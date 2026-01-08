@@ -12,7 +12,7 @@ import {
   SynthesisSchema,
 } from "./types";
 
-const model = google("gemini-2.5-flash");
+const model = google("gemini-2.5-flash-lite");
 
 const SYSTEM_PROMPT = `You are a senior venture analyst synthesizing research into actionable recommendations for founders. Your role is to combine multiple perspectives into a coherent assessment.
 
@@ -94,7 +94,7 @@ Provide a comprehensive synthesis with scores, recommendations, and a clear verd
       promptHash,
       prompt,
       response: JSON.stringify(result.object),
-      model: "gemini-2.5-flash",
+      model: "gemini-2.5-flash-lite",
       tokensUsed: result.usage?.totalTokens,
       latencyMs,
     },

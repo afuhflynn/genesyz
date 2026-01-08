@@ -163,7 +163,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     );
   }
 
-  const { url } = response[0].data;
+  const { ufsUrl } = response[0].data;
 
-  return NextResponse.json({ url });
+  return NextResponse.json({ url: ufsUrl });
 }

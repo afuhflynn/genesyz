@@ -72,7 +72,10 @@ export function Sidebar({ className }: SidebarProps) {
 
   return (
     <ScrollArea
-      className={cn("pb-12 min-h-screen border-r bg-background", className)}
+      className={cn(
+        "pb-12 h-full overflow-auto flex-col justify-between border-r bg-background relative",
+        className
+      )}
     >
       <div className="space-y-4 py-4">
         <div className="px-3 py-2">

@@ -16,7 +16,11 @@ export default function MagicLinkPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (email) {
-      magicLink.mutate(email);
+      magicLink.mutate(email, {
+        onSuccess: () => {
+          setEmail("");
+        },
+      });
     }
   };
 

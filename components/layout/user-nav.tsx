@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { signOut } from "@/lib/auth-client";
 import { User } from "better-auth";
+import { useRouter } from "next/navigation";
 
 interface UserNavProps {
   user?: User | null;
@@ -21,6 +22,7 @@ interface UserNavProps {
 
 export function UserNav({ user }: UserNavProps) {
   if (!user) return null;
+  const router = useRouter();
 
   return (
     <DropdownMenu>
@@ -57,7 +59,17 @@ export function UserNav({ user }: UserNavProps) {
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => signOut()}>
+        <DropdownMenuItem
+          onClick={() =>
+            signOut({
+              fetchOptions: {
+                onSuccess() {
+                  router.push("/sign-in");
+                },
+              },
+            })
+          }
+        >
           Log out
           <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut>
         </DropdownMenuItem>

@@ -9,7 +9,7 @@ import {
   TrendAnalysisSchema,
 } from "./types";
 
-const model = google("gemini-2.5-flash");
+const model = google("gemini-2.5-flash-lite");
 
 const SYSTEM_PROMPT = `You are a technology and market trends analyst specializing in identifying timing windows for startup opportunities. Your role is to assess whether now is the right time for a given idea.
 
@@ -61,7 +61,7 @@ Assess the timing, technology readiness, and relevant trends that could impact t
       promptHash,
       prompt,
       response: JSON.stringify(result.object),
-      model: "gemini-2.5-flash",
+      model: "gemini-2.5-flash-lite",
       tokensUsed: result.usage?.totalTokens,
       latencyMs,
     },

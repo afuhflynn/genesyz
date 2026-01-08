@@ -46,7 +46,7 @@ export async function sendWelcomeEmail(options: {
   </div>
 
   <div style="text-align: center; margin-bottom: 32px;">
-    <a href="${APP_URL}/dashboard" style="display: inline-block; background: #F5A623; color: #F5A623; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 700; font-size: 16px;">
+    <a href="${APP_URL}/dashboard" style="display: inline-block; background: #F5A623; color: #fffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 700; font-size: 16px;">
       Go to Dashboard
     </a>
   </div>
@@ -98,7 +98,7 @@ export async function sendDigestEmail(options: {
           <td style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9;">
             <a href="${APP_URL}/ideas/${
         idea.id
-      }" style="color: #F5A623; text-decoration: none; font-weight: 500;">
+      }" style="color: #fffff; text-decoration: none; font-weight: 500;">
               ${idea.title}
             </a>
           </td>
@@ -164,14 +164,14 @@ export async function sendDigestEmail(options: {
       : `
     <div style="background: #f8fafc; border-radius: 12px; padding: 32px; text-align: center;">
       <p style="font-size: 16px; color: #64748b; margin: 0;">
-        No ideas yet. <a href="${APP_URL}/ideas/new" style="color: #F5A623; font-weight: 600;">Capture your first idea</a>
+        No ideas yet. <a href="${APP_URL}/ideas/new" style="color: #fffff; font-weight: 600;">Capture your first idea</a>
       </p>
     </div>
   `
   }
 
   <div style="text-align: center; margin: 32px 0;">
-    <a href="${APP_URL}/dashboard" style="display: inline-block; background: #F5A623; color: #F5A623; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 700; font-size: 16px;">
+    <a href="${APP_URL}/dashboard" style="display: inline-block; background: #F5A623; color: #fffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 700; font-size: 16px;">
       View Dashboard
     </a>
   </div>
@@ -180,7 +180,7 @@ export async function sendDigestEmail(options: {
 
   <p style="font-size: 12px; color: #94a3b8; text-align: center;">
     © ${new Date().getFullYear()} IdeasVault. All rights reserved.<br>
-    <a href="${APP_URL}/settings" style="color: #94a3b8;">Manage email preferences</a>
+    <a href="${APP_URL}/settings" style="color: #000000;">Manage email preferences</a>
   </p>
 </body>
 </html>
@@ -271,7 +271,7 @@ export async function sendResearchCompleteEmail(options: {
   </div>
 
   <div style="text-align: center; margin-bottom: 32px;">
-    <a href="${APP_URL}/ideas/${ideaId}" style="display: inline-block; background: #F5A623; color: #F5A623; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 700; font-size: 16px;">
+    <a href="${APP_URL}/ideas/${ideaId}" style="display: inline-block; background: #F5A623; color: #fffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 700; font-size: 16px;">
       View Full Research
     </a>
   </div>
@@ -394,7 +394,7 @@ export async function sendPasswordResetEmail(options: {
   </p>
 
   <div style="text-align: center; margin-bottom: 32px;">
-    <a href="${url}" style="display: inline-block; background: #F5A623; color: #F5A623; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 700; font-size: 16px;">
+    <a href="${url}" style="display: inline-block; background: #F5A623; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 700; font-size: 16px;">
       Reset Password
     </a>
   </div>
@@ -452,7 +452,7 @@ export async function sendMagicLinkEmail(options: {
   </p>
 
   <div style="text-align: center; margin-bottom: 32px;">
-    <a href="${url}" style="display: inline-block; background: #F5A623; color: #F5A623; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 700; font-size: 16px;">
+    <a href="${url}" style="display: inline-block; background: #F5A623; color: #fffff; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 700; font-size: 16px;">
       Sign In to IdeasVault
     </a>
   </div>

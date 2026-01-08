@@ -8,7 +8,7 @@ import {
   InterpretedIdeaSchema,
 } from "./types";
 
-const model = google("gemini-2.5-flash");
+const model = google("gemini-2.5-flash-lite");
 
 const SYSTEM_PROMPT = `You are an expert startup analyst and idea interpreter. Your role is to take raw, unstructured founder ideas and transform them into clear, structured representations.
 
@@ -60,7 +60,7 @@ Transform this into a structured idea representation. Be thorough but concise.`;
       promptHash,
       prompt,
       response: JSON.stringify(result.object),
-      model: "gemini-2.5-flash",
+      model: "gemini-2.5-flash-lite",
       tokensUsed: result.usage?.totalTokens,
       latencyMs,
     },

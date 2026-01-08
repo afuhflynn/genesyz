@@ -194,10 +194,19 @@ export default function IdeaDetailPage() {
             {/* Score Cards */}
             {score && (
               <div className="grid gap-4 md:grid-cols-4">
-                <ScoreCard title="Overall" score={score.overallScore} />
-                <ScoreCard title="Clarity" score={score.clarityScore} />
-                <ScoreCard title="Market" score={score.marketScore} />
-                <ScoreCard title="Execution" score={score.executionScore} />
+                <ScoreCard
+                  title="Overall"
+                  score={score.overallScore as number}
+                />
+                <ScoreCard
+                  title="Clarity"
+                  score={score.clarityScore as number}
+                />
+                <ScoreCard title="Market" score={score.marketScore as number} />
+                <ScoreCard
+                  title="Execution"
+                  score={score.executionScore as number}
+                />
               </div>
             )}
 
