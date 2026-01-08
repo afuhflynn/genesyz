@@ -25,14 +25,16 @@ export function Footer() {
       <div className="container mx-auto px-4 py-12 md:py-16">
         <div className="grid grid-cols-2 gap-8 md:grid-cols-4 lg:grid-cols-5">
           <div className="col-span-2 lg:col-span-2">
-            <Link href="/" className="flex items-center space-x-2">
+            <Link href="/" className="flex items-center ">
               <Image
-                src="/images/logo/logo-header.png"
+                src="/images/logo/source-icon.png"
                 alt="IdeasVault Logo"
                 width={120}
                 height={30}
-                className="h-8 w-auto"
+                className="h-14 w-auto"
               />
+
+              <span className="text-xl font-semibold">IdeasVault</span>
             </Link>
             <p className="mt-4 max-w-xs text-sm text-muted-foreground leading-relaxed">
               IdeasVault helps entrepreneurs validate their startup ideas with

@@ -25,7 +25,7 @@ export async function sendWelcomeEmail(options: {
     <img src="${APP_URL}/images/logo/logo-email.png" alt="IdeasVault" width="150" height="50" style="display: block; margin: 0 auto;">
   </div>
 
-  <h2 style="font-size: 24px; font-weight: 600; color: #0f172a; margin-bottom: 16px;">
+  <h2 style="font-size: 24px; font-weight: 600; color: #F5A623; margin-bottom: 16px;">
     Welcome, ${userName}!
   </h2>
 
@@ -34,7 +34,7 @@ export async function sendWelcomeEmail(options: {
   </p>
 
   <div style="background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-radius: 12px; padding: 24px; margin-bottom: 24px;">
-    <h3 style="font-size: 18px; font-weight: 600; color: #0f172a; margin: 0 0 12px 0;">
+    <h3 style="font-size: 18px; font-weight: 600; color: #F5A623; margin: 0 0 12px 0;">
       Here's what you can do:
     </h3>
     <ul style="margin: 0; padding-left: 20px; color: #475569;">
@@ -46,7 +46,7 @@ export async function sendWelcomeEmail(options: {
   </div>
 
   <div style="text-align: center; margin-bottom: 32px;">
-    <a href="${APP_URL}/dashboard" style="display: inline-block; background: #F5A623; color: #0f172a; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 700; font-size: 16px;">
+    <a href="${APP_URL}/dashboard" style="display: inline-block; background: #F5A623; color: #F5A623; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 700; font-size: 16px;">
       Go to Dashboard
     </a>
   </div>
@@ -98,7 +98,7 @@ export async function sendDigestEmail(options: {
           <td style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9;">
             <a href="${APP_URL}/ideas/${
         idea.id
-      }" style="color: #0f172a; text-decoration: none; font-weight: 500;">
+      }" style="color: #F5A623; text-decoration: none; font-weight: 500;">
               ${idea.title}
             </a>
           </td>
@@ -134,17 +134,17 @@ export async function sendDigestEmail(options: {
     <p style="font-size: 14px; color: #64748b; margin: 8px 0 0 0;">Weekly Digest</p>
   </div>
 
-  <h2 style="font-size: 22px; font-weight: 600; color: #0f172a; margin-bottom: 24px;">
+  <h2 style="font-size: 22px; font-weight: 600; color: #F5A623; margin-bottom: 24px;">
     Hi ${userName}, here's your weekly update
   </h2>
 
   <div style="display: flex; gap: 16px; margin-bottom: 32px;">
     <div style="flex: 1; background: #f8fafc; border-radius: 12px; padding: 20px; text-align: center;">
-      <p style="font-size: 32px; font-weight: 700; color: #0f172a; margin: 0;">${totalIdeas}</p>
+      <p style="font-size: 32px; font-weight: 700; color: #F5A623; margin: 0;">${totalIdeas}</p>
       <p style="font-size: 14px; color: #64748b; margin: 4px 0 0 0;">Active Ideas</p>
     </div>
     <div style="flex: 1; background: #f8fafc; border-radius: 12px; padding: 20px; text-align: center;">
-      <p style="font-size: 32px; font-weight: 700; color: #0f172a; margin: 0;">${averageScore}</p>
+      <p style="font-size: 32px; font-weight: 700; color: #F5A623; margin: 0;">${averageScore}</p>
       <p style="font-size: 14px; color: #64748b; margin: 4px 0 0 0;">Avg Score</p>
     </div>
   </div>
@@ -152,7 +152,7 @@ export async function sendDigestEmail(options: {
   ${
     topIdeas.length > 0
       ? `
-    <h3 style="font-size: 18px; font-weight: 600; color: #0f172a; margin-bottom: 16px;">
+    <h3 style="font-size: 18px; font-weight: 600; color: #F5A623; margin-bottom: 16px;">
       Your Top Ideas
     </h3>
     <table style="width: 100%; border-collapse: collapse; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
@@ -164,14 +164,14 @@ export async function sendDigestEmail(options: {
       : `
     <div style="background: #f8fafc; border-radius: 12px; padding: 32px; text-align: center;">
       <p style="font-size: 16px; color: #64748b; margin: 0;">
-        No ideas yet. <a href="${APP_URL}/ideas/new" style="color: #0f172a; font-weight: 600;">Capture your first idea</a>
+        No ideas yet. <a href="${APP_URL}/ideas/new" style="color: #F5A623; font-weight: 600;">Capture your first idea</a>
       </p>
     </div>
   `
   }
 
   <div style="text-align: center; margin: 32px 0;">
-    <a href="${APP_URL}/dashboard" style="display: inline-block; background: #F5A623; color: #0f172a; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 700; font-size: 16px;">
+    <a href="${APP_URL}/dashboard" style="display: inline-block; background: #F5A623; color: #F5A623; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 700; font-size: 16px;">
       View Dashboard
     </a>
   </div>
@@ -232,7 +232,7 @@ export async function sendResearchCompleteEmail(options: {
     <img src="${APP_URL}/images/logo/logo-email.png" alt="IdeasVault" width="150" height="50" style="display: block; margin: 0 auto;">
   </div>
 
-  <h2 style="font-size: 22px; font-weight: 600; color: #0f172a; margin-bottom: 16px;">
+  <h2 style="font-size: 22px; font-weight: 600; color: #F5A623; margin-bottom: 16px;">
     Research Complete! 🎉
   </h2>
 
@@ -241,7 +241,7 @@ export async function sendResearchCompleteEmail(options: {
   </p>
 
   <div style="background: #f8fafc; border-radius: 12px; padding: 24px; margin-bottom: 24px;">
-    <h3 style="font-size: 18px; font-weight: 600; color: #0f172a; margin: 0 0 16px 0;">
+    <h3 style="font-size: 18px; font-weight: 600; color: #F5A623; margin: 0 0 16px 0;">
       ${ideaTitle}
     </h3>
 
@@ -271,7 +271,7 @@ export async function sendResearchCompleteEmail(options: {
   </div>
 
   <div style="text-align: center; margin-bottom: 32px;">
-    <a href="${APP_URL}/ideas/${ideaId}" style="display: inline-block; background: #F5A623; color: #0f172a; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 700; font-size: 16px;">
+    <a href="${APP_URL}/ideas/${ideaId}" style="display: inline-block; background: #F5A623; color: #F5A623; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 700; font-size: 16px;">
       View Full Research
     </a>
   </div>
@@ -318,7 +318,7 @@ export async function sendVerificationEmail(options: {
     <img src="${APP_URL}/images/logo/logo-email.png" alt="IdeasVault" width="150" height="50" style="display: block; margin: 0 auto;">
   </div>
 
-  <h2 style="font-size: 22px; font-weight: 600; color: #0f172a; margin-bottom: 16px; text-align: center;">
+  <h2 style="font-size: 22px; font-weight: 600; color: #F5A623; margin-bottom: 16px; text-align: center;">
     Verify your email address
   </h2>
 
@@ -339,7 +339,7 @@ export async function sendVerificationEmail(options: {
     <p style="font-size: 14px; color: #64748b; margin-bottom: 16px;">
       Or click the button below to verify directly:
     </p>
-    <a href="${url}" style="display: inline-block; background: #0f172a; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 14px;">
+    <a href="${url}" style="display: inline-block; background: #F5A623; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 14px;">
       Verify Email
     </a>
   </div>
@@ -385,7 +385,7 @@ export async function sendPasswordResetEmail(options: {
     <img src="${APP_URL}/images/logo/logo-email.png" alt="IdeasVault" width="150" height="50" style="display: block; margin: 0 auto;">
   </div>
 
-  <h2 style="font-size: 22px; font-weight: 600; color: #0f172a; margin-bottom: 16px; text-align: center;">
+  <h2 style="font-size: 22px; font-weight: 600; color: #F5A623; margin-bottom: 16px; text-align: center;">
     Reset your password
   </h2>
 
@@ -394,7 +394,7 @@ export async function sendPasswordResetEmail(options: {
   </p>
 
   <div style="text-align: center; margin-bottom: 32px;">
-    <a href="${url}" style="display: inline-block; background: #F5A623; color: #0f172a; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 700; font-size: 16px;">
+    <a href="${url}" style="display: inline-block; background: #F5A623; color: #F5A623; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 700; font-size: 16px;">
       Reset Password
     </a>
   </div>
@@ -443,7 +443,7 @@ export async function sendMagicLinkEmail(options: {
     <img src="${APP_URL}/images/logo/logo-email.png" alt="IdeasVault" width="150" height="50" style="display: block; margin: 0 auto;">
   </div>
 
-  <h2 style="font-size: 22px; font-weight: 600; color: #0f172a; margin-bottom: 16px; text-align: center;">
+  <h2 style="font-size: 22px; font-weight: 600; color: #F5A623; margin-bottom: 16px; text-align: center;">
     Sign in to your account
   </h2>
 
@@ -452,7 +452,7 @@ export async function sendMagicLinkEmail(options: {
   </p>
 
   <div style="text-align: center; margin-bottom: 32px;">
-    <a href="${url}" style="display: inline-block; background: #F5A623; color: #0f172a; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 700; font-size: 16px;">
+    <a href="${url}" style="display: inline-block; background: #F5A623; color: #F5A623; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 700; font-size: 16px;">
       Sign In to IdeasVault
     </a>
   </div>

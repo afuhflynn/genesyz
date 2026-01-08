@@ -4,6 +4,8 @@ import {
   sendPasswordResetEmail,
 } from "@/lib/email/send";
 import { sendEmail } from "@/lib/email/client";
+import { db } from "@/lib/db";
+import { PLANS } from "@/lib/polar/client";
 
 export const sendVerificationEmailFunction = inngest.createFunction(
   { id: "send-verification-email", name: "Send Verification Email" },
@@ -29,6 +31,27 @@ export const sendWelcomeEmailFunction = inngest.createFunction(
   { event: "email.send.welcome" },
   async ({ event, step }) => {
     const { email, name, username } = event.data;
+
+    await step.run("create-entitlement", async () => {
+      const user = await db.user.findUnique({
+        where: {
+          name: name,
+          email,
+        },
+      });
+
+      if (!user) {
+        throw new Error("Failed to create user");
+      }
+      await db.entitlement.create({
+        data: {
+          userId: user.id,
+          plan: "FREE",
+          maxActiveIdeas: PLANS.FREE.maxActiveIdeas,
+          status: "ACTIVE",
+        },
+      });
+    });
 
     await step.run("send-email", async () => {
       await sendEmail({

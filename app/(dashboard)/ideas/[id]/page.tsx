@@ -40,7 +40,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { formatRelativeTime } from "@/lib/utils";
+import { cn, formatRelativeTime } from "@/lib/utils";
 import {
   Accordion,
   AccordionContent,
@@ -441,14 +441,14 @@ export default function IdeaDetailPage() {
           </TabsContent>
 
           <TabsContent value="raw">
-            <Card>
+            <Card className="w-full!">
               <CardHeader>
                 <CardTitle>Raw Agent Outputs</CardTitle>
                 <CardDescription>
                   Direct JSON output from the research agents
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="w-full!">
                 <Accordion type="single" collapsible className="w-full">
                   {researchPackets.map((packet) => (
                     <AccordionItem key={packet.id} value={packet.id}>

@@ -41,7 +41,6 @@ export default function RegisterPage() {
       footerText="Already have an account?"
       footerLink="/sign-in"
       footerLinkText="Sign in"
-      showMagicLink={false}
       isLoading={signUp.isPending}
     >
       <form onSubmit={handleSubmit} className="space-y-6">

@@ -63,52 +63,54 @@ export default function DashboardPage() {
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <motion.div variants={item}>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Ideas</CardTitle>
-            <Lightbulb className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{data?.totalIdeas || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              {data?.usage.activeIdeas} active /{" "}
-              {data?.usage.maxIdeas === 999999
-                ? "Unlimited"
-                : data?.usage.maxIdeas}{" "}
-              allowed
-            </p>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Ideas</CardTitle>
+              <Lightbulb className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{data?.totalIdeas || 0}</div>
+              <p className="text-xs text-muted-foreground">
+                {data?.usage.activeIdeas} active /{" "}
+                {data?.usage.maxIdeas === 999999
+                  ? "Unlimited"
+                  : data?.usage.maxIdeas}{" "}
+                allowed
+              </p>
+            </CardContent>
+          </Card>
         </motion.div>
         <motion.div variants={item}>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Researched</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {data?.researchedIdeas || 0}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Fully analyzed by AI
-            </p>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Researched</CardTitle>
+              <Activity className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {data?.researchedIdeas || 0}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Fully analyzed by AI
+              </p>
+            </CardContent>
+          </Card>
         </motion.div>
         <motion.div variants={item}>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg. Score</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{data?.averageScore || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              Across all researched ideas
-            </p>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Avg. Score</CardTitle>
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {data?.averageScore || 0}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Across all researched ideas
+              </p>
+            </CardContent>
+          </Card>
         </motion.div>
       </div>
 
@@ -201,7 +203,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </motion.div>
   );
 }
 

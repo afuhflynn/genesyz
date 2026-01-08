@@ -194,8 +194,18 @@ export const api = {
   mutations: {
     // Ideas
     ideas: {
-      create: (data: FormData): Promise<Idea> =>
-        apiRequest("/ideas", { method: "POST", body: data }),
+      create: async (data: FormData): Promise<Idea> => {
+        // use the inbuild fetch api to send (because it may contain files and axios won't handle it well)
+        const response = await fetch("/api/ideas", {
+          method: "POST",
+          body: data,
+        });
+        if (response.status === 201) {
+          return (await response.json()) as Idea;
+        } else {
+          throw new Error("Failed to create idea");
+        }
+      },
 
       archive: (id: string): Promise<Idea> =>
         apiRequest(`/ideas/${id}/archive`, { method: "PATCH" }),

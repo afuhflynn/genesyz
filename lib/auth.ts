@@ -7,8 +7,8 @@ import {
   portal,
   usage,
   webhooks,
-  magicLink,
 } from "@polar-sh/better-auth";
+import { magicLink } from "better-auth/plugins";
 import { Polar } from "@polar-sh/sdk";
 import { syncEntitlement } from "@/lib/polar/entitlements";
 import { inngest } from "./inngest/client";
@@ -17,9 +17,13 @@ export const auth = betterAuth({
   database: prismaAdapter(db, {
     provider: "postgresql",
   }),
+
   emailAndPassword: {
     enabled: true,
     autoSignIn: false,
+    requireEmailVerification: false,
+    minPasswordLength: 8,
+    maxPasswordLength: 30,
     async sendResetPassword({ user, url }, request) {
       await inngest.send({
         name: "email.send.passwordReset",
@@ -45,16 +49,14 @@ export const auth = betterAuth({
       maxAge: 5 * 60, // Cache session for 5 minutes
     },
   },
-  trustedOrigins: [process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"],
+  trustedOrigins: [process.env.NEXT_PUBLIC_APP_URL! || "http://localhost:3000"],
   plugins: [
     polar({
       client: new Polar({
         accessToken: process.env.POLAR_ACCESS_TOKEN!,
         server: "sandbox",
       }),
-      onEntitlementSync: async (event) => {
-        await syncEntitlement(event);
-      },
+
       createCustomerOnSignUp: true,
       use: [
         checkout({

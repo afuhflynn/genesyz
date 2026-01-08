@@ -320,8 +320,16 @@ export function useVerifyEmail() {
 
 export function useMagicLink() {
   return useMutation({
-    mutationFn: (email: string) =>
-      authClient.signIn.magicLink({ email, callbackURL: "/dashboard" }),
+    mutationFn: async (email: string) => {
+      const { error } = await authClient.signIn.magicLink({
+        email,
+        callbackURL: "/dashboard",
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+    },
     onSuccess: () => {
       toast.success("Magic link sent! Check your email.");
     },
@@ -365,17 +373,16 @@ export function useSignIn() {
 export function useSignUp() {
   const router = useRouter();
   return useMutation({
-    mutationFn: (data: any) => signUp.email(data),
-    onSuccess: (response: any, variables: any) => {
-      if (response.error) {
-        toast.error(response.error.message || "Registration failed");
-      } else {
-        toast.success("Registration successful! Please verify your email.");
-        router.push(
-          `/verify-email?email=${encodeURIComponent(variables.email)}`
-        );
-        router.refresh();
+    mutationFn: async (data: any) => {
+      const { error } = await signUp.email(data);
+      if (error) {
+        throw new Error(error?.message);
       }
+    },
+    onSuccess(_data, variables) {
+      toast.success("Registration successful! Please verify your email.");
+      router.push(`/verify-email?email=${encodeURIComponent(variables.email)}`);
+      router.refresh();
     },
     onError: (error: Error) => {
       toast.error(error.message || "An unexpected error occurred");

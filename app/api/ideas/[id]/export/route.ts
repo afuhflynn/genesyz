@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 import { db } from "@/lib/db";
 import PDFDocument from "pdfkit";
 import { utapi } from "@/lib/files";
-import { Readable } from "stream";
+import path from "node:path";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -51,6 +51,11 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
   // Create PDF
   const doc = new PDFDocument({ margin: 50 });
+  doc.registerFont(
+    "Inter",
+    path.join(process.cwd(), "public/fonts/Nunito-VariableFont_wght.ttf")
+  );
+
   const chunks: Buffer[] = [];
 
   doc.on("data", (chunk) => chunks.push(chunk));

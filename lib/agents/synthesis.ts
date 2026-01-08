@@ -12,7 +12,7 @@ import {
   SynthesisSchema,
 } from "./types";
 
-const model = google("gemini-2.0-flash");
+const model = google("gemini-2.5-flash");
 
 const SYSTEM_PROMPT = `You are a senior venture analyst synthesizing research into actionable recommendations for founders. Your role is to combine multiple perspectives into a coherent assessment.
 
@@ -94,7 +94,7 @@ Provide a comprehensive synthesis with scores, recommendations, and a clear verd
       promptHash,
       prompt,
       response: JSON.stringify(result.object),
-      model: "gemini-2.0-flash",
+      model: "gemini-2.5-flash",
       tokensUsed: result.usage?.totalTokens,
       latencyMs,
     },
@@ -102,10 +102,10 @@ Provide a comprehensive synthesis with scores, recommendations, and a clear verd
 
   // Confidence based on consistency of all inputs
   const avgConfidence =
-    (previousOutputs.INTERPRETER?.confidence || 0) +
-    (previousOutputs.MARKET_RESEARCH?.confidence || 0) +
-    (previousOutputs.TREND_ANALYSIS?.confidence || 0) +
-    (previousOutputs.EXECUTION_FRICTION?.confidence || 0);
+    (previousOutputs?.INTERPRETER?.confidence || 0) +
+    (previousOutputs?.MARKET_RESEARCH?.confidence || 0) +
+    (previousOutputs?.TREND_ANALYSIS?.confidence || 0) +
+    (previousOutputs?.EXECUTION_FRICTION?.confidence || 0);
   const confidence = avgConfidence / 4;
 
   return {

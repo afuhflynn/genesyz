@@ -1,6 +1,6 @@
+import { SearchBar } from "@/components/faqs/search-bar";
 import { FAQSection } from "@/components/marketing/faq-section";
-import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { FAQsTips } from "@/constants";
 
 export default function FAQPage() {
   return (
@@ -14,13 +14,7 @@ export default function FAQPage() {
             Have questions? We're here to help you get the most out of
             IdeasVault.
           </p>
-          <div className="relative max-w-xl mx-auto">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5" />
-            <Input
-              placeholder="Search for answers..."
-              className="h-14 pl-12 text-lg rounded-2xl shadow-sm border-slate-200 bg-white"
-            />
-          </div>
+          <SearchBar />
         </div>
       </section>
 
@@ -32,14 +26,7 @@ export default function FAQPage() {
             Browse by Category
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-            {[
-              { title: "Getting Started", count: 12, icon: "🚀" },
-              { title: "AI Pipeline", count: 8, icon: "🧠" },
-              { title: "Billing & Plans", count: 5, icon: "💳" },
-              { title: "Security & Privacy", count: 6, icon: "🔒" },
-              { title: "API & Integrations", count: 4, icon: "🔌" },
-              { title: "Troubleshooting", count: 10, icon: "🛠️" },
-            ].map((cat) => (
+            {FAQsTips.map((cat) => (
               <div
                 key={cat.title}
                 className="p-6 rounded-2xl border bg-white hover:border-primary transition-colors cursor-pointer group"

@@ -4,12 +4,14 @@ export const searchParamsSchema = {
   redirect: parseAsString,
   page: parseAsString.withDefault("1"),
   limit: parseAsString.withDefault("16"),
+  search: parseAsString,
 };
 
 type ParamsTypes = Values<{
   redirect: SingleParserBuilder<string>;
   page: SingleParserBuilder<number>;
   limit: SingleParserBuilder<number>;
+  search: SingleParserBuilder<string>;
 }>;
 
 // Helper function to build URLs with current params

@@ -9,7 +9,7 @@ import {
   MarketResearchSchema,
 } from "./types";
 
-const model = google("gemini-2.0-flash");
+const model = google("gemini-2.5-flash");
 
 const SYSTEM_PROMPT = `You are a senior market research analyst with expertise in startup ecosystems, competitive analysis, and market sizing. Your role is to provide actionable market intelligence for founder ideas.
 
@@ -63,7 +63,7 @@ Provide comprehensive market research including market sizing, competitor analys
       promptHash,
       prompt,
       response: JSON.stringify(result.object),
-      model: "gemini-2.0-flash",
+      model: "gemini-2.5-flash",
       tokensUsed: result.usage?.totalTokens,
       latencyMs,
     },

@@ -14,7 +14,7 @@ import {
   Shield,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "@/lib/auth-client";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useState } from "react";
@@ -26,6 +26,7 @@ interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
 export function Sidebar({ className }: SidebarProps) {
   const pathname = usePathname();
   const { data: user } = useProfile();
+  const router = useRouter();
 
   const routes = [
     {
@@ -38,7 +39,7 @@ export function Sidebar({ className }: SidebarProps) {
       label: "My Ideas",
       icon: Lightbulb,
       href: "/ideas",
-      active: pathname === "/ideas" || pathname.startsWith("/ideas/"),
+      active: pathname === "/ideas",
     },
     {
       label: "New Idea",
@@ -70,21 +71,11 @@ export function Sidebar({ className }: SidebarProps) {
   }
 
   return (
-    <div className={cn("pb-12 min-h-screen border-r bg-background", className)}>
+    <ScrollArea
+      className={cn("pb-12 min-h-screen border-r bg-background", className)}
+    >
       <div className="space-y-4 py-4">
         <div className="px-3 py-2">
-          <div className="mb-6 px-4">
-            <Link href="/dashboard">
-              <Image
-                src="/images/logo/logo-header.png"
-                alt="IdeasVault"
-                width={140}
-                height={56}
-                priority
-                className="h-10 w-auto"
-              />
-            </Link>
-          </div>
           <div className="space-y-1">
             {routes.map((route) => (
               <Button
@@ -106,13 +97,21 @@ export function Sidebar({ className }: SidebarProps) {
         <Button
           variant="ghost"
           className="w-full justify-start text-muted-foreground hover:text-destructive"
-          onClick={() => signOut()}
+          onClick={() =>
+            signOut({
+              fetchOptions: {
+                onSuccess() {
+                  router.push("/sign-in");
+                },
+              },
+            })
+          }
         >
           <LogOut className="mr-2 h-4 w-4" />
           Sign Out
         </Button>
       </div>
-    </div>
+    </ScrollArea>
   );
 }
 
