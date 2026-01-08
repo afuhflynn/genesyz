@@ -25,7 +25,7 @@ export const auth = betterAuth({
     minPasswordLength: 8,
     maxPasswordLength: 30,
     async sendResetPassword({ user, url }, request) {
-      await inngest.send({
+      void inngest.send({
         name: "email.send.passwordReset",
         data: {
           email: user.email,
@@ -74,26 +74,26 @@ export const auth = betterAuth({
         webhooks({
           secret: process.env.POLAR_WEBHOOK_SECRET!,
           onSubscriptionCreated: async (payload) => {
-            await handleSubscriptionChange(payload.data);
+            void handleSubscriptionChange(payload.data);
           },
           onSubscriptionUpdated: async (payload) => {
-            await handleSubscriptionChange(payload.data);
+            void handleSubscriptionChange(payload.data);
           },
           onSubscriptionActive: async (payload) => {
-            await handleSubscriptionChange(payload.data);
+            void handleSubscriptionChange(payload.data);
           },
           onSubscriptionCanceled: async (payload) => {
-            await handleSubscriptionCanceled(payload.data);
+            void handleSubscriptionCanceled(payload.data);
           },
           onSubscriptionRevoked: async (payload) => {
-            await handleSubscriptionRevoked(payload.data);
+            void handleSubscriptionRevoked(payload.data);
           },
         }),
       ],
     }),
     magicLink({
       async sendMagicLink({ email, url }, request) {
-        await inngest.send({
+        void inngest.send({
           name: "email.send.magicLink",
           data: {
             email,
