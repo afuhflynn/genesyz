@@ -1,0 +1,323 @@
+// IdeasVault Prisma Schema
+// AI-powered idea vault for founders
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ===========================================
+// Authentication (Better Auth)
+// ===========================================
+
+model User {
+  id            String   @id @default(cuid())
+  name          String
+  email         String   @unique
+  emailVerified Boolean  @default(false)
+  image         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Email Verification
+  verificationCode   String?
+  verificationExpiry DateTime?
+  accountStatus      AccountStatus @default(ACTIVE)
+
+  // Password Reset
+  resetToken       String?
+  resetTokenExpiry DateTime?
+
+  role UserRole @default(USER)
+
+  // Relations
+  sessions     Session[]
+  accounts     Account[]
+  ideas        Idea[]
+  entitlements Entitlement[]
+  auditLogs    AuditLog[]
+
+  @@map("users")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum AccountStatus {
+  ACTIVE
+  FROZEN
+  DELETED
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+// ===========================================
+// Core Business Logic
+// ===========================================
+
+model Idea {
+  id           String     @id @default(cuid())
+  userId       String
+  title        String?
+  summary      String?
+  status       IdeaStatus @default(PENDING)
+  isArchived   Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  researchedAt DateTime?
+
+  // Relations
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  inputs          IdeaInput[]
+  researchJobs    ResearchJob[]
+  researchPackets ResearchPacket[]
+  scores          IdeaScore[]
+  researchLogs    ResearchLog[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("ideas")
+}
+
+enum IdeaStatus {
+  PENDING // Just submitted, not yet processed
+  PROCESSING // AI pipeline running
+  RESEARCHED // Research complete
+  FAILED // Pipeline failed
+}
+
+model IdeaInput {
+  id       String        @id @default(cuid())
+  ideaId   String
+  type     IdeaInputType
+  content  String? // Text content
+  fileUrl  String? // URL to uploaded file
+  fileName String?
+  mimeType String?
+  fileSize Int?
+
+  // Processed content
+  transcription String? // For audio inputs
+  ocrText       String? // For image inputs
+
+  createdAt DateTime @default(now())
+
+  idea Idea @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+
+  @@index([ideaId])
+  @@map("idea_inputs")
+}
+
+enum IdeaInputType {
+  TEXT
+  AUDIO
+  IMAGE
+}
+
+// ===========================================
+// AI Research Pipeline
+// ===========================================
+
+model ResearchJob {
+  id           String            @id @default(cuid())
+  ideaId       String
+  status       ResearchJobStatus @default(PENDING)
+  startedAt    DateTime?
+  completedAt  DateTime?
+  error        String?
+  retryCount   Int               @default(0)
+  inngestRunId String? // Track Inngest run ID
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  idea Idea @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+
+  @@index([ideaId])
+  @@index([status])
+  @@map("research_jobs")
+}
+
+enum ResearchJobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+model ResearchPacket {
+  id         String            @id @default(cuid())
+  ideaId     String
+  agentType  ResearchAgentType
+  content    Json // Structured agent output
+  confidence Float? // 0-1 confidence score
+  version    Int               @default(1)
+  createdAt  DateTime          @default(now())
+
+  idea Idea @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+
+  @@index([ideaId])
+  @@index([agentType])
+  @@map("research_packets")
+}
+
+enum ResearchAgentType {
+  INTERPRETER
+  MARKET_RESEARCH
+  TREND_ANALYSIS
+  EXECUTION_FRICTION
+  SYNTHESIS
+}
+
+model IdeaScore {
+  id     String @id @default(cuid())
+  ideaId String
+
+  // Individual scores (0-100)
+  clarityScore   Int?
+  marketScore    Int?
+  executionScore Int?
+  overallScore   Int?
+
+  // Explanations
+  clarityExplanation   String?
+  marketExplanation    String?
+  executionExplanation String?
+  overallExplanation   String?
+
+  version   Int      @default(1)
+  createdAt DateTime @default(now())
+
+  idea Idea @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+
+  @@index([ideaId])
+  @@map("idea_scores")
+}
+
+model ResearchLog {
+  id         String            @id @default(cuid())
+  ideaId     String
+  agentType  ResearchAgentType
+  promptHash String // Hash for deduplication
+  prompt     String // Full prompt sent
+  response   String // Raw response received
+  model      String // AI model used
+  tokensUsed Int?
+  latencyMs  Int?
+  createdAt  DateTime          @default(now())
+
+  idea Idea @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+
+  @@index([ideaId])
+  @@index([agentType])
+  @@map("research_logs")
+}
+
+// ===========================================
+// Billing (Polar)
+// ===========================================
+
+model Entitlement {
+  id                  String            @id @default(cuid())
+  userId              String
+  polarCustomerId     String?
+  polarSubscriptionId String?
+  plan                EntitlementPlan   @default(FREE)
+  maxActiveIdeas      Int               @default(3)
+  status              EntitlementStatus @default(ACTIVE)
+  currentPeriodEnd    DateTime?
+  cancelAtPeriodEnd   Boolean           @default(false)
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId])
+  @@index([polarCustomerId])
+  @@index([polarSubscriptionId])
+  @@map("entitlements")
+}
+
+enum EntitlementPlan {
+  FREE
+  PRO
+}
+
+enum EntitlementStatus {
+  ACTIVE
+  CANCELED
+  PAST_DUE
+  EXPIRED
+}
+
+// ===========================================
+// Audit & Security
+// ===========================================
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String?
+  action     String // e.g., "idea.created", "research.completed"
+  resource   String? // e.g., "idea", "research_job"
+  resourceId String?
+  metadata   Json? // Additional context
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

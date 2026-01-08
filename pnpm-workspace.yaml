@@ -1,5 +1,9 @@
 packages:
   - .
+
 ignoredBuiltDependencies:
+  - '@prisma/engines'
+  - prisma
+  - protobufjs
   - sharp
   - unrs-resolver

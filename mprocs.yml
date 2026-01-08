@@ -1,0 +1,11 @@
+procs:
+  next-dev:
+    cmd: ["pnpm", "dev"]
+  inngest-dev:
+    cmd: ["pnpm", "inngest:dev"]
+  ngrok-dev:
+    cmd: ["pnpm", "ngrok:dev"]
+  tests:
+    cmd: ["pnpm", "test"]
+    env:
+      NODE_ENV: "test"
