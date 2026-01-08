@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { generateVerificationCode } from "@/utils/generateCode";
-import { generateToken } from "@/utils/generate-token";
-import { inngest } from "@/inngest/client";
-import { generateUniqueUsername } from "@/utils/generate-unique-username";
+import { db } from "@/lib/db";
+import {
+  generateVerificationCode,
+  generateToken,
+  generateUniqueUsername,
+} from "@/lib/auth-utils";
+import { inngest } from "@/lib/inngest/client";
 
 /**
  * @description Handles user signup, ensures a unique username is auto-generated,
@@ -20,37 +22,46 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
 
-    // Ensure user record exists from pre-auth stage
-    const existingUser = await prisma.user.findUnique({ where: { email } });
+    // Ensure user record exists
+    const existingUser = await db.user.findUnique({ where: { email } });
 
     if (!existingUser)
       return NextResponse.json(
         {
           success: false,
-          message: "Sorry, an unexpected error occurred signing up.",
+          message: "User not found.",
         },
-        { status: 409 }
+        { status: 404 }
       );
 
     // Generate a guaranteed unique username
-    const uniqueUsername = await generateUniqueUsername();
+    const uniqueUsername = generateUniqueUsername(existingUser.name);
 
     const verificationCode = generateVerificationCode();
     const verificationToken = generateToken();
 
-    // use background job to do the remaining work
-    await inngest.send({
-      name: "email/send.verificationEmail",
+    // Update user with username and verification info if needed
+    await db.user.update({
+      where: { email },
       data: {
-        email,
-        username: `${existingUser.name} @${uniqueUsername}`,
-        verificationToken,
+        username: uniqueUsername,
         verificationCode,
       },
     });
 
+    // Send verification email via Inngest
+    await inngest.send({
+      name: "email.send.verification",
+      data: {
+        email,
+        name: existingUser.name,
+        code: verificationCode,
+        url: `${process.env.NEXT_PUBLIC_APP_URL}/verify-email?token=${verificationToken}`,
+      },
+    });
+
     return NextResponse.json(
-      { success: true, message: "Signup successful" },
+      { success: true, message: "Signup processed successfully" },
       { status: 201 }
     );
   } catch (error) {
@@ -58,8 +69,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        message:
-          "An error occurred on our side signing you up. Please try again later.",
+        message: "An error occurred during signup processing.",
       },
       { status: 500 }
     );

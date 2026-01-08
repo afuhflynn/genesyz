@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Card,
   CardHeader,
@@ -12,48 +11,35 @@ import {
   CardDescription,
   CardContent,
 } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import axios from "axios";
-import { toast } from "sonner";
-import { ResendEmailComponent } from "@/components/auth/resend-email-component";
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+} from "@/components/ui/input-otp";
+import { useVerifyEmail, useResendVerification } from "@/hooks";
 import { Loader2Icon } from "lucide-react";
 
 export default function VerifyEmailPage() {
   const [verificationCode, setVerificationCode] = useState("");
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const email = searchParams.get("email") || "";
 
-  const { error, loading, setError, setLoading } = useAppStore();
-
-  useEffect(() => {
-    setError("");
-  }, [setError]);
+  const verifyEmail = useVerifyEmail();
+  const resendVerification = useResendVerification();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError("");
-    try {
-      const result = await axios.post<{ message: string }>(
-        "/api/auth/custom/verify-email",
-        {
-          code: verificationCode,
-        }
-      );
-      toast.success(result.data.message);
-      router.push("/log-in");
-    } catch (error: Error | any) {
-      if (error.response.data) {
-        setError(error.response.data.message);
-        toast.error(error.response.data.message);
-      } else if (error.message) {
-        setError(error.message);
-        toast.error(error.message);
-      } else {
-        setError("Sorry, an unexpected error occurred. Try again later.");
-        toast.error("Sorry, an unexpected error occurred. Try again later.");
-      }
-    } finally {
-      setLoading(false);
+    verifyEmail.mutate(verificationCode, {
+      onSuccess: () => {
+        router.push("/sign-in");
+      },
+    });
+  };
+
+  const handleResend = () => {
+    if (email) {
+      resendVerification.mutate(email);
     }
   };
 
@@ -65,46 +51,85 @@ export default function VerifyEmailPage() {
         transition={{ duration: 0.5 }}
         className="w-full max-w-md"
       >
-        <Card>
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold">
+        <Card className="border-2">
+          <CardHeader className="space-y-1 text-center">
+            <CardTitle className="text-3xl font-black">
               Verify your email
             </CardTitle>
-            <CardDescription>
-              We've sent a 6 digit verification code to your email. Please enter
-              the code below.
+            <CardDescription className="text-base">
+              We've sent a 6-digit code to{" "}
+              <span className="font-bold text-foreground">{email}</span>. Enter
+              it below to activate your account.
             </CardDescription>
           </CardHeader>
           <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-4">
+            <CardContent className="flex flex-col items-center space-y-8">
               <div className="space-y-2">
-                <Label htmlFor="verification-code">Verification Code</Label>
-                <Input
-                  id="verification-code"
-                  type="number"
-                  placeholder="Enter verification code"
+                <InputOTP
+                  maxLength={6}
                   value={verificationCode}
-                  onChange={(e) => setVerificationCode(e.target.value)}
-                  required
-                />
+                  onChange={(value) => setVerificationCode(value)}
+                >
+                  <InputOTPGroup className="gap-2">
+                    <InputOTPSlot
+                      index={0}
+                      className="h-12 w-12 text-xl font-bold rounded-xl border"
+                    />
+                    <InputOTPSlot
+                      index={1}
+                      className="h-12 w-12 text-xl font-bold rounded-xl border"
+                    />
+                    <InputOTPSlot
+                      index={2}
+                      className="h-12 w-12 text-xl font-bold rounded-xl border"
+                    />
+                    <InputOTPSlot
+                      index={3}
+                      className="h-12 w-12 text-xl font-bold rounded-xl border"
+                    />
+                    <InputOTPSlot
+                      index={4}
+                      className="h-12 w-12 text-xl font-bold rounded-xl border-2"
+                    />
+                    <InputOTPSlot
+                      index={5}
+                      className="h-12 w-12 text-xl font-bold rounded-xl border-2"
+                    />
+                  </InputOTPGroup>
+                </InputOTP>
               </div>
+
               <Button
                 type="submit"
-                className="w-full"
-                disabled={loading || !verificationCode}
+                className="w-full h-12 text-lg font-bold rounded-xl"
+                disabled={
+                  verifyEmail.isPending || verificationCode.length !== 6
+                }
               >
-                {loading ? (
+                {verifyEmail.isPending ? (
                   <Loader2Icon className="animate-spin" />
                 ) : (
-                  "Verify Email"
+                  "Verify Account"
                 )}
               </Button>
-              {error && (
-                <p className="text-destructive text-sm text-center">{error}</p>
-              )}
+
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground mb-2">
+                  Didn't receive the code?
+                </p>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="font-bold text-primary hover:text-primary/80"
+                  onClick={handleResend}
+                  disabled={resendVerification.isPending}
+                >
+                  {resendVerification.isPending ? "Sending..." : "Resend Code"}
+                </Button>
+              </div>
             </CardContent>
           </form>
-          <ResendEmailComponent loading={loading as boolean} />
         </Card>
       </motion.div>
     </div>

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { inngest } from "@/inngest/client";
-import { generateUniqueUsername } from "@/utils/generate-unique-username";
+import { db } from "@/lib/db";
+import { generateUniqueUsername } from "@/lib/auth-utils";
+import { inngest } from "@/lib/inngest/client";
 
 /**
  * @description Handles unique username generation after social auth signup or uses the available name, and sends a personalized welcome email.
@@ -17,58 +17,54 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
 
-    // Ensure user record exists from pre-auth stage
-    const existingUser = await prisma.user.findUnique({ where: { email } });
+    // Ensure user record exists
+    const existingUser = await db.user.findUnique({ where: { email } });
 
     if (!existingUser)
       return NextResponse.json(
         {
           success: false,
-          message: "Sorry, an unexpected error occurred signing up.",
+          message: "User not found.",
         },
-        { status: 409 }
+        { status: 404 }
       );
 
+    let username = existingUser.username;
+
     // Check if user has a username field
-    if (!existingUser.username || existingUser.username.trim() === "") {
+    if (!username || username.trim() === "") {
       // Generate a guaranteed unique username
-      const uniqueUsername = await generateUniqueUsername();
+      username = generateUniqueUsername(existingUser.name);
 
       // update db record
-      const updatedUser = await prisma.user.update({
+      await db.user.update({
         where: { email },
         data: {
-          username: uniqueUsername,
+          username,
         },
       });
-
-      if (!updatedUser) {
-        return {
-          message: `Error updating user account!`,
-          updatedUser: null,
-        };
-      }
     }
 
-    // Send welcome email with inngest background job
+    // Send welcome email via Inngest
     await inngest.send({
-      name: "email/send.welcomeEmail",
+      name: "email.send.welcome",
       data: {
         email,
+        name: existingUser.name,
+        username: username!,
       },
     });
 
     return NextResponse.json(
-      { success: true, message: "Credentials updated successful" },
-      { status: 201 }
+      { success: true, message: "Profile updated successfully" },
+      { status: 200 }
     );
   } catch (error) {
-    console.error("Signup error:", error);
+    console.error("Social signup error:", error);
     return NextResponse.json(
       {
         success: false,
-        message:
-          "An error occurred on our side updating your credentials. Please try again later.",
+        message: "An error occurred while updating your profile.",
       },
       { status: 500 }
     );

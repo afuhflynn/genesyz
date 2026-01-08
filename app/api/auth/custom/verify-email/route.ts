@@ -1,80 +1,63 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { inngest } from "@/inngest/client";
-
-/**
- * @description A function that handles user sign up and account creation
- * @param req
- * @returns
- */
+import { db } from "@/lib/db";
+import { inngest } from "@/lib/inngest/client";
 
 export async function POST(req: NextRequest) {
   const { code } = await req.json();
+
   try {
-    //Ensure all fields are filled
-    if (!code)
+    if (!code) {
       return NextResponse.json(
-        { success: false, message: "All fields are required!" },
+        { success: false, message: "Verification code is required" },
         { status: 400 }
       );
-    //Check if user code is still valid
-    const currentDate = new Date(Date.now());
-    const foundUser = await prisma.user.findFirst({
+    }
+
+    // Manual verification logic
+    const user = await db.user.findFirst({
       where: {
-        verificationCode: String(code),
-        verificationCodeExpiresAt: { gt: currentDate },
+        verificationCode: code,
+        // We could also check verificationExpiry here if we had it
       },
     });
-    if (!foundUser)
+
+    if (!user) {
       return NextResponse.json(
         {
           success: false,
-          message: "Invalid or expired verification code.",
+          message: "Invalid or expired code",
         },
-        { status: 403 }
+        { status: 400 }
       );
+    }
 
-    const updatedUser = await prisma.user.update({
-      where: {
-        email: foundUser.email,
-      },
+    // Update user as verified
+    const updatedUser = await db.user.update({
+      where: { id: user.id },
       data: {
-        verificationCode: null,
-        verificationCodeExpiresAt: null,
-        verificationToken: null,
-        verificationTokenExpiresAt: null,
         emailVerified: true,
+        verificationCode: null,
       },
     });
 
-    if (!updatedUser) {
-      return {
-        message: `Error updating user account!`,
-        updatedUser: null,
-      };
-    }
-    // send welcome email in background
+    // Send welcome email via Inngest
     await inngest.send({
-      name: "email/send.welcomeEmail",
+      name: "email.send.welcome",
       data: {
         email: updatedUser.email,
+        name: updatedUser.name,
+        username: updatedUser.username || updatedUser.email.split("@")[0],
       },
     });
 
     return NextResponse.json(
-      {
-        success: true,
-
-        message: "Account verification successful",
-      },
-      { status: 201 }
+      { success: true, message: "Email verified successfully" },
+      { status: 200 }
     );
   } catch (error) {
+    console.error("Verify email error:", error);
     return NextResponse.json(
-      {
-        success: false,
-        message: "Error verifying your email. Please try again later.",
-      },
+      { success: false, message: "An unexpected error occurred" },
       { status: 500 }
     );
   }

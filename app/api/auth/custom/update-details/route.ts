@@ -1,140 +1,109 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { getServerSession } from "@/actions/getSeverSession";
-import { sendNotificationEmail } from "@/utils/send.emails";
+import { db } from "@/lib/db";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { sendEmail } from "@/lib/email/client";
 import { validateUsername } from "@/utils/validate-username";
-import {
-  getUserByEmail,
-  getUserByEmailAndId,
-  getUserByUsername,
-} from "@/lib/db-utils";
-
-/**
- * @description A function that handles user sign up and account creation
- * @param req
- * @returns
- */
 
 export async function PUT(req: NextRequest) {
   const { email, image, name, username } = await req.json();
-  const session = await getServerSession();
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
 
   if (!session?.user) {
     return NextResponse.json(
-      {
-        success: false,
-        message: "User session expired or invalid",
-      },
-      { status: 400 }
+      { success: false, message: "Unauthorized" },
+      { status: 401 }
     );
   }
 
   // Check if username is valid
-  const isValidUsername = validateUsername(username);
-
-  if (!isValidUsername) {
+  if (username && !validateUsername(username)) {
     return NextResponse.json(
       {
         success: false,
-        message:
-          "Username must not include any white spaces or special characters (only numbers, letters underscores or dashes are allowed)",
+        message: "Invalid username format",
       },
       { status: 400 }
     );
   }
+
   try {
-    //Check if user code is still valid
-    const foundUser = await getUserByEmailAndId(
-      session.user.email as string,
-      session.user.id as string
-    );
+    const user = await db.user.findUnique({
+      where: { id: session.user.id },
+    });
 
-    if (!foundUser)
+    if (!user) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "User session has expired or is invalid!",
-        },
-        { status: 403 }
+        { success: false, message: "User not found" },
+        { status: 404 }
       );
-
-    // Check if user already exists with provided new email or username
-    if (foundUser.username !== username) {
-      const userNameExists = await getUserByUsername(username as string);
-
-      if (userNameExists)
-        return NextResponse.json(
-          {
-            success: false,
-            message: "The provided username is already taken!",
-          },
-          { status: 409 }
-        );
     }
 
-    // Check if user already exists with provided new email or username
-    if (session?.user.email !== email) {
-      const userEmailExists = await getUserByEmail(email as string);
-
-      if (userEmailExists)
+    // Check if username is taken
+    if (username && username !== user.username) {
+      const existing = await db.user.findFirst({
+        where: { username },
+      });
+      if (existing) {
         return NextResponse.json(
-          {
-            success: false,
-            message: "The provided email is already taken!",
-          },
+          { success: false, message: "Username is already taken" },
           { status: 409 }
         );
+      }
     }
 
-    // Update db record
-    const updatedUser = await prisma.user.update({
-      where: {
-        id: foundUser.id,
-      },
+    // Check if email is taken
+    if (email && email !== user.email) {
+      const existing = await db.user.findUnique({
+        where: { email },
+      });
+      if (existing) {
+        return NextResponse.json(
+          { success: false, message: "Email is already taken" },
+          { status: 409 }
+        );
+      }
+    }
+
+    // Update user
+    const updatedUser = await db.user.update({
+      where: { id: user.id },
       data: {
-        email: email ? email : foundUser.email,
-        image: image ? image : foundUser.image,
-        name: name ? name : foundUser.name,
-        username: username ? username : foundUser.username,
+        email: email || user.email,
+        image: image || user.image,
+        name: name || user.name,
+        username: username || user.username,
       },
     });
 
-    if (!updatedUser) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Sorry, an unexpected error occurred updating your details",
-        },
-        { status: 500 }
-      );
-    }
-
-    // Send the user a notification email
-    await sendNotificationEmail(
-      `Your email: ${updatedUser.email} recently authorized an update of your account info`,
-      updatedUser?.email as string,
-      (updatedUser?.name as string) || (foundUser?.username as string),
-      new Date(Date.now()).toLocaleDateString(),
-      updatedUser?.name as string,
-      {
-        "X-Category": "Notification Email",
-      }
-    );
+    // Send notification email
+    await sendEmail({
+      to: updatedUser.email,
+      subject: "Your account details were updated",
+      html: `
+        <p>Hi ${updatedUser.name || "there"},</p>
+        <p>This is a confirmation that your account details were recently updated.</p>
+        <p>If you did not make this change, please contact support immediately.</p>
+      `,
+      text: `Hi ${
+        updatedUser.name || "there"
+      }, your account details were recently updated.`,
+    });
 
     return NextResponse.json(
       {
         success: true,
-        user: { ...updatedUser },
-        message: "User details updated successfully",
+        user: updatedUser,
+        message: "Profile updated successfully",
       },
-      { status: 201 }
+      { status: 200 }
     );
   } catch (error) {
+    console.error("Update details error:", error);
     return NextResponse.json(
-      {
-        success: false,
-        message: "Error updating your data. Please try again later.",
-      },
+      { success: false, message: "An unexpected error occurred" },
       { status: 500 }
     );
   }

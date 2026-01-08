@@ -1,110 +1,74 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { getServerSession } from "@/actions/getSeverSession";
-import { hashPassword } from "@/utils/hash-password";
-import { sendNotificationEmail } from "@/utils/send.emails";
+import { db } from "@/lib/db";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { hashPassword } from "@/lib/auth-utils";
+import { sendEmail } from "@/lib/email/client";
 import bcrypt from "bcryptjs";
-import { getUserByEmailAndId } from "@/lib/db-utils";
-
-/**
- * @description A function that handles user sign up and account creation
- * @param req
- * @returns
- */
 
 export async function PUT(req: NextRequest) {
   const { password, currentPassword } = await req.json();
-  const session = await getServerSession();
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
 
   if (!session?.user) {
     return NextResponse.json(
-      {
-        success: false,
-        message: "User session expired or invalid",
-      },
-      { status: 400 }
+      { success: false, message: "Unauthorized" },
+      { status: 401 }
     );
   }
 
   try {
-    //Check if user code is still valid
-    const foundUser = await getUserByEmailAndId(
-      session.user.email as string,
-      session.user.id as string
-    );
-
-    if (!foundUser)
-      return NextResponse.json(
-        {
-          success: false,
-          message: "User session has expired or is invalid!",
-        },
-        { status: 403 }
-      );
-
-    // Check if current password matches the provided current password
-    const match = await bcrypt.compare(
-      currentPassword,
-      foundUser.password as string
-    );
-    if (!match)
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Incorrect current password.",
-        },
-        { status: 403 }
-      );
-
-    // hash provided password
-    const pwdHash = await hashPassword(password);
-
-    // Update db record
-    const updatedUser = await prisma.user.update({
-      where: {
-        id: foundUser.id,
-      },
-      data: {
-        password: password ? pwdHash : foundUser.password,
-      },
+    const user = await db.user.findUnique({
+      where: { id: session.user.id },
     });
 
-    if (!updatedUser) {
+    if (!user || !user.password) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "Sorry, an unexpected error occurred updating your password",
-        },
-        { status: 500 }
+        { success: false, message: "User not found" },
+        { status: 404 }
       );
     }
 
-    // Send the user a notification email
-    await sendNotificationEmail(
-      `Your email: ${updatedUser.email} recently authorized an update of your account password`,
-      updatedUser?.email as string,
-      (updatedUser?.name as string) || (foundUser?.username as string),
-      new Date(Date.now()).toLocaleDateString(),
-      updatedUser?.name as string,
-      {
-        "X-Category": "Notification Email",
-      }
-    );
+    // Check if current password matches
+    const match = await bcrypt.compare(currentPassword, user.password);
+    if (!match) {
+      return NextResponse.json(
+        { success: false, message: "Incorrect current password" },
+        { status: 400 }
+      );
+    }
+
+    // Hash new password
+    const pwdHash = await hashPassword(password);
+
+    // Update password
+    await db.user.update({
+      where: { id: user.id },
+      data: { password: pwdHash },
+    });
+
+    // Send notification email
+    await sendEmail({
+      to: user.email,
+      subject: "Your password was updated",
+      html: `
+        <p>Hi ${user.name || "there"},</p>
+        <p>This is a confirmation that your password was recently changed.</p>
+        <p>If you did not make this change, please contact support immediately.</p>
+      `,
+      text: `Hi ${user.name || "there"}, your password was recently changed.`,
+    });
 
     return NextResponse.json(
-      {
-        success: true,
-        user: { ...updatedUser },
-        message: "User password updated successfully",
-      },
-      { status: 201 }
+      { success: true, message: "Password updated successfully" },
+      { status: 200 }
     );
   } catch (error) {
+    console.error("Update password error:", error);
     return NextResponse.json(
-      {
-        success: false,
-        message: "Error updating your password. Please try again later.",
-      },
+      { success: false, message: "An unexpected error occurred" },
       { status: 500 }
     );
   }

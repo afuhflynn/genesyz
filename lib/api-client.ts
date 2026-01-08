@@ -227,5 +227,35 @@ export const api = {
       cancelSubscription: (): Promise<{ success: boolean }> =>
         apiRequest("/billing/cancel", { method: "POST" }),
     },
+
+    // Auth
+    auth: {
+      forgotPassword: (email: string): Promise<{ success: boolean }> =>
+        apiRequest("/auth/custom/forgot-password", {
+          method: "POST",
+          body: { email },
+        }),
+
+      resetPassword: (
+        password: string,
+        token: string
+      ): Promise<{ success: boolean }> =>
+        apiRequest("/auth/custom/reset-password", {
+          method: "PUT",
+          body: { password, token },
+        }),
+
+      verifyEmail: (code: string): Promise<{ success: boolean }> =>
+        apiRequest("/auth/custom/verify-email", {
+          method: "POST",
+          body: { code },
+        }),
+
+      resendVerification: (email: string): Promise<{ success: boolean }> =>
+        apiRequest("/auth/custom/resend-verification-email", {
+          method: "PUT",
+          body: { email },
+        }),
+    },
   },
 };

@@ -7,17 +7,29 @@ import {
   portal,
   usage,
   webhooks,
+  magicLink,
 } from "@polar-sh/better-auth";
 import { Polar } from "@polar-sh/sdk";
 import { syncEntitlement } from "@/lib/polar/entitlements";
+import { inngest } from "./inngest/client";
 
 export const auth = betterAuth({
   database: prismaAdapter(db, {
     provider: "postgresql",
   }),
   emailAndPassword: {
-    enabled: false, // Google OAuth only for now
+    enabled: true,
     autoSignIn: false,
+    async sendResetPassword({ user, url }, request) {
+      await inngest.send({
+        name: "email.send.passwordReset",
+        data: {
+          email: user.email,
+          name: user.name,
+          url,
+        },
+      });
+    },
   },
   socialProviders: {
     google: {
@@ -38,9 +50,11 @@ export const auth = betterAuth({
     polar({
       client: new Polar({
         accessToken: process.env.POLAR_ACCESS_TOKEN!,
-        server:
-          process.env.NODE_ENV === "development" ? "sandbox" : "production",
+        server: "sandbox",
       }),
+      onEntitlementSync: async (event) => {
+        await syncEntitlement(event);
+      },
       createCustomerOnSignUp: true,
       use: [
         checkout({
@@ -74,6 +88,17 @@ export const auth = betterAuth({
           },
         }),
       ],
+    }),
+    magicLink({
+      async sendMagicLink({ email, url }, request) {
+        await inngest.send({
+          name: "email.send.magicLink",
+          data: {
+            email,
+            url,
+          },
+        });
+      },
     }),
   ],
 });

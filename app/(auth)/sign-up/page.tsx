@@ -1,26 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { signUp } from "@/lib/auth-client";
 import { Eye, EyeClosed, Loader2Icon } from "lucide-react";
-import { toast } from "sonner";
-import axios from "axios";
+import { useSignUp } from "@/hooks";
 
 export default function RegisterPage() {
-  const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [isPassword, setSetIsPassword] = useState(true);
+  const [isPassword, setIsPassword] = useState(true);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
   });
+  const signUp = useSignUp();
 
   const handleInputChange = (name: string, value: string) => {
     setFormData((prev) => ({
@@ -31,37 +26,12 @@ export default function RegisterPage() {
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setIsLoading(true);
-    setError("");
-
-    const { error } = await signUp.email({
+    signUp.mutate({
       name: formData.name,
       password: formData.password,
       email: formData.email,
+      callbackURL: "/dashboard",
     });
-
-    if (error) {
-      setError(error?.message || "Registration failed");
-      return;
-    }
-
-    // call he send verification email endpoint
-    const result = await axios.post("/api/auth/send-verification-on-register", {
-      email: formData.email,
-    });
-
-    if (result.data?.error) {
-      setError(result.data.error || "Failed to send verification email");
-      setIsLoading(false);
-      return;
-    }
-
-    // Redirect to login after successful registration
-    toast.success("Registration successful");
-    router.push("/verify-email?email=" + encodeURIComponent(formData.email));
-    router.refresh();
-
-    setIsLoading(false);
   }
 
   return (
@@ -72,37 +42,34 @@ export default function RegisterPage() {
       footerLink="/sign-in"
       footerLinkText="Sign in"
       showMagicLink={false}
-      isLoading={isLoading}
+      isLoading={signUp.isPending}
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {error && (
-          <div className="bg-destructive/10 text-destructive rounded-md p-3 text-sm">
-            {error}
-          </div>
-        )}
+      <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-2">
           <Label htmlFor="name">Full Name</Label>
           <Input
             id="name"
             name="name"
             placeholder="John Doe"
+            className="h-12 rounded-xl"
             value={formData.name}
             onChange={(e) => handleInputChange(e.target.name, e.target.value)}
             required
-            disabled={isLoading && !error}
+            disabled={signUp.isPending}
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">Email Address</Label>
           <Input
             id="email"
             name="email"
             type="email"
-            placeholder="m@example.com"
+            placeholder="name@example.com"
+            className="h-12 rounded-xl"
             value={formData.email}
             onChange={(e) => handleInputChange(e.target.name, e.target.value)}
             required
-            disabled={isLoading && !error}
+            disabled={signUp.isPending}
           />
         </div>
         <div className="space-y-2">
@@ -112,16 +79,17 @@ export default function RegisterPage() {
               id="password"
               name="password"
               type={isPassword ? "password" : "text"}
+              placeholder="••••••••"
+              className="h-12 rounded-xl pr-12"
               value={formData.password}
               onChange={(e) => handleInputChange(e.target.name, e.target.value)}
               required
-              disabled={isLoading && !error}
-              className="pr-6"
+              disabled={signUp.isPending}
             />
             <button
               type="button"
-              className="absolute right-4 self-center"
-              onClick={() => setSetIsPassword((prev) => !prev)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              onClick={() => setIsPassword((prev) => !prev)}
             >
               {isPassword ? (
                 <Eye className="size-5" />
@@ -131,8 +99,12 @@ export default function RegisterPage() {
             </button>
           </div>
         </div>
-        <Button type="submit" className="w-full" disabled={isLoading && !error}>
-          {isLoading && !error ? (
+        <Button
+          type="submit"
+          className="w-full h-12 text-lg font-bold rounded-xl"
+          disabled={signUp.isPending}
+        >
+          {signUp.isPending ? (
             <Loader2Icon className="animate-spin" />
           ) : (
             "Create Account"

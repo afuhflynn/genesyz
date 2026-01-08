@@ -28,6 +28,34 @@ export type InngestEvents = {
       name?: string;
     };
   };
+  "email.send.verification": {
+    data: {
+      email: string;
+      name: string;
+      code: string;
+      url: string;
+    };
+  };
+  "email.send.welcome": {
+    data: {
+      email: string;
+      name: string;
+      username: string;
+    };
+  };
+  "email.send.passwordReset": {
+    data: {
+      email: string;
+      name: string;
+      url: string;
+    };
+  };
+  "email.send.magicLink": {
+    data: {
+      email: string;
+      url: string;
+    };
+  };
   "digest.weekly": {
     data: Record<string, never>;
   };

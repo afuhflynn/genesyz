@@ -1,87 +1,51 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { generateToken } from "@/utils/generate-token";
-import { getUserByEmail } from "@/lib/db-utils";
-import { emailService } from "@/utils/send.emails";
 import { auth } from "@/lib/auth";
-
-/**
- * @description A function that handles user sign up and account creation
- * @param req
- * @returns
- */
+import { sendPasswordResetEmail } from "@/lib/email/send";
 
 export async function POST(req: NextRequest) {
   const { email } = await req.json();
+
   try {
-    //Ensure all fields are filled
-    if (!email)
+    if (!email) {
       return NextResponse.json(
-        { success: false, message: "All fields are required!" },
+        { success: false, message: "Email is required" },
         { status: 400 }
       );
-    //Check if user code is still valid
-    const foundUser = await getUserByEmail(email);
-    if (!foundUser)
-      return NextResponse.json(
-        {
-          success: false,
-          message: "User not found!",
-        },
-        { status: 403 }
-      );
+    }
 
-    const { status } = await auth.api.requestPasswordReset({
+    // Better Auth handles token generation and storage
+    // We just need to trigger the request and send the email
+    // However, Better Auth's forgotPassword usually sends the email automatically if configured
+    // But since we want more control, we can use the internal API to get the token/url
+
+    const { status, error } = await auth.api.forgotPassword({
       body: {
         email,
+        redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/reset-password`,
       },
     });
 
-    if (!status) {
+    if (error || !status) {
       return NextResponse.json(
         {
           success: false,
-          message: "Error sending reset email. Please try again later.",
+          message: error?.message || "Failed to process request",
         },
-        { status: 500 }
+        { status: 400 }
       );
     }
-    // Update db record
-    // const resetToken = generateToken();
-    // await prisma.user.update({
-    //   where: {
-    //     id: foundUser.id,
-    //   },
-    //   data: {
-    //     resetPasswordToken: resetToken,
-    //     resetPasswordTokenExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
-    //   },
-    // });
-
-    // // Send the user a notification email
-    // await emailService.sendPasswordResetEmail(
-    //   foundUser.email as string,
-    //   (foundUser.name as string) || foundUser.username || "User",
-    //   `${process.env.NEXT_PUBLIC_CLIENT_URL}/reset-password/${resetToken}`,
-    //   {
-    //     "X-Category": "Password Reset",
-    //   }
-    // );
 
     return NextResponse.json(
       {
         success: true,
-        message: "Password reset email sent successfully",
+        message: "If an account exists, a reset link has been sent.",
       },
       { status: 200 }
     );
   } catch (error) {
-    console.log({ error });
+    console.error("Forgot password error:", error);
     return NextResponse.json(
-      {
-        success: false,
-        message: "Error sending reset email. Please try again later.",
-      },
+      { success: false, message: "An unexpected error occurred" },
       { status: 500 }
     );
   }

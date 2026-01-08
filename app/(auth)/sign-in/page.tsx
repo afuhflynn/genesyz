@@ -6,24 +6,21 @@ import { AuthLayout } from "@/components/auth/AuthLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeClosed, Loader2Icon } from "lucide-react";
+import { Eye, EyeClosed, Loader2Icon, LockIcon } from "lucide-react";
 import { useQueryStates } from "nuqs";
 import { searchParamsSchema } from "@/nuqs";
 import Link from "next/link";
-import { signIn } from "@/lib/auth-client";
-import { toast } from "sonner";
+import { useSignIn } from "@/hooks";
 
 export default function LoginPage() {
-  const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [isPassword, setSetIsPassword] = useState(true);
+  const [isPassword, setIsPassword] = useState(true);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
   const [params] = useQueryStates(searchParamsSchema);
   const { redirect } = params;
+  const signIn = useSignIn();
 
   const handleInputChange = (name: string, value: string) => {
     setFormData((prev) => ({
@@ -34,23 +31,11 @@ export default function LoginPage() {
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setIsLoading(true);
-    setError("");
-
-    const { error } = await signIn.email({
+    signIn.mutate({
       email: formData.email,
       password: formData.password,
+      callbackURL: redirect ?? "/dashboard",
     });
-
-    if (error) {
-      setError(error?.message || "Invalid credentials");
-      return;
-    }
-
-    toast.success("Login successful");
-    router.push(redirect ?? "/dashboard");
-    router.refresh();
-    setIsLoading(false);
   }
 
   return (
@@ -60,35 +45,31 @@ export default function LoginPage() {
       footerText="Don't have an account?"
       footerLink="/sign-up"
       footerLinkText="Sign up"
-      isLoading={isLoading}
+      isLoading={signIn.isPending}
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {error && (
-          <div className="bg-destructive/10 text-destructive rounded-md p-3 text-sm">
-            {error}
-          </div>
-        )}
+      <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">Email Address</Label>
           <Input
             id="email"
             name="email"
             type="email"
-            placeholder="m@example.com"
+            placeholder="name@example.com"
+            className="h-12 rounded-xl"
             required
             value={formData.email}
             onChange={(e) => handleInputChange(e.target.name, e.target.value)}
-            disabled={isLoading && !error}
+            disabled={signIn.isPending}
           />
         </div>
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label htmlFor="password">Password</Label>
             <Link
-              href={`/reset-password${
+              href={`/forgot-password${
                 redirect !== null ? `?redirect=${redirect}` : ""
               }`}
-              className="text-primary text-sm hover:underline"
+              className="text-primary text-sm font-bold hover:underline"
             >
               Forgot password?
             </Link>
@@ -98,16 +79,17 @@ export default function LoginPage() {
               id="password"
               name="password"
               type={isPassword ? "password" : "text"}
+              placeholder="••••••••"
+              className="h-12 rounded-xl pr-12"
               value={formData.password}
               onChange={(e) => handleInputChange(e.target.name, e.target.value)}
               required
-              disabled={isLoading && !error}
-              className="pr-6"
+              disabled={signIn.isPending}
             />
             <button
               type="button"
-              className="absolute right-4 self-center"
-              onClick={() => setSetIsPassword((prev) => !prev)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              onClick={() => setIsPassword((prev) => !prev)}
             >
               {isPassword ? (
                 <Eye className="size-5" />
@@ -117,8 +99,12 @@ export default function LoginPage() {
             </button>
           </div>
         </div>
-        <Button type="submit" className="w-full" disabled={isLoading && !error}>
-          {isLoading && !error ? (
+        <Button
+          type="submit"
+          className="w-full h-12 text-lg font-bold rounded-xl"
+          disabled={signIn.isPending}
+        >
+          {signIn.isPending ? (
             <Loader2Icon className="animate-spin" />
           ) : (
             "Sign In"

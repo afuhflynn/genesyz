@@ -33,7 +33,7 @@ export function AuthLayout({
   footerLinkText,
   isLoading,
   showMagicLink = true,
-  magicLinkHref = "/auth/magic-link",
+  magicLinkHref = "/magic-link",
 }: AuthLayoutProps) {
   return (
     <div className="bg-muted/50 relative flex min-h-screen items-center justify-center px-4 py-12 sm:px-6 lg:px-8">

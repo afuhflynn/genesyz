@@ -292,3 +292,188 @@ export async function sendResearchCompleteEmail(options: {
     text: `Hi ${userName}, the AI research for "${ideaTitle}" is ready. Overall score: ${overallScore}. Verdict: ${verdict}. View at ${APP_URL}/ideas/${ideaId}`,
   });
 }
+
+// ===========================================
+// Verification Email
+// ===========================================
+
+export async function sendVerificationEmail(options: {
+  to: string;
+  userName: string;
+  code: string;
+  url: string;
+}): Promise<boolean> {
+  const { to, userName, code, url } = options;
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verify your email</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #1a1a1a; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+  <div style="text-align: center; margin-bottom: 40px;">
+    <img src="${APP_URL}/images/logo/logo-email.png" alt="IdeasVault" width="150" height="50" style="display: block; margin: 0 auto;">
+  </div>
+
+  <h2 style="font-size: 22px; font-weight: 600; color: #0f172a; margin-bottom: 16px; text-align: center;">
+    Verify your email address
+  </h2>
+
+  <p style="font-size: 16px; color: #475569; margin-bottom: 24px; text-align: center;">
+    Hi ${userName}, please use the code below to verify your email address and complete your registration.
+  </p>
+
+  <div style="background: #f8fafc; border-radius: 12px; padding: 32px; margin-bottom: 24px; text-align: center;">
+    <div style="font-size: 32px; font-weight: 700; letter-spacing: 8px; color: #F5A623; margin-bottom: 8px;">
+      ${code}
+    </div>
+    <p style="font-size: 14px; color: #94a3b8; margin: 0;">
+      This code expires in 24 hours.
+    </p>
+  </div>
+
+  <div style="text-align: center; margin-bottom: 32px;">
+    <p style="font-size: 14px; color: #64748b; margin-bottom: 16px;">
+      Or click the button below to verify directly:
+    </p>
+    <a href="${url}" style="display: inline-block; background: #0f172a; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 14px;">
+      Verify Email
+    </a>
+  </div>
+
+  <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 32px 0;">
+
+  <p style="font-size: 12px; color: #94a3b8; text-align: center;">
+    If you didn't create an account, you can safely ignore this email.
+  </p>
+</body>
+</html>
+  `;
+
+  return sendEmail({
+    to,
+    subject: "Verify your IdeasVault account",
+    html,
+    text: `Hi ${userName}, your verification code is: ${code}. Or verify here: ${url}`,
+  });
+}
+
+// ===========================================
+// Password Reset Email
+// ===========================================
+
+export async function sendPasswordResetEmail(options: {
+  to: string;
+  userName: string;
+  url: string;
+}): Promise<boolean> {
+  const { to, userName, url } = options;
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reset your password</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #1a1a1a; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+  <div style="text-align: center; margin-bottom: 40px;">
+    <img src="${APP_URL}/images/logo/logo-email.png" alt="IdeasVault" width="150" height="50" style="display: block; margin: 0 auto;">
+  </div>
+
+  <h2 style="font-size: 22px; font-weight: 600; color: #0f172a; margin-bottom: 16px; text-align: center;">
+    Reset your password
+  </h2>
+
+  <p style="font-size: 16px; color: #475569; margin-bottom: 24px; text-align: center;">
+    Hi ${userName}, we received a request to reset your password. Click the button below to choose a new one.
+  </p>
+
+  <div style="text-align: center; margin-bottom: 32px;">
+    <a href="${url}" style="display: inline-block; background: #F5A623; color: #0f172a; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 700; font-size: 16px;">
+      Reset Password
+    </a>
+  </div>
+
+  <p style="font-size: 14px; color: #64748b; text-align: center; margin-bottom: 24px;">
+    This link will expire in 1 hour. If you didn't request this, you can safely ignore this email.
+  </p>
+
+  <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 32px 0;">
+
+  <p style="font-size: 12px; color: #94a3b8; text-align: center;">
+    © ${new Date().getFullYear()} IdeasVault. All rights reserved.
+  </p>
+</body>
+</html>
+  `;
+
+  return sendEmail({
+    to,
+    subject: "Reset your IdeasVault password",
+    html,
+    text: `Hi ${userName}, reset your password here: ${url}`,
+  });
+}
+
+// ===========================================
+// Magic Link Email
+// ===========================================
+
+export async function sendMagicLinkEmail(options: {
+  to: string;
+  url: string;
+}): Promise<boolean> {
+  const { to, url } = options;
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign in to IdeasVault</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #1a1a1a; max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+  <div style="text-align: center; margin-bottom: 40px;">
+    <img src="${APP_URL}/images/logo/logo-email.png" alt="IdeasVault" width="150" height="50" style="display: block; margin: 0 auto;">
+  </div>
+
+  <h2 style="font-size: 22px; font-weight: 600; color: #0f172a; margin-bottom: 16px; text-align: center;">
+    Sign in to your account
+  </h2>
+
+  <p style="font-size: 16px; color: #475569; margin-bottom: 24px; text-align: center;">
+    Click the button below to sign in to your IdeasVault account. This link will expire in 10 minutes.
+  </p>
+
+  <div style="text-align: center; margin-bottom: 32px;">
+    <a href="${url}" style="display: inline-block; background: #F5A623; color: #0f172a; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 700; font-size: 16px;">
+      Sign In to IdeasVault
+    </a>
+  </div>
+
+  <p style="font-size: 14px; color: #64748b; text-align: center; margin-bottom: 24px;">
+    If you didn't request this link, you can safely ignore this email.
+  </p>
+
+  <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 32px 0;">
+
+  <p style="font-size: 12px; color: #94a3b8; text-align: center;">
+    © ${new Date().getFullYear()} IdeasVault. All rights reserved.
+  </p>
+</body>
+</html>
+  `;
+
+  return sendEmail({
+    to,
+    subject: "Sign in to IdeasVault",
+    html,
+    text: `Sign in to IdeasVault here: ${url}`,
+  });
+}

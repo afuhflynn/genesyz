@@ -1,8 +1,6 @@
 "use client";
 
-import type React from "react";
-
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -15,9 +13,9 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { Eye, EyeClosed, Loader2Icon, LockIcon } from "lucide-react";
+import { useResetPassword } from "@/hooks";
 import { toast } from "sonner";
-import axios from "axios";
-import { Eye, EyeClosed, Loader2Icon } from "lucide-react";
 
 export default function ResetPasswordPage() {
   const [formData, setFormData] = useState({
@@ -28,54 +26,33 @@ export default function ResetPasswordPage() {
 
   const { token } = useParams();
   const router = useRouter();
-  const { error, loading, setError, setLoading } = useAppStore();
-
-  useEffect(() => {
-    setError("");
-  }, [setError]);
+  const resetPassword = useResetPassword();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
+
     if (formData.password !== formData.confirmPassword) {
-      toast.error("Please both passwords must match. Check your passwords.");
-      setError("Please both passwords must match. Check your passwords.");
+      toast.error("Passwords do not match");
       return;
     }
-    setLoading(true);
-    try {
-      await axios.put<{ message: string }>("/api/auth/custom/reset-password", {
+
+    resetPassword.mutate(
+      {
         password: formData.password,
-        token,
-      });
-      toast.success(
-        "Your password has been reset. You can now log in with your new password."
-      );
-      router.push("/log-in");
-    } catch (error: Error | any) {
-      if (error.response.data) {
-        toast.error(error.response.data.message);
-        setError(error.response.data.message);
-      } else {
-        toast.error("Sorry, an unexpected error occurred. Try again later.");
-        setError("Sorry, an unexpected error occurred. Try again later.");
+        token: token as string,
+      },
+      {
+        onSuccess: () => {
+          router.push("/sign-in");
+        },
       }
-    } finally {
-      setLoading(false);
-    }
+    );
   };
 
   const handleInputChange = (name: string, value: string) => {
     setFormData({ ...formData, [name]: value });
   };
 
-  const handleTogglePassword = () => {
-    setIsPassword((prev) => (prev ? false : true));
-
-    setTimeout(() => {
-      setIsPassword(true);
-    }, 10000);
-  };
   return (
     <div className="container flex items-center justify-center min-h-screen py-12">
       <motion.div
@@ -84,12 +61,17 @@ export default function ResetPasswordPage() {
         transition={{ duration: 0.5 }}
         className="w-full max-w-md"
       >
-        <Card>
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold">
-              Reset your password
+        <Card className="border-2">
+          <CardHeader className="space-y-1 text-center">
+            <div className="mx-auto bg-primary/10 w-12 h-12 rounded-full flex items-center justify-center mb-4">
+              <LockIcon className="w-6 h-6 text-primary" />
+            </div>
+            <CardTitle className="text-3xl font-black">
+              Reset password
             </CardTitle>
-            <CardDescription>Enter your new password below</CardDescription>
+            <CardDescription className="text-base">
+              Enter your new password below to regain access to your account.
+            </CardDescription>
           </CardHeader>
           <form onSubmit={handleSubmit}>
             <CardContent className="space-y-4">
@@ -100,23 +82,23 @@ export default function ResetPasswordPage() {
                     id="password"
                     type={isPassword ? "password" : "text"}
                     name="password"
-                    placeholder="Enter your new password"
+                    placeholder="••••••••"
+                    className="h-12 rounded-xl pr-12"
                     value={formData.password}
                     onChange={(e) =>
                       handleInputChange(e.target.name, e.target.value)
                     }
-                    className="pr-10"
                     required
                   />
                   <button
-                    className="absolute right-2 top-0 bottom-0"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                     type="button"
-                    onClick={handleTogglePassword}
+                    onClick={() => setIsPassword(!isPassword)}
                   >
                     {isPassword ? (
-                      <Eye className="w-[1.3rem] h-[1.3rem]" />
+                      <Eye className="w-5 h-5" />
                     ) : (
-                      <EyeClosed className="w-[1.3rem] h-[1.3rem]" />
+                      <EyeClosed className="w-5 h-5" />
                     )}
                   </button>
                 </div>
@@ -127,7 +109,8 @@ export default function ResetPasswordPage() {
                   id="confirm-password"
                   type="password"
                   name="confirmPassword"
-                  placeholder="Confirm your new password"
+                  placeholder="••••••••"
+                  className="h-12 rounded-xl"
                   value={formData.confirmPassword}
                   onChange={(e) =>
                     handleInputChange(e.target.name, e.target.value)
@@ -138,20 +121,19 @@ export default function ResetPasswordPage() {
 
               <Button
                 type="submit"
-                className="w-full"
+                className="w-full h-12 text-lg font-bold rounded-xl"
                 disabled={
-                  loading || !formData.confirmPassword || !formData.password
+                  resetPassword.isPending ||
+                  !formData.confirmPassword ||
+                  !formData.password
                 }
               >
-                {loading ? (
+                {resetPassword.isPending ? (
                   <Loader2Icon className="animate-spin" />
                 ) : (
-                  "Reset Password"
+                  "Update Password"
                 )}
               </Button>
-              {error && (
-                <p className="text-destructive text-sm text-center">{error}</p>
-              )}
             </CardContent>
           </form>
         </Card>

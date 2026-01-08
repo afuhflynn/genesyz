@@ -1,88 +1,67 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { generateVerificationCode } from "@/utils/generateCode";
-import { generateToken } from "@/utils/generate-token";
-import { sendVerificationEmail } from "@/utils/send.emails";
-import { getUserByEmail } from "@/lib/db-utils";
-
-/**
- * @description A function that handles user sign up and account creation
- * @param req
- * @returns
- */
+import { inngest } from "@/lib/inngest/client";
+import { generateVerificationCode, generateToken } from "@/lib/auth-utils";
 
 export async function PUT(req: NextRequest) {
   const { email } = await req.json();
+
   try {
-    //Ensure all fields are filled
-    if (!email)
+    if (!email) {
       return NextResponse.json(
-        { success: false, message: "All fields are required!" },
+        { success: false, message: "Email is required" },
         { status: 400 }
       );
-    //Check if user with given email exists
-    const foundUser = await getUserByEmail(email);
-    if (!foundUser)
+    }
+
+    const user = await db.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "Invalid credentials",
-        },
-        { status: 403 }
+        { success: false, message: "User not found" },
+        { status: 404 }
       );
+    }
 
-    // NOTE: Prevent the user from requesting too many emails to verify account
-    // const decision = aj.withRule([
+    if (user.emailVerified) {
+      return NextResponse.json(
+        { success: false, message: "Email is already verified" },
+        { status: 400 }
+      );
+    }
 
-    //   tokenBucket({
-    //     mode: "LIVE",
-    //     refillRate: 5, // Refill 5 tokens per interval
-    //     interval: 10, // Refill every 10 seconds
-    //     capacity: 10, // Bucket capacity of 10 tokens
-
-    //   }),
-    // ]);
-
-    // Update db record
     const verificationCode = generateVerificationCode();
     const verificationToken = generateToken();
-    const updatedUser = await db.user.update({
-      where: {
-        id: foundUser.id,
-      },
+
+    // Update user with new verification code
+    await db.user.update({
+      where: { email },
       data: {
-        verificationToken,
-        verificationTokenExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
         verificationCode,
-        verificationCodeExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
-        emailVerified: false,
       },
     });
 
-    //Send verification email
-    await sendVerificationEmail(
-      updatedUser.verificationCode as string,
-      updatedUser.email as string,
-      (updatedUser.name as string) || foundUser.username || "User",
-      updatedUser.verificationToken as string,
-      {
-        "X-Category": "Verification Email",
-      }
-    );
+    // Send verification email via Inngest
+    await inngest.send({
+      name: "email.send.verification",
+      data: {
+        email,
+        name: user.name,
+        code: verificationCode,
+        url: `${process.env.NEXT_PUBLIC_APP_URL}/verify-email?token=${verificationToken}`,
+      },
+    });
 
     return NextResponse.json(
-      {
-        success: true,
-        message: "Verification sent successful",
-      },
-      { status: 201 }
+      { success: true, message: "Verification email resent successfully" },
+      { status: 200 }
     );
   } catch (error) {
+    console.error("Resend verification error:", error);
     return NextResponse.json(
-      {
-        success: false,
-        message: "Error sending email. Please try again later.",
-      },
+      { success: false, message: "An unexpected error occurred" },
       { status: 500 }
     );
   }

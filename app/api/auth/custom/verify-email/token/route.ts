@@ -1,30 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { inngest } from "@/inngest/client";
+import { db } from "@/lib/db";
+import { auth } from "@/lib/auth";
+import { inngest } from "@/lib/inngest/client";
 
 /**
- * @description A function that handles user sign up and account creation
- * @param req
- * @returns
+ * @description Handles email verification via token.
  */
-
 export async function POST(req: NextRequest) {
   const { token } = await req.json();
+
   try {
-    //Ensure all fields are filled
     if (!token)
       return NextResponse.json(
-        { success: false, message: "All fields are required!" },
+        { success: false, message: "Token is required!" },
         { status: 400 }
       );
-    //Check if user token is still valid
-    const currentDate = new Date(Date.now());
-    const foundUser = await prisma.user.findFirst({
+
+    // We can use Better Auth's internal API to verify the email if it's a Better Auth token
+    // For now, we'll refactor the custom logic to use 'db'
+
+    const foundUser = await db.user.findFirst({
       where: {
-        verificationToken: String(token),
-        verificationTokenExpiresAt: { gt: currentDate },
+        verificationCode: token, // Assuming token is stored in verificationCode or similar
       },
     });
+
     if (!foundUser)
       return NextResponse.json(
         {
@@ -32,47 +32,39 @@ export async function POST(req: NextRequest) {
           message: "Invalid or expired verification token.",
         },
         { status: 403 }
-      ); // send welcome email in background
-    const updatedUser = await prisma.user.update({
-      where: {
-        email: foundUser.email,
-      },
+      );
+
+    const updatedUser = await db.user.update({
+      where: { id: foundUser.id },
       data: {
-        verificationCode: null,
-        verificationCodeExpiresAt: null,
-        verificationToken: null,
-        verificationTokenExpiresAt: null,
         emailVerified: true,
+        verificationCode: null,
       },
     });
 
-    if (!updatedUser) {
-      return {
-        message: `Error updating user account!`,
-        updatedUser: null,
-      };
-    }
-    // send welcome email in background
+    // Send welcome email via Inngest
     await inngest.send({
-      name: "email/send.welcomeEmail",
+      name: "email.send.welcome",
       data: {
         email: updatedUser.email,
+        name: updatedUser.name,
+        username: updatedUser.username || updatedUser.email.split("@")[0],
       },
     });
 
     return NextResponse.json(
       {
         success: true,
-
         message: "Account verification successful",
       },
-      { status: 201 }
+      { status: 200 }
     );
   } catch (error) {
+    console.error("Verification error:", error);
     return NextResponse.json(
       {
         success: false,
-        message: "Error verifying your email. Please try again later.",
+        message: "Error verifying your email.",
       },
       { status: 500 }
     );

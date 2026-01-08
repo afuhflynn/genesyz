@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -13,44 +13,21 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import axios from "axios";
-import { toast } from "sonner";
-import { Loader2Icon } from "lucide-react";
+import { useResendVerification } from "@/hooks";
+import { Loader2Icon, MailIcon } from "lucide-react";
 
-export default function VerifyEmailPage() {
+export default function ResendVerificationPage() {
   const [email, setEmail] = useState("");
   const router = useRouter();
+  const resendVerification = useResendVerification();
 
-  const { error, loading, setError, setLoading } = useAppStore();
-
-  useEffect(() => {
-    setError("");
-  }, [setError]);
-
-  const resendVerificationEmail = async (e: React.FormEvent) => {
+  const handleResend = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError("");
-    try {
-      const result = await axios.put<{ message: string }>(
-        "/api/auth/custom/resend-verification-email",
-        {
-          email,
-        }
-      );
-      toast.success(result.data.message);
-      router.push("/verify-email");
-    } catch (error: Error | any) {
-      if (error.response.data) {
-        setError(error.response.data.message);
-        toast.error(error.response.data.message);
-      } else {
-        setError("Sorry, an unexpected error occurred. Try again later.");
-        toast.error("Sorry, an unexpected error occurred. Try again later.");
-      }
-    } finally {
-      setLoading(false);
-    }
+    resendVerification.mutate(email, {
+      onSuccess: () => {
+        router.push(`/verify-email?email=${encodeURIComponent(email)}`);
+      },
+    });
   };
 
   return (
@@ -61,23 +38,27 @@ export default function VerifyEmailPage() {
         transition={{ duration: 0.5 }}
         className="w-full max-w-md"
       >
-        <Card>
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold">
-              Resend verification email
+        <Card className="border-2">
+          <CardHeader className="space-y-1 text-center">
+            <div className="mx-auto bg-primary/10 w-12 h-12 rounded-full flex items-center justify-center mb-4">
+              <MailIcon className="w-6 h-6 text-primary" />
+            </div>
+            <CardTitle className="text-3xl font-black">
+              Resend verification
             </CardTitle>
-            <CardDescription>
-              Enter your email below to get a new verification email.
+            <CardDescription className="text-base">
+              Enter your email below and we'll send you a new verification code.
             </CardDescription>
           </CardHeader>
-          <form onSubmit={resendVerificationEmail}>
+          <form onSubmit={handleResend}>
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email Address</Label>
                 <Input
-                  id="verification-code"
+                  id="email"
                   type="email"
-                  placeholder="Enter email address"
+                  placeholder="name@example.com"
+                  className="h-12 rounded-xl"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -85,18 +66,15 @@ export default function VerifyEmailPage() {
               </div>
               <Button
                 type="submit"
-                className="w-full"
-                disabled={loading || !email}
+                className="w-full h-12 text-lg font-bold rounded-xl"
+                disabled={resendVerification.isPending || !email}
               >
-                {loading ? (
+                {resendVerification.isPending ? (
                   <Loader2Icon className="animate-spin" />
                 ) : (
-                  "Resend Email"
+                  "Send Verification Email"
                 )}
               </Button>
-              {error && (
-                <p className="text-destructive text-sm text-center">{error}</p>
-              )}
             </CardContent>
           </form>
         </Card>
