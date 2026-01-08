@@ -11,7 +11,7 @@ export function Header() {
   const { data: session } = useSession();
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur-md supports-backdrop-filter:bg-background/60">
       <div className=" flex h-14 items-center px-0! m-0! content-between w-full! relative">
         <MobileSidebar />
         <div className="hidden md:flex w-full items-center justify-between">

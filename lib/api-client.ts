@@ -52,6 +52,10 @@ export interface DashboardData {
   averageScore: number;
   recentIdeas: IdeaWithDetails[];
   topIdeas: IdeaWithDetails[];
+  usage: {
+    activeIdeas: number;
+    maxIdeas: number;
+  };
 }
 
 export interface UserProfile extends User {

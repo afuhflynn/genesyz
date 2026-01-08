@@ -146,7 +146,7 @@ export default function DashboardPage() {
                       {idea.status === "RESEARCHED" ? (
                         <Badge
                           variant={getScoreVariant(
-                            idea.scores[0]?.overallScore
+                            idea?.scores[0]?.overallScore as number
                           )}
                         >
                           {idea.scores[0]?.overallScore || 0}

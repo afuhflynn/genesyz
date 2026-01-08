@@ -73,7 +73,7 @@ export function Sidebar({ className }: SidebarProps) {
   return (
     <ScrollArea
       className={cn(
-        "pb-12 h-full overflow-auto flex-col justify-between border-r bg-background relative",
+        "h-full! overflow-auto flex-col justify-between border-r bg-background relative",
         className
       )}
     >
@@ -96,7 +96,7 @@ export function Sidebar({ className }: SidebarProps) {
           </div>
         </div>
       </div>
-      <div className="absolute bottom-4 left-0 w-full px-3">
+      <div className="w-full px-3 absolute bottom-4">
         <Button
           variant="ghost"
           className="w-full justify-start text-muted-foreground hover:text-destructive"
