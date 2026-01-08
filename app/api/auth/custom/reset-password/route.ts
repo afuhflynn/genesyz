@@ -13,18 +13,18 @@ export async function PUT(req: NextRequest) {
     }
 
     // Better Auth handles the token validation and password update
-    const { status, error } = await auth.api.resetPassword({
+    const { status } = await auth.api.resetPassword({
       body: {
         newPassword: password,
         token,
       },
     });
 
-    if (error || !status) {
+    if (!status) {
       return NextResponse.json(
         {
           success: false,
-          message: error?.message || "Failed to reset password",
+          message: "Failed to reset password",
         },
         { status: 400 }
       );

@@ -16,6 +16,8 @@ import { Label } from "@/components/ui/label";
 import { Eye, EyeClosed, Loader2Icon, LockIcon } from "lucide-react";
 import { useResetPassword } from "@/hooks";
 import { toast } from "sonner";
+import { useQueryStates } from "nuqs";
+import { searchParamsSchema } from "@/nuqs";
 
 export default function ResetPasswordPage() {
   const [formData, setFormData] = useState({
@@ -23,8 +25,8 @@ export default function ResetPasswordPage() {
     confirmPassword: "",
   });
   const [isPassword, setIsPassword] = useState(true);
+  const [params] = useQueryStates(searchParamsSchema);
 
-  const { token } = useParams();
   const router = useRouter();
   const resetPassword = useResetPassword();
 
@@ -39,7 +41,7 @@ export default function ResetPasswordPage() {
     resetPassword.mutate(
       {
         password: formData.password,
-        token: token as string,
+        token: params.token as string,
       },
       {
         onSuccess: () => {

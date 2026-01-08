@@ -18,18 +18,18 @@ export async function POST(req: NextRequest) {
     // However, Better Auth's forgotPassword usually sends the email automatically if configured
     // But since we want more control, we can use the internal API to get the token/url
 
-    const { status, error } = await auth.api.forgotPassword({
+    const { status } = await auth.api.requestPasswordReset({
       body: {
         email,
         redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/reset-password`,
       },
     });
 
-    if (error || !status) {
+    if (!status) {
       return NextResponse.json(
         {
           success: false,
-          message: error?.message || "Failed to process request",
+          message: "Failed to process request",
         },
         { status: 400 }
       );

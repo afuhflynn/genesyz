@@ -5,6 +5,7 @@ export const searchParamsSchema = {
   page: parseAsString.withDefault("1"),
   limit: parseAsString.withDefault("16"),
   search: parseAsString,
+  token: parseAsString,
 };
 
 type ParamsTypes = Values<{
@@ -12,6 +13,7 @@ type ParamsTypes = Values<{
   page: SingleParserBuilder<number>;
   limit: SingleParserBuilder<number>;
   search: SingleParserBuilder<string>;
+  token: SingleParserBuilder<string>;
 }>;
 
 // Helper function to build URLs with current params
