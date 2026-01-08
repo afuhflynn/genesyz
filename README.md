@@ -83,7 +83,3 @@ The project is designed to be deployed on Vercel.
 3.  Configure environment variables in Vercel dashboard.
 4.  Set up a managed PostgreSQL database (e.g., Neon, Supabase, or DigitalOcean).
 5.  Deploy!
-
-## License
-
-MIT
