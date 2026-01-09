@@ -37,7 +37,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="space-y-8 max-w-2xl mx-auto">
+    <div className="space-y-8 max-w-5xl lg:w-4xl mx-auto">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
         <p className="text-muted-foreground mt-2">

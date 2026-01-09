@@ -211,11 +211,23 @@ export const api = {
         }
       },
 
+      update: (
+        id: string,
+        data: { title?: string; summary?: string }
+      ): Promise<Idea> =>
+        apiRequest(`/ideas/${id}`, { method: "PATCH", body: data }),
+
       archive: (id: string): Promise<Idea> =>
-        apiRequest(`/ideas/${id}/archive`, { method: "PATCH" }),
+        apiRequest(`/ideas/${id}`, {
+          method: "PATCH",
+          body: { isArchived: true },
+        }),
 
       unarchive: (id: string): Promise<Idea> =>
-        apiRequest(`/ideas/${id}/unarchive`, { method: "PATCH" }),
+        apiRequest(`/ideas/${id}`, {
+          method: "PATCH",
+          body: { isArchived: false },
+        }),
 
       delete: (id: string): Promise<{ success: boolean }> =>
         apiRequest(`/ideas/${id}`, { method: "DELETE" }),
@@ -227,19 +239,16 @@ export const api = {
         apiRequest(`/ideas/${id}/export`, { method: "POST" }),
     },
 
+    // Assets
+    assets: {
+      delete: (id: string): Promise<{ success: boolean }> =>
+        apiRequest(`/assets/${id}`, { method: "DELETE" }),
+    },
+
     // Profile
     profile: {
       update: (data: { name?: string; image?: string }): Promise<User> =>
         apiRequest("/user/profile", { method: "PATCH", body: data }),
-    },
-
-    // Billing
-    billing: {
-      createCheckout: (planId: string): Promise<{ url: string }> =>
-        apiRequest("/billing/checkout", { method: "POST", body: { planId } }),
-
-      cancelSubscription: (): Promise<{ success: boolean }> =>
-        apiRequest("/billing/cancel", { method: "POST" }),
     },
 
     // Auth

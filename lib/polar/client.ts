@@ -11,7 +11,7 @@ export const PLANS = {
     id: "free",
     name: "Free",
     maxActiveIdeas: 3,
-    polarProductId: process.env.POLAR_FREE_PRODUCT_ID,
+    polarProductId: process.env.NEXT_PUBLIC_POLAR_FREE_PRODUCT_ID,
     features: [
       "Up to 3 active ideas",
       "AI-powered research",
@@ -24,7 +24,7 @@ export const PLANS = {
     id: "pro",
     name: "Pro",
     maxActiveIdeas: Infinity,
-    polarProductId: process.env.POLAR_PRO_PRODUCT_ID,
+    polarProductId: process.env.NEXT_PUBLIC_POLAR_PRO_PRODUCT_ID,
     price: "$20/month",
     features: [
       "Unlimited ideas",

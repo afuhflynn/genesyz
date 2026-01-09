@@ -7,8 +7,10 @@ import {
   type AgentOutput,
   InterpretedIdeaSchema,
 } from "./types";
+import { openai } from "@ai-sdk/openai";
 
-const model = google("gemini-2.5-flash-lite");
+// const model = google("gemini-3-flash-preview");
+const model = openai("gpt-5-mini-2025-08-07");
 
 const SYSTEM_PROMPT = `You are an expert startup analyst and idea interpreter. Your role is to take raw, unstructured founder ideas and transform them into clear, structured representations.
 
@@ -60,7 +62,7 @@ Transform this into a structured idea representation. Be thorough but concise.`;
       promptHash,
       prompt,
       response: JSON.stringify(result.object),
-      model: "gemini-2.5-flash-lite",
+      model: "gemini-3-flash-preview",
       tokensUsed: result.usage?.totalTokens,
       latencyMs,
     },

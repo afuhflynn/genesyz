@@ -8,8 +8,10 @@ import {
   type InterpretedIdea,
   TrendAnalysisSchema,
 } from "./types";
+import { openai } from "@ai-sdk/openai";
 
-const model = google("gemini-2.5-flash-lite");
+// const model = google("gemini-3-flash-preview");
+const model = openai("gpt-5-mini-2025-08-07");
 
 const SYSTEM_PROMPT = `You are a technology and market trends analyst specializing in identifying timing windows for startup opportunities. Your role is to assess whether now is the right time for a given idea.
 
@@ -61,7 +63,7 @@ Assess the timing, technology readiness, and relevant trends that could impact t
       promptHash,
       prompt,
       response: JSON.stringify(result.object),
-      model: "gemini-2.5-flash-lite",
+      model: "gemini-3-flash-preview",
       tokensUsed: result.usage?.totalTokens,
       latencyMs,
     },

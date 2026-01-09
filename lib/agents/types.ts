@@ -17,6 +17,17 @@ export interface AgentInput {
   previousOutputs?: Record<ResearchAgentType, AgentOutput>;
 }
 
+export interface PortfolioInput {
+  userId: string;
+  ideas: {
+    id: string;
+    title: string;
+    summary: string;
+    category: string;
+    overallScore: number;
+  }[];
+}
+
 // ===========================================
 // Output Types
 // ===========================================
@@ -188,3 +199,62 @@ export const SynthesisSchema = z.object({
 });
 
 export type Synthesis = z.infer<typeof SynthesisSchema>;
+
+// ===========================================
+// Deep Research Agent
+// ===========================================
+
+export const DeepResearchSchema = z.object({
+  marketGaps: z.array(
+    z.object({
+      gap: z.string(),
+      opportunity: z.string(),
+      validationSource: z.string().nullable(),
+    })
+  ),
+  technicalRoadmap: z.object({
+    phase1: z.string().describe("MVP / Initial Validation"),
+    phase2: z.string().describe("Scaling / Core Features"),
+    phase3: z.string().describe("Advanced / Ecosystem"),
+  }),
+  pivotOptions: z.array(
+    z.object({
+      direction: z.string(),
+      rationale: z.string(),
+    })
+  ),
+  strategicMoat: z.string().describe("How to build a defensible business"),
+});
+
+export type DeepResearch = z.infer<typeof DeepResearchSchema>;
+
+// ===========================================
+// Strategic Advisory Agent (Portfolio Level)
+// ===========================================
+
+export const StrategicAdvisorySchema = z.object({
+  executiveSummary: z.string(),
+  portfolioThemes: z.array(z.string()),
+  marketPulse: z.array(
+    z.object({
+      newsItem: z.string(),
+      relevance: z.string(),
+      impactOnPortfolio: z.enum(["positive", "negative", "neutral"]),
+    })
+  ),
+  strategicRecommendations: z.array(
+    z.object({
+      ideaTitle: z.string(),
+      recommendation: z.string(),
+      priority: z.enum(["high", "medium", "low"]),
+    })
+  ),
+  vcCorner: z.object({
+    sentiment: z.string().describe("Current VC sentiment for these categories"),
+    brutalHonesty: z.string().describe("The hard truth about these ideas"),
+    investmentPotential: z.enum(["high", "medium", "low"]),
+  }),
+  weeklyActionPlan: z.array(z.string()),
+});
+
+export type StrategicAdvisory = z.infer<typeof StrategicAdvisorySchema>;

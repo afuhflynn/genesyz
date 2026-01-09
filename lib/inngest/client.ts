@@ -1,9 +1,11 @@
 import { Inngest } from "inngest";
+import { realtimeMiddleware } from "@inngest/realtime/middleware";
 
 // Create the Inngest client
 export const inngest = new Inngest({
   id: "ideasvault",
   name: "IdeasVault",
+  middleware: [realtimeMiddleware()],
 });
 
 // Event types for type safety

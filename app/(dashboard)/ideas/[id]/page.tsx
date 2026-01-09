@@ -40,6 +40,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInngestSubscription } from "@inngest/realtime/hooks";
+import { AssetTab } from "@/components/ideas/AssetTab";
 import { cn, formatRelativeTime } from "@/lib/utils";
 import {
   Accordion,
@@ -49,20 +52,101 @@ import {
 } from "@/components/ui/accordion";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { fetchRealtimeSubscriptionToken } from "@/app/api/inngest/token/_actions/fetchRealtimeSubscriptionToken";
+import { useQueryStates } from "nuqs";
+import { searchParamsSchema } from "@/nuqs";
+
+interface IResearchProgress {
+  status: string;
+  message: string;
+  step?: string;
+  id: string;
+}
 
 export default function IdeaDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const id = params.id as string;
+  const [searchParams, setSearchParams] = useQueryStates(searchParamsSchema);
 
-  const { data: idea, isLoading, error } = useIdea(id);
+  const { data: idea, isLoading, error, refetch } = useIdea(id);
   const rerunResearch = useRerunResearch();
   const archiveIdea = useArchiveIdea();
   const deleteIdea = useDeleteIdea();
   const exportPdf = useExportIdeaPdf();
 
-  const [activeTab, setActiveTab] = useState("overview");
+  const [researchProgress, setResearchProgress] = useState<IResearchProgress[]>(
+    []
+  );
+
+  // Fetch subscription token
+  const { data: tokenData } = useQuery({
+    queryKey: ["inngest-token", id],
+    queryFn: async () => {
+      const res = await fetch(`/api/inngest/token?ideaId=${id}`);
+      if (!res.ok) throw new Error("Failed to fetch token");
+      return res.json() as Promise<{ token: string }>;
+    },
+    enabled:
+      !!id && (idea?.status === "PROCESSING" || idea?.status === "PENDING"),
+  });
+
+  // Subscribe to real-time updates
+  const {
+    latestData,
+    data,
+    error: channelError,
+    freshData,
+    state,
+  } = useInngestSubscription({
+    refreshToken: async () =>
+      await fetchRealtimeSubscriptionToken(id as string),
+  });
+
+  useEffect(() => {
+    if (latestData) {
+      const message = (latestData.data as any).message;
+      const topic = latestData.topic;
+      const status = (latestData.data as any).status;
+      const eventId = (latestData.data as any).id;
+
+      setResearchProgress((prev) => {
+        const exists = prev.find((item) => item.step === topic);
+
+        if (exists) {
+          return prev.map((item) => {
+            if (item.id === eventId) {
+              return {
+                ...item,
+                message,
+                status,
+              };
+            }
+
+            return item;
+          });
+        } else {
+          return [
+            ...prev,
+            {
+              step: topic,
+              message,
+              status,
+              id: eventId,
+            },
+          ];
+        }
+      });
+    }
+  }, [latestData, id, queryClient, refetch]);
+
+  useEffect(() => {
+    if (idea?.status === "RESEARCHED") {
+      setResearchProgress([]);
+    }
+  }, [idea?.status]);
 
   if (isLoading) return <IdeaDetailSkeleton />;
   if (error || !idea) return <IdeaNotFound />;
@@ -176,11 +260,12 @@ export default function IdeaDetailPage() {
 
       {/* Main Content */}
       {isResearching ? (
-        <ResearchingState />
+        <ResearchingState progress={researchProgress} />
       ) : (
         <Tabs
-          value={activeTab}
-          onValueChange={setActiveTab}
+          value={searchParams.tab as string}
+          onValueChange={(value) => setSearchParams({ tab: value })}
+          defaultValue="overview"
           className="space-y-4"
         >
           <TabsList>
@@ -188,6 +273,7 @@ export default function IdeaDetailPage() {
             <TabsTrigger value="market">Market</TabsTrigger>
             <TabsTrigger value="execution">Execution</TabsTrigger>
             <TabsTrigger value="raw">Raw Data</TabsTrigger>
+            <TabsTrigger value="assets">Assets</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-4">
@@ -288,7 +374,7 @@ export default function IdeaDetailPage() {
           </TabsContent>
 
           <TabsContent value="market" className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 ">
               <Card>
                 <CardHeader>
                   <CardTitle>Market Size</CardTitle>
@@ -449,6 +535,10 @@ export default function IdeaDetailPage() {
             </Card>
           </TabsContent>
 
+          <TabsContent value="assets" className="space-y-4">
+            <AssetTab ideaId={id} inputs={idea.inputs} />
+          </TabsContent>
+
           <TabsContent value="raw">
             <Card className="w-full!">
               <CardHeader>
@@ -502,7 +592,7 @@ function ScoreCard({ title, score }: { title: string; score: number }) {
   );
 }
 
-function ResearchingState() {
+function ResearchingState({ progress }: { progress: IResearchProgress[] }) {
   return (
     <div className="flex flex-col items-center justify-center py-20 space-y-6 text-center">
       <div className="relative">
@@ -519,22 +609,23 @@ function ResearchingState() {
         </p>
       </div>
       <div className="flex flex-col gap-2 w-full max-w-sm">
-        <div className="flex items-center gap-3 text-sm">
-          <CheckCircle2 className="h-4 w-4 text-green-500" />
-          <span>Parsing idea structure</span>
-        </div>
-        <div className="flex items-center gap-3 text-sm">
-          <Clock className="h-4 w-4 text-amber-500 animate-pulse" />
-          <span>Conducting market research</span>
-        </div>
-        <div className="flex items-center gap-3 text-sm text-muted-foreground">
-          <div className="h-4 w-4 rounded-full border-2 border-muted" />
-          <span>Analyzing trends</span>
-        </div>
-        <div className="flex items-center gap-3 text-sm text-muted-foreground">
-          <div className="h-4 w-4 rounded-full border-2 border-muted" />
-          <span>Synthesizing results</span>
-        </div>
+        {progress.map((item, index) => (
+          <div
+            className="flex items-center gap-3 text-sm"
+            key={`${index}-${item.id}`}
+          >
+            {item.status === "FAILED" ? (
+              <XCircle className="h-4 w-4 text-red-500" />
+            ) : item.status === "COMPLETED" ||
+              item.status === "INITIATE" ||
+              item.status === "PROCESSING" ? (
+              <CheckCircle2 className="h-4 w-4 text-green-500" />
+            ) : (
+              <div className="h-4 w-4 rounded-full border-2 border-muted" />
+            )}
+            <span>{item?.message || "No message"}</span>
+          </div>
+        ))}
       </div>
     </div>
   );

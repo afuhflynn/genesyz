@@ -11,8 +11,10 @@ import {
   type ExecutionFriction,
   SynthesisSchema,
 } from "./types";
+import { openai } from "@ai-sdk/openai";
 
-const model = google("gemini-2.5-flash-lite");
+// const model = google("gemini-3-flash-preview");
+const model = openai("gpt-5-mini-2025-08-07");
 
 const SYSTEM_PROMPT = `You are a senior venture analyst synthesizing research into actionable recommendations for founders. Your role is to combine multiple perspectives into a coherent assessment.
 
@@ -94,7 +96,7 @@ Provide a comprehensive synthesis with scores, recommendations, and a clear verd
       promptHash,
       prompt,
       response: JSON.stringify(result.object),
-      model: "gemini-2.5-flash-lite",
+      model: "gemini-3-flash-preview",
       tokensUsed: result.usage?.totalTokens,
       latencyMs,
     },

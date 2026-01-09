@@ -96,6 +96,28 @@ export function useCreateIdea() {
   });
 }
 
+export function useUpdateIdea() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: { title?: string; summary?: string };
+    }) => api.mutations.ideas.update(id, data),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.ideas.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.ideas.detail(id) });
+      toast.success("Idea updated");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to update idea");
+    },
+  });
+}
+
 export function useArchiveIdea() {
   const queryClient = useQueryClient();
 
@@ -134,6 +156,7 @@ export function useRerunResearch() {
   return useMutation({
     mutationFn: (id: string) => api.mutations.ideas.rerunResearch(id),
     onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.ideas.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.ideas.detail(id) });
       toast.success("Research restarted");
     },
@@ -148,7 +171,7 @@ export function useExportIdeaPdf() {
     mutationFn: (id: string) => api.mutations.ideas.exportPdf(id),
     onSuccess: (data) => {
       // Open the PDF URL in a new tab
-      window.open(data.url, "_blank");
+      window.open(data.url, "_blank", "noopener,noreferrer");
       toast.success("PDF generated");
     },
     onError: (error: Error) => {
@@ -214,38 +237,6 @@ export function useSubscription() {
     queryKey: queryKeys.billing.subscription(),
     queryFn: () => api.queries.billing.getSubscription(),
     staleTime: 5 * 60 * 1000,
-  });
-}
-
-export function useCreateCheckout() {
-  return useMutation({
-    mutationFn: (planId: string) =>
-      api.mutations.billing.createCheckout(planId),
-    onSuccess: (data) => {
-      // Redirect to Polar checkout
-      window.location.href = data.url;
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || "Failed to start checkout");
-    },
-  });
-}
-
-export function useCancelSubscription() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: () => api.mutations.billing.cancelSubscription(),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.billing.all });
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.profile.entitlement(),
-      });
-      toast.success("Subscription cancelled");
-    },
-    onError: (error: Error) => {
-      toast.error(error.message || "Failed to cancel subscription");
-    },
   });
 }
 

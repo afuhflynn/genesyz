@@ -112,6 +112,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     where: { id },
     data: {
       isArchived: body.isArchived,
+      title: body.title,
+      summary: body.summary,
     },
     include: {
       inputs: true,

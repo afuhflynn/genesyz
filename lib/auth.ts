@@ -12,6 +12,11 @@ import { magicLink } from "better-auth/plugins";
 import { Polar } from "@polar-sh/sdk";
 import { syncEntitlement } from "@/lib/polar/entitlements";
 import { inngest } from "./inngest/client";
+import type { WebhookSubscriptionCreatedPayload } from "@polar-sh/sdk/models/components/webhooksubscriptioncreatedpayload.js";
+import type { WebhookSubscriptionUpdatedPayload } from "@polar-sh/sdk/models/components/webhooksubscriptionupdatedpayload.js";
+import type { WebhookSubscriptionRevokedPayload } from "@polar-sh/sdk/models/components/webhooksubscriptionrevokedpayload.js";
+import type { WebhookSubscriptionActivePayload } from "@polar-sh/sdk/models/components/webhooksubscriptionactivepayload.js";
+import type { WebhookSubscriptionCanceledPayload } from "@polar-sh/sdk/models/components/webhooksubscriptioncanceledpayload.js";
 
 export const auth = betterAuth({
   database: prismaAdapter(db, {
@@ -25,7 +30,7 @@ export const auth = betterAuth({
     minPasswordLength: 8,
     maxPasswordLength: 30,
     async sendResetPassword({ user, url }, request) {
-      void inngest.send({
+      await inngest.send({
         name: "email.send.passwordReset",
         data: {
           email: user.email,
@@ -62,7 +67,7 @@ export const auth = betterAuth({
         checkout({
           products: [
             {
-              productId: process.env.POLAR_PRO_PRODUCT_ID!,
+              productId: process.env.NEXT_PUBLIC_POLAR_PRO_PRODUCT_ID!,
               slug: "pro",
             },
           ],
@@ -74,26 +79,26 @@ export const auth = betterAuth({
         webhooks({
           secret: process.env.POLAR_WEBHOOK_SECRET!,
           onSubscriptionCreated: async (payload) => {
-            void handleSubscriptionChange(payload.data);
+            await handleSubscriptionChange(payload);
           },
           onSubscriptionUpdated: async (payload) => {
-            void handleSubscriptionChange(payload.data);
+            await handleSubscriptionChange(payload);
           },
           onSubscriptionActive: async (payload) => {
-            void handleSubscriptionChange(payload.data);
+            await handleSubscriptionChange(payload);
           },
           onSubscriptionCanceled: async (payload) => {
-            void handleSubscriptionCanceled(payload.data);
+            await handleSubscriptionCanceled(payload);
           },
           onSubscriptionRevoked: async (payload) => {
-            void handleSubscriptionRevoked(payload.data);
+            await handleSubscriptionRevoked(payload);
           },
         }),
       ],
     }),
     magicLink({
       async sendMagicLink({ email, url }, request) {
-        void inngest.send({
+        await inngest.send({
           name: "email.send.magicLink",
           data: {
             email,
@@ -106,22 +111,29 @@ export const auth = betterAuth({
 });
 
 // Helper functions for Polar webhooks
-async function handleSubscriptionChange(data: any) {
-  const userId = data.metadata?.userId || data.user_id;
+async function handleSubscriptionChange(
+  data:
+    | WebhookSubscriptionCreatedPayload
+    | WebhookSubscriptionUpdatedPayload
+    | WebhookSubscriptionActivePayload
+) {
+  const userId = data.data.customerId;
   if (!userId) return;
 
   const plan =
-    data.product_id === process.env.POLAR_PRO_PRODUCT_ID ? "PRO" : "FREE";
+    data.data.productId === process.env.NEXT_PUBLIC_POLAR_PRO_PRODUCT_ID
+      ? "PRO"
+      : "FREE";
 
   await syncEntitlement(userId, {
-    polarCustomerId: data.customer_id,
-    polarSubscriptionId: data.id,
+    polarCustomerId: data.data.customerId,
+    polarSubscriptionId: data.data.id,
     plan,
-    status: data.status === "active" ? "ACTIVE" : "PAST_DUE",
-    currentPeriodEnd: data.current_period_end
-      ? new Date(data.current_period_end)
+    status: data.data.status === "active" ? "ACTIVE" : "PAST_DUE",
+    currentPeriodEnd: data.data.currentPeriodEnd
+      ? new Date(data.data.currentPeriodEnd)
       : undefined,
-    cancelAtPeriodEnd: data.cancel_at_period_end || false,
+    cancelAtPeriodEnd: data.data.cancelAtPeriodEnd || false,
   });
 
   await db.auditLog.create({
@@ -131,24 +143,26 @@ async function handleSubscriptionChange(data: any) {
       resource: "entitlement",
       metadata: {
         plan,
-        status: data.status,
-        subscriptionId: data.id,
+        status: data.data.status,
+        subscriptionId: data.data.status,
       },
     },
   });
 }
 
-async function handleSubscriptionCanceled(data: any) {
-  const userId = data.metadata?.userId || data.user_id;
+async function handleSubscriptionCanceled(
+  data: WebhookSubscriptionCanceledPayload
+) {
+  const userId = data.data.customerId;
   if (!userId) return;
 
   await syncEntitlement(userId, {
-    polarCustomerId: data.customer_id,
-    polarSubscriptionId: data.id,
+    polarCustomerId: data.data.customerId,
+    polarSubscriptionId: data.data.id,
     plan: "FREE",
     status: "CANCELED",
-    currentPeriodEnd: data.current_period_end
-      ? new Date(data.current_period_end)
+    currentPeriodEnd: data.data.currentPeriodEnd
+      ? new Date(data.data.currentPeriodEnd)
       : undefined,
     cancelAtPeriodEnd: true,
   });
@@ -158,18 +172,20 @@ async function handleSubscriptionCanceled(data: any) {
       userId,
       action: "subscription.canceled",
       resource: "entitlement",
-      metadata: { subscriptionId: data.id },
+      metadata: { subscriptionId: data.data.id },
     },
   });
 }
 
-async function handleSubscriptionRevoked(data: any) {
-  const userId = data.metadata?.userId || data.user_id;
+async function handleSubscriptionRevoked(
+  data: WebhookSubscriptionRevokedPayload
+) {
+  const userId = data.data.customerId;
   if (!userId) return;
 
   await syncEntitlement(userId, {
-    polarCustomerId: data.customer_id,
-    polarSubscriptionId: data.id,
+    polarCustomerId: data.data.customerId,
+    polarSubscriptionId: data.data.id,
     plan: "FREE",
     status: "EXPIRED",
   });
@@ -179,7 +195,7 @@ async function handleSubscriptionRevoked(data: any) {
       userId,
       action: "subscription.expired",
       resource: "entitlement",
-      metadata: { subscriptionId: data.id },
+      metadata: { subscriptionId: data.data.id },
     },
   });
 }

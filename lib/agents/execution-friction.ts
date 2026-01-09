@@ -8,8 +8,10 @@ import {
   type InterpretedIdea,
   ExecutionFrictionSchema,
 } from "./types";
+import { openai } from "@ai-sdk/openai";
 
-const model = google("gemini-2.5-flash-lite");
+// const model = google("gemini-3-flash-preview");
+const model = openai("gpt-5-mini-2025-08-07");
 
 const SYSTEM_PROMPT = `You are a seasoned startup operator and technical advisor. Your role is to assess the practical challenges of executing on a startup idea.
 
@@ -63,7 +65,7 @@ Analyze technical complexity, resource requirements, risks, and provide actionab
       promptHash,
       prompt,
       response: JSON.stringify(result.object),
-      model: "gemini-2.5-flash-lite",
+      model: "gemini-3-flash-preview",
       tokensUsed: result.usage?.totalTokens,
       latencyMs,
     },

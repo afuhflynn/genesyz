@@ -8,8 +8,10 @@ import {
   type InterpretedIdea,
   MarketResearchSchema,
 } from "./types";
+import { openai } from "@ai-sdk/openai";
 
-const model = google("gemini-2.5-flash-lite");
+// const model = google("gemini-3-flash-preview");
+const model = openai("gpt-5-mini-2025-08-07");
 
 const SYSTEM_PROMPT = `You are a senior market research analyst with expertise in startup ecosystems, competitive analysis, and market sizing. Your role is to provide actionable market intelligence for founder ideas.
 
@@ -63,7 +65,7 @@ Provide comprehensive market research including market sizing, competitor analys
       promptHash,
       prompt,
       response: JSON.stringify(result.object),
-      model: "gemini-2.5-flash-lite",
+      model: "gemini-3-flash-preview",
       tokensUsed: result.usage?.totalTokens,
       latencyMs,
     },

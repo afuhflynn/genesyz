@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  useSubscription,
-  useCreateCheckout,
-  useCancelSubscription,
-} from "@/hooks";
+import { useSubscription } from "@/hooks";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -18,11 +14,13 @@ import { Badge } from "@/components/ui/badge";
 import { Check, Loader2, AlertTriangle } from "lucide-react";
 import { PLANS } from "@/lib/polar/client";
 import { Skeleton } from "@/components/ui/skeleton";
+import { authClient } from "@/lib/auth-client";
+import { useState } from "react";
 
 export default function BillingPage() {
   const { data: subscription, isLoading } = useSubscription();
-  const createCheckout = useCreateCheckout();
-  const cancelSubscription = useCancelSubscription();
+  const [createCheckout, setCreateCheckout] = useState(false);
+  const [cancelSubscription, setCancelSubscription] = useState(false);
 
   // Determine current plan
   // Note: The API returns { subscription: unknown, usage: ... }
@@ -31,17 +29,37 @@ export default function BillingPage() {
   const currentPlanId =
     subscription?.usage.maxIdeas === Infinity ? "PRO" : "FREE";
 
-  const handleUpgrade = (planId: string) => {
-    createCheckout.mutate(planId);
+  const handleUpgrade = async (planId: string) => {
+    let productId = "";
+
+    if (planId === "pro") {
+      productId = process.env.NEXT_PUBLIC_POLAR_PRO_PRODUCT_ID!;
+    } else {
+      productId = process.env.NEXT_PUBLIC_POLAR_FREE_PRODUCT_ID!;
+    }
+    setCreateCheckout(true);
+    try {
+      await authClient.checkout({
+        products: [productId],
+        successUrl: "/dashboard?checkout_id={CHECKOUT_ID}",
+        authenticatedUsersOnly: true,
+        slug: planId,
+      });
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setCreateCheckout(false);
+    }
   };
 
-  const handleCancel = () => {
+  const handleCancel = async () => {
     if (
       confirm(
         "Are you sure you want to cancel? You will lose access to Pro features at the end of your billing period."
       )
     ) {
-      cancelSubscription.mutate();
+      // await authClient.customer.subscriptions.
+      // cancelSubscription.mutate();
     }
   };
 
@@ -50,7 +68,7 @@ export default function BillingPage() {
   }
 
   return (
-    <div className="space-y-8 max-w-5xl mx-auto">
+    <div className="space-y-8 max-w-5xl lg:w-4xl mx-auto">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Billing & Plans</h1>
         <p className="text-muted-foreground mt-2">
@@ -59,14 +77,14 @@ export default function BillingPage() {
       </div>
 
       {/* Usage Card */}
-      <Card>
+      <Card className="w-full!">
         <CardHeader>
           <CardTitle>Current Usage</CardTitle>
           <CardDescription>
             Your active ideas usage for this billing period.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="w-full!">
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
               <span>Active Ideas</span>
@@ -140,9 +158,9 @@ export default function BillingPage() {
                 className="w-full"
                 variant="outline"
                 onClick={handleCancel}
-                disabled={cancelSubscription.isPending}
+                disabled={cancelSubscription}
               >
-                {cancelSubscription.isPending ? (
+                {cancelSubscription ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : null}
                 Downgrade to Free
@@ -186,9 +204,9 @@ export default function BillingPage() {
               <Button
                 className="w-full"
                 onClick={() => handleUpgrade("pro")}
-                disabled={createCheckout.isPending}
+                disabled={createCheckout}
               >
-                {createCheckout.isPending ? (
+                {createCheckout ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : null}
                 Upgrade to Pro
@@ -214,15 +232,15 @@ export default function BillingPage() {
 
 function BillingSkeleton() {
   return (
-    <div className="space-y-8 max-w-5xl mx-auto">
+    <div className="space-y-8 max-w-5xl lg:w-4xl mx-auto">
       <div className="space-y-2">
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-4 w-64" />
       </div>
       <Skeleton className="h-32 w-full" />
       <div className="grid gap-8 md:grid-cols-2">
-        <Skeleton className="h-[400px]" />
-        <Skeleton className="h-[400px]" />
+        <Skeleton className="h-100" />
+        <Skeleton className="h-100" />
       </div>
     </div>
   );

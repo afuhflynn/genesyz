@@ -1,0 +1,21 @@
+The Strategic Advisory email template (sendStrategicAdvisoryEmail) has this structure:
+Header:
+- Dark background with radial gradient
+- White logo, "Premium Advisory" badge, title "Weekly Strategic Report"
+- User name and date
+Body Sections:
+- Executive Summary: Icon + boxed text with summary
+- Portfolio Themes: Icon + pill-style theme tags
+- Market Pulse: Icon + list of news items with colored borders (positive/green, negative/red, neutral/gray) and impact badges
+- Strategic Roadmap: Icon + bordered container with recommendations by idea title, priority dots (red=high, orange=medium, gray=low), and recommendation text
+- VC Corner: Dark themed section with sentiment, "brutal honesty" quote, investment potential badge (color-coded)
+- Weekly Action Plan: Icon + bulleted list with golden bullet points
+Footer:
+- CTA button "Open Full Portfolio Analysis"
+- Premium disclaimer, copyright, manage preferences/unsubscribe links
+Styling: Modern design with Inter font, shadows, rounded corners, consistent color scheme (F5A623 orange, grays, conditional colors), responsive layout. Subject: "Strategic Advisory: First Theme or Default"
+▣  Plan · grok-code · 16.6s
+Give me the file path to the email you are talking about
+tembeng
+Thinking: The user asked: "Give me the file path to the email you are talking about"
+The file is lib/email/send.ts (full path: /home/tembeng/Documents/new_projects/FlynnSphere/ideas-vault/lib/email/send.ts). The Strategic Advisory email template is the sendStrategicAdvisoryEmail function starting at line 198.
