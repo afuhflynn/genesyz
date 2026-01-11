@@ -4,7 +4,7 @@ import {
   useIdeas,
   useDeleteIdea,
   useUpdateIdea,
-  useArchiveIdea,
+  useUnArchiveIdea,
 } from "@/hooks";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,16 +44,17 @@ import { SearchBar } from "@/components/ideas/SearchBar";
 import { useQueryStates } from "nuqs";
 import { searchParamsSchema } from "@/nuqs";
 
-export default function IdeasPage() {
+export default function ArchivedIdeasPage() {
   const [params] = useQueryStates(searchParamsSchema);
   const { data, isLoading } = useIdeas({
     page: parseInt(params.page),
     limit: parseInt(params.limit),
     query: params.search as string,
+    archived: true,
   });
   const deleteIdea = useDeleteIdea();
   const updateIdea = useUpdateIdea();
-  const archiveIdea = useArchiveIdea();
+  const unarchiveIdea = useUnArchiveIdea();
 
   const [editingIdea, setEditingIdea] = useState<{
     id: string;
@@ -80,9 +81,9 @@ export default function IdeasPage() {
     <div className="space-y-8">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">My Ideas</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Archived Ideas</h1>
           <p className="text-muted-foreground">
-            Manage and track your startup ideas
+            Manage and track your archived startup ideas
           </p>
         </div>
         <Button asChild>
@@ -190,19 +191,10 @@ export default function IdeasPage() {
                       Edit
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      onClick={() => archiveIdea.mutate(idea.id)}
+                      onClick={() => unarchiveIdea.mutate(idea.id)}
                     >
-                      {idea.isArchived ? (
-                        <>
-                          <ArchiveRestore className="mr-2 h-4 w-4" />
-                          Unarchive
-                        </>
-                      ) : (
-                        <>
-                          <Archive className="mr-2 h-4 w-4" />
-                          Archive
-                        </>
-                      )}
+                      <ArchiveRestore className="mr-2 h-4 w-4" />
+                      Unarchive
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem

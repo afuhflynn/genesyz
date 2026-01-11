@@ -1,9 +1,15 @@
-import { parseAsString, SingleParserBuilder, Values } from "nuqs";
+import {
+  parseAsBoolean,
+  parseAsString,
+  SingleParserBuilder,
+  Values,
+} from "nuqs";
 
 export const searchParamsSchema = {
   redirect: parseAsString,
   page: parseAsString.withDefault("1"),
-  limit: parseAsString.withDefault("16"),
+  limit: parseAsString.withDefault("10"),
+  archived: parseAsBoolean.withDefault(false),
   search: parseAsString,
   token: parseAsString,
   checkout_id: parseAsString,
@@ -14,6 +20,7 @@ type ParamsTypes = Values<{
   redirect: SingleParserBuilder<string>;
   page: SingleParserBuilder<number>;
   limit: SingleParserBuilder<number>;
+  archived: SingleParserBuilder<boolean>;
   search: SingleParserBuilder<string>;
   token: SingleParserBuilder<string>;
   checkout_id: SingleParserBuilder<string>;

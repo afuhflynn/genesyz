@@ -1,7 +1,18 @@
 import { z } from "zod";
 import { tool } from "ai";
 import { tavily } from "@tavily/core";
+
+// constants
 const TAVILY_API_KEY = process.env.TAVILY_API_KEY;
+
+const client = tavily({
+  apiKey: TAVILY_API_KEY,
+});
+const search_depth = "advanced";
+
+/**
+ * Web search tool
+ */
 
 export const webSearch = tool({
   description:
@@ -17,9 +28,6 @@ export const webSearch = tool({
     if (!TAVILY_API_KEY) {
       throw new Error("TAVILY_API_KEY is not set");
     }
-    const client = tavily({
-      apiKey: TAVILY_API_KEY,
-    });
 
     const response = await client.search(query, {
       searchDepth: searchDepth,
@@ -58,26 +66,17 @@ export const getIndustryNews = tool({
 
     const query = `latest news and trends in ${category} startup ecosystem last ${daysBack} days`;
 
-    const response = await fetch("https://api.tavily.com/search", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        api_key: TAVILY_API_KEY,
-        query,
-        search_depth: "advanced",
-        topic: "news",
-        max_results: 5,
-      }),
+    const response = await client.search(query, {
+      searchDepth: search_depth,
+      includeAnswer: true,
+      maxResults: 5,
     });
 
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Tavily API error: ${error}`);
+    if (!response) {
+      throw new Error("No response from Tavily API");
     }
 
-    return response.json();
+    return response.results;
   },
 });
 
@@ -94,25 +93,17 @@ export const getCompetitorUpdates = tool({
 
     const query = `${competitorName} startup latest news funding product launch 2024 2025`;
 
-    const response = await fetch("https://api.tavily.com/search", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        api_key: TAVILY_API_KEY,
-        query,
-        search_depth: "advanced",
-        max_results: 3,
-      }),
+    const response = await client.search(query, {
+      searchDepth: search_depth,
+      includeAnswer: true,
+      maxResults: 3,
     });
 
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Tavily API error: ${error}`);
+    if (!response) {
+      throw new Error("No response from Tavily API");
     }
 
-    return response.json();
+    return response.results;
   },
 });
 

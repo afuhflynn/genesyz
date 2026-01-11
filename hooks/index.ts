@@ -133,6 +133,21 @@ export function useArchiveIdea() {
     },
   });
 }
+export function useUnArchiveIdea() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => api.mutations.ideas.unarchive(id),
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.ideas.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.ideas.detail(id) });
+      toast.success("Idea unarchived");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to unarchive idea");
+    },
+  });
+}
 
 export function useDeleteIdea() {
   const queryClient = useQueryClient();

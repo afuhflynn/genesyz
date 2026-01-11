@@ -111,7 +111,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   const updatedIdea = await db.idea.update({
     where: { id },
     data: {
-      isArchived: body.isArchived,
+      isArchived: body?.isArchived,
       title: body.title,
       summary: body.summary,
     },

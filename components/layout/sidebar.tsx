@@ -12,6 +12,7 @@ import {
   LogOut,
   Menu,
   Shield,
+  Archive,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -58,6 +59,12 @@ export function Sidebar({ className }: SidebarProps) {
       icon: Settings,
       href: "/settings",
       active: pathname === "/settings",
+    },
+    {
+      label: "Archived Ideas",
+      icon: Archive,
+      href: "/ideas/archived",
+      active: pathname === "/ideas/archived",
     },
   ];
 

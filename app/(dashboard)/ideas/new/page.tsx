@@ -135,6 +135,7 @@ export default function NewIdeaPage() {
                     onFileSelect={setAudioFile}
                     accept={{ "audio/*": [".mp3", ".wav", ".m4a", ".webm"] }}
                     label="Drop audio file here (mp3, wav, m4a)"
+                    disabled
                   />
                   <p className="text-xs text-muted-foreground">
                     We'll transcribe your audio automatically.
@@ -149,6 +150,7 @@ export default function NewIdeaPage() {
                     onFileSelect={setImageFile}
                     accept={{ "image/*": [".png", ".jpg", ".jpeg", ".webp"] }}
                     label="Drop image file here"
+                    disabled
                   />
                   <p className="text-xs text-muted-foreground">
                     Our vision AI will extract text and structure from your

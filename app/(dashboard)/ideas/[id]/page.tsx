@@ -6,6 +6,7 @@ import {
   useArchiveIdea,
   useDeleteIdea,
   useExportIdeaPdf,
+  useUnArchiveIdea,
 } from "@/hooks";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -74,6 +75,7 @@ export default function IdeaDetailPage() {
   const { data: idea, isLoading, error, refetch } = useIdea(id);
   const rerunResearch = useRerunResearch();
   const archiveIdea = useArchiveIdea();
+  const unarchiveIdea = useUnArchiveIdea();
   const deleteIdea = useDeleteIdea();
   const exportPdf = useExportIdeaPdf();
 
@@ -227,7 +229,15 @@ export default function IdeaDetailPage() {
                 Rerun Research
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => archiveIdea.mutate(id)}>
+              <DropdownMenuItem
+                onClick={() => {
+                  if (idea.isArchived) {
+                    unarchiveIdea.mutate(id);
+                  } else {
+                    archiveIdea.mutate(id);
+                  }
+                }}
+              >
                 {idea.isArchived ? (
                   <>
                     <ArchiveRestore className="mr-2 h-4 w-4" />
@@ -518,7 +528,7 @@ export default function IdeaDetailPage() {
                     {execution?.riskFactors?.map((risk: any, i: number) => (
                       <div
                         key={i}
-                        className="flex items-start gap-2 p-3 bg-secondary/50 rounded-lg"
+                        className="flex items-start gap-2 p-3 bg-secondary/10 rounded-lg"
                       >
                         <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
                         <div>
@@ -555,7 +565,7 @@ export default function IdeaDetailPage() {
                         {packet.agentType}
                       </AccordionTrigger>
                       <AccordionContent>
-                        <ScrollArea className="h-[400px] w-full rounded-md border p-4">
+                        <ScrollArea className="h-100 w-full rounded-md border p-4">
                           <pre className="text-xs font-mono">
                             {JSON.stringify(packet.content, null, 2)}
                           </pre>

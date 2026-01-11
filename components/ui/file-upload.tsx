@@ -12,6 +12,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { Badge } from "./badge";
 
 interface FileUploadProps {
   onFileSelect: (file: File | null) => void;
@@ -19,6 +20,7 @@ interface FileUploadProps {
   maxSize?: number; // in bytes
   label?: string;
   className?: string;
+  disabled: boolean;
 }
 
 export function FileUpload({
@@ -27,6 +29,7 @@ export function FileUpload({
   maxSize = 10 * 1024 * 1024, // 10MB default
   label = "Drag & drop a file here, or click to select",
   className,
+  disabled = true,
 }: FileUploadProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
@@ -70,13 +73,23 @@ export function FileUpload({
     <div
       {...getRootProps()}
       className={cn(
-        "relative cursor-pointer rounded-lg border-2 border-dashed border-muted-foreground/25 px-6 py-10 transition-colors hover:border-muted-foreground/50",
+        "relative rounded-lg border-2 border-dashed border-muted-foreground/25 px-6 py-10 transition-colors hover:border-muted-foreground/50",
         isDragActive && "border-primary bg-primary/5",
         selectedFile && "border-primary bg-primary/5",
-        className
+        className,
+        disabled ? "cursor-default opacity-70" : " cursor-pointer opacity-100"
       )}
     >
-      <input {...getInputProps()} />
+      {disabled && (
+        <Badge className="absolute self-center">
+          Uploads not supported at the moment
+        </Badge>
+      )}
+      <input
+        {...getInputProps()}
+        disabled={disabled} // TODO: Remove this later when ready to support file uploads
+        className={cn("disabled:opacity-30 disabled:cursor-default")}
+      />
       <div className="flex flex-col items-center justify-center gap-2 text-center">
         {selectedFile ? (
           <div className="flex items-center gap-4">

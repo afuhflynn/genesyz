@@ -17,16 +17,32 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const page = parseInt(searchParams.get("page") || "1");
   const limit = parseInt(searchParams.get("limit") || "10");
+  const query = searchParams.get("query");
   const archived = searchParams.get("archived") === "true";
 
   const skip = (page - 1) * limit;
 
+  let where = { userId: session.user.id, isArchived: archived } as any;
+  if (query && typeof query === "string" && query.trim() !== "") {
+    where.OR = [
+      {
+        summary: {
+          contains: query as string,
+          mode: "insensitive",
+        },
+      },
+      {
+        title: {
+          contains: query as string,
+          mode: "insensitive",
+        },
+      },
+    ];
+  }
+
   const [ideas, total] = await Promise.all([
     db.idea.findMany({
-      where: {
-        userId: session.user.id,
-        isArchived: archived,
-      },
+      where: { ...where },
       include: {
         inputs: true,
         scores: {
@@ -34,16 +50,14 @@ export async function GET(request: NextRequest) {
           take: 1,
         },
         researchPackets: true,
+        researchJobs: true,
       },
       orderBy: { createdAt: "desc" },
       skip,
       take: limit,
     }),
     db.idea.count({
-      where: {
-        userId: session.user.id,
-        isArchived: archived,
-      },
+      where: { ...where },
     }),
   ]);
 

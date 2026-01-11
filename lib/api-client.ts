@@ -34,6 +34,8 @@ export interface CreateIdeaInput {
 export interface PaginationParams {
   page?: number;
   limit?: number;
+  query?: string;
+  archived?: boolean;
 }
 
 export interface PaginatedResponse<T> {
@@ -128,7 +130,9 @@ export const api = {
         params?: PaginationParams
       ): Promise<PaginatedResponse<IdeaWithDetails>> =>
         apiRequest(
-          `/ideas?page=${params?.page || 1}&limit=${params?.limit || 10}`,
+          `/ideas?page=${params?.page || 1}&limit=${params?.limit || 10}${
+            params?.query ? `&query=${params.query}` : ""
+          }${params?.archived ? `&archived=${params.archived}` : ""}`,
           { method: "GET" }
         ),
 
