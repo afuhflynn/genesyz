@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Loader2Icon } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,12 +18,14 @@ import {
   InputOTPSlot,
 } from "@/components/ui/input-otp";
 import { useResendVerification, useVerifyEmail } from "@/hooks";
+import { useQueryStates } from "nuqs";
+import { searchParamsSchema } from "@/nuqs";
 
 export default function VerifyEmailPage() {
   const [verificationCode, setVerificationCode] = useState("");
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const email = searchParams.get("email") || "";
+  const [params] = useQueryStates(searchParamsSchema);
+  const email = params.email || "";
 
   const verifyEmail = useVerifyEmail();
   const resendVerification = useResendVerification();

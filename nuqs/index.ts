@@ -14,6 +14,7 @@ export const searchParamsSchema = {
   token: parseAsString,
   checkout_id: parseAsString,
   tab: parseAsString.withDefault("overview"),
+  email: parseAsString,
 };
 
 type ParamsTypes = Values<{
@@ -25,13 +26,14 @@ type ParamsTypes = Values<{
   token: SingleParserBuilder<string>;
   checkout_id: SingleParserBuilder<string>;
   tab: SingleParserBuilder<string>;
+  email: SingleParserBuilder<string>;
 }>;
 
 // Helper function to build URLs with current params
 export const buildUrl = (
   href: string,
   overrides: Partial<typeof searchParamsSchema> = {},
-  params: ParamsTypes,
+  params: ParamsTypes
 ) => {
   const newParams = new URLSearchParams();
   const merged = { ...params, ...overrides };
