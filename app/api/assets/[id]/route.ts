@@ -6,7 +6,7 @@ import { utapi } from "@/lib/uploadthing-server";
 
 export async function DELETE(
   _request: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await auth.api.getSession({
     headers: await headers(),
@@ -16,7 +16,7 @@ export async function DELETE(
     return new NextResponse("Unauthorized", { status: 401 });
   }
 
-  const assetId = params.id;
+  const { id: assetId } = await params;
 
   try {
     const asset = await db.ideaInput.findUnique({
