@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { db } from "@/lib/db";
+import { type NextRequest, NextResponse } from "next/server";
 import { ajAI } from "@/lib/arcjet";
+import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
 import { inngest } from "@/lib/inngest/client";
 import { isAllowedToCreateIdea } from "@/lib/polar/entitlements";
 
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
 
   const skip = (page - 1) * limit;
 
-  let where = { userId: session.user.id, isArchived: archived } as any;
+  const where = { userId: session.user.id, isArchived: archived } as any;
   if (query && typeof query === "string" && query.trim() !== "") {
     where.OR = [
       {
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
   if (decision.isDenied()) {
     return NextResponse.json(
       { error: "Rate limit exceeded. Please try again later." },
-      { status: 429 }
+      { status: 429 },
     );
   }
 
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
   if (!entitlementCheck.allowed) {
     return NextResponse.json(
       { error: entitlementCheck.reason },
-      { status: 403 }
+      { status: 403 },
     );
   }
 
@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
   if (!text && !audioData && !imageData) {
     return NextResponse.json(
       { error: "At least one input (text, audio, or image) is required" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 

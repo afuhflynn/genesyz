@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 
 export async function PUT(req: NextRequest) {
@@ -8,7 +8,7 @@ export async function PUT(req: NextRequest) {
     if (!token || !password) {
       return NextResponse.json(
         { success: false, message: "Token and password are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -26,19 +26,19 @@ export async function PUT(req: NextRequest) {
           success: false,
           message: "Failed to reset password",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     return NextResponse.json(
       { success: true, message: "Password reset successful" },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error("Reset password error:", error);
     return NextResponse.json(
       { success: false, message: "An unexpected error occurred" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

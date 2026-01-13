@@ -1,20 +1,20 @@
 import { google } from "@ai-sdk/google";
+import { mistral } from "@ai-sdk/mistral";
 import { generateObject } from "ai";
 import { db } from "@/lib/db";
 import { hashString } from "@/lib/utils";
 import {
   type AgentInput,
   type AgentOutput,
+  type ExecutionFriction,
   type InterpretedIdea,
   type MarketResearch,
-  type TrendAnalysis,
-  type ExecutionFriction,
   SynthesisSchema,
+  type TrendAnalysis,
 } from "./types";
-import { openai } from "@ai-sdk/openai";
 
 // const model = google("gemini-3-flash-preview");
-const model = openai("gpt-5-mini-2025-08-07");
+const model = mistral("mistral-medium-latest");
 
 const SYSTEM_PROMPT = `You are a senior venture analyst synthesizing research into actionable recommendations for founders. Your role is to combine multiple perspectives into a coherent assessment.
 
@@ -27,7 +27,7 @@ Guidelines:
 - Be direct about whether to pursue or not`;
 
 export async function runSynthesisAgent(
-  input: AgentInput
+  input: AgentInput,
 ): Promise<AgentOutput> {
   const { ideaId, previousOutputs } = input;
 

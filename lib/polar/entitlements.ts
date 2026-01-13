@@ -88,7 +88,7 @@ export async function syncEntitlement(
     status: "ACTIVE" | "CANCELED" | "PAST_DUE" | "EXPIRED";
     currentPeriodEnd?: Date;
     cancelAtPeriodEnd?: boolean;
-  }
+  },
 ): Promise<void> {
   const maxActiveIdeas =
     PLANS[data.plan]?.maxActiveIdeas || PLANS.FREE.maxActiveIdeas;

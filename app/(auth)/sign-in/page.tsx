@@ -1,15 +1,15 @@
 "use client";
 
+import { Eye, EyeClosed, Loader2Icon } from "lucide-react";
+import Link from "next/link";
+import { useQueryStates } from "nuqs";
 import { useState } from "react";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeClosed, Loader2Icon, LockIcon } from "lucide-react";
-import { useQueryStates } from "nuqs";
-import { searchParamsSchema } from "@/nuqs";
-import Link from "next/link";
 import { useSignIn } from "@/hooks";
+import { searchParamsSchema } from "@/nuqs";
 
 export default function LoginPage() {
   const [isPassword, setIsPassword] = useState(true);

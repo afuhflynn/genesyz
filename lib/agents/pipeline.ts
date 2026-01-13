@@ -1,19 +1,19 @@
-import { db } from "@/lib/db";
+import type { Realtime } from "@inngest/realtime";
 import type { ResearchAgentType } from "@prisma/client";
+import { v4 as uuid4 } from "uuid";
+import { db } from "@/lib/db";
+import { runDeepResearchAgent } from "./deep-research";
+import { runExecutionFrictionAgent } from "./execution-friction";
 import { runInterpreterAgent } from "./interpreter";
 import { runMarketResearchAgent } from "./market-research";
-import { runTrendAnalysisAgent } from "./trend-analysis";
-import { runExecutionFrictionAgent } from "./execution-friction";
-import { runDeepResearchAgent } from "./deep-research";
 import { runSynthesisAgent } from "./synthesis";
+import { runTrendAnalysisAgent } from "./trend-analysis";
 import type {
   AgentInput,
   AgentOutput,
   IdeaInputData,
   Synthesis,
 } from "./types";
-import { Realtime } from "@inngest/realtime";
-import { v4 as uuid4 } from "uuid";
 
 export interface PipelineResult {
   success: boolean;
@@ -28,7 +28,7 @@ export interface PipelineResult {
  */
 export async function runResearchPipeline(
   ideaId: string,
-  publish: Realtime.PublishFn
+  publish: Realtime.PublishFn,
 ): Promise<PipelineResult> {
   // Fetch the idea and its inputs
   const idea = await db.idea.findUnique({

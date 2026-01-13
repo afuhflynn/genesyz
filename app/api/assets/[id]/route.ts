@@ -1,12 +1,12 @@
+import { headers } from "next/headers";
+import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { utapi } from "@/lib/uploadthing-server";
-import { headers } from "next/headers";
-import { NextResponse } from "next/server";
 
 export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
+  _request: Request,
+  { params }: { params: { id: string } },
 ) {
   const session = await auth.api.getSession({
     headers: await headers(),

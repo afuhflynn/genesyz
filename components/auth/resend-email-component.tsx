@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CardFooter } from "@/components/ui/card";
-import { useEffect, useState } from "react";
 
 export const ResendEmailComponent = ({ loading }: { loading: boolean }) => {
   const [seconds, setSeconds] = useState(0);

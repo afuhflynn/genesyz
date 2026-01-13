@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { inngest } from "@/lib/inngest/client";
 
@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
     if (!code) {
       return NextResponse.json(
         { success: false, message: "Verification code is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
           success: false,
           message: "Invalid or expired code",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -52,13 +52,13 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(
       { success: true, message: "Email verified successfully" },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error("Verify email error:", error);
     return NextResponse.json(
       { success: false, message: "An unexpected error occurred" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

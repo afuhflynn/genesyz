@@ -1,8 +1,8 @@
-import { inngest } from "../client";
-import { db } from "@/lib/db";
-import { sendDigestEmail, sendStrategicAdvisoryEmail } from "@/lib/email/send";
 import { runStrategicAdvisoryAgent } from "@/lib/agents/strategic-advisory";
 import type { StrategicAdvisory } from "@/lib/agents/types";
+import { db } from "@/lib/db";
+import { sendDigestEmail, sendStrategicAdvisoryEmail } from "@/lib/email/send";
+import { inngest } from "../client";
 
 /**
  * Weekly Digest Cron Function
@@ -137,5 +137,5 @@ export const weeklyDigestFunction = inngest.createFunction(
       sent: results.filter((r) => r.success).length,
       failed: results.filter((r) => !r.success).length,
     };
-  }
+  },
 );

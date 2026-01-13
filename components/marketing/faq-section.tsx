@@ -1,5 +1,8 @@
 "use client";
 
+import { motion } from "framer-motion";
+import { useQueryStates } from "nuqs";
+import { useEffect, useState } from "react";
 import {
   Accordion,
   AccordionContent,
@@ -8,9 +11,6 @@ import {
 } from "@/components/ui/accordion";
 import { faqs } from "@/constants";
 import { searchParamsSchema } from "@/nuqs";
-import { motion } from "framer-motion";
-import { useQueryStates } from "nuqs";
-import { useEffect, useState } from "react";
 
 interface FAQ {
   question: string;
@@ -34,8 +34,8 @@ export function FAQSection() {
               .includes(params.search?.toLowerCase() as string) ||
             f.answer
               .toLowerCase()
-              .includes(params.search?.toLowerCase() as string)
-        )
+              .includes(params.search?.toLowerCase() as string),
+        ),
       );
     } else {
       setFilteredFaqs(faqs);

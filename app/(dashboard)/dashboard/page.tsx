@@ -1,14 +1,14 @@
 "use client";
 
-import { useDashboard } from "@/hooks";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { PlusCircle, Lightbulb, TrendingUp, Activity } from "lucide-react";
-import Link from "next/link";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
-import { formatRelativeTime } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { Activity, Lightbulb, PlusCircle, TrendingUp } from "lucide-react";
+import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useDashboard } from "@/hooks";
+import { formatRelativeTime } from "@/lib/utils";
 
 const container = {
   hidden: { opacity: 0 },
@@ -61,7 +61,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <motion.div variants={item}>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -146,7 +146,7 @@ export default function DashboardPage() {
                       {idea.status === "RESEARCHED" ? (
                         <Badge
                           variant={getScoreVariant(
-                            idea?.scores[0]?.overallScore as number
+                            idea?.scores[0]?.overallScore as number,
                           )}
                         >
                           {idea.scores[0]?.overallScore || 0}
@@ -208,7 +208,7 @@ export default function DashboardPage() {
 }
 
 function getScoreVariant(
-  score?: number
+  score?: number,
 ): "default" | "secondary" | "destructive" | "outline" {
   if (!score) return "outline";
   if (score >= 80) return "default"; // High score (green-ish in default theme usually, but depends on config)
@@ -227,7 +227,7 @@ function DashboardSkeleton() {
         {Array(4)
           .fill(0)
           .map((_, i) => (
-            <Card key={i}>
+            <Card key={`item-${i}`}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <Skeleton className="h-4 w-20" />
                 <Skeleton className="h-4 w-4" />
@@ -249,7 +249,7 @@ function DashboardSkeleton() {
               {Array(5)
                 .fill(0)
                 .map((_, i) => (
-                  <div key={i} className="flex items-center">
+                  <div key={`item-${i}`} className="flex items-center">
                     <div className="space-y-2">
                       <Skeleton className="h-4 w-48" />
                       <Skeleton className="h-3 w-64" />
@@ -271,7 +271,7 @@ function DashboardSkeleton() {
               {Array(5)
                 .fill(0)
                 .map((_, i) => (
-                  <div key={i} className="flex items-center">
+                  <div key={`item-${i}`} className="flex items-center">
                     <div className="ml-4 space-y-2">
                       <Skeleton className="h-4 w-32" />
                       <Skeleton className="h-3 w-20" />

@@ -2,12 +2,12 @@
 
 import { motion } from "framer-motion";
 import {
-  Search,
-  TrendingUp,
   BarChart3,
   CheckCircle2,
-  Zap,
+  Search,
   ShieldCheck,
+  TrendingUp,
+  Zap,
 } from "lucide-react";
 
 const steps = [

@@ -1,6 +1,11 @@
 "use client";
 
-import { useAdminUsers } from "@/hooks";
+import { ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -9,13 +14,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useAdminUsers } from "@/hooks";
 import { formatRelativeTime } from "@/lib/utils";
-import { useState } from "react";
-import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function AdminUsersPage() {
   const [page, setPage] = useState(1);
@@ -61,7 +61,7 @@ export default function AdminUsersPage() {
               Array(5)
                 .fill(0)
                 .map((_, i) => (
-                  <TableRow key={i}>
+                  <TableRow key={`item-${i}`}>
                     <TableCell>
                       <Skeleton className="h-4 w-32" />
                     </TableCell>
@@ -89,7 +89,7 @@ export default function AdminUsersPage() {
                 </TableCell>
               </TableRow>
             ) : (
-              data?.data.map((user: any) => (
+              data?.data.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell className="font-medium">
                     {user.name || "N/A"}

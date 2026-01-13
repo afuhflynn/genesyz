@@ -1,6 +1,6 @@
-import { z } from "zod";
-import { tool } from "ai";
 import { tavily } from "@tavily/core";
+import { tool } from "ai";
+import { z } from "zod";
 
 // constants
 const TAVILY_API_KEY = process.env.TAVILY_API_KEY;
@@ -52,7 +52,7 @@ export const getIndustryNews = tool({
     category: z
       .string()
       .describe(
-        "The industry or startup category (e.g., fintech, ai, healthcare)"
+        "The industry or startup category (e.g., fintech, ai, healthcare)",
       ),
     daysBack: z
       .number()

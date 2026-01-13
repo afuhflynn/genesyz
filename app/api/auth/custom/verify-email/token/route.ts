@@ -1,6 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { auth } from "@/lib/auth";
 import { inngest } from "@/lib/inngest/client";
 
 /**
@@ -13,7 +12,7 @@ export async function POST(req: NextRequest) {
     if (!token)
       return NextResponse.json(
         { success: false, message: "Token is required!" },
-        { status: 400 }
+        { status: 400 },
       );
 
     // We can use Better Auth's internal API to verify the email if it's a Better Auth token
@@ -31,7 +30,7 @@ export async function POST(req: NextRequest) {
           success: false,
           message: "Invalid or expired verification token.",
         },
-        { status: 403 }
+        { status: 403 },
       );
 
     const updatedUser = await db.user.update({
@@ -57,7 +56,7 @@ export async function POST(req: NextRequest) {
         success: true,
         message: "Account verification successful",
       },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error("Verification error:", error);
@@ -66,7 +65,7 @@ export async function POST(req: NextRequest) {
         success: false,
         message: "Error verifying your email.",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

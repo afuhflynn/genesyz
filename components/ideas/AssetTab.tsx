@@ -1,21 +1,21 @@
 "use client";
 
-import { IdeaInput, IdeaInputType } from "@prisma/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { type IdeaInput, IdeaInputType } from "@prisma/client";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
+  Download,
   FileIcon,
   ImageIcon,
-  MusicIcon,
-  Trash2,
-  Download,
-  Play,
-  Pause,
   Loader2,
+  MusicIcon,
+  Pause,
+  Play,
+  Trash2,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { api } from "@/lib/api-client";
 
 interface AssetTabProps {

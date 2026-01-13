@@ -1,4 +1,4 @@
-import { Lightbulb, Target, Users, Rocket } from "lucide-react";
+import { Lightbulb, Rocket, Target, Users } from "lucide-react";
 
 export default function AboutPage() {
   return (

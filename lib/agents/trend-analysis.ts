@@ -1,4 +1,5 @@
 import { google } from "@ai-sdk/google";
+import { mistral } from "@ai-sdk/mistral";
 import { generateObject } from "ai";
 import { db } from "@/lib/db";
 import { hashString } from "@/lib/utils";
@@ -8,10 +9,9 @@ import {
   type InterpretedIdea,
   TrendAnalysisSchema,
 } from "./types";
-import { openai } from "@ai-sdk/openai";
 
 // const model = google("gemini-3-flash-preview");
-const model = openai("gpt-5-mini-2025-08-07");
+const model = mistral("mistral-medium-latest");
 
 const SYSTEM_PROMPT = `You are a technology and market trends analyst specializing in identifying timing windows for startup opportunities. Your role is to assess whether now is the right time for a given idea.
 
@@ -24,7 +24,7 @@ Guidelines:
 - Note emerging trends that could impact the idea`;
 
 export async function runTrendAnalysisAgent(
-  input: AgentInput
+  input: AgentInput,
 ): Promise<AgentOutput> {
   const { ideaId, previousOutputs } = input;
 

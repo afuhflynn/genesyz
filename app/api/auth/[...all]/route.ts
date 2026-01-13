@@ -1,8 +1,8 @@
-import { auth } from "@/lib/auth";
 import { toNextJsHandler } from "better-auth/next-js";
+import type { NextRequest } from "next/server";
 
 import { protect } from "@/lib/arcjet";
-import { NextRequest } from "next/server";
+import { auth } from "@/lib/auth";
 
 const authHandlers = toNextJsHandler(auth.handler);
 export const { GET } = toNextJsHandler(auth);

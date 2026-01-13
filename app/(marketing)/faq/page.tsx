@@ -1,6 +1,5 @@
 import { SearchBar } from "@/components/faqs/search-bar";
 import { FAQSection } from "@/components/marketing/faq-section";
-import { FAQsTips } from "@/constants";
 
 export default function FAQPage() {
   return (
@@ -20,7 +19,7 @@ export default function FAQPage() {
 
       <FAQSection />
 
-      <section className="py-24 border-t bg-background">
+      {/* <section className="py-24 border-t bg-background">
         <div className="container mx-auto px-4">
           <h2 className="text-2xl font-bold text-center mb-12">
             Browse by Category
@@ -42,7 +41,7 @@ export default function FAQPage() {
             ))}
           </div>
         </div>
-      </section>
+      </section> */}
 
       <section className="py-24 bg-slate-900 text-white">
         <div className="container mx-auto px-4 text-center">
@@ -51,9 +50,14 @@ export default function FAQPage() {
             Our support team is available 24/7 to help you with any issues or
             questions you might have.
           </p>
-          <button className="h-14 px-10 bg-primary text-primary-foreground rounded-xl font-bold hover:bg-primary/90 transition-colors">
-            Contact Support
-          </button>
+          <a href="mailto:help@ideasvault.com" target="_blank" rel="noopener">
+            <button
+              type={"button"}
+              className="h-14 px-10 bg-primary text-primary-foreground rounded-xl font-bold hover:bg-primary/90 transition-colors"
+            >
+              Contact Support
+            </button>
+          </a>
         </div>
       </section>
     </>

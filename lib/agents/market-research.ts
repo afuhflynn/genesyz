@@ -1,4 +1,5 @@
 import { google } from "@ai-sdk/google";
+import { mistral } from "@ai-sdk/mistral";
 import { generateObject } from "ai";
 import { db } from "@/lib/db";
 import { hashString } from "@/lib/utils";
@@ -8,10 +9,9 @@ import {
   type InterpretedIdea,
   MarketResearchSchema,
 } from "./types";
-import { openai } from "@ai-sdk/openai";
 
 // const model = google("gemini-3-flash-preview");
-const model = openai("gpt-5-mini-2025-08-07");
+const model = mistral("mistral-medium-latest");
 
 const SYSTEM_PROMPT = `You are a senior market research analyst with expertise in startup ecosystems, competitive analysis, and market sizing. Your role is to provide actionable market intelligence for founder ideas.
 
@@ -24,7 +24,7 @@ Guidelines:
 - Note when data is estimated vs. verified`;
 
 export async function runMarketResearchAgent(
-  input: AgentInput
+  input: AgentInput,
 ): Promise<AgentOutput> {
   const { ideaId, previousOutputs } = input;
 
@@ -76,7 +76,7 @@ Provide comprehensive market research including market sizing, competitor analys
   const hasMarketSize = Boolean(result.object.marketSize.tam);
   const confidence = Math.min(
     0.4 + competitorCount * 0.1 + (hasMarketSize ? 0.2 : 0),
-    0.9
+    0.9,
   );
 
   return {

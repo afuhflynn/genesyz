@@ -1,9 +1,9 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Check, ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ArrowRight, Check } from "lucide-react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import { PLANS } from "@/lib/polar/client";
 
 export default function PricingPage() {
@@ -154,7 +154,7 @@ export default function PricingPage() {
                     { name: "Support", free: "Email", pro: "Priority 24/7" },
                   ].map((row, i) => (
                     <tr
-                      key={i}
+                      key={`${row.name}-${i}`}
                       className="border-b hover:bg-slate-50 transition-colors"
                     >
                       <td className="py-4 px-6 font-medium">{row.name}</td>

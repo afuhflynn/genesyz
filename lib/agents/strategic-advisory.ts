@@ -1,11 +1,11 @@
 import { google } from "@ai-sdk/google";
-import { generateText, generateObject, stepCountIs } from "ai";
+import { mistral } from "@ai-sdk/mistral";
+import { generateObject, generateText, stepCountIs } from "ai";
 import { tools } from "@/lib/ai/tools";
 import { type PortfolioInput, StrategicAdvisorySchema } from "./types";
-import { openai } from "@ai-sdk/openai";
 
 // const model = google("gemini-3-flash-preview");
-const model = openai("gpt-5-mini-2025-08-07");
+const model = mistral("mistral-medium-latest");
 
 const ADVISORY_SYSTEM_PROMPT = `You are a top-tier venture capital partner and strategic advisor.
 Your goal is to analyze a founder's entire portfolio of ideas and provide professional, actionable guidance.
@@ -18,14 +18,14 @@ You have access to web search and industry news tools. Use them to:
 Be sophisticated, data-driven, and direct.`;
 
 export async function runStrategicAdvisoryAgent(
-  input: PortfolioInput
+  input: PortfolioInput,
 ): Promise<unknown> {
   const { ideas } = input;
 
   const portfolioSummary = ideas
     .map(
       (idea) =>
-        `- ${idea.title} (${idea.category}): ${idea.summary} [Score: ${idea.overallScore}]`
+        `- ${idea.title} (${idea.category}): ${idea.summary} [Score: ${idea.overallScore}]`,
     )
     .join("\n");
 
@@ -41,7 +41,7 @@ Portfolio Summary:
 ${portfolioSummary}
 
 Please fetch the latest industry news for these categories: ${categories.join(
-      ", "
+      ", ",
     )}.
 Synthesize how these market shifts affect the founder's portfolio.`,
     tools,

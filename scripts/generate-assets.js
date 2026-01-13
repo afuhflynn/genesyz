@@ -1,6 +1,6 @@
 const sharp = require("sharp");
-const fs = require("fs");
-const path = require("path");
+const fs = require("node:fs");
+const path = require("node:path");
 
 const SOURCE_ICON = "public/images/logo/source-icon.png";
 const SOURCE_FULL = "public/images/logo/source-full.png";

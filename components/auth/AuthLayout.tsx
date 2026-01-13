@@ -1,3 +1,4 @@
+import { ArrowLeft, Mail } from "lucide-react";
 import Link from "next/link";
 import {
   Card,
@@ -6,11 +7,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { SocialsAuth } from "./socials-auth";
+import { Button } from "../ui/button";
 import { Separator } from "../ui/separator";
 import { AuthFooter } from "./auth-footer";
-import { Button } from "../ui/button";
-import { ArrowLeft, Mail } from "lucide-react";
+import { SocialsAuth } from "./socials-auth";
 
 interface AuthLayoutProps {
   children: React.ReactNode;

@@ -1,18 +1,18 @@
 import { google } from "@ai-sdk/google";
-import { generateText, generateObject, stepCountIs } from "ai";
+import { mistral } from "@ai-sdk/mistral";
+import { generateObject, generateText, stepCountIs } from "ai";
+import { tools } from "@/lib/ai/tools";
 import { db } from "@/lib/db";
 import { hashString } from "@/lib/utils";
-import { tools } from "@/lib/ai/tools";
 import {
   type AgentInput,
   type AgentOutput,
-  type InterpretedIdea,
   DeepResearchSchema,
+  type InterpretedIdea,
 } from "./types";
-import { openai } from "@ai-sdk/openai";
 
 // const model = google("gemini-3-flash-preview");
-const model = openai("gpt-5-mini-2025-08-07");
+const model = mistral("mistral-medium-latest");
 
 const RESEARCH_SYSTEM_PROMPT = `You are a world-class startup researcher. Your goal is to find the "hard truths" about a startup idea.
 You have access to web search tools. Use them to:
@@ -32,7 +32,7 @@ Focus on:
 - Strategic Moat: How can this business become defensible?`;
 
 export async function runDeepResearchAgent(
-  input: AgentInput
+  input: AgentInput,
 ): Promise<AgentOutput> {
   const { ideaId, previousOutputs } = input;
 

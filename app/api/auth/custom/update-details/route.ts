@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { type NextRequest, NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
 import { sendEmail } from "@/lib/email/client";
 import { validateUsername } from "@/utils/validate-username";
 
@@ -14,7 +14,7 @@ export async function PUT(req: NextRequest) {
   if (!session?.user) {
     return NextResponse.json(
       { success: false, message: "Unauthorized" },
-      { status: 401 }
+      { status: 401 },
     );
   }
 
@@ -25,7 +25,7 @@ export async function PUT(req: NextRequest) {
         success: false,
         message: "Invalid username format",
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -37,7 +37,7 @@ export async function PUT(req: NextRequest) {
     if (!user) {
       return NextResponse.json(
         { success: false, message: "User not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -49,7 +49,7 @@ export async function PUT(req: NextRequest) {
       if (existing) {
         return NextResponse.json(
           { success: false, message: "Username is already taken" },
-          { status: 409 }
+          { status: 409 },
         );
       }
     }
@@ -62,7 +62,7 @@ export async function PUT(req: NextRequest) {
       if (existing) {
         return NextResponse.json(
           { success: false, message: "Email is already taken" },
-          { status: 409 }
+          { status: 409 },
         );
       }
     }
@@ -98,13 +98,13 @@ export async function PUT(req: NextRequest) {
         user: updatedUser,
         message: "Profile updated successfully",
       },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error("Update details error:", error);
     return NextResponse.json(
       { success: false, message: "An unexpected error occurred" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

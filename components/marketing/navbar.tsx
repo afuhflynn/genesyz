@@ -1,11 +1,11 @@
 "use client";
 
-import Link from "next/link";
+import { motion } from "framer-motion";
 import Image from "next/image";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
 
 const navLinks = [
   { name: "Features", href: "/#features" },
@@ -46,7 +46,7 @@ export function Navbar() {
                   "text-sm font-medium transition-colors hover:text-primary",
                   pathname === link.href
                     ? "text-primary"
-                    : "text-muted-foreground"
+                    : "text-muted-foreground",
                 )}
               >
                 {link.name}

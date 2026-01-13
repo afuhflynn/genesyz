@@ -1,10 +1,10 @@
 import {
-  Search,
-  TrendingUp,
   BarChart3,
-  ShieldCheck,
   Cpu,
   Database,
+  Search,
+  ShieldCheck,
+  TrendingUp,
 } from "lucide-react";
 
 export default function HowItWorksPage() {

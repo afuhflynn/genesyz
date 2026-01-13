@@ -1,5 +1,5 @@
-import { z } from "zod";
 import type { ResearchAgentType } from "@prisma/client";
+import { z } from "zod";
 
 // ===========================================
 // Input Types
@@ -91,7 +91,7 @@ export const MarketResearchSchema = z.object({
       description: z.string(),
       strengths: z.array(z.string()),
       weaknesses: z.array(z.string()),
-    })
+    }),
   ),
   marketTrends: z.array(z.string()),
   barriers: z.array(z.string()).describe("Barriers to entry"),
@@ -110,7 +110,7 @@ export const TrendAnalysisSchema = z.object({
       trend: z.string(),
       relevance: z.enum(["high", "medium", "low"]),
       impact: z.string(),
-    })
+    }),
   ),
   timingAssessment: z.object({
     verdict: z.enum(["too-early", "right-time", "late", "too-late"]),
@@ -147,7 +147,7 @@ export const ExecutionFrictionSchema = z.object({
       risk: z.string(),
       severity: z.enum(["high", "medium", "low"]),
       mitigation: z.string(),
-    })
+    }),
   ),
   dependencies: z.array(z.string()),
   quickWins: z
@@ -186,7 +186,7 @@ export const SynthesisSchema = z.object({
       priority: z.enum(["high", "medium", "low"]),
       action: z.string(),
       rationale: z.string(),
-    })
+    }),
   ),
   nextSteps: z.array(z.string()),
   verdict: z.enum([
@@ -210,7 +210,7 @@ export const DeepResearchSchema = z.object({
       gap: z.string(),
       opportunity: z.string(),
       validationSource: z.string().nullable(),
-    })
+    }),
   ),
   technicalRoadmap: z.object({
     phase1: z.string().describe("MVP / Initial Validation"),
@@ -221,7 +221,7 @@ export const DeepResearchSchema = z.object({
     z.object({
       direction: z.string(),
       rationale: z.string(),
-    })
+    }),
   ),
   strategicMoat: z.string().describe("How to build a defensible business"),
 });
@@ -240,14 +240,14 @@ export const StrategicAdvisorySchema = z.object({
       newsItem: z.string(),
       relevance: z.string(),
       impactOnPortfolio: z.enum(["positive", "negative", "neutral"]),
-    })
+    }),
   ),
   strategicRecommendations: z.array(
     z.object({
       ideaTitle: z.string(),
       recommendation: z.string(),
       priority: z.enum(["high", "medium", "low"]),
-    })
+    }),
   ),
   vcCorner: z.object({
     sentiment: z.string().describe("Current VC sentiment for these categories"),

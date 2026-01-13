@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
-import { db } from "@/lib/db";
-import PDFDocument from "pdfkit";
-import { utapi } from "@/lib/files";
 import path from "node:path";
+import { headers } from "next/headers";
+import { type NextRequest, NextResponse } from "next/server";
+import PDFDocument from "pdfkit";
+import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
+import { utapi } from "@/lib/files";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   if (decision.isDenied()) {
     return NextResponse.json(
       { error: "Rate limit exceeded. Please try again later." },
-      { status: 429 }
+      { status: 429 },
     );
   }
 
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   const doc = new PDFDocument({ margin: 50 });
   doc.registerFont(
     "Inter",
-    path.join(process.cwd(), "public/fonts/Nunito-VariableFont_wght.ttf")
+    path.join(process.cwd(), "public/fonts/Nunito-VariableFont_wght.ttf"),
   );
 
   const chunks: Buffer[] = [];
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
   // Research Content
   const synthesis = idea.researchPackets.find(
-    (p) => p.agentType === "SYNTHESIS"
+    (p) => p.agentType === "SYNTHESIS",
   )?.content as any;
   if (synthesis) {
     doc.fontSize(16).font("Helvetica-Bold").text("Final Verdict").moveDown(0.5);
@@ -159,7 +159,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     console.error("UploadThing error:", response[0].error);
     return NextResponse.json(
       { error: "Failed to upload PDF" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 

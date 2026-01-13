@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { type NextRequest, NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
 import { sendEmail } from "@/lib/email/client";
 
 export async function PUT(req: NextRequest) {
@@ -13,7 +13,7 @@ export async function PUT(req: NextRequest) {
   if (!session?.user) {
     return NextResponse.json(
       { success: false, message: "Unauthorized" },
-      { status: 401 }
+      { status: 401 },
     );
   }
 
@@ -44,13 +44,13 @@ export async function PUT(req: NextRequest) {
         user: updatedUser,
         message: "Email preferences updated successfully",
       },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error("Update email preference error:", error);
     return NextResponse.json(
       { success: false, message: "An unexpected error occurred" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

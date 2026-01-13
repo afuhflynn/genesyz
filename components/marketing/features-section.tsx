@@ -3,13 +3,13 @@
 import { motion } from "framer-motion";
 import {
   BarChart3,
-  ShieldCheck,
-  Zap,
-  Search,
-  TrendingUp,
   FileText,
   Globe,
   Lock,
+  Search,
+  ShieldCheck,
+  TrendingUp,
+  Zap,
 } from "lucide-react";
 
 const features = [

@@ -1,9 +1,9 @@
 "use client";
 
-import { searchParamsSchema } from "@/nuqs";
-import { debounce, useQueryStates } from "nuqs";
-import { Input } from "../ui/input";
 import { Search } from "lucide-react";
+import { debounce, useQueryStates } from "nuqs";
+import { searchParamsSchema } from "@/nuqs";
+import { Input } from "../ui/input";
 
 export const SearchBar = () => {
   const [params, setParams] = useQueryStates(searchParamsSchema);
@@ -17,7 +17,7 @@ export const SearchBar = () => {
         onChange={(e) =>
           setParams(
             { ...params, search: e.target.value },
-            { shallow: false, limitUrlUpdates: debounce(500) }
+            { shallow: false, limitUrlUpdates: debounce(500) },
           )
         }
       />

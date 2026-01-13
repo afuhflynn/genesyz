@@ -1,6 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { sendPasswordResetEmail } from "@/lib/email/send";
 
 export async function POST(req: NextRequest) {
   const { email } = await req.json();
@@ -9,7 +8,7 @@ export async function POST(req: NextRequest) {
     if (!email) {
       return NextResponse.json(
         { success: false, message: "Email is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -31,7 +30,7 @@ export async function POST(req: NextRequest) {
           success: false,
           message: "Failed to process request",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -40,13 +39,13 @@ export async function POST(req: NextRequest) {
         success: true,
         message: "If an account exists, a reset link has been sent.",
       },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error("Forgot password error:", error);
     return NextResponse.json(
       { success: false, message: "An unexpected error occurred" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

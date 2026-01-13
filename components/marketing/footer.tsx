@@ -1,6 +1,6 @@
-import Link from "next/link";
+import { Github, Linkedin, Twitter } from "lucide-react";
 import Image from "next/image";
-import { Github, Twitter, Linkedin } from "lucide-react";
+import Link from "next/link";
 
 const footerLinks = {
   product: [
@@ -43,19 +43,22 @@ export function Footer() {
             </p>
             <div className="mt-6 flex space-x-4">
               <Link
-                href="#"
+                href="https://x.com/afuhflynn"
+                target="_blank"
                 className="text-muted-foreground hover:text-primary transition-colors"
               >
                 <Twitter className="h-5 w-5" />
               </Link>
               <Link
-                href="#"
+                href="https://github.com/afuhflynn"
+                target="_blank"
                 className="text-muted-foreground hover:text-primary transition-colors"
               >
                 <Github className="h-5 w-5" />
               </Link>
               <Link
-                href="#"
+                href="https://linkedin.com/in/afuhflynn"
+                target="_blank"
                 className="text-muted-foreground hover:text-primary transition-colors"
               >
                 <Linkedin className="h-5 w-5" />

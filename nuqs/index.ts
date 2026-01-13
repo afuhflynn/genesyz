@@ -1,8 +1,8 @@
 import {
   parseAsBoolean,
   parseAsString,
-  SingleParserBuilder,
-  Values,
+  type SingleParserBuilder,
+  type Values,
 } from "nuqs";
 
 export const searchParamsSchema = {
@@ -10,7 +10,7 @@ export const searchParamsSchema = {
   page: parseAsString.withDefault("1"),
   limit: parseAsString.withDefault("10"),
   archived: parseAsBoolean.withDefault(false),
-  search: parseAsString,
+  search: parseAsString.withDefault(""),
   token: parseAsString,
   checkout_id: parseAsString,
   tab: parseAsString.withDefault("overview"),
@@ -31,7 +31,7 @@ type ParamsTypes = Values<{
 export const buildUrl = (
   href: string,
   overrides: Partial<typeof searchParamsSchema> = {},
-  params: ParamsTypes
+  params: ParamsTypes,
 ) => {
   const newParams = new URLSearchParams();
   const merged = { ...params, ...overrides };

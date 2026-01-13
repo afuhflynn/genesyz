@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { type NextRequest, NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
 import { getSignedDownloadUrl } from "@/lib/files";
 
 // POST /api/storage/signed-url - Generate a signed URL for file access
@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     console.error("Failed to generate signed URL:", error);
     return NextResponse.json(
       { error: "Failed to generate URL" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

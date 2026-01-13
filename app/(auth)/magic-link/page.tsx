@@ -1,13 +1,12 @@
 "use client";
 
+import { Loader2Icon, MailIcon } from "lucide-react";
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { AuthLayout } from "@/components/auth/AuthLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2Icon, MailIcon } from "lucide-react";
 import { useMagicLink } from "@/hooks";
-import { AuthLayout } from "@/components/auth/AuthLayout";
 
 export default function MagicLinkPage() {
   const [email, setEmail] = useState("");

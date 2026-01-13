@@ -1,5 +1,5 @@
-import { sendEmail } from "./client";
 import type { StrategicAdvisory } from "../agents/types";
+import { sendEmail } from "./client";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
@@ -98,8 +98,8 @@ export async function sendDigestEmail(options: {
         <tr>
           <td style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9;">
             <a href="${APP_URL}/ideas/${
-        idea.id
-      }" style="color: #fffff; text-decoration: none; font-weight: 500;">
+              idea.id
+            }" style="color: #fffff; text-decoration: none; font-weight: 500;">
               ${idea.title}
             </a>
           </td>
@@ -108,16 +108,20 @@ export async function sendDigestEmail(options: {
               idea.score >= 70
                 ? "#dcfce7"
                 : idea.score >= 50
-                ? "#fef3c7"
-                : "#fee2e2"
+                  ? "#fef3c7"
+                  : "#fee2e2"
             }; color: ${
-        idea.score >= 70 ? "#166534" : idea.score >= 50 ? "#a16207" : "#dc2626"
-      }; padding: 4px 12px; border-radius: 9999px; font-size: 14px; font-weight: 600;">
+              idea.score >= 70
+                ? "#166534"
+                : idea.score >= 50
+                  ? "#a16207"
+                  : "#dc2626"
+            }; padding: 4px 12px; border-radius: 9999px; font-size: 14px; font-weight: 600;">
               ${idea.score}
             </span>
           </td>
         </tr>
-      `
+      `,
     )
     .join("");
 
@@ -209,8 +213,8 @@ export async function sendStrategicAdvisoryEmail(options: {
       item.impactOnPortfolio === "positive"
         ? "#10b981"
         : item.impactOnPortfolio === "negative"
-        ? "#ef4444"
-        : "#64748b"
+          ? "#ef4444"
+          : "#64748b"
     };">
       <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
         <p style="font-size: 14px; font-weight: 700; color: #1e293b; margin: 0; flex: 1;">${
@@ -220,23 +224,23 @@ export async function sendStrategicAdvisoryEmail(options: {
           item.impactOnPortfolio === "positive"
             ? "#dcfce7"
             : item.impactOnPortfolio === "negative"
-            ? "#fee2e2"
-            : "#f1f5f9"
+              ? "#fee2e2"
+              : "#f1f5f9"
         }; color: ${
-        item.impactOnPortfolio === "positive"
-          ? "#166534"
-          : item.impactOnPortfolio === "negative"
-          ? "#991b1b"
-          : "#475569"
-      }; margin-left: 12px; white-space: nowrap;">${
-        item.impactOnPortfolio
-      }</span>
+          item.impactOnPortfolio === "positive"
+            ? "#166534"
+            : item.impactOnPortfolio === "negative"
+              ? "#991b1b"
+              : "#475569"
+        }; margin-left: 12px; white-space: nowrap;">${
+          item.impactOnPortfolio
+        }</span>
       </div>
       <p style="font-size: 13px; color: #475569; line-height: 1.5; margin: 0;">${
         item.relevance
       }</p>
     </div>
-  `
+  `,
     )
     .join("");
 
@@ -249,8 +253,8 @@ export async function sendStrategicAdvisoryEmail(options: {
           rec.priority === "high"
             ? "#ef4444"
             : rec.priority === "medium"
-            ? "#f59e0b"
-            : "#94a3b8"
+              ? "#f59e0b"
+              : "#94a3b8"
         }; margin-right: 10px;"></span>
         <p style="font-size: 15px; font-weight: 700; color: #0f172a; margin: 0;">${
           rec.ideaTitle
@@ -260,7 +264,7 @@ export async function sendStrategicAdvisoryEmail(options: {
         rec.recommendation
       }</p>
     </div>
-  `
+  `,
     )
     .join("");
 
@@ -271,7 +275,7 @@ export async function sendStrategicAdvisoryEmail(options: {
       <span style="color: #F5A623; margin-right: 12px; font-weight: bold;">•</span>
       <span>${step}</span>
     </li>
-  `
+  `,
     )
     .join("");
 
@@ -294,9 +298,9 @@ export async function sendStrategicAdvisoryEmail(options: {
       </div>
       <h1 style="font-size: 28px; font-weight: 800; margin: 0; letter-spacing: -0.03em; position: relative; z-index: 1; color: #ffffff;">Weekly Strategic Report</h1>
       <p style="font-size: 14px; color: #94a3b8; margin: 12px 0 0 0; position: relative; z-index: 1;">Prepared for ${userName} • ${new Date().toLocaleDateString(
-    "en-US",
-    { month: "long", day: "numeric", year: "numeric" }
-  )}</p>
+        "en-US",
+        { month: "long", day: "numeric", year: "numeric" },
+      )}</p>
     </div>
 
     <div style="padding: 40px 32px;">
@@ -326,7 +330,7 @@ export async function sendStrategicAdvisoryEmail(options: {
             .map(
               (theme) => `
             <span style="padding: 6px 14px; background: #f1f5f9; color: #475569; border-radius: 9999px; font-size: 13px; font-weight: 600; border: 1px solid #e2e8f0;">${theme}</span>
-          `
+          `,
             )
             .join("")}
         </div>
@@ -380,11 +384,11 @@ export async function sendStrategicAdvisoryEmail(options: {
             advisory.vcCorner.investmentPotential === "high"
               ? "#10b981"
               : advisory.vcCorner.investmentPotential === "medium"
-              ? "#F5A623"
-              : "#ef4444"
+                ? "#F5A623"
+                : "#ef4444"
           }; text-transform: uppercase;">${
-    advisory.vcCorner.investmentPotential
-  }</span>
+            advisory.vcCorner.investmentPotential
+          }</span>
         </div>
       </div>
 
@@ -490,8 +494,8 @@ export async function sendResearchCompleteEmail(options: {
           overallScore >= 70
             ? "#166534"
             : overallScore >= 50
-            ? "#a16207"
-            : "#dc2626"
+              ? "#a16207"
+              : "#dc2626"
         }; margin: 0;">
           ${overallScore}
         </p>
@@ -501,8 +505,8 @@ export async function sendResearchCompleteEmail(options: {
         <span style="display: inline-block; background: ${
           verdictStyle.bg
         }; color: ${
-    verdictStyle.text
-  }; padding: 6px 16px; border-radius: 9999px; font-size: 14px; font-weight: 600; text-transform: capitalize;">
+          verdictStyle.text
+        }; padding: 6px 16px; border-radius: 9999px; font-size: 14px; font-weight: 600; text-transform: capitalize;">
           ${verdict.replace(/-/g, " ")}
         </span>
       </div>

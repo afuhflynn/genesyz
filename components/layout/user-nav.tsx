@@ -1,5 +1,8 @@
 "use client";
 
+import type { User } from "better-auth";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,9 +16,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { signOut } from "@/lib/auth-client";
-import { User } from "better-auth";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 interface UserNavProps {
   user?: User | null;
@@ -46,12 +46,12 @@ export function UserNav({ user }: UserNavProps) {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem asChild>
+          {/* <DropdownMenuItem asChild>
             <Link href="/profile">
               Profile
               <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
             </Link>
-          </DropdownMenuItem>
+          </DropdownMenuItem> */}
           <DropdownMenuItem asChild>
             <Link href="/billing">
               Billing
@@ -76,6 +76,7 @@ export function UserNav({ user }: UserNavProps) {
               },
             })
           }
+          className="hover:text-destructive!"
         >
           Log out
           <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut>

@@ -1,22 +1,22 @@
-import { betterAuth } from "better-auth";
-import { prismaAdapter } from "better-auth/adapters/prisma";
-import { db } from "./db";
 import {
-  polar,
   checkout,
+  polar,
   portal,
   usage,
   webhooks,
 } from "@polar-sh/better-auth";
-import { magicLink } from "better-auth/plugins";
 import { Polar } from "@polar-sh/sdk";
-import { syncEntitlement } from "@/lib/polar/entitlements";
-import { inngest } from "./inngest/client";
-import type { WebhookSubscriptionCreatedPayload } from "@polar-sh/sdk/models/components/webhooksubscriptioncreatedpayload.js";
-import type { WebhookSubscriptionUpdatedPayload } from "@polar-sh/sdk/models/components/webhooksubscriptionupdatedpayload.js";
-import type { WebhookSubscriptionRevokedPayload } from "@polar-sh/sdk/models/components/webhooksubscriptionrevokedpayload.js";
 import type { WebhookSubscriptionActivePayload } from "@polar-sh/sdk/models/components/webhooksubscriptionactivepayload.js";
 import type { WebhookSubscriptionCanceledPayload } from "@polar-sh/sdk/models/components/webhooksubscriptioncanceledpayload.js";
+import type { WebhookSubscriptionCreatedPayload } from "@polar-sh/sdk/models/components/webhooksubscriptioncreatedpayload.js";
+import type { WebhookSubscriptionRevokedPayload } from "@polar-sh/sdk/models/components/webhooksubscriptionrevokedpayload.js";
+import type { WebhookSubscriptionUpdatedPayload } from "@polar-sh/sdk/models/components/webhooksubscriptionupdatedpayload.js";
+import { betterAuth } from "better-auth";
+import { prismaAdapter } from "better-auth/adapters/prisma";
+import { magicLink } from "better-auth/plugins";
+import { syncEntitlement } from "@/lib/polar/entitlements";
+import { db } from "./db";
+import { inngest } from "./inngest/client";
 
 export const auth = betterAuth({
   database: prismaAdapter(db, {
@@ -115,7 +115,7 @@ async function handleSubscriptionChange(
   data:
     | WebhookSubscriptionCreatedPayload
     | WebhookSubscriptionUpdatedPayload
-    | WebhookSubscriptionActivePayload
+    | WebhookSubscriptionActivePayload,
 ) {
   const userId = data.data.customerId;
   if (!userId) return;
@@ -151,7 +151,7 @@ async function handleSubscriptionChange(
 }
 
 async function handleSubscriptionCanceled(
-  data: WebhookSubscriptionCanceledPayload
+  data: WebhookSubscriptionCanceledPayload,
 ) {
   const userId = data.data.customerId;
   if (!userId) return;
@@ -178,7 +178,7 @@ async function handleSubscriptionCanceled(
 }
 
 async function handleSubscriptionRevoked(
-  data: WebhookSubscriptionRevokedPayload
+  data: WebhookSubscriptionRevokedPayload,
 ) {
   const userId = data.data.customerId;
   if (!userId) return;

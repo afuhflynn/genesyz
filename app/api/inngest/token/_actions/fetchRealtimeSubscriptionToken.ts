@@ -1,10 +1,10 @@
 // ex. /app/actions/get-subscribe-token.ts
 "use server";
+import { getSubscriptionToken, type Realtime } from "@inngest/realtime";
+import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { inngest } from "@/lib/inngest/client";
-import { getSubscriptionToken, Realtime } from "@inngest/realtime";
-import { headers } from "next/headers";
-import { ideaChannel } from "@/lib/inngest/functions/research-pipeline";
+import type { ideaChannel } from "@/lib/inngest/functions/research-pipeline";
 
 export type UserChannelToken = Realtime.Token<
   typeof ideaChannel,
@@ -12,7 +12,7 @@ export type UserChannelToken = Realtime.Token<
 >;
 
 export async function fetchRealtimeSubscriptionToken(
-  ideaId: string
+  ideaId: string,
 ): Promise<UserChannelToken> {
   const session = await auth.api.getSession({
     headers: await headers(),

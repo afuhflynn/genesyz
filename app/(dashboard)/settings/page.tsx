@@ -1,6 +1,7 @@
 "use client";
 
-import { useProfile, useUpdateProfile } from "@/hooks";
+import { Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,9 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Loader2 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useProfile, useUpdateProfile } from "@/hooks";
 
 export default function SettingsPage() {
   const { data: user, isLoading } = useProfile();
@@ -52,7 +51,7 @@ export default function SettingsPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="flex items-center gap-6">
+            {/* <div className="flex items-center gap-6">
               <Avatar className="h-20 w-20">
                 <AvatarImage src={user?.image || ""} />
                 <AvatarFallback className="text-lg">
@@ -65,14 +64,13 @@ export default function SettingsPage() {
                   Your profile picture is managed via your Google account.
                 </p>
               </div>
-            </div>
+            </div> */}
 
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input id="email" value={user?.email || ""} disabled />
               <p className="text-xs text-muted-foreground">
-                Email address cannot be changed as it is linked to your Google
-                account.
+                Email editing not allowed at the momment.
               </p>
             </div>
 

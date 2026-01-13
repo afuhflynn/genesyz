@@ -1,6 +1,6 @@
-import { inngest } from "../client";
-import { db } from "@/lib/db";
 import { runResearchPipeline } from "@/lib/agents/pipeline";
+import { db } from "@/lib/db";
+import { inngest } from "../client";
 
 /**
  * Re-evaluation Cron Function
@@ -62,5 +62,5 @@ export const reevaluationFunction = inngest.createFunction(
     return {
       triggered: ideas.length,
     };
-  }
+  },
 );

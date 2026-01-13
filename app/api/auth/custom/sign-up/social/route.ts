@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
+import { type NextRequest, NextResponse } from "next/server";
 import { generateUniqueUsername } from "@/lib/auth-utils";
+import { db } from "@/lib/db";
 import { inngest } from "@/lib/inngest/client";
 
 /**
@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
     if (!email)
       return NextResponse.json(
         { success: false, message: "Email is required!" },
-        { status: 400 }
+        { status: 400 },
       );
 
     // Ensure user record exists
@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
           success: false,
           message: "User not found.",
         },
-        { status: 404 }
+        { status: 404 },
       );
 
     let username = existingUser.username;
@@ -51,13 +51,13 @@ export async function POST(req: NextRequest) {
       data: {
         email,
         name: existingUser.name,
-        username: username!,
+        username,
       },
     });
 
     return NextResponse.json(
       { success: true, message: "Profile updated successfully" },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error("Social signup error:", error);
@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
         success: false,
         message: "An error occurred while updating your profile.",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/db";
-import { auth } from "@/lib/auth";
-import { headers } from "next/headers";
-import { hashPassword } from "@/lib/auth-utils";
-import { sendEmail } from "@/lib/email/client";
 import bcrypt from "bcryptjs";
+import { headers } from "next/headers";
+import { type NextRequest, NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
+import { hashPassword } from "@/lib/auth-utils";
+import { db } from "@/lib/db";
+import { sendEmail } from "@/lib/email/client";
 
 export async function PUT(req: NextRequest) {
   const { password, currentPassword } = await req.json();
@@ -15,7 +15,7 @@ export async function PUT(req: NextRequest) {
   if (!session?.user) {
     return NextResponse.json(
       { success: false, message: "Unauthorized" },
-      { status: 401 }
+      { status: 401 },
     );
   }
 
@@ -27,7 +27,7 @@ export async function PUT(req: NextRequest) {
     if (!user || !user.password) {
       return NextResponse.json(
         { success: false, message: "User not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -36,7 +36,7 @@ export async function PUT(req: NextRequest) {
     if (!match) {
       return NextResponse.json(
         { success: false, message: "Incorrect current password" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -63,13 +63,13 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json(
       { success: true, message: "Password updated successfully" },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error("Update password error:", error);
     return NextResponse.json(
       { success: false, message: "An unexpected error occurred" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

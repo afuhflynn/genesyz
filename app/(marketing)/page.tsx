@@ -1,11 +1,11 @@
-import { Hero } from "@/components/marketing/hero";
-import { HowItWorksSection } from "@/components/marketing/how-it-works-section";
-import { FeaturesSection } from "@/components/marketing/features-section";
-import { PricingSection } from "@/components/marketing/pricing-section";
-import { FAQSection } from "@/components/marketing/faq-section";
-import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { FAQSection } from "@/components/marketing/faq-section";
+import { FeaturesSection } from "@/components/marketing/features-section";
+import { Hero } from "@/components/marketing/hero";
+import { HowItWorksSection } from "@/components/marketing/how-it-works-section";
+import { PricingSection } from "@/components/marketing/pricing-section";
+import { Button } from "@/components/ui/button";
 
 export default function LandingPage() {
   return (

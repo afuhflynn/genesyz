@@ -1,22 +1,22 @@
 "use client";
 
-import { useState } from "react";
-import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { Eye, EyeClosed, Loader2Icon, LockIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useQueryStates } from "nuqs";
+import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Card,
+  CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
-  CardContent,
 } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeClosed, Loader2Icon, LockIcon } from "lucide-react";
 import { useResetPassword } from "@/hooks";
-import { toast } from "sonner";
-import { useQueryStates } from "nuqs";
 import { searchParamsSchema } from "@/nuqs";
 
 export default function ResetPasswordPage() {
@@ -47,7 +47,7 @@ export default function ResetPasswordPage() {
         onSuccess: () => {
           router.push("/sign-in");
         },
-      }
+      },
     );
   };
 

@@ -1,9 +1,9 @@
 "use client";
-import { signInWithOAuth } from "@/lib/auth/sign-in-with-auth";
-import { Button } from "../ui/button";
-import { toast } from "sonner";
 import { useQueryStates } from "nuqs";
+import { toast } from "sonner";
+import { signInWithOAuth } from "@/lib/auth/sign-in-with-auth";
 import { searchParamsSchema } from "@/nuqs";
+import { Button } from "../ui/button";
 
 interface props {
   isLoading?: boolean;

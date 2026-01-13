@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { type NextRequest, NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 
 interface RouteParams {
@@ -8,7 +8,7 @@ interface RouteParams {
 }
 
 // GET /api/ideas/[id]/research - Get research packets for an idea
-export async function GET(request: NextRequest, { params }: RouteParams) {
+export async function GET(_request: NextRequest, { params }: RouteParams) {
   const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session?.user) {
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   if (decision.isDenied()) {
     return NextResponse.json(
       { error: "Rate limit exceeded. Please try again later." },
-      { status: 429 }
+      { status: 429 },
     );
   }
 
@@ -77,7 +77,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   if (idea.status === "PROCESSING") {
     return NextResponse.json(
       { error: "Research is already in progress" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 

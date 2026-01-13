@@ -1,17 +1,17 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
+import { CheckCircle2Icon, Loader2Icon } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Card,
+  CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
-  CardContent,
 } from "@/components/ui/card";
 import { useVerifyEmail } from "@/hooks";
-import { Loader2Icon, CheckCircle2Icon } from "lucide-react";
 
 export default function VerifyEmailTokenPage() {
   const router = useRouter();

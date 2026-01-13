@@ -1,17 +1,17 @@
 import { google } from "@ai-sdk/google";
+import { mistral } from "@ai-sdk/mistral";
 import { generateObject } from "ai";
 import { db } from "@/lib/db";
 import { hashString } from "@/lib/utils";
 import {
   type AgentInput,
   type AgentOutput,
-  type InterpretedIdea,
   ExecutionFrictionSchema,
+  type InterpretedIdea,
 } from "./types";
-import { openai } from "@ai-sdk/openai";
 
 // const model = google("gemini-3-flash-preview");
-const model = openai("gpt-5-mini-2025-08-07");
+const model = mistral("mistral-medium-latest");
 
 const SYSTEM_PROMPT = `You are a seasoned startup operator and technical advisor. Your role is to assess the practical challenges of executing on a startup idea.
 
@@ -24,7 +24,7 @@ Guidelines:
 - Consider both technical and operational challenges`;
 
 export async function runExecutionFrictionAgent(
-  input: AgentInput
+  input: AgentInput,
 ): Promise<AgentOutput> {
   const { ideaId, previousOutputs } = input;
 
@@ -76,7 +76,7 @@ Analyze technical complexity, resource requirements, risks, and provide actionab
   // Lower complexity and fewer high-severity risks = higher confidence
   const confidence = Math.max(
     0.4,
-    0.9 - techComplexity * 0.03 - riskCount * 0.02
+    0.9 - techComplexity * 0.03 - riskCount * 0.02,
   );
 
   return {

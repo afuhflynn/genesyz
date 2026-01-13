@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { type NextRequest, NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { getUserUsage } from "@/lib/polar/entitlements";
 
 // GET /api/dashboard - Get dashboard data
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session?.user) {
@@ -79,15 +79,15 @@ export async function GET(request: NextRequest) {
 
   // Calculate average score
   const ideasWithScores = sortedTopIdeas.filter(
-    (i) => i.scores[0]?.overallScore
+    (i) => i.scores[0]?.overallScore,
   );
   const averageScore =
     ideasWithScores.length > 0
       ? Math.round(
           ideasWithScores.reduce(
             (sum, i) => sum + (i.scores[0]?.overallScore || 0),
-            0
-          ) / ideasWithScores.length
+            0,
+          ) / ideasWithScores.length,
         )
       : 0;
 

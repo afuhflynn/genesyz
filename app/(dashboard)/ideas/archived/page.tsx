@@ -1,28 +1,14 @@
 "use client";
 
-import {
-  useIdeas,
-  useDeleteIdea,
-  useUpdateIdea,
-  useUnArchiveIdea,
-} from "@/hooks";
+import { ArchiveRestore, MoreVertical, PlusCircle } from "lucide-react";
+import Link from "next/link";
+import { useQueryStates } from "nuqs";
+import { DeleteIdeaDialog } from "@/components/ideas/[id]/DeleteIdea";
+import { EditIdeaDialog } from "@/components/ideas/[id]/EditIdea";
+import { SearchBar } from "@/components/ideas/SearchBar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  PlusCircle,
-  MoreVertical,
-  Edit,
-  Trash2,
-  Loader2,
-  ArchiveRestore,
-  Archive,
-} from "lucide-react";
-import Link from "next/link";
-import { Input } from "@/components/ui/input";
-import { formatRelativeTime } from "@/lib/utils";
-import { useState } from "react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,52 +16,22 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { SearchBar } from "@/components/ideas/SearchBar";
-import { useQueryStates } from "nuqs";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useIdeas, useUnArchiveIdea } from "@/hooks";
+import { formatRelativeTime } from "@/lib/utils";
 import { searchParamsSchema } from "@/nuqs";
 
 export default function ArchivedIdeasPage() {
   const [params] = useQueryStates(searchParamsSchema);
   const { data, isLoading } = useIdeas({
-    page: parseInt(params.page),
-    limit: parseInt(params.limit),
+    page: parseInt(params.page, 10),
+    limit: parseInt(params.limit, 10),
     query: params.search as string,
     archived: true,
   });
-  const deleteIdea = useDeleteIdea();
-  const updateIdea = useUpdateIdea();
   const unarchiveIdea = useUnArchiveIdea();
 
-  const [editingIdea, setEditingIdea] = useState<{
-    id: string;
-    title: string;
-    summary: string;
-  } | null>(null);
-
   const ideas = data?.data;
-
-  const handleUpdate = () => {
-    if (!editingIdea) return;
-    updateIdea.mutate(
-      {
-        id: editingIdea.id,
-        data: { title: editingIdea.title, summary: editingIdea.summary },
-      },
-      {
-        onSuccess: () => setEditingIdea(null),
-      }
-    );
-  };
 
   return (
     <div className="space-y-8">
@@ -100,7 +56,7 @@ export default function ArchivedIdeasPage() {
           {Array(6)
             .fill(0)
             .map((_, i) => (
-              <Card key={i}>
+              <Card key={`item-${i}`}>
                 <CardHeader>
                   <Skeleton className="h-6 w-3/4" />
                 </CardHeader>
@@ -177,18 +133,13 @@ export default function ArchivedIdeasPage() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setEditingIdea({
-                          id: idea.id,
-                          title: idea.title || "",
-                          summary: idea.summary || "",
-                        });
-                      }}
-                    >
-                      <Edit className="mr-2 h-4 w-4" />
-                      Edit
+                    <DropdownMenuItem asChild>
+                      <EditIdeaDialog
+                        id={idea.id}
+                        archived={false}
+                        title={idea.title as string}
+                        summary={idea.summary as string}
+                      />
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => unarchiveIdea.mutate(idea.id)}
@@ -197,19 +148,8 @@ export default function ArchivedIdeasPage() {
                       Unarchive
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      className="text-destructive focus:text-destructive"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        if (
-                          confirm("Are you sure you want to delete this idea?")
-                        ) {
-                          deleteIdea.mutate(idea.id);
-                        }
-                      }}
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Delete
+                    <DropdownMenuItem asChild>
+                      <DeleteIdeaDialog id={idea.id} />
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -218,59 +158,6 @@ export default function ArchivedIdeasPage() {
           ))}
         </div>
       )}
-
-      {/* Edit Idea Dialog */}
-      <Dialog
-        open={!!editingIdea}
-        onOpenChange={(open) => !open && setEditingIdea(null)}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Idea</DialogTitle>
-            <DialogDescription>
-              Update the title and summary of your idea.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="title">Title</Label>
-              <Input
-                id="title"
-                value={editingIdea?.title || ""}
-                onChange={(e) =>
-                  setEditingIdea((prev) =>
-                    prev ? { ...prev, title: e.target.value } : null
-                  )
-                }
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="summary">Summary</Label>
-              <Textarea
-                id="summary"
-                rows={5}
-                value={editingIdea?.summary || ""}
-                onChange={(e) =>
-                  setEditingIdea((prev) =>
-                    prev ? { ...prev, summary: e.target.value } : null
-                  )
-                }
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingIdea(null)}>
-              Cancel
-            </Button>
-            <Button onClick={handleUpdate} disabled={updateIdea.isPending}>
-              {updateIdea.isPending && (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              )}
-              Save Changes
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

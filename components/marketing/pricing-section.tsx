@@ -1,9 +1,9 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Check, ArrowRight, Star } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ArrowRight, Check, Star } from "lucide-react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import { PLANS } from "@/lib/polar/client";
 
 export function PricingSection() {

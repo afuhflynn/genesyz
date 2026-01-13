@@ -1,9 +1,9 @@
 "use client";
 
-import { useAdminStats } from "@/hooks";
+import { CheckCircle2, Lightbulb, Users } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Lightbulb, CheckCircle2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAdminStats } from "@/hooks";
 
 export default function AdminDashboardPage() {
   const { data: stats, isLoading, error } = useAdminStats();
@@ -69,7 +69,7 @@ function AdminDashboardSkeleton() {
         {Array(3)
           .fill(0)
           .map((_, i) => (
-            <Skeleton key={i} className="h-32" />
+            <Skeleton key={`item-${i}`} className="h-32" />
           ))}
       </div>
     </div>

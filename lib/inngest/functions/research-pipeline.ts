@@ -1,10 +1,10 @@
-import { inngest } from "../client";
+import { channel, topic } from "@inngest/realtime";
+import { v4 as uuid4 } from "uuid";
+import z from "zod";
 import { runResearchPipeline } from "@/lib/agents/pipeline";
 import { db } from "@/lib/db";
 import { sendResearchCompleteEmail } from "@/lib/email/send";
-import { channel, topic } from "@inngest/realtime";
-import z from "zod";
-import { v4 as uuid4 } from "uuid";
+import { inngest } from "../client";
 
 export const ideaChannel = channel((ideaId: string) => `idea:${ideaId}`)
   .addTopic(
@@ -13,8 +13,8 @@ export const ideaChannel = channel((ideaId: string) => `idea:${ideaId}`)
         status: z.enum(["PROCESSING", "PENDING"]),
         message: z.string(),
         id: z.string(),
-      })
-    )
+      }),
+    ),
   )
   .addTopic(
     topic("research.progress").schema(
@@ -45,7 +45,7 @@ export const ideaChannel = channel((ideaId: string) => `idea:${ideaId}`)
                     description: z.string(),
                     strengths: z.array(z.string()),
                     weaknesses: z.array(z.string()),
-                  })
+                  }),
                 ),
               }),
               confidence: z.number(),
@@ -73,7 +73,7 @@ export const ideaChannel = channel((ideaId: string) => `idea:${ideaId}`)
                   z.object({
                     risk: z.string(),
                     mitigation: z.string(),
-                  })
+                  }),
                 ),
               }),
               confidence: z.number(),
@@ -90,7 +90,7 @@ export const ideaChannel = channel((ideaId: string) => `idea:${ideaId}`)
                     description: z.string(),
                     strengths: z.array(z.string()),
                     weaknesses: z.array(z.string()),
-                  })
+                  }),
                 ),
               }),
               confidence: z.number(),
@@ -121,8 +121,8 @@ export const ideaChannel = channel((ideaId: string) => `idea:${ideaId}`)
             }),
           }),
         }),
-      })
-    )
+      }),
+    ),
   )
   .addTopic(
     topic("research.finished").schema(
@@ -142,8 +142,8 @@ export const ideaChannel = channel((ideaId: string) => `idea:${ideaId}`)
         })
         .refine((data) => data.success, "Research failed")
         .refine((data) => data.overallScore !== null, "Research failed")
-        .refine((data) => data.overallScore !== undefined, "Research failed")
-    )
+        .refine((data) => data.overallScore !== undefined, "Research failed"),
+    ),
   )
   .addTopic(
     topic("parse.idea").schema(
@@ -151,8 +151,8 @@ export const ideaChannel = channel((ideaId: string) => `idea:${ideaId}`)
         status: z.enum(["INITIATE", "COMPLETE"]),
         message: z.string(),
         id: z.string(),
-      })
-    )
+      }),
+    ),
   );
 
 /**
@@ -309,5 +309,5 @@ export const researchPipelineFunction = inngest.createFunction(
       ideaId,
       overallScore: result.synthesis?.scores?.overall?.score,
     };
-  }
+  },
 );

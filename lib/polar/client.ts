@@ -17,7 +17,6 @@ export const PLANS = {
       "AI-powered research",
       "Basic scoring",
       "Email support",
-      "One day trial",
     ],
   },
   PRO: {

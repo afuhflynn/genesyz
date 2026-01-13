@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { Image as ImageIcon, Loader2, Mic, Type } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCreateIdea } from "@/hooks";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,12 +11,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { FileUpload } from "@/components/ui/file-upload";
+import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Mic, Image as ImageIcon, Type, Loader2 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { useCreateIdea } from "@/hooks";
 
 import { useUploadThing } from "@/lib/uploadthing";
 
@@ -46,7 +45,7 @@ export default function NewIdeaPage() {
     try {
       if (audioFile) {
         const res = await startAudioUpload([audioFile]);
-        if (res && res[0]) {
+        if (res?.[0]) {
           formData.append("audio", JSON.stringify(res[0]));
         } else {
           throw new Error("Audio upload failed");
@@ -55,7 +54,7 @@ export default function NewIdeaPage() {
 
       if (imageFile) {
         const res = await startImageUpload([imageFile]);
-        if (res && res[0]) {
+        if (res?.[0]) {
           formData.append("image", JSON.stringify(res[0]));
         } else {
           throw new Error("Image upload failed");

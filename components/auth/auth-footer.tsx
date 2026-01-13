@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { CardFooter } from "../ui/card";
 import { useQueryStates } from "nuqs";
 import { searchParamsSchema } from "@/nuqs";
+import { CardFooter } from "../ui/card";
 
 export const AuthFooter = ({
   footerLink,

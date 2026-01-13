@@ -1,16 +1,33 @@
 "use client";
 
+import { useInngestSubscription } from "@inngest/realtime/hooks";
 import {
-  useIdea,
-  useRerunResearch,
-  useArchiveIdea,
-  useDeleteIdea,
-  useExportIdeaPdf,
-  useUnArchiveIdea,
-} from "@/hooks";
-import { useParams, useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
+  AlertTriangle,
+  Archive,
+  ArchiveRestore,
+  ArrowLeft,
+  Calendar,
+  CheckCircle2,
+  Download,
+  MoreVertical,
+  RefreshCw,
+  XCircle,
+} from "lucide-react";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useQueryStates } from "nuqs";
+import { useEffect, useState } from "react";
+import { fetchRealtimeSubscriptionToken } from "@/app/api/inngest/token/_actions/fetchRealtimeSubscriptionToken";
+import { DeleteIdeaDialog } from "@/components/ideas/[id]/DeleteIdea";
+import { AssetTab } from "@/components/ideas/AssetTab";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -18,22 +35,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  ArrowLeft,
-  Download,
-  RefreshCw,
-  Trash2,
-  Archive,
-  ArchiveRestore,
-  MoreVertical,
-  Calendar,
-  CheckCircle2,
-  AlertTriangle,
-  XCircle,
-  Clock,
-} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -41,21 +42,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useInngestSubscription } from "@inngest/realtime/hooks";
-import { AssetTab } from "@/components/ideas/AssetTab";
-import { cn, formatRelativeTime } from "@/lib/utils";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import Link from "next/link";
-import { useState, useEffect } from "react";
-import { fetchRealtimeSubscriptionToken } from "@/app/api/inngest/token/_actions/fetchRealtimeSubscriptionToken";
-import { useQueryStates } from "nuqs";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  useArchiveIdea,
+  useExportIdeaPdf,
+  useIdea,
+  useRerunResearch,
+  useUnArchiveIdea,
+} from "@/hooks";
+import { cn, formatRelativeTime } from "@/lib/utils";
 import { searchParamsSchema } from "@/nuqs";
 
 interface IResearchProgress {
@@ -67,42 +64,21 @@ interface IResearchProgress {
 
 export default function IdeaDetailPage() {
   const params = useParams();
-  const router = useRouter();
-  const queryClient = useQueryClient();
   const id = params.id as string;
   const [searchParams, setSearchParams] = useQueryStates(searchParamsSchema);
 
-  const { data: idea, isLoading, error, refetch } = useIdea(id);
+  const { data: idea, isLoading, error } = useIdea(id);
   const rerunResearch = useRerunResearch();
   const archiveIdea = useArchiveIdea();
   const unarchiveIdea = useUnArchiveIdea();
-  const deleteIdea = useDeleteIdea();
   const exportPdf = useExportIdeaPdf();
 
   const [researchProgress, setResearchProgress] = useState<IResearchProgress[]>(
     []
   );
 
-  // Fetch subscription token
-  const { data: tokenData } = useQuery({
-    queryKey: ["inngest-token", id],
-    queryFn: async () => {
-      const res = await fetch(`/api/inngest/token?ideaId=${id}`);
-      if (!res.ok) throw new Error("Failed to fetch token");
-      return res.json() as Promise<{ token: string }>;
-    },
-    enabled:
-      !!id && (idea?.status === "PROCESSING" || idea?.status === "PENDING"),
-  });
-
   // Subscribe to real-time updates
-  const {
-    latestData,
-    data,
-    error: channelError,
-    freshData,
-    state,
-  } = useInngestSubscription({
+  const { latestData } = useInngestSubscription({
     refreshToken: async () =>
       await fetchRealtimeSubscriptionToken(id as string),
   });
@@ -142,7 +118,7 @@ export default function IdeaDetailPage() {
         }
       });
     }
-  }, [latestData, id, queryClient, refetch]);
+  }, [latestData]);
 
   useEffect(() => {
     if (idea?.status === "RESEARCHED") {
@@ -250,18 +226,8 @@ export default function IdeaDetailPage() {
                   </>
                 )}
               </DropdownMenuItem>
-              <DropdownMenuItem
-                className="text-destructive focus:text-destructive"
-                onClick={() => {
-                  if (confirm("Are you sure? This cannot be undone.")) {
-                    deleteIdea.mutate(id, {
-                      onSuccess: () => router.push("/ideas"),
-                    });
-                  }
-                }}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete
+              <DropdownMenuItem asChild>
+                <DeleteIdeaDialog id={id} redirect={"/ideas"} />
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -658,7 +624,7 @@ function IdeaDetailSkeleton() {
             <Skeleton key={i} className="h-32" />
           ))}
       </div>
-      <Skeleton className="h-[500px]" />
+      <Skeleton className="h-125" />
     </div>
   );
 }

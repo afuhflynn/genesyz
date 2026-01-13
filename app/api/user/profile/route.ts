@@ -1,7 +1,7 @@
-import { auth } from "@/lib/auth";
-import { db } from "@/lib/db";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
 
 export async function GET(request: Request) {
   try {
@@ -35,7 +35,7 @@ export async function GET(request: Request) {
     if (!entitlement) {
       return NextResponse.json(
         { error: "An unexpected error occurred" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -52,7 +52,45 @@ export async function GET(request: Request) {
     console.error("Failed to get user subscription:", error);
     return NextResponse.json(
       { error: "An unexpected error occurred" },
-      { status: 500 }
+      { status: 500 },
+    );
+  }
+}
+
+export async function PATCH(request: Request) {
+  try {
+    const session = await auth.api.getSession({ headers: await headers() });
+
+    if (!session?.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { name } = await request.json();
+
+    if (name && typeof name === "string" && name.trim() === "") {
+      return NextResponse.json(
+        { error: "A valid name cannot be empty" },
+        { status: 400 },
+      );
+    }
+
+    const user = await db.user.update({
+      where: { id: session.user.id },
+      data: {
+        name,
+      },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found!" }, { status: 404 });
+    }
+
+    return NextResponse.json({ sucess: true });
+  } catch (error) {
+    console.error("Failed to update user profile:", error);
+    return NextResponse.json(
+      { error: "An unexpected error occurred" },
+      { status: 500 },
     );
   }
 }

@@ -1,8 +1,8 @@
-import { auth } from "@/lib/auth";
-import { inngest } from "@/lib/inngest/client";
 import { getSubscriptionToken, Realtime } from "@inngest/realtime";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
+import { inngest } from "@/lib/inngest/client";
 
 export async function GET(request: Request) {
   const session = await auth.api.getSession({

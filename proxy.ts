@@ -1,10 +1,9 @@
+import arcjet, { createMiddleware, detectBot, shield } from "@arcjet/next";
 import { getSessionCookie } from "better-auth/cookies";
-import { NextRequest, NextResponse } from "next/server";
-import { createMiddleware } from "@arcjet/next";
-import arcjet, { detectBot, shield } from "@arcjet/next";
+import { type NextRequest, NextResponse } from "next/server";
 
 const aj = arcjet({
-  key: process.env.ARCJET_KEY!,
+  key: process.env.ARCJET_KEY as string,
   rules: [
     shield({ mode: "LIVE" }),
     detectBot({
@@ -35,7 +34,7 @@ export async function proxy(request: NextRequest) {
 
   const isProtected = protectedRoutes.some((r) => pathname.startsWith(r));
   const isUnprotectedAuthRoutes = unprotectedAuthRoutes.some((r) =>
-    pathname.startsWith(r)
+    pathname.startsWith(r),
   );
 
   // 1. If not signed in → block protected routes
@@ -46,8 +45,8 @@ export async function proxy(request: NextRequest) {
     loginUrl.searchParams.set(
       "redirect",
       encodeURIComponent(
-        `${pathname}${searchParams.toString() ? `?${searchParams}` : ""}`
-      )
+        `${pathname}${searchParams.toString() ? `?${searchParams}` : ""}`,
+      ),
     );
     return NextResponse.redirect(loginUrl);
   }

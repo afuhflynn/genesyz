@@ -1,11 +1,11 @@
-import { inngest } from "../client";
-import {
-  sendVerificationEmail,
-  sendPasswordResetEmail,
-} from "@/lib/email/send";
-import { sendEmail } from "@/lib/email/client";
 import { db } from "@/lib/db";
+import { sendEmail } from "@/lib/email/client";
+import {
+  sendPasswordResetEmail,
+  sendVerificationEmail,
+} from "@/lib/email/send";
 import { PLANS } from "@/lib/polar/client";
+import { inngest } from "../client";
 
 export const sendVerificationEmailFunction = inngest.createFunction(
   { id: "send-verification-email", name: "Send Verification Email" },
@@ -23,7 +23,7 @@ export const sendVerificationEmailFunction = inngest.createFunction(
     });
 
     return { success: true, email };
-  }
+  },
 );
 
 export const sendWelcomeEmailFunction = inngest.createFunction(
@@ -67,7 +67,7 @@ export const sendWelcomeEmailFunction = inngest.createFunction(
     });
 
     return { success: true, email };
-  }
+  },
 );
 
 export const sendPasswordResetEmailFunction = inngest.createFunction(
@@ -85,7 +85,7 @@ export const sendPasswordResetEmailFunction = inngest.createFunction(
     });
 
     return { success: true, email };
-  }
+  },
 );
 
 export const sendMagicLinkEmailFunction = inngest.createFunction(
@@ -103,5 +103,5 @@ export const sendMagicLinkEmailFunction = inngest.createFunction(
     });
 
     return { success: true, email };
-  }
+  },
 );

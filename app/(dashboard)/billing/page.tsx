@@ -1,6 +1,8 @@
 "use client";
 
-import { useSubscription } from "@/hooks";
+import { AlertTriangle, Check, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -10,17 +12,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Check, Loader2, AlertTriangle } from "lucide-react";
-import { PLANS } from "@/lib/polar/client";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useSubscription } from "@/hooks";
 import { authClient } from "@/lib/auth-client";
-import { useState } from "react";
+import { PLANS } from "@/lib/polar/client";
 
 export default function BillingPage() {
   const { data: subscription, isLoading } = useSubscription();
   const [createCheckout, setCreateCheckout] = useState(false);
-  const [cancelSubscription, setCancelSubscription] = useState(false);
+  const [cancelSubscription, _setCancelSubscription] = useState(false);
 
   // Determine current plan
   // Note: The API returns { subscription: unknown, usage: ... }
@@ -33,9 +33,9 @@ export default function BillingPage() {
     let productId = "";
 
     if (planId === "pro") {
-      productId = process.env.NEXT_PUBLIC_POLAR_PRO_PRODUCT_ID!;
+      productId = process.env.NEXT_PUBLIC_POLAR_PRO_PRODUCT_ID as string;
     } else {
-      productId = process.env.NEXT_PUBLIC_POLAR_FREE_PRODUCT_ID!;
+      productId = process.env.NEXT_PUBLIC_POLAR_FREE_PRODUCT_ID as string;
     }
     setCreateCheckout(true);
     try {
@@ -55,7 +55,7 @@ export default function BillingPage() {
   const handleCancel = async () => {
     if (
       confirm(
-        "Are you sure you want to cancel? You will lose access to Pro features at the end of your billing period."
+        "Are you sure you want to cancel? You will lose access to Pro features at the end of your billing period.",
       )
     ) {
       // await authClient.customer.subscriptions.
@@ -105,7 +105,7 @@ export default function BillingPage() {
                       (subscription?.usage.maxIdeas === 999999
                         ? 100
                         : subscription?.usage.maxIdeas || 1)) *
-                      100
+                      100,
                   )}%`,
                 }}
               />
@@ -141,7 +141,7 @@ export default function BillingPage() {
           <CardContent>
             <ul className="space-y-3 text-sm">
               {PLANS.FREE.features.map((feature, i) => (
-                <li key={i} className="flex items-center gap-2">
+                <li key={`item-${i}`} className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-500" />
                   {feature}
                 </li>
@@ -188,7 +188,7 @@ export default function BillingPage() {
           <CardContent>
             <ul className="space-y-3 text-sm">
               {PLANS.PRO.features.map((feature, i) => (
-                <li key={i} className="flex items-center gap-2">
+                <li key={`item-${i}`} className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-green-500" />
                   {feature}
                 </li>

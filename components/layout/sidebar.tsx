@@ -1,26 +1,26 @@
 "use client";
 
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
+  Archive,
+  CreditCard,
   LayoutDashboard,
   Lightbulb,
-  PlusCircle,
-  Settings,
-  CreditCard,
   LogOut,
   Menu,
+  PlusCircle,
+  Settings,
   Shield,
-  Archive,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { signOut } from "@/lib/auth-client";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useProfile } from "@/hooks";
-import Image from "next/image";
+import { signOut } from "@/lib/auth-client";
+import { cn } from "@/lib/utils";
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
 
@@ -81,7 +81,7 @@ export function Sidebar({ className }: SidebarProps) {
     <ScrollArea
       className={cn(
         "h-full! overflow-auto flex-col justify-between border-r bg-background relative",
-        className
+        className,
       )}
     >
       <div className="space-y-4 py-4">
@@ -135,8 +135,8 @@ export function MobileSidebar() {
           <Menu className="h-6 w-6" />
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="p-0 w-72">
-        <Sidebar className="border-none" />
+      <SheetContent side="left" className="p-0 w-72 ">
+        <Sidebar className="border-none mt-6" />
       </SheetContent>
     </Sheet>
   );

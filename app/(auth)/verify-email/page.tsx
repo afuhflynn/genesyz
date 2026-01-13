@@ -1,23 +1,23 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
+import { Loader2Icon } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
+  CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
-  CardContent,
 } from "@/components/ui/card";
 import {
   InputOTP,
   InputOTPGroup,
   InputOTPSlot,
 } from "@/components/ui/input-otp";
-import { useVerifyEmail, useResendVerification } from "@/hooks";
-import { Loader2Icon } from "lucide-react";
+import { useResendVerification, useVerifyEmail } from "@/hooks";
 
 export default function VerifyEmailPage() {
   const [verificationCode, setVerificationCode] = useState("");

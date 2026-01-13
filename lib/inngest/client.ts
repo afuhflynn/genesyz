@@ -1,5 +1,5 @@
-import { Inngest } from "inngest";
 import { realtimeMiddleware } from "@inngest/realtime/middleware";
+import { Inngest } from "inngest";
 
 // Create the Inngest client
 export const inngest = new Inngest({

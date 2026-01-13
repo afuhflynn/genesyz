@@ -1,17 +1,17 @@
 "use client";
 
-import { useCallback, useState } from "react";
-import { useDropzone, type FileRejection } from "react-dropzone";
 import {
+  FileAudio,
+  File as FileIcon,
+  FileImage,
   UploadCloud,
   X,
-  FileAudio,
-  FileImage,
-  File as FileIcon,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { useCallback, useState } from "react";
+import { type FileRejection, useDropzone } from "react-dropzone";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { Badge } from "./badge";
 
 interface FileUploadProps {
@@ -39,7 +39,7 @@ export function FileUpload({
         const error = rejectedFiles[0].errors[0];
         if (error.code === "file-too-large") {
           toast.error(
-            `File is too large. Max size is ${maxSize / 1024 / 1024}MB`
+            `File is too large. Max size is ${maxSize / 1024 / 1024}MB`,
           );
         } else {
           toast.error(error.message);
@@ -53,7 +53,7 @@ export function FileUpload({
         onFileSelect(file);
       }
     },
-    [maxSize, onFileSelect]
+    [maxSize, onFileSelect],
   );
 
   const removeFile = (e: React.MouseEvent) => {
@@ -77,7 +77,7 @@ export function FileUpload({
         isDragActive && "border-primary bg-primary/5",
         selectedFile && "border-primary bg-primary/5",
         className,
-        disabled ? "cursor-default opacity-70" : " cursor-pointer opacity-100"
+        disabled ? "cursor-default opacity-70" : " cursor-pointer opacity-100",
       )}
     >
       {disabled && (

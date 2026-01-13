@@ -2,16 +2,16 @@ import ip from "@arcjet/ip";
 import arcjet, {
   type ArcjetDecision,
   type BotOptions,
+  detectBot,
   type EmailOptions,
   type ProtectSignupOptions,
-  type SlidingWindowRateLimitOptions,
-  detectBot,
   protectSignup,
+  type SlidingWindowRateLimitOptions,
   shield,
   slidingWindow,
   tokenBucket,
 } from "@arcjet/next";
-import { NextRequest } from "next/server";
+import type { NextRequest } from "next/server";
 import { auth } from "./auth";
 
 export const aj = arcjet({

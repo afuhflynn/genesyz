@@ -5,15 +5,15 @@
  * =================================
  */
 
-import { privateAxios, publicAxios } from "@/config/axios.config";
 import type {
+  Entitlement,
   Idea,
   IdeaInput,
   IdeaScore,
   ResearchPacket,
-  Entitlement,
   User,
 } from "@prisma/client";
+import { privateAxios, publicAxios } from "@/config/axios.config";
 
 // ===========================================
 // Types
@@ -48,6 +48,12 @@ export interface PaginatedResponse<T> {
   };
 }
 
+interface UserWithEntitlement extends User {
+  entitlements: Entitlement[];
+  _count: {
+    ideas: number;
+  };
+}
 export interface DashboardData {
   totalIdeas: number;
   researchedIdeas: number;
@@ -79,7 +85,7 @@ async function apiRequest<T>(
     method: HttpMethod;
     body?: unknown;
     isPublic?: boolean;
-  }
+  },
 ): Promise<T> {
   const axios = options.isPublic ? publicAxios : privateAxios;
 
@@ -127,13 +133,13 @@ export const api = {
     // Ideas
     ideas: {
       getAll: (
-        params?: PaginationParams
+        params?: PaginationParams,
       ): Promise<PaginatedResponse<IdeaWithDetails>> =>
         apiRequest(
           `/ideas?page=${params?.page || 1}&limit=${params?.limit || 10}${
             params?.query ? `&query=${params.query}` : ""
           }${params?.archived ? `&archived=${params.archived}` : ""}`,
-          { method: "GET" }
+          { method: "GET" },
         ),
 
       getById: (id: string): Promise<IdeaWithDetails> =>
@@ -178,23 +184,23 @@ export const api = {
       }> => apiRequest("/admin/stats", { method: "GET" }),
 
       getUsers: (
-        params?: PaginationParams & { search?: string }
-      ): Promise<PaginatedResponse<User>> =>
+        params?: PaginationParams & { search?: string },
+      ): Promise<PaginatedResponse<UserWithEntitlement>> =>
         apiRequest(
           `/admin/users?page=${params?.page || 1}&limit=${params?.limit || 20}${
             params?.search ? `&search=${params.search}` : ""
           }`,
-          { method: "GET" }
+          { method: "GET" },
         ),
 
       getAuditLogs: (
-        params?: PaginationParams
+        params?: PaginationParams,
       ): Promise<PaginatedResponse<unknown>> =>
         apiRequest(
           `/admin/audit-logs?page=${params?.page || 1}&limit=${
             params?.limit || 50
           }`,
-          { method: "GET" }
+          { method: "GET" },
         ),
     },
   },
@@ -211,13 +217,17 @@ export const api = {
         if (response.status === 201) {
           return (await response.json()) as Idea;
         } else {
+          const result = await response.json();
+          if (result.error) {
+            throw new Error(result.error);
+          }
           throw new Error("Failed to create idea");
         }
       },
 
       update: (
         id: string,
-        data: { title?: string; summary?: string }
+        data: { title?: string; summary?: string },
       ): Promise<Idea> =>
         apiRequest(`/ideas/${id}`, { method: "PATCH", body: data }),
 
@@ -265,7 +275,7 @@ export const api = {
 
       resetPassword: (
         password: string,
-        token: string
+        token: string,
       ): Promise<{ success: boolean }> =>
         apiRequest("/auth/custom/reset-password", {
           method: "PUT",

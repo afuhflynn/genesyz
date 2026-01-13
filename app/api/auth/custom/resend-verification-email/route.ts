@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
+import { generateToken, generateVerificationCode } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { inngest } from "@/lib/inngest/client";
-import { generateVerificationCode, generateToken } from "@/lib/auth-utils";
 
 export async function PUT(req: NextRequest) {
   const { email } = await req.json();
@@ -10,7 +10,7 @@ export async function PUT(req: NextRequest) {
     if (!email) {
       return NextResponse.json(
         { success: false, message: "Email is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -21,14 +21,14 @@ export async function PUT(req: NextRequest) {
     if (!user) {
       return NextResponse.json(
         { success: false, message: "User not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     if (user.emailVerified) {
       return NextResponse.json(
         { success: false, message: "Email is already verified" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -56,13 +56,13 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json(
       { success: true, message: "Verification email resent successfully" },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error("Resend verification error:", error);
     return NextResponse.json(
       { success: false, message: "An unexpected error occurred" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
