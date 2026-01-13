@@ -59,9 +59,9 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${ibmPlexMono.variable} ${inter.className} antialiased`}
       >
-        <QueryProvider>
-          <NuqsAdapter>
-            <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
+        <NuqsAdapter>
+          <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
+          <QueryProvider>
             <ThemeProvider
               attribute="class"
               defaultTheme="light"
@@ -71,8 +71,8 @@ export default function RootLayout({
               {children}
             </ThemeProvider>
             <Toaster />
-          </NuqsAdapter>
-        </QueryProvider>
+          </QueryProvider>
+        </NuqsAdapter>
       </body>
     </html>
   );
