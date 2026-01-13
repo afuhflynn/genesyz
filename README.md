@@ -37,41 +37,48 @@ IdeasVault is an AI-powered platform that helps founders validate their startup 
 ### Installation
 
 1.  **Clone the repository**:
+
     ```bash
-    git clone https://github.com/yourusername/ideasvault.git
-    cd ideasvault
+    git clone https://github.com/afuhflynn/ideas-vault.git
+    cd ideas-vault
     ```
 
 2.  **Install dependencies**:
+
     ```bash
     pnpm install
     ```
 
 3.  **Set up environment variables**:
+
     Copy `.env.example` to `.env` and fill in the required values.
+
     ```bash
     cp .env.example .env
     ```
 
 4.  **Start the database**:
+
     ```bash
     docker-compose up -d
     ```
 
 5.  **Initialize the database**:
+
     ```bash
     pnpm prisma db push
-    pnpm prisma db seed
     ```
 
 6.  **Start the development server**:
+
     ```bash
     pnpm dev
     ```
 
 7.  **Start Inngest dev server** (in a separate terminal):
+
     ```bash
-    npx inngest-cli@latest dev
+    pnpm inngest:start
     ```
 
 ## Deployment
