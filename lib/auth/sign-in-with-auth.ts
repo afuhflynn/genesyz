@@ -1,5 +1,6 @@
 import { toast } from "sonner";
 import { signIn } from "../auth-client";
+import { privateAxios } from "@/config/axios.config";
 
 export const signInWithOAuth = async (
   provider: "google" | "github",
@@ -9,11 +10,11 @@ export const signInWithOAuth = async (
     provider,
     callbackURL: callback ?? "/dashboard",
     fetchOptions: {
-      onSuccess(context) {
-        //   context.data.
-        //     const res = await privateAxios.post("/auth/custom/sign-up/social", {
-        //   email: data.,
-        // });
+      onSuccess: async (context) => {
+        const user = context?.data?.user;
+        await privateAxios.post("/auth/custom/sign-up/social", {
+          email: user?.email,
+        });
 
         toast.success("Signup successful!");
       },
