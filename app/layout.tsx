@@ -8,6 +8,7 @@ import { ourFileRouter } from "@/app/api/uploadthing/core";
 import { ThemeProvider } from "@/components/provders/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { QueryProvider } from "@/providers/query-provider";
+import { Suspense } from "react";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -59,20 +60,22 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${ibmPlexMono.variable} ${inter.className} antialiased`}
       >
-        <NuqsAdapter>
-          <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
-          <QueryProvider>
-            <ThemeProvider
-              attribute="class"
-              defaultTheme="light"
-              enableSystem
-              disableTransitionOnChange
-            >
-              {children}
-            </ThemeProvider>
-            <Toaster />
-          </QueryProvider>
-        </NuqsAdapter>
+        <Suspense fallback={null}>
+          <NuqsAdapter>
+            <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
+            <QueryProvider>
+              <ThemeProvider
+                attribute="class"
+                defaultTheme="light"
+                enableSystem
+                disableTransitionOnChange
+              >
+                {children}
+              </ThemeProvider>
+              <Toaster />
+            </QueryProvider>
+          </NuqsAdapter>
+        </Suspense>
       </body>
     </html>
   );
