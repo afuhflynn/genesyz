@@ -14,7 +14,10 @@ export const SocialsAuth = ({ isLoading }: props) => {
   const { redirect } = params;
   const handleOAuthSignIn = async (provider: "google" | "github") => {
     try {
-      await signInWithOAuth(provider, redirect as string);
+      await signInWithOAuth(
+        provider,
+        decodeURIComponent(redirect as string) || undefined
+      );
     } catch (error) {
       console.error(error);
       toast.error(`Failed to sign in with ${provider}`);
