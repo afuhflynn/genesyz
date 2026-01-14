@@ -1,9 +1,9 @@
 "use client";
 import { useQueryStates } from "nuqs";
 import { toast } from "sonner";
-import { signInWithOAuth } from "@/lib/auth/sign-in-with-auth";
 import { searchParamsSchema } from "@/nuqs";
 import { Button } from "../ui/button";
+import { signIn } from "@/lib/auth-client";
 
 interface props {
   isLoading?: boolean;
@@ -14,7 +14,24 @@ export const SocialsAuth = ({ isLoading }: props) => {
   const { redirect } = params;
   const handleOAuthSignIn = async (provider: "google" | "github") => {
     try {
-      await signInWithOAuth(provider, decodeURIComponent(redirect as string));
+      // await signInWithOAuth(provider, decodeURIComponent(redirect as string));
+      await signIn.social({
+        provider,
+        callbackURL:
+          redirect !== null
+            ? decodeURIComponent(redirect as string)
+            : "/dashboard",
+        // fetchOptions: {
+        //   onResponse(context) {
+        //       const user = context?.data?.user;
+        //       await privateAxios.post("/auth/custom/sign-up/social", {
+        //         email: user?.email,
+        //       });
+
+        //       toast.success("Signup successful!");
+        //   },
+        // },
+      });
     } catch (error) {
       console.error(error);
       toast.error(`Failed to sign in with ${provider}`);
