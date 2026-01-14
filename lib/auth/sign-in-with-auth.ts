@@ -2,11 +2,11 @@ import { signIn } from "../auth-client";
 
 export const signInWithOAuth = async (
   provider: "google" | "github",
-  callback?: string
+  callback: string | null
 ) => {
   await signIn.social({
     provider,
-    callbackURL: callback ?? "/dashboard",
+    callbackURL: callback !== null ? callback : "/dashboard",
     // fetchOptions: {
     //   onResponse(context) {
     //       const user = context?.data?.user;
