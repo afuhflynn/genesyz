@@ -2,6 +2,7 @@
 
 import {
   Archive,
+  BotIcon,
   CreditCard,
   LayoutDashboard,
   Lightbulb,
@@ -66,6 +67,12 @@ export function Sidebar({ className }: SidebarProps) {
       href: "/ideas/archived",
       active: pathname === "/ideas/archived",
     },
+    {
+      label: "Chat with Vault",
+      icon: BotIcon,
+      href: "/chat",
+      active: pathname === "/chat",
+    },
   ];
 
   if (user?.role === "ADMIN") {
@@ -81,7 +88,7 @@ export function Sidebar({ className }: SidebarProps) {
     <ScrollArea
       className={cn(
         "h-full! overflow-auto flex-col justify-between border-r bg-background relative",
-        className,
+        className
       )}
     >
       <div className="space-y-4 py-4">
