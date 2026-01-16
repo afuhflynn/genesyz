@@ -82,22 +82,36 @@ export type InterpretedIdea = z.infer<typeof InterpretedIdeaSchema>;
 
 export const MarketResearchSchema = z.object({
   marketSize: z.object({
-    tam: z.string().describe("Total Addressable Market estimate"),
-    sam: z.string().describe("Serviceable Addressable Market estimate"),
-    som: z.string().describe("Serviceable Obtainable Market estimate"),
-    growthRate: z.string().describe("Expected market growth rate"),
+    tam: z.object({
+      value: z.string(),
+      methodology: z.string(),
+    }),
+    sam: z.object({
+      value: z.string(),
+      methodology: z.string(),
+    }),
+    som: z.object({
+      value: z.string(),
+      methodology: z.string(),
+    }),
+    growthRate: z.object({
+      value: z.string(),
+      methodology: z.string(),
+    }),
   }),
-  competitors: z.array(
-    z.object({
-      name: z.string(),
-      description: z.string(),
-      strengths: z.array(z.string()),
-      weaknesses: z.array(z.string()),
-    })
-  ),
-  marketTrends: z.array(z.string()),
-  barriers: z.array(z.string()).describe("Barriers to entry"),
-  opportunities: z.array(z.string()).describe("Market opportunities"),
+  competitors: z
+    .array(
+      z.object({
+        name: z.string(),
+        description: z.string(),
+        strengths: z.array(z.string()).max(5),
+        weaknesses: z.array(z.string()).max(5),
+      }),
+    )
+    .max(6),
+  marketTrends: z.array(z.string()).max(5),
+  barriers: z.array(z.string()).max(5),
+  opportunities: z.array(z.string()).max(5),
 });
 
 export type MarketResearch = z.infer<typeof MarketResearchSchema>;
@@ -112,7 +126,7 @@ export const TrendAnalysisSchema = z.object({
       trend: z.string(),
       relevance: z.enum(["high", "medium", "low"]),
       impact: z.string(),
-    })
+    }),
   ),
   timingAssessment: z.object({
     verdict: z.enum(["too-early", "right-time", "late", "too-late"]),
@@ -149,7 +163,7 @@ export const ExecutionFrictionSchema = z.object({
       risk: z.string(),
       severity: z.enum(["high", "medium", "low"]),
       mitigation: z.string(),
-    })
+    }),
   ),
   dependencies: z.array(z.string()),
   quickWins: z
@@ -188,7 +202,7 @@ export const SynthesisSchema = z.object({
       priority: z.enum(["high", "medium", "low"]),
       action: z.string(),
       rationale: z.string(),
-    })
+    }),
   ),
   nextSteps: z.array(z.string()),
   verdict: z.enum([
@@ -212,7 +226,7 @@ export const DeepResearchSchema = z.object({
       gap: z.string(),
       opportunity: z.string(),
       validationSource: z.string().nullable(),
-    })
+    }),
   ),
   technicalRoadmap: z.object({
     phase1: z.string().describe("MVP / Initial Validation"),
@@ -223,7 +237,7 @@ export const DeepResearchSchema = z.object({
     z.object({
       direction: z.string(),
       rationale: z.string(),
-    })
+    }),
   ),
   strategicMoat: z.string().describe("How to build a defensible business"),
 });
@@ -242,7 +256,7 @@ export const StrategicAdvisorySchema = z.object({
       newsItem: z.string(),
       relevance: z.string(),
       impactOnPortfolio: z.enum(["positive", "negative", "neutral"]),
-    })
+    }),
   ),
   verdicts: z.array(
     z.object({
@@ -257,7 +271,7 @@ export const StrategicAdvisorySchema = z.object({
       }),
       evidence: z.array(z.string()),
       counterArgument: z.string(),
-    })
+    }),
   ),
   brainDrillingQuestions: z.array(z.string()),
   vcCorner: z.object({
@@ -289,14 +303,14 @@ export const StateSchema = z.object({
       text: z.string(),
       confidence: z.enum(["low", "med", "high"]),
       evidence: z.array(z.string()),
-    })
+    }),
   ),
   signals: z.array(
     z.object({
       type: z.enum(["market", "competitor", "user", "technical"]),
       text: z.string(),
       source: z.string().optional(),
-    })
+    }),
   ),
   lastVerdict: z
     .object({

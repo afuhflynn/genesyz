@@ -1,6 +1,6 @@
 import { google } from "@ai-sdk/google";
 import { mistral } from "@ai-sdk/mistral";
-import { generateObject } from "ai";
+import { generateObject, generateText } from "ai";
 import { db } from "@/lib/db";
 import { hashString } from "@/lib/utils";
 import {
@@ -24,7 +24,7 @@ Guidelines:
 - Note when data is estimated vs. verified`;
 
 export async function runMarketResearchAgent(
-  input: AgentInput
+  input: AgentInput,
 ): Promise<AgentOutput> {
   const { ideaId, previousOutputs } = input;
 
@@ -44,17 +44,50 @@ export async function runMarketResearchAgent(
 **Target Audience:** ${interpretedIdea.targetAudience.join(", ")}
 **Category:** ${interpretedIdea.category}
 
-Provide comprehensive market research including market sizing, competitor analysis, and market trends.`;
+Provide market research with market size, up to 5 competitors (each with up to 3 strengths/weaknesses), up to 4 trends, up to 4 barriers, up to 4 opportunities. Keep total under 1500 words. Output valid JSON only.`;
 
   const promptHash = await hashString(prompt);
   const startTime = Date.now();
 
-  const result = await generateObject({
-    model,
-    schema: MarketResearchSchema,
-    system: SYSTEM_PROMPT,
-    prompt,
-  });
+  let result;
+  let attempts = 0;
+  const maxAttempts = 3;
+
+  while (attempts < maxAttempts) {
+    try {
+      result = await generateObject({
+        model,
+        schema: MarketResearchSchema,
+        system: SYSTEM_PROMPT,
+        prompt,
+      });
+      break; // Success, exit loop
+    } catch (error) {
+      attempts++;
+      if (attempts >= maxAttempts) {
+        // Fallback: try text generation and parse manually
+        console.error(
+          "Object generation failed after retries, attempting fallback:",
+          error,
+        );
+        const textResult = await generateText({
+          model,
+          system: SYSTEM_PROMPT,
+          prompt: `${prompt}\n\nOutput valid JSON only matching the schema.`,
+        });
+        try {
+          const parsed = JSON.parse(textResult.text);
+          result = { object: MarketResearchSchema.parse(parsed) };
+        } catch (parseError) {
+          throw new Error(
+            "Fallback parsing also failed: " + parseError.message,
+          );
+        }
+      }
+      // Wait briefly before retry
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+  }
 
   const latencyMs = Date.now() - startTime;
 
@@ -76,7 +109,7 @@ Provide comprehensive market research including market sizing, competitor analys
   const hasMarketSize = Boolean(result.object.marketSize.tam);
   const confidence = Math.min(
     0.4 + competitorCount * 0.1 + (hasMarketSize ? 0.2 : 0),
-    0.9
+    0.9,
   );
 
   return {
