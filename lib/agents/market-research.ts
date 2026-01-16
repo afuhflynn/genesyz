@@ -78,9 +78,10 @@ Provide market research with market size, up to 5 competitors (each with up to 3
         } catch (parseError) {
           throw new Error('Fallback parsing also failed: ' + (parseError instanceof Error ? parseError.message : String(parseError)));
         }
+      } else {
+        // Wait briefly before retry
+        await new Promise(resolve => setTimeout(resolve, 1000));
       }
-      // Wait briefly before retry
-      await new Promise(resolve => setTimeout(resolve, 1000));
     }
   }
 
