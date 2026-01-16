@@ -7,6 +7,7 @@ import {
   type AgentInput,
   type AgentOutput,
   type InterpretedIdea,
+  type MarketResearch,
   MarketResearchSchema,
 } from "./types";
 
@@ -113,9 +114,9 @@ Provide market research with market size, up to 5 competitors (each with up to 3
       agentType: "MARKET_RESEARCH",
       promptHash,
       prompt,
-      response: JSON.stringify(result.object),
+      response: JSON.stringify(marketResearch),
       model: "mistral-large-latest",
-      tokensUsed: result.usage?.totalTokens,
+      tokensUsed: result.usage?.totalTokens || null,
       latencyMs,
     },
   });
