@@ -117,7 +117,7 @@ Provide market research with market size, up to 5 competitors (each with up to 3
       prompt,
       response: JSON.stringify(marketResearch),
       model: "mistral-large-latest",
-      tokensUsed: result.usage?.totalTokens || null,
+      tokensUsed: result.usage?.totalTokens || 0,
       latencyMs,
     },
   });
