@@ -78,8 +78,8 @@ Provide market research with market size, up to 5 competitors (each with up to 3
         try {
           const parsed = JSON.parse(textResult.text);
           result = {
-            object: MarketResearchSchema.parse(parsed),
-            usage: undefined,
+            object: MarketResearchSchema.parse(parsed) as any,
+            usage: null,
             warnings: [],
             reasoning: "",
             finishReason: "stop",
@@ -121,8 +121,9 @@ Provide market research with market size, up to 5 competitors (each with up to 3
   });
 
   // Calculate confidence based on market data availability
-  const competitorCount = result.object.competitors.length;
-  const hasMarketSize = Boolean(result.object.marketSize.tam);
+  const marketResearch = result.object as MarketResearch;
+  const competitorCount = marketResearch.competitors.length;
+  const hasMarketSize = Boolean(marketResearch.marketSize.tam);
   const confidence = Math.min(
     0.4 + competitorCount * 0.1 + (hasMarketSize ? 0.2 : 0),
     0.9,
@@ -130,7 +131,7 @@ Provide market research with market size, up to 5 competitors (each with up to 3
 
   return {
     agentType: "MARKET_RESEARCH",
-    content: result.object,
+    content: marketResearch,
     confidence,
     reasoning: `Identified ${competitorCount} competitors and market sizing data`,
   };
