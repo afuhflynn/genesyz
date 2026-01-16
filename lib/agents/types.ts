@@ -25,6 +25,8 @@ export interface PortfolioInput {
     summary: string;
     category: string;
     overallScore: number;
+    metrics?: any;
+    history?: any[];
   }[];
 }
 
@@ -91,7 +93,7 @@ export const MarketResearchSchema = z.object({
       description: z.string(),
       strengths: z.array(z.string()),
       weaknesses: z.array(z.string()),
-    }),
+    })
   ),
   marketTrends: z.array(z.string()),
   barriers: z.array(z.string()).describe("Barriers to entry"),
@@ -110,7 +112,7 @@ export const TrendAnalysisSchema = z.object({
       trend: z.string(),
       relevance: z.enum(["high", "medium", "low"]),
       impact: z.string(),
-    }),
+    })
   ),
   timingAssessment: z.object({
     verdict: z.enum(["too-early", "right-time", "late", "too-late"]),
@@ -147,7 +149,7 @@ export const ExecutionFrictionSchema = z.object({
       risk: z.string(),
       severity: z.enum(["high", "medium", "low"]),
       mitigation: z.string(),
-    }),
+    })
   ),
   dependencies: z.array(z.string()),
   quickWins: z
@@ -186,7 +188,7 @@ export const SynthesisSchema = z.object({
       priority: z.enum(["high", "medium", "low"]),
       action: z.string(),
       rationale: z.string(),
-    }),
+    })
   ),
   nextSteps: z.array(z.string()),
   verdict: z.enum([
@@ -210,7 +212,7 @@ export const DeepResearchSchema = z.object({
       gap: z.string(),
       opportunity: z.string(),
       validationSource: z.string().nullable(),
-    }),
+    })
   ),
   technicalRoadmap: z.object({
     phase1: z.string().describe("MVP / Initial Validation"),
@@ -221,7 +223,7 @@ export const DeepResearchSchema = z.object({
     z.object({
       direction: z.string(),
       rationale: z.string(),
-    }),
+    })
   ),
   strategicMoat: z.string().describe("How to build a defensible business"),
 });
@@ -240,15 +242,24 @@ export const StrategicAdvisorySchema = z.object({
       newsItem: z.string(),
       relevance: z.string(),
       impactOnPortfolio: z.enum(["positive", "negative", "neutral"]),
-    }),
+    })
   ),
-  strategicRecommendations: z.array(
+  verdicts: z.array(
     z.object({
+      ideaId: z.string(),
       ideaTitle: z.string(),
-      recommendation: z.string(),
-      priority: z.enum(["high", "medium", "low"]),
-    }),
+      verdict: z.enum(["Go", "Pause", "Kill"]),
+      onePriority: z.string(),
+      oneStop: z.string(),
+      topRisk: z.object({
+        category: z.enum(["Market", "Product", "Financial", "Team"]),
+        description: z.string(),
+      }),
+      evidence: z.array(z.string()),
+      counterArgument: z.string(),
+    })
   ),
+  brainDrillingQuestions: z.array(z.string()),
   vcCorner: z.object({
     sentiment: z.string().describe("Current VC sentiment for these categories"),
     brutalHonesty: z.string().describe("The hard truth about these ideas"),
@@ -258,3 +269,42 @@ export const StrategicAdvisorySchema = z.object({
 });
 
 export type StrategicAdvisory = z.infer<typeof StrategicAdvisorySchema>;
+
+// ===========================================
+// State & Delta Schema
+// ===========================================
+
+export const StateSchema = z.object({
+  ideaId: z.string(),
+  metrics: z.object({
+    mau: z.number().nullable(),
+    cac: z.number().nullable(),
+    ltv: z.number().nullable(),
+    revenue: z.number().nullable(),
+    other: z.record(z.any()).optional(),
+  }),
+  assumptions: z.array(
+    z.object({
+      id: z.string(),
+      text: z.string(),
+      confidence: z.enum(["low", "med", "high"]),
+      evidence: z.array(z.string()),
+    })
+  ),
+  signals: z.array(
+    z.object({
+      type: z.enum(["market", "competitor", "user", "technical"]),
+      text: z.string(),
+      source: z.string().optional(),
+    })
+  ),
+  lastVerdict: z
+    .object({
+      date: z.string(),
+      verdict: z.enum(["Go", "Pause", "Kill"]),
+      notes: z.string(),
+    })
+    .nullable(),
+});
+
+export type IdeaState = z.infer<typeof StateSchema>;

@@ -67,12 +67,12 @@ export function Sidebar({ className }: SidebarProps) {
       href: "/ideas/archived",
       active: pathname === "/ideas/archived",
     },
-    {
-      label: "Chat with Vault",
-      icon: BotIcon,
-      href: "/chat",
-      active: pathname === "/chat",
-    },
+    // {
+    //   label: "Chat with Vault",
+    //   icon: BotIcon,
+    //   href: "/chat",
+    //   active: pathname === "/chat",
+    // },
   ];
 
   if (user?.role === "ADMIN") {

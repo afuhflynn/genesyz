@@ -14,7 +14,7 @@ import {
 } from "./types";
 
 // const model = google("gemini-3-flash-preview");
-const model = mistral("mistral-medium-latest");
+const model = mistral("mistral-large-latest");
 
 const SYSTEM_PROMPT = `You are a senior venture analyst synthesizing research into actionable recommendations for founders. Your role is to combine multiple perspectives into a coherent assessment.
 
@@ -27,7 +27,7 @@ Guidelines:
 - Be direct about whether to pursue or not`;
 
 export async function runSynthesisAgent(
-  input: AgentInput,
+  input: AgentInput
 ): Promise<AgentOutput> {
   const { ideaId, previousOutputs } = input;
 

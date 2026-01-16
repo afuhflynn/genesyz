@@ -127,10 +127,31 @@ model Idea {
   researchPackets ResearchPacket[]
   scores          IdeaScore[]
   researchLogs    ResearchLog[]
+  snapshots       IdeaSnapshot[]
+
+  // Interrogation State
+  founderGoals String[] @default([])
+  assumptions  Json? // Array of assumption objects
+  metrics      Json? // Quantitative metrics (MAU, CAC, LTV, etc.)
+  state        Json? // Full state snapshot for delta detection
 
   @@index([userId])
   @@index([status])
   @@map("ideas")
+}
+
+model IdeaSnapshot {
+  id      String   @id @default(cuid())
+  ideaId  String
+  date    DateTime @default(now())
+  state   Json // Full state JSON as per spec
+  verdict Json // Verdict JSON (Go/Pause/Kill, etc.)
+  deltas  Json? // Detected changes since last snapshot
+
+  idea Idea @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+
+  @@index([ideaId])
+  @@map("idea_snapshots")
 }
 
 enum IdeaStatus {

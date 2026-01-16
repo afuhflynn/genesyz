@@ -65,19 +65,36 @@ export const weeklyDigestFunction = inngest.createFunction(
         error?: string;
       }[] = [];
 
-      for (const user of users) {
+      // Re-fetch users with full context for stateful run
+      const usersWithContext = await db.user.findMany({
+        where: {
+          id: { in: users.map((u) => u.id) },
+        },
+        include: {
+          ideas: {
+            where: {
+              isArchived: false,
+              status: "RESEARCHED",
+            },
+            include: {
+              researchPackets: {
+                where: { agentType: "INTERPRETER" },
+                take: 1,
+              },
+              snapshots: {
+                orderBy: { date: "desc" },
+                take: 12, // Keep 12 weeks of memory
+              },
+            },
+          },
+        },
+      });
+
+      for (const user of usersWithContext) {
         if (!user.email) continue;
 
         try {
-          // 1. Calculate summary stats for basic digest
-          const totalIdeas = user.ideas.length;
-          const avgScore =
-            user.ideas.reduce((sum, idea) => {
-              const score = idea.scores[0]?.overallScore || 0;
-              return sum + score;
-            }, 0) / totalIdeas || 0;
-
-          // 2. Run Strategic Advisory Agent for top-tier report
+          // 1. Run Strategic Advisory Agent for top-tier report
           const advisory = (await runStrategicAdvisoryAgent({
             userId: user.id,
             ideas: user.ideas.map((idea) => {
@@ -88,10 +105,75 @@ export const weeklyDigestFunction = inngest.createFunction(
                 title: idea.title || "Untitled Idea",
                 summary: idea.summary || "",
                 category: content?.category || "saas",
-                overallScore: idea.scores[0]?.overallScore || 0,
+                overallScore: 0, // Scores are deprecated in favor of verdicts
+                metrics: idea.metrics,
+                history: idea.snapshots.map((s) => ({
+                  date: s.date,
+                  verdict: s.verdict,
+                })),
               };
             }),
           })) as StrategicAdvisory;
+
+          // 2. Persist verdicts and snapshots
+          for (const verdict of advisory.verdicts) {
+            const idea = user.ideas.find((i) => i.id === verdict.ideaId);
+            if (idea) {
+              const lastSnapshot = idea.snapshots[0];
+              const lastVerdict = lastSnapshot?.verdict as any;
+
+              // Calculate robust deltas
+              const deltas = {
+                verdictChanged: lastVerdict
+                  ? lastVerdict.verdict !== verdict.verdict
+                  : false,
+                priorityChanged: lastVerdict
+                  ? lastVerdict.onePriority !== verdict.onePriority
+                  : false,
+                newRisks: lastVerdict
+                  ? verdict.topRisk.description !==
+                    lastVerdict.topRisk.description
+                  : true,
+                metricDeltas: {} as Record<string, number>,
+              };
+
+              // Calculate metric deltas if they exist
+              if (idea.metrics && typeof idea.metrics === "object") {
+                const currentMetrics = idea.metrics as Record<string, any>;
+                const lastState = lastSnapshot?.state as any;
+                const lastMetrics = lastState?.metrics as Record<string, any>;
+
+                if (lastMetrics) {
+                  for (const [key, val] of Object.entries(currentMetrics)) {
+                    if (
+                      typeof val === "number" &&
+                      typeof lastMetrics[key] === "number"
+                    ) {
+                      const diff = val - lastMetrics[key];
+                      const percentChange =
+                        lastMetrics[key] !== 0
+                          ? (diff / lastMetrics[key]) * 100
+                          : 0;
+                      deltas.metricDeltas[key] = Math.round(percentChange);
+                    }
+                  }
+                }
+              }
+
+              await db.ideaSnapshot.create({
+                data: {
+                  ideaId: idea.id,
+                  state: {
+                    metrics: idea.metrics,
+                    assumptions: idea.assumptions,
+                    signals: [],
+                  },
+                  verdict: verdict as any,
+                  deltas: deltas as any,
+                },
+              });
+            }
+          }
 
           // 3. Send the professional Strategic Advisory email
           await sendStrategicAdvisoryEmail({
@@ -137,5 +219,5 @@ export const weeklyDigestFunction = inngest.createFunction(
       sent: results.filter((r) => r.success).length,
       failed: results.filter((r) => !r.success).length,
     };
-  },
+  }
 );

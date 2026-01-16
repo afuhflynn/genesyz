@@ -12,7 +12,7 @@ import {
 } from "./types";
 
 // const model = google("gemini-3-flash-preview");
-const model = mistral("mistral-medium-latest");
+const model = mistral("mistral-large-latest");
 
 const RESEARCH_SYSTEM_PROMPT = `You are a world-class startup researcher. Your goal is to find the "hard truths" about a startup idea.
 You have access to web search tools. Use them to:
@@ -32,7 +32,7 @@ Focus on:
 - Strategic Moat: How can this business become defensible?`;
 
 export async function runDeepResearchAgent(
-  input: AgentInput,
+  input: AgentInput
 ): Promise<AgentOutput> {
   const { ideaId, previousOutputs } = input;
 

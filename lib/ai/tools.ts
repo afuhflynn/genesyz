@@ -52,7 +52,7 @@ export const getIndustryNews = tool({
     category: z
       .string()
       .describe(
-        "The industry or startup category (e.g., fintech, ai, healthcare)",
+        "The industry or startup category (e.g., fintech, ai, healthcare)"
       ),
     daysBack: z
       .number()
@@ -107,8 +107,89 @@ export const getCompetitorUpdates = tool({
   },
 });
 
+export const getIdeaContext = tool({
+  description:
+    "Get the full context of an idea, including research and history.",
+  inputSchema: z.object({
+    ideaId: z.string().describe("The ID of the idea"),
+  }),
+  execute: async ({ ideaId }) => {
+    const { db } = await import("@/lib/db");
+    const idea = await db.idea.findUnique({
+      where: { id: ideaId },
+      include: {
+        researchPackets: true,
+        scores: true,
+        snapshots: {
+          orderBy: { date: "desc" },
+          take: 5,
+        },
+      },
+    });
+
+    if (!idea) throw new Error("Idea not found");
+
+    return {
+      id: idea.id,
+      title: idea.title,
+      summary: idea.summary,
+      founderGoals: idea.founderGoals,
+      assumptions: idea.assumptions,
+      research: idea.researchPackets.map((p) => ({
+        type: p.agentType,
+        content: p.content,
+      })),
+      scores: idea.scores[0],
+      history: idea.snapshots,
+    };
+  },
+});
+
+export const updateIdeaState = tool({
+  description: "Update the founder goals or assumptions for an idea.",
+  inputSchema: z.object({
+    ideaId: z.string().describe("The ID of the idea"),
+    founderGoals: z.array(z.string()).optional(),
+    assumptions: z.any().optional(), // JSON array of assumptions
+  }),
+  execute: async ({ ideaId, founderGoals, assumptions }) => {
+    const { db } = await import("@/lib/db");
+    const updatedIdea = await db.idea.update({
+      where: { id: ideaId },
+      data: {
+        ...(founderGoals && { founderGoals }),
+        ...(assumptions && { assumptions }),
+      },
+    });
+    return { success: true, ideaId: updatedIdea.id };
+  },
+});
+
+export const saveVerdict = tool({
+  description: "Save a weekly verdict and state snapshot for an idea.",
+  inputSchema: z.object({
+    ideaId: z.string().describe("The ID of the idea"),
+    state: z.any().describe("The full state JSON"),
+    verdict: z.any().describe("The verdict JSON (Go/Pause/Kill, etc.)"),
+  }),
+  execute: async ({ ideaId, state, verdict }) => {
+    const { db } = await import("@/lib/db");
+    const snapshot = await db.ideaSnapshot.create({
+      data: {
+        ideaId,
+        state,
+        verdict,
+      },
+    });
+    return { success: true, snapshotId: snapshot.id };
+  },
+});
+
 export const tools = {
   webSearch,
   getIndustryNews,
   getCompetitorUpdates,
+  getIdeaContext,
+  updateIdeaState,
+  saveVerdict,
 };

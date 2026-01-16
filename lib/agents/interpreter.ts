@@ -10,7 +10,7 @@ import {
 } from "./types";
 
 // const model = google("gemini-3-flash-preview");
-const model = mistral("mistral-medium-latest");
+const model = mistral("mistral-large-latest");
 
 const SYSTEM_PROMPT = `You are an expert startup analyst and idea interpreter. Your role is to take raw, unstructured founder ideas and transform them into clear, structured representations.
 
@@ -22,7 +22,7 @@ Guidelines:
 - If information is genuinely missing, make reasonable inferences but note uncertainty`;
 
 export async function runInterpreterAgent(
-  input: AgentInput,
+  input: AgentInput
 ): Promise<AgentOutput> {
   const { ideaId, rawInput } = input;
 
