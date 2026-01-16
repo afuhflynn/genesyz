@@ -106,6 +106,7 @@ Provide market research with market size, up to 5 competitors (each with up to 3
     );
   }
 
+  const marketResearch = result.object as MarketResearch;
   const latencyMs = Date.now() - startTime;
 
   await db.researchLog.create({
@@ -122,7 +123,6 @@ Provide market research with market size, up to 5 competitors (each with up to 3
   });
 
   // Calculate confidence based on market data availability
-  const marketResearch = result.object as MarketResearch;
   const competitorCount = marketResearch.competitors.length;
   const hasMarketSize = Boolean(marketResearch.marketSize.tam);
   const confidence = Math.min(
