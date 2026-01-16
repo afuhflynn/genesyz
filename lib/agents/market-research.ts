@@ -77,7 +77,13 @@ Provide market research with market size, up to 5 competitors (each with up to 3
         });
         try {
           const parsed = JSON.parse(textResult.text);
-          result = { object: MarketResearchSchema.parse(parsed) };
+          result = {
+            object: MarketResearchSchema.parse(parsed),
+            usage: undefined,
+            warnings: [],
+            reasoning: "",
+            finishReason: "stop",
+          };
         } catch (parseError) {
           throw new Error(
             "Fallback parsing also failed: " +
@@ -108,7 +114,7 @@ Provide market research with market size, up to 5 competitors (each with up to 3
       promptHash,
       prompt,
       response: JSON.stringify(result.object),
-      model: "gemini-3-flash-preview",
+      model: "mistral-large-latest",
       tokensUsed: result.usage?.totalTokens,
       latencyMs,
     },
