@@ -49,7 +49,7 @@ Provide market research with market size, up to 5 competitors (each with up to 3
   const promptHash = await hashString(prompt);
   const startTime = Date.now();
 
-  let result;
+  let result: Awaited<ReturnType<typeof generateObject>> | undefined;
   let attempts = 0;
   const maxAttempts = 3;
 
@@ -66,10 +66,7 @@ Provide market research with market size, up to 5 competitors (each with up to 3
       attempts++;
       if (attempts >= maxAttempts) {
         // Fallback: try text generation and parse manually
-        console.error(
-          "Object generation failed after retries, attempting fallback:",
-          error,
-        );
+        console.error('Object generation failed after retries, attempting fallback:', error);
         const textResult = await generateText({
           model,
           system: SYSTEM_PROMPT,
@@ -79,10 +76,17 @@ Provide market research with market size, up to 5 competitors (each with up to 3
           const parsed = JSON.parse(textResult.text);
           result = { object: MarketResearchSchema.parse(parsed) };
         } catch (parseError) {
-          throw new Error(
-            "Fallback parsing also failed: " + parseError.message,
-          );
+          throw new Error('Fallback parsing also failed: ' + (parseError instanceof Error ? parseError.message : String(parseError)));
         }
+      }
+      // Wait briefly before retry
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+  }
+
+  if (!result) {
+    throw new Error('Failed to generate market research after all attempts and fallback');
+  }
       }
       // Wait briefly before retry
       await new Promise((resolve) => setTimeout(resolve, 1000));
