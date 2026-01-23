@@ -77,6 +77,12 @@ export default function IdeaDetailPage() {
     []
   );
 
+  useEffect(() => {
+    if (idea) {
+      console.log({ idea });
+    }
+  }, [idea]);
+
   // Subscribe to real-time updates
   const { latestData } = useInngestSubscription({
     refreshToken: async () =>
@@ -362,7 +368,7 @@ export default function IdeaDetailPage() {
                         TAM
                       </p>
                       <p className="text-lg font-bold">
-                        {market?.marketSize?.tam}
+                        {market?.marketSize?.tam?.value}
                       </p>
                     </div>
                     <div>
@@ -370,7 +376,7 @@ export default function IdeaDetailPage() {
                         Growth
                       </p>
                       <p className="text-lg font-bold">
-                        {market?.marketSize?.growthRate}
+                        {market?.marketSize?.growthRate?.value}
                       </p>
                     </div>
                   </div>
