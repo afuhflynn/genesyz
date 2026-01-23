@@ -11,7 +11,7 @@ import {
 } from "./types";
 
 // const model = google("gemini-3-flash-preview");
-const model = mistral("mistral-large-latest");
+const model = mistral("open-mixtral-8x7b");
 
 const SYSTEM_PROMPT = `You are a technology and market trends analyst specializing in identifying timing windows for startup opportunities. Your role is to assess whether now is the right time for a given idea.
 
@@ -24,7 +24,7 @@ Guidelines:
 - Note emerging trends that could impact the idea`;
 
 export async function runTrendAnalysisAgent(
-  input: AgentInput
+  input: AgentInput,
 ): Promise<AgentOutput> {
   const { ideaId, previousOutputs } = input;
 

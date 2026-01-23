@@ -12,7 +12,7 @@ import {
 } from "./types";
 
 // const model = google("gemini-3-flash-preview");
-const model = mistral("mistral-large-latest");
+const model = mistral("open-mixtral-8x7b");
 
 const SYSTEM_PROMPT = `You are a senior market research analyst with expertise in startup ecosystems, competitive analysis, and market sizing. Your role is to provide actionable market intelligence for founder ideas.
 
@@ -116,7 +116,7 @@ Provide market research with market size, up to 5 competitors (each with up to 3
       promptHash,
       prompt,
       response: JSON.stringify(marketResearch),
-      model: "mistral-large-latest",
+      model: "open-mixtral-8x7b",
       tokensUsed: result.usage?.totalTokens || 0,
       latencyMs,
     },
