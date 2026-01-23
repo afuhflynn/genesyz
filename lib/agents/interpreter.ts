@@ -9,8 +9,8 @@ import {
   InterpretedIdeaSchema,
 } from "./types";
 
-// const model = google("gemini-3-flash-preview");
-const model = mistral("open-mixtral-8x7b");
+const primaryModel = mistral("open-mixtral-8x7b");
+const fallbackModel = google("gemini-2.5-flash");
 
 const SYSTEM_PROMPT = `You are an expert startup analyst and idea interpreter. Your role is to take raw, unstructured founder ideas and transform them into clear, structured representations.
 
@@ -44,13 +44,32 @@ Transform this into a structured idea representation. Be thorough but concise.`;
   const promptHash = await hashString(prompt);
 
   const startTime = Date.now();
+  let result: Awaited<
+    ReturnType<typeof generateObject<typeof InterpretedIdeaSchema>>
+  >;
+  let modelUsed: string;
 
-  const result = await generateObject({
-    model,
-    schema: InterpretedIdeaSchema,
-    system: SYSTEM_PROMPT,
-    prompt,
-  });
+  try {
+    result = await generateObject({
+      model: primaryModel,
+      schema: InterpretedIdeaSchema,
+      system: SYSTEM_PROMPT,
+      prompt,
+    });
+    modelUsed = "open-mixtral-8x7b";
+  } catch (error) {
+    console.warn(
+      `[INTERPRETER] Mistral primary model failed, falling back to Gemini:`,
+      error,
+    );
+    result = await generateObject({
+      model: fallbackModel,
+      schema: InterpretedIdeaSchema,
+      system: SYSTEM_PROMPT,
+      prompt,
+    });
+    modelUsed = "gemini-2.5-flash";
+  }
 
   const latencyMs = Date.now() - startTime;
 
@@ -62,7 +81,7 @@ Transform this into a structured idea representation. Be thorough but concise.`;
       promptHash,
       prompt,
       response: JSON.stringify(result.object),
-      model: "gemini-3-flash-preview",
+      model: modelUsed,
       tokensUsed: result.usage?.totalTokens,
       latencyMs,
     },

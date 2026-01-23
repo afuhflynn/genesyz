@@ -11,10 +11,10 @@ import {
   type InterpretedIdea,
 } from "./types";
 
-// const model = google("gemini-3-flash-preview");
-const model = mistral("open-mixtral-8x7b");
+const primaryModel = mistral("open-mixtral-8x7b");
+const fallbackModel = google("gemini-2.5-flash");
 
-const RESEARCH_SYSTEM_PROMPT = `You are a world-class startup researcher. Your goal is to find the "hard truths" about a startup idea.
+const RESEARCH_SYSTEM_PROMPT = `You are a world-class startup researcher. Your goal is to find "hard truths" about a startup idea.
 You have access to web search tools. Use them to:
 1. Find real market gaps that aren't being addressed.
 2. Identify specific technical or regulatory hurdles.
@@ -45,11 +45,17 @@ export async function runDeepResearchAgent(
 
   const startTime = Date.now();
 
+  let modelUsed: string;
+
   // Step 1: Gather Information using tools
-  const { text: researchData, toolResults } = await generateText({
-    model,
-    system: RESEARCH_SYSTEM_PROMPT,
-    prompt: `Perform deep research for this startup idea:
+  let researchData: string;
+  let toolResults: any[];
+
+  try {
+    const primaryResult = await generateText({
+      model: primaryModel,
+      system: RESEARCH_SYSTEM_PROMPT,
+      prompt: `Perform deep research for this startup idea:
 Title: ${interpretedIdea.title}
 Summary: ${interpretedIdea.summary}
 Problem: ${interpretedIdea.problemStatement}
@@ -57,13 +63,39 @@ Solution: ${interpretedIdea.proposedSolution}
 Category: ${interpretedIdea.category}
 
 Search for real competitors, market gaps, and technical challenges.`,
-    tools,
-    stopWhen: stepCountIs(5), // Allow up to 5 steps of research
-  });
+      tools,
+      stopWhen: stepCountIs(5), // Allow up to 5 steps of research
+    });
+    researchData = primaryResult.text;
+    toolResults = primaryResult.toolResults;
+    modelUsed = "open-mixtral-8x7b";
+  } catch (error) {
+    console.warn(
+      "[DEEP_RESEARCH] Mistral primary model failed, falling back to Gemini for research:",
+      error,
+    );
+    const fallbackResult = await generateText({
+      model: fallbackModel,
+      system: RESEARCH_SYSTEM_PROMPT,
+      prompt: `Perform deep research for this startup idea:
+Title: ${interpretedIdea.title}
+Summary: ${interpretedIdea.summary}
+Problem: ${interpretedIdea.problemStatement}
+Solution: ${interpretedIdea.proposedSolution}
+Category: ${interpretedIdea.category}
+
+Search for real competitors, market gaps, and technical challenges.`,
+      tools,
+      stopWhen: stepCountIs(5),
+    });
+    researchData = fallbackResult.text;
+    toolResults = fallbackResult.toolResults;
+    modelUsed = "gemini-2.5-flash";
+  }
 
   // Step 2: Synthesize into structured object
   const result = await generateObject({
-    model,
+    model: primaryModel,
     schema: DeepResearchSchema,
     system: SYNTHESIS_SYSTEM_PROMPT,
     prompt: `Based on the following research data, generate a structured deep research report:
@@ -76,7 +108,7 @@ ${JSON.stringify(toolResults, null, 2)}`,
 
   const latencyMs = Date.now() - startTime;
 
-  // Log the research call
+  // Log research call
   await db.researchLog.create({
     data: {
       ideaId,
@@ -84,7 +116,7 @@ ${JSON.stringify(toolResults, null, 2)}`,
       promptHash: await hashString(researchData),
       prompt: researchData,
       response: JSON.stringify(result.object),
-      model: "gemini-3-flash-preview",
+      model: modelUsed,
       tokensUsed: result.usage?.totalTokens,
       latencyMs,
     },

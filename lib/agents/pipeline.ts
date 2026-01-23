@@ -25,6 +25,23 @@ export interface PipelineResult {
 /**
  * Run the complete research pipeline for an idea
  * This is called by Inngest for background processing
+ *
+ * @param ideaId - The ID of the idea to research
+ * @param publish - Inngest publish function for realtime updates
+ * @returns Pipeline result with all agent outputs and synthesis
+ *
+ * **AI Model Architecture**:
+ * - Primary Model: Mistral `open-mixtral-8x7b` (cost-effective for high-volume)
+ * - Fallback Model: Google Gemini 2.5 Flash (automatic failover on errors)
+ * - Each agent logs which model was used via `researchLog.model` field
+ *
+ * **Agent Pipeline**:
+ * 1. Interpreter Agent (understands idea from vague inputs)
+ * 2. Market Research Agent (analyzes TAM, competitors, growth rates)
+ * 3. Trend Analysis Agent (checks timing and technology readiness)
+ * 4. Execution Friction Agent (identifies technical and operational risks)
+ * 5. Deep Research Agent (uses web search for market validation)
+ * 6. Synthesis Agent (combines all data into final score and verdict)
  */
 export async function runResearchPipeline(
   ideaId: string,

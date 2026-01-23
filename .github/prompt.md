@@ -86,7 +86,9 @@ Billing / Payments
 AI
 - Vercel AI SDK
 - @ai-sdk/react
-- @ai-sdk/google
+- @ai-sdk/google (Gemini 2.5 Flash)
+- @ai-sdk/mistral (Mistral open-mixtral-8x7b)
+- Dual-Model Architecture: Mistral primary, Gemini fallback for resilience
 
 Background & Realtime
 - **Inngest**

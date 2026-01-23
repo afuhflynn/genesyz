@@ -5,23 +5,29 @@ IdeasVault is an AI-powered platform that helps founders validate their startup 
 ## Features
 
 - **Instant Validation**: Submit an idea (text, voice, or image) and get a report in minutes.
-- **AI Research Agents**:
-  - **Interpreter**: Understands your idea from vague inputs.
-  - **Market Research**: Analyzes TAM, competitors, and growth rates.
-  - **Trend Analysis**: Checks "Why now?" and technology readiness.
-  - **Execution Friction**: Identifies technical and operational risks.
-  - **Synthesis**: Combines all data into a final score and verdict.
+- **AI Research Agents** (Dual-Model Architecture):
+   - **Primary Model**: Mistral `open-mixtral-8x7b` (cost-efficient for high-volume)
+   - **Fallback Model**: Google Gemini 2.5 Flash (automatic failover on errors)
+   - **Interpreter**: Understands your idea from vague inputs.
+   - **Market Research**: Analyzes TAM, competitors, and growth rates.
+   - **Trend Analysis**: Checks "Why now?" and technology readiness.
+   - **Execution Friction**: Identifies technical and operational risks.
+   - **Synthesis**: Combines all data into a final score and verdict.
+   - **Deep Research**: Uses web search tools to validate market gaps and feasibility.
 - **Billing & Entitlements**: Free and Pro plans managed via Polar.
 - **PDF Export**: Download professional research reports.
 - **Email Notifications**: Get notified when research is complete.
 
 ## Tech Stack
 
-- **Framework**: Next.js 15 (App Router)
+- **Framework**: Next.js 16 (App Router)
 - **Language**: TypeScript
 - **Database**: PostgreSQL (with Prisma ORM)
 - **Auth**: Better Auth (Google OAuth)
-- **AI**: Google Gemini 2.0 Flash (via Vercel AI SDK)
+- **AI**: Dual-Model Architecture
+  - **Primary**: Mistral `open-mixtral-8x7b` (cost-effective, high-volume)
+  - **Fallback**: Google Gemini 2.5 Flash (resilience, edge cases)
+  - Via Vercel AI SDK (@ai-sdk/mistral, @ai-sdk/google)
 - **Background Jobs**: Inngest
 - **Styling**: Tailwind CSS + shadcn/ui
 - **Storage**: DigitalOcean Spaces (S3 compatible)

@@ -1,6 +1,25 @@
 "use client";
 
+/**
+ * Chat Interface Component
+ *
+ * **AI Model Configuration**:
+ * - Primary Model: Mistral `open-mixtral-8x7b` (fast, cost-effective)
+ * - Fallback Model: Google Gemini 2.5 Flash (resilience on errors)
+ * - User Selection: Allows manual model selection via dropdown
+ *
+ * **Model Options**:
+ * - "mistral": Fast, cost-effective, ideal for general queries
+ * - "gemini": Advanced reasoning, uses 2.5 Flash as fallback
+ *
+ * **Research Mode**:
+ * - When enabled: Includes real-time web search tools and market insights
+ * - Disabled: Uses chat model only for faster responses
+ */
 import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport } from "ai";
+import { Loader2, Search, SendIcon } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -11,9 +30,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { SendIcon, Loader2, Search } from "lucide-react";
-import { useRef, useEffect, useState } from "react";
-import { DefaultChatTransport } from "ai";
 import {
   Message,
   MessageContent,
@@ -30,7 +46,7 @@ interface ChatInterfaceProps {
 export function ChatInterface({ ideas = [] }: ChatInterfaceProps) {
   const [selectedIdea, setSelectedIdea] = useState<string>("");
   const [selectedModel, setSelectedModel] = useState<"mistral" | "gemini">(
-    "mistral"
+    "mistral",
   );
   const [includeResearch, setIncludeResearch] = useState(false);
   const [ideas_list, setIdeasList] = useState(ideas);
@@ -66,7 +82,7 @@ export function ChatInterface({ ideas = [] }: ChatInterfaceProps) {
         .then((data) => {
           if (Array.isArray(data)) {
             setIdeasList(
-              data.map((idea: any) => ({ id: idea.id, title: idea.title }))
+              data.map((idea: any) => ({ id: idea.id, title: idea.title })),
             );
           }
         })

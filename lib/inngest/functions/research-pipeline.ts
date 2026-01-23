@@ -158,7 +158,21 @@ export const ideaChannel = channel((ideaId: string) => `idea:${ideaId}`)
 /**
  * Research Pipeline Function
  * Triggered when a new idea is submitted
- * Runs the multi-agent AI research pipeline
+ * Runs multi-agent AI research pipeline with dual-model architecture
+ *
+ * **AI Model Strategy**:
+ * - Primary Model: Mistral `open-mixtral-8x7b` (cost-effective for high-volume)
+ * - Fallback Model: Google Gemini 2.5 Flash (automatic failover on API errors)
+ * - Each agent uses try-catch pattern to switch models
+ * - Model usage is tracked in `researchLog.model` field for monitoring
+ *
+ * **Agent Pipeline**:
+ * 1. Interpreter Agent (understands idea from vague inputs)
+ * 2. Market Research Agent (analyzes TAM, competitors, growth rates)
+ * 3. Trend Analysis Agent (checks timing and technology readiness)
+ * 4. Execution Friction Agent (identifies technical and operational risks)
+ * 5. Deep Research Agent (uses web search for market validation)
+ * 6. Synthesis Agent (combines all data into final score and verdict)
  */
 export const researchPipelineFunction = inngest.createFunction(
   {

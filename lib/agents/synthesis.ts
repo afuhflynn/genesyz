@@ -13,8 +13,8 @@ import {
   type TrendAnalysis,
 } from "./types";
 
-// const model = google("gemini-3-flash-preview");
-const model = mistral("open-mixtral-8x7b");
+const primaryModel = mistral("open-mixtral-8x7b");
+const fallbackModel = google("gemini-2.5-flash");
 
 const SYSTEM_PROMPT = `You are a senior venture analyst synthesizing research into actionable recommendations for founders. Your role is to combine multiple perspectives into a coherent assessment.
 
@@ -80,12 +80,32 @@ Provide a comprehensive synthesis with scores, recommendations, and a clear verd
   const promptHash = await hashString(prompt);
   const startTime = Date.now();
 
-  const result = await generateObject({
-    model,
-    schema: SynthesisSchema,
-    system: SYSTEM_PROMPT,
-    prompt,
-  });
+  let result: Awaited<
+    ReturnType<typeof generateObject<typeof SynthesisSchema>>
+  >;
+  let modelUsed: string;
+
+  try {
+    result = await generateObject({
+      model: primaryModel,
+      schema: SynthesisSchema,
+      system: SYSTEM_PROMPT,
+      prompt,
+    });
+    modelUsed = "open-mixtral-8x7b";
+  } catch (error) {
+    console.warn(
+      "[SYNTHESIS] Mistral primary model failed, falling back to Gemini:",
+      error,
+    );
+    result = await generateObject({
+      model: fallbackModel,
+      schema: SynthesisSchema,
+      system: SYSTEM_PROMPT,
+      prompt,
+    });
+    modelUsed = "gemini-2.5-flash";
+  }
 
   const latencyMs = Date.now() - startTime;
 
@@ -96,7 +116,7 @@ Provide a comprehensive synthesis with scores, recommendations, and a clear verd
       promptHash,
       prompt,
       response: JSON.stringify(result.object),
-      model: "gemini-3-flash-preview",
+      model: modelUsed,
       tokensUsed: result.usage?.totalTokens,
       latencyMs,
     },

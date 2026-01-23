@@ -1,11 +1,11 @@
-import { mistral } from "@ai-sdk/mistral";
 import { google } from "@ai-sdk/google";
+import { mistral } from "@ai-sdk/mistral";
 import { streamText } from "ai";
-import { tools } from "@/lib/ai/tools";
-import { db } from "@/lib/db";
 import { headers } from "next/headers";
-import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
+import { tools } from "@/lib/ai/tools";
+import { auth } from "@/lib/auth";
+import { db } from "@/lib/db";
 
 export const runtime = "nodejs";
 
@@ -17,7 +17,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { messages, model = "gemini", ideaId } = await req.json();
+    const { messages, model = "mistral", ideaId } = await req.json();
 
     // Build system prompt based on the "AI Interrogation" philosophy
     let systemPrompt = `You are Ideas Vault — an AI Chief of Staff focused on helping early-stage founders decide what to do next.
@@ -76,10 +76,9 @@ Use the 'getIdeaContext' tool to fetch more details if needed.`;
       system: systemPrompt,
       tools: tools,
       messages,
-      maxSteps: 5, // Allow tool calling loops
     });
 
-    return result.toDataStreamResponse();
+    return result.toTextStreamResponse();
   } catch (error) {
     console.error("Chat API error:", error);
     return NextResponse.json(

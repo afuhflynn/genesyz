@@ -10,8 +10,8 @@ import {
   TrendAnalysisSchema,
 } from "./types";
 
-// const model = google("gemini-3-flash-preview");
-const model = mistral("open-mixtral-8x7b");
+const primaryModel = mistral("open-mixtral-8x7b");
+const fallbackModel = google("gemini-2.5-flash");
 
 const SYSTEM_PROMPT = `You are a technology and market trends analyst specializing in identifying timing windows for startup opportunities. Your role is to assess whether now is the right time for a given idea.
 
@@ -45,14 +45,35 @@ export async function runTrendAnalysisAgent(
 Assess the timing, technology readiness, and relevant trends that could impact this idea's success.`;
 
   const promptHash = await hashString(prompt);
+
   const startTime = Date.now();
 
-  const result = await generateObject({
-    model,
-    schema: TrendAnalysisSchema,
-    system: SYSTEM_PROMPT,
-    prompt,
-  });
+  let result: Awaited<
+    ReturnType<typeof generateObject<typeof TrendAnalysisSchema>>
+  >;
+  let modelUsed: string;
+
+  try {
+    result = await generateObject({
+      model: primaryModel,
+      schema: TrendAnalysisSchema,
+      system: SYSTEM_PROMPT,
+      prompt,
+    });
+    modelUsed = "open-mixtral-8x7b";
+  } catch (error) {
+    console.warn(
+      "[TREND_ANALYSIS] Mistral primary model failed, falling back to Gemini:",
+      error,
+    );
+    result = await generateObject({
+      model: fallbackModel,
+      schema: TrendAnalysisSchema,
+      system: SYSTEM_PROMPT,
+      prompt,
+    });
+    modelUsed = "gemini-2.5-flash";
+  }
 
   const latencyMs = Date.now() - startTime;
 
@@ -63,7 +84,7 @@ Assess the timing, technology readiness, and relevant trends that could impact t
       promptHash,
       prompt,
       response: JSON.stringify(result.object),
-      model: "gemini-3-flash-preview",
+      model: modelUsed,
       tokensUsed: result.usage?.totalTokens,
       latencyMs,
     },

@@ -11,8 +11,8 @@ import {
   MarketResearchSchema,
 } from "./types";
 
-// const model = google("gemini-3-flash-preview");
-const model = mistral("open-mixtral-8x7b");
+const primaryModel = mistral("open-mixtral-8x7b");
+const fallbackModel = google("gemini-2.5-flash");
 
 const SYSTEM_PROMPT = `You are a senior market research analyst with expertise in startup ecosystems, competitive analysis, and market sizing. Your role is to provide actionable market intelligence for founder ideas.
 
@@ -50,54 +50,45 @@ Provide market research with market size, up to 5 competitors (each with up to 3
   const promptHash = await hashString(prompt);
   const startTime = Date.now();
 
-  let result: Awaited<ReturnType<typeof generateObject>> | undefined;
-  let attempts = 0;
-  const maxAttempts = 3;
+  let result:
+    | Awaited<ReturnType<typeof generateObject<typeof MarketResearchSchema>>>
+    | undefined;
+  let modelUsed: string = "gemini-2.5-flash";
 
-  while (attempts < maxAttempts) {
-    try {
-      result = await generateObject({
-        model,
-        schema: MarketResearchSchema,
-        system: SYSTEM_PROMPT,
-        prompt,
-      });
-      break; // Success, exit loop
-    } catch (error) {
-      attempts++;
-      if (attempts >= maxAttempts) {
-        // Fallback: try text generation and parse manually
-        console.error(
-          "Object generation failed after retries, attempting fallback:",
-          error,
-        );
-        const textResult = await generateText({
-          model,
+  try {
+    let attempts = 0;
+    const maxAttempts = 3;
+
+    while (attempts < maxAttempts) {
+      try {
+        result = await generateObject({
+          model: primaryModel,
+          schema: MarketResearchSchema,
           system: SYSTEM_PROMPT,
-          prompt: `${prompt}\n\nOutput valid JSON only matching the schema.`,
+          prompt,
         });
-        try {
-          const parsed = JSON.parse(textResult.text);
-          result = {
-            object: MarketResearchSchema.parse(parsed) as any,
-            usage: null,
-            warnings: [],
-            reasoning: "",
-            finishReason: "stop",
-          };
-        } catch (parseError) {
-          throw new Error(
-            "Fallback parsing also failed: " +
-              (parseError instanceof Error
-                ? parseError.message
-                : String(parseError)),
-          );
+        modelUsed = "open-mixtral-8x7b";
+        break;
+      } catch (error) {
+        attempts++;
+        if (attempts >= maxAttempts) {
+          throw error;
         }
-      } else {
-        // Wait briefly before retry
         await new Promise((resolve) => setTimeout(resolve, 1000));
       }
     }
+  } catch (error) {
+    console.warn(
+      "[MARKET_RESEARCH] Mistral primary model failed after all retries, falling back to Gemini:",
+      error,
+    );
+    result = await generateObject({
+      model: fallbackModel,
+      schema: MarketResearchSchema,
+      system: SYSTEM_PROMPT,
+      prompt,
+    });
+    modelUsed = "gemini-2.5-flash";
   }
 
   if (!result) {
@@ -116,7 +107,7 @@ Provide market research with market size, up to 5 competitors (each with up to 3
       promptHash,
       prompt,
       response: JSON.stringify(marketResearch),
-      model: "open-mixtral-8x7b",
+      model: modelUsed,
       tokensUsed: result.usage?.totalTokens || 0,
       latencyMs,
     },
