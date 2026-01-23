@@ -68,7 +68,7 @@ Use the 'getIdeaContext' tool to fetch more details if needed.`;
     // Get model instance
     const aiModel =
       model === "mistral"
-        ? mistral("mistral-large-latest")
+        ? mistral("open-mixtral-8x7b")
         : google("gemini-2.5-flash");
 
     const result = streamText({
@@ -84,7 +84,7 @@ Use the 'getIdeaContext' tool to fetch more details if needed.`;
     console.error("Chat API error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
