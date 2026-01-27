@@ -33,7 +33,8 @@ export default function LoginPage() {
     signIn.mutate({
       email: formData.email,
       password: formData.password,
-      callbackURL: redirect ?? "/dashboard",
+      callbackURL:
+        decodeURIComponent(redirect as string).trim() ?? "/dashboard",
     });
   }
 

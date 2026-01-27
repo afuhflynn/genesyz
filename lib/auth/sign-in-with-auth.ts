@@ -2,7 +2,7 @@ import { signIn } from "../auth-client";
 
 export const signInWithOAuth = async (
   provider: "google" | "github",
-  callback: string | null
+  callback: string | null,
 ) => {
   await signIn.social({
     provider,

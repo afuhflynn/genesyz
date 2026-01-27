@@ -52,7 +52,7 @@ export const getIndustryNews = tool({
     category: z
       .string()
       .describe(
-        "The industry or startup category (e.g., fintech, ai, healthcare)"
+        "The industry or startup category (e.g., fintech, ai, healthcare)",
       ),
     daysBack: z
       .number()

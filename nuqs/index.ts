@@ -33,7 +33,7 @@ type ParamsTypes = Values<{
 export const buildUrl = (
   href: string,
   overrides: Partial<typeof searchParamsSchema> = {},
-  params: ParamsTypes
+  params: ParamsTypes,
 ) => {
   const newParams = new URLSearchParams();
   const merged = { ...params, ...overrides };

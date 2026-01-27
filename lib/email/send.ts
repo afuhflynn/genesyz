@@ -53,9 +53,9 @@ function renderPremiumEmail(options: {
   <div style="text-align: center; margin-top: 24px;">
     <p style="font-size: 11px; color: #94a3b8;">
       © ${new Date().getFullYear()} IdeasVault. ${
-    footerHtml ||
-    `<a href="${APP_URL}/settings" style="color: #64748b; text-decoration: underline;">Manage Preferences</a>`
-  }
+        footerHtml ||
+        `<a href="${APP_URL}/settings" style="color: #64748b; text-decoration: underline;">Manage Preferences</a>`
+      }
     </p>
   </div>
 </body>
@@ -140,8 +140,8 @@ export async function sendDigestEmail(options: {
         <tr>
           <td style="padding: 12px 16px; border-bottom: 1px solid #f1f5f9;">
             <a href="${APP_URL}/ideas/${
-        idea.id
-      }" style="color: #0f172a; text-decoration: none; font-weight: 600;">
+              idea.id
+            }" style="color: #0f172a; text-decoration: none; font-weight: 600;">
               ${idea.title}
             </a>
           </td>
@@ -150,16 +150,20 @@ export async function sendDigestEmail(options: {
               idea.score >= 70
                 ? "#dcfce7"
                 : idea.score >= 50
-                ? "#fef3c7"
-                : "#fee2e2"
+                  ? "#fef3c7"
+                  : "#fee2e2"
             }; color: ${
-        idea.score >= 70 ? "#166534" : idea.score >= 50 ? "#a16207" : "#dc2626"
-      }; padding: 4px 12px; border-radius: 9999px; font-size: 12px; font-weight: 800;">
+              idea.score >= 70
+                ? "#166534"
+                : idea.score >= 50
+                  ? "#a16207"
+                  : "#dc2626"
+            }; padding: 4px 12px; border-radius: 9999px; font-size: 12px; font-weight: 800;">
               ${idea.score}
             </span>
           </td>
         </tr>
-      `
+      `,
     )
     .join("");
 
@@ -221,86 +225,192 @@ export async function sendDigestEmail(options: {
   });
 }
 
-export async function sendStrategicAdvisoryEmail(options: {
+export async function sendWeeklyStrategicReportEmail(options: {
   to: string;
   userName: string;
   advisory: StrategicAdvisory;
 }): Promise<boolean> {
   const { to, userName, advisory } = options;
 
-  const primaryVerdict = advisory.verdicts[0];
-  const insights = primaryVerdict?.evidence.slice(0, 3) || [];
-  const nextAction =
-    primaryVerdict?.onePriority || "Check dashboard for next steps";
-  const stopAction = primaryVerdict?.oneStop || "N/A";
-  const risk = primaryVerdict?.topRisk;
-
-  const riskCategoryColors: Record<string, string> = {
-    Market: "#3b82f6",
-    Product: "#a855f7",
-    Financial: "#10b981",
-    Team: "#f97316",
+  const primaryFocus = advisory.primaryFocus || {
+    ideaTitle: "CropGuard",
+    allocation: 80,
   };
+  const marketPulse = advisory.marketPulse?.slice(0, 3) || [];
+  const vcCorner = advisory.vcCorner || {};
+  const riskCliffs = advisory.riskCliffs || [];
+  const actionPlan = advisory.weeklyActionPlan || [];
 
+  // Generate subject line variants
+  const subjectVariants = [
+    `🎯 Weekly Focus: ${primaryFocus.ideaTitle} (${primaryFocus.allocation}%) — Strategic Update`,
+    `🚀 Founder Focus: ${primaryFocus.ideaTitle} Priority Actions`,
+    `📈 Weekly Strategy: ${primaryFocus.ideaTitle} Leads with ${primaryFocus.allocation}% Allocation`,
+  ];
+
+  // Generate preheader variants
+  const preheaderVariants = [
+    `Your primary focus this week is ${primaryFocus.ideaTitle} with ${primaryFocus.allocation}% allocation`,
+    `Key actions: ${actionPlan
+      .slice(0, 2)
+      .map((a) => a.title)
+      .join(", ")}`,
+    `VC insight: ${vcCorner.investorAngle || "Market trends favor your top ideas"}`,
+  ];
+
+  // Generate Markdown version
+  const markdownContent = `
+# Founder Focus This Week
+
+## ${primaryFocus.ideaTitle} — ${primaryFocus.allocation}% time allocation
+
+### Executive Summary
+${advisory.executiveSummary}
+
+### Market Pulse
+${marketPulse.map((item) => `- ${item.newsItem}`).join("\n")}
+
+### Strategic Roadmap
+${advisory.verdicts
+  .map((verdict) => {
+    return `#### ${verdict.ideaTitle}
+- ${verdict.onePriority}
+- Status: ${verdict.status || "validation"}
+- Allocation: ${verdict.timeAllocation || 20}%
+`;
+  })
+  .join("")}
+
+### Weekly Action Plan
+${actionPlan
+  .map((action) => {
+    return `- **${action.title}** (${action.priority})
+  - Owner: ${action.owner}
+  - Due: ${action.due_date}
+  - Time: ${action.estimated_time_allocation}
+  - Success: ${action.success_criteria}
+  - Kill: ${action.kill_criteria}
+`;
+  })
+  .join("")}
+
+### VC Corner
+${vcCorner.sentiment}
+
+**Investor Angle:** ${vcCorner.investorAngle}
+
+### Why This Might Fail
+${riskCliffs.map((risk) => `- **${risk.ideaTitle}:** ${risk.failureReason}`).join("\n")}
+
+[Approve Focus]() | [Assign Owners]()
+`;
+
+  // Generate HTML version
   const contentHtml = `
-    <p style="font-size: 14px; color: #64748b; margin: 0 0 24px 0;">Hi ${userName}, here is your decision-first update.</p>
-
-    <div style="margin-bottom: 24px;">
-      <h2 style="font-size: 18px; font-weight: 800; color: #0f172a; margin: 0 0 8px 0;">
-        Verdict: <span style="color: ${
-          primaryVerdict?.verdict === "Go"
-            ? "#10b981"
-            : primaryVerdict?.verdict === "Pause"
-            ? "#f59e0b"
-            : "#ef4444"
-        }">${primaryVerdict?.verdict}</span> — ${primaryVerdict?.ideaTitle}
+    <div style="background: #F5A623; color: white; padding: 16px; border-radius: 12px 12px 0 0; text-align: center; font-weight: 800;">
+      Founder Focus This Week
+    </div>
+    <div style="background: #fef3c7; padding: 16px; border-radius: 0 0 12px 12px; margin-bottom: 24px;">
+      <h2 style="font-size: 20px; font-weight: 800; color: #a16207; margin: 0 0 8px 0;">
+        ${primaryFocus.ideaTitle} — ${primaryFocus.allocation}% time allocation
       </h2>
-      <p style="font-size: 15px; color: #475569; margin: 0; line-height: 1.6;">
-        ${advisory.executiveSummary.split(".")[0]}.
-      </p>
     </div>
 
-    <div style="margin-bottom: 24px; padding: 16px; background: #f1f5f9; border-radius: 12px; border: 1px solid #e2e8f0;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-        <span style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase;">Top Risk</span>
-        <span style="font-size: 10px; font-weight: 800; color: ${
-          risk ? riskCategoryColors[risk.category] : "#64748b"
-        }; text-transform: uppercase; padding: 2px 8px; border: 1px solid ${
-    risk ? riskCategoryColors[risk.category] : "#e2e8f0"
-  }; border-radius: 9999px;">${risk?.category || "N/A"}</span>
-      </div>
-      <p style="font-size: 14px; color: #334155; margin: 0; font-weight: 500;">${
-        risk?.description || "No critical risks identified."
-      }</p>
-    </div>
+    <h3 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0 0 12px 0;">Executive Summary</h3>
+    <p style="font-size: 14px; color: #475569; margin: 0 0 24px 0; line-height: 1.6;">
+      ${advisory.executiveSummary}
+    </p>
 
-    <ul style="margin: 0 0 24px 0; padding: 0; list-style: none;">
-      ${insights
+    <h3 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0 0 12px 0;">Market Pulse</h3>
+    <ul style="margin: 0 0 24px 0; padding: 0 0 0 20px;">
+      ${marketPulse
         .map(
-          (insight) => `
-        <li style="margin-bottom: 10px; font-size: 14px; color: #334155; display: flex; align-items: flex-start;">
-          <span style="color: #F5A623; margin-right: 12px; font-weight: bold;">•</span>
-          <span>${insight}</span>
-        </li>
-      `
+          (item) => `
+        <li style="margin-bottom: 8px; font-size: 14px; color: #334155;">${item.newsItem}</li>
+      `,
         )
         .join("")}
     </ul>
 
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
-      <div style="background: #f0fdf4; border-radius: 12px; padding: 16px; border: 1px solid #e2e8f0; border-left-width: 4px; border-left-color: #10b981;">
-        <p style="font-size: 10px; font-weight: 800; color: #166534; margin: 0 0 4px 0; text-transform: uppercase;">One Priority</p>
-        <p style="font-size: 13px; color: #14532d; margin: 0; font-weight: 600;">${nextAction}</p>
+    <h3 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0 0 12px 0;">Strategic Roadmap</h3>
+    ${advisory.verdicts
+      .map((verdict) => {
+        return `
+      <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0;">
+        <h4 style="font-size: 14px; font-weight: 800; color: #0f172a; margin: 0 0 8px 0;">${verdict.ideaTitle}</h4>
+        <p style="font-size: 13px; color: #475569; margin: 0 0 4px 0;"><strong>Priority:</strong> ${verdict.onePriority}</p>
+        <p style="font-size: 13px; color: #475569; margin: 0 0 4px 0;"><strong>Status:</strong> ${verdict.status || "validation"}</p>
+        <p style="font-size: 13px; color: #475569; margin: 0;"><strong>Allocation:</strong> ${verdict.timeAllocation || 20}%</p>
       </div>
-      <div style="background: #fef2f2; border-radius: 12px; padding: 16px; border: 1px solid #e2e8f0; border-left-width: 4px; border-left-color: #ef4444;">
-        <p style="font-size: 10px; font-weight: 800; color: #991b1b; margin: 0 0 4px 0; text-transform: uppercase;">Stop Action</p>
-        <p style="font-size: 13px; color: #7f1d1d; margin: 0; font-weight: 600;">${stopAction}</p>
-      </div>
-    </div>
+    `;
+      })
+      .join("")}
 
-    <div style="text-align: center;">
-      <a href="${APP_URL}/dashboard" style="display: inline-block; background: #F5A623; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 14px; box-shadow: 0 4px 6px -1px rgba(245, 166, 35, 0.2);">
-        Open Full Analysis
+    <h3 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0 0 12px 0;">Weekly Action Plan</h3>
+    <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 13px;">
+      <thead>
+        <tr style="background: #f8fafc; border-radius: 8px 8px 0 0;">
+          <th style="padding: 12px; text-align: left; color: #64748b; font-weight: 800; text-transform: uppercase; font-size: 10px;">Action</th>
+          <th style="padding: 12px; text-align: left; color: #64748b; font-weight: 800; text-transform: uppercase; font-size: 10px;">Owner</th>
+          <th style="padding: 12px; text-align: left; color: #64748b; font-weight: 800; text-transform: uppercase; font-size: 10px;">Due</th>
+          <th style="padding: 12px; text-align: left; color: #64748b; font-weight: 800; text-transform: uppercase; font-size: 10px;">Priority</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${actionPlan
+          .map((action) => {
+            const priorityColor =
+              action.priority === "High"
+                ? "#dc2626"
+                : action.priority === "Medium"
+                  ? "#f59e0b"
+                  : "#10b981";
+            return `
+          <tr style="border-bottom: 1px solid #f1f5f9;">
+            <td style="padding: 12px; color: #334155;">
+              <strong>${action.title}</strong>
+              <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
+                <strong>Success:</strong> ${action.success_criteria}<br>
+                <strong>Kill:</strong> ${action.kill_criteria}
+              </div>
+            </td>
+            <td style="padding: 12px; color: #334155;">${action.owner}</td>
+            <td style="padding: 12px; color: #334155;">${action.due_date}</td>
+            <td style="padding: 12px; color: ${priorityColor};">
+              <span style="display: inline-block; padding: 2px 8px; background: ${priorityColor}20; border-radius: 9999px; font-size: 10px; font-weight: 800; text-transform: uppercase;">${action.priority}</span>
+            </td>
+          </tr>
+        `;
+          })
+          .join("")}
+      </tbody>
+    </table>
+
+    <h3 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0 0 12px 0;">VC Corner</h3>
+    <p style="font-size: 14px; color: #475569; margin: 0 0 12px 0; line-height: 1.6;">
+      ${vcCorner.sentiment}
+    </p>
+    <p style="font-size: 14px; color: #475569; margin: 0 0 24px 0; line-height: 1.6; font-weight: 800;">
+      <em>Investor Angle:</em> ${vcCorner.investorAngle}
+    </p>
+
+    <h3 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0 0 12px 0;">Why This Might Fail</h3>
+    <ul style="margin: 0 0 24px 0; padding: 0 0 0 20px;">
+      ${riskCliffs
+        .map(
+          (risk) => `
+        <li style="margin-bottom: 8px; font-size: 14px; color: #334155;"><strong>${risk.ideaTitle}:</strong> ${risk.failureReason}</li>
+      `,
+        )
+        .join("")}
+    </ul>
+
+    <div style="text-align: center; margin-top: 24px;">
+      <a href="${APP_URL}/dashboard" style="display: inline-block; background: #F5A623; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 14px; box-shadow: 0 4px 6px -1px rgba(245, 166, 35, 0.2); margin-right: 12px;">
+        Approve Focus
+      </a>
+      <a href="${APP_URL}/dashboard" style="display: inline-block; background: #0f172a; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 14px; box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.2);">
+        Assign Owners
       </a>
     </div>
   `;
@@ -311,11 +421,51 @@ export async function sendStrategicAdvisoryEmail(options: {
     badge: "Premium Advisory",
   });
 
+  // Generate Slack/Telegram summary
+  const slackSummary = `🎯 Weekly Focus: ${primaryFocus.ideaTitle} (${primaryFocus.allocation}%) — Key actions: ${actionPlan
+    .slice(0, 2)
+    .map((a) => a.title)
+    .join(", ")}. VC angle: ${vcCorner.investorAngle}`;
+
+  // Generate JSON output
+  const jsonOutput = {
+    metadata: {
+      subject: subjectVariants[0],
+      preheader: preheaderVariants[0],
+      publish_date: "2026-01-26",
+      primary_focus: primaryFocus.ideaTitle,
+      focus_allocation: primaryFocus.allocation,
+    },
+    sections: [
+      { type: "executive_summary", content: advisory.executiveSummary },
+      { type: "market_pulse", content: marketPulse },
+      { type: "strategic_roadmap", content: advisory.verdicts },
+      { type: "weekly_action_plan", content: actionPlan },
+      { type: "vc_corner", content: vcCorner },
+      { type: "risk_cliffs", content: riskCliffs },
+    ],
+    weekly_action_plan: actionPlan,
+    email_variants: {
+      markdown: markdownContent,
+      html: contentHtml,
+    },
+    slack_summary: slackSummary,
+    subject_variants: subjectVariants,
+    preheader_variants: preheaderVariants,
+    qa_checklist: [
+      "Every action has a success_criteria and an owner assigned",
+      "Primary focus set and allocation >= 50%",
+      "At least one kill_criteria present",
+      "All required fields present in JSON output",
+      "Email renders correctly in HTML and Markdown",
+    ],
+  };
+
   return sendEmail({
     to,
-    subject: `Verdict: ${primaryVerdict?.verdict} — ${primaryVerdict?.ideaTitle}`,
+    subject: subjectVariants[0],
     html,
-    text: `Verdict: ${primaryVerdict?.verdict} — ${primaryVerdict?.ideaTitle}. Next Priority: ${nextAction}. Stop Action: ${stopAction}`,
+    text: markdownContent,
   });
 }
 
@@ -364,8 +514,8 @@ export async function sendResearchCompleteEmail(options: {
             overallScore >= 70
               ? "#166534"
               : overallScore >= 50
-              ? "#a16207"
-              : "#dc2626"
+                ? "#a16207"
+                : "#dc2626"
           }; margin: 0;">
             ${overallScore}
           </p>
@@ -375,10 +525,10 @@ export async function sendResearchCompleteEmail(options: {
           <span style="display: inline-block; background: ${
             verdictStyle.bg
           }; color: ${
-    verdictStyle.text
-  }; padding: 8px 16px; border-radius: 9999px; font-size: 12px; font-weight: 800; text-transform: uppercase; border: 1px solid ${
-    verdictStyle.text
-  }20;">
+            verdictStyle.text
+          }; padding: 8px 16px; border-radius: 9999px; font-size: 12px; font-weight: 800; text-transform: uppercase; border: 1px solid ${
+            verdictStyle.text
+          }20;">
             ${verdict.replace(/-/g, " ")}
           </span>
         </div>

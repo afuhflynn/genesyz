@@ -1,7 +1,7 @@
 import { runStrategicAdvisoryAgent } from "@/lib/agents/strategic-advisory";
 import type { StrategicAdvisory } from "@/lib/agents/types";
 import { db } from "@/lib/db";
-import { sendDigestEmail, sendStrategicAdvisoryEmail } from "@/lib/email/send";
+import { sendWeeklyStrategicReportEmail } from "@/lib/email/send";
 import { inngest } from "../client";
 
 /**
@@ -9,15 +9,14 @@ import { inngest } from "../client";
  * Runs every Monday at 9:00 AM UTC
  * Sends personalized digest emails to all active users
  */
-export const weeklyDigestFunction = inngest.createFunction(
+export const weeklyStrategicReportFunction = inngest.createFunction(
   {
-    id: "weekly-digest",
-    name: "Weekly Digest Email",
+    id: "weekly-strategic-report",
+    name: "Weekly Strategic Report",
   },
-  { cron: "0 9 * * 1" }, // Every Monday at 9:00 AM UTC
+  { cron: "0 9 * * 0" }, // Every Sunday at 9:00 AM UTC
 
-  // { cron: "*/1 * * * *" }, // Every 5 minutes
-  async ({ step }) => {
+  async ({ step }: { step: any }) => {
     // Step 1: Get all users with active ideas
     const users = await step.run("get-active-users", async () => {
       return await db.user.findMany({
@@ -44,6 +43,10 @@ export const weeklyDigestFunction = inngest.createFunction(
                 where: { agentType: "INTERPRETER" },
                 take: 1,
               },
+              snapshots: {
+                orderBy: { date: "desc" },
+                take: 12, // Keep 12 weeks of memory
+              },
             },
             orderBy: { createdAt: "desc" },
             take: 5, // Get top 5 recent ideas
@@ -57,8 +60,8 @@ export const weeklyDigestFunction = inngest.createFunction(
       throw new Error("No users found");
     }
 
-    // Step 2: Send digest to each user
-    const results = await step.run("send-digests", async () => {
+    // Step 2: Send strategic report to each user
+    const results = await step.run("send-reports", async () => {
       const emailResults: {
         userId: string;
         success: boolean;
@@ -68,7 +71,7 @@ export const weeklyDigestFunction = inngest.createFunction(
       // Re-fetch users with full context for stateful run
       const usersWithContext = await db.user.findMany({
         where: {
-          id: { in: users.map((u) => u.id) },
+          id: { in: users.map((u: any) => u.id) },
         },
         include: {
           ideas: {
@@ -97,7 +100,7 @@ export const weeklyDigestFunction = inngest.createFunction(
           // 1. Run Strategic Advisory Agent for top-tier report
           const advisory = (await runStrategicAdvisoryAgent({
             userId: user.id,
-            ideas: user.ideas.map((idea) => {
+            ideas: user.ideas.map((idea: any) => {
               const interpreterPacket = idea.researchPackets[0];
               const content = interpreterPacket?.content as any;
               return {
@@ -107,7 +110,7 @@ export const weeklyDigestFunction = inngest.createFunction(
                 category: content?.category || "saas",
                 overallScore: 0, // Scores are deprecated in favor of verdicts
                 metrics: idea.metrics,
-                history: idea.snapshots.map((s) => ({
+                history: idea.snapshots.map((s: any) => ({
                   date: s.date,
                   verdict: s.verdict,
                 })),
@@ -117,7 +120,7 @@ export const weeklyDigestFunction = inngest.createFunction(
 
           // 2. Persist verdicts and snapshots
           for (const verdict of advisory.verdicts) {
-            const idea = user.ideas.find((i) => i.id === verdict.ideaId);
+            const idea = user.ideas.find((i: any) => i.id === verdict.ideaId);
             if (idea) {
               const lastSnapshot = idea.snapshots[0];
               const lastVerdict = lastSnapshot?.verdict as any;
@@ -175,8 +178,8 @@ export const weeklyDigestFunction = inngest.createFunction(
             }
           }
 
-          // 3. Send the professional Strategic Advisory email
-          await sendStrategicAdvisoryEmail({
+          // 3. Send the weekly strategic report email
+          await sendWeeklyStrategicReportEmail({
             to: user.email,
             userName: user.name || "Founder",
             advisory,
@@ -184,12 +187,13 @@ export const weeklyDigestFunction = inngest.createFunction(
 
           emailResults.push({ userId: user.id, success: true });
         } catch (error) {
-          console.error(`Error sending digest to user ${user.id}:`, error);
           emailResults.push({
             userId: user.id,
             success: false,
             error: error instanceof Error ? error.message : "Unknown error",
           });
+          console.error(`Error sending report to user ${user.id}:`, error);
+          throw new Error(`Error sending report to user ${user.id}: ${error}`);
         }
       }
 
@@ -198,12 +202,12 @@ export const weeklyDigestFunction = inngest.createFunction(
 
     // Step 3: Log results
     await step.run("log-results", async () => {
-      const successful = results.filter((r) => r.success).length;
-      const failed = results.filter((r) => !r.success).length;
+      const successful = results.filter((r: any) => r.success).length;
+      const failed = results.filter((r: any) => !r.success).length;
 
       await db.auditLog.create({
         data: {
-          action: "digest.sent",
+          action: "strategic_report.sent",
           resource: "email",
           metadata: {
             totalUsers: users.length,
@@ -216,8 +220,8 @@ export const weeklyDigestFunction = inngest.createFunction(
 
     return {
       totalUsers: users.length,
-      sent: results.filter((r) => r.success).length,
-      failed: results.filter((r) => !r.success).length,
+      sent: results.filter((r: any) => r.success).length,
+      failed: results.filter((r: any) => !r.success).length,
     };
-  }
+  },
 );

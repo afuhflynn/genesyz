@@ -8,14 +8,14 @@ import {
 } from "@/lib/inngest/functions/auth-emails";
 import { reevaluationFunction } from "@/lib/inngest/functions/re-evaluation";
 import { researchPipelineFunction } from "@/lib/inngest/functions/research-pipeline";
-import { weeklyDigestFunction } from "@/lib/inngest/functions/weekly-digest";
+import { weeklyStrategicReportFunction } from "@/lib/inngest/functions/weekly-digest";
 
 // Export Inngest serve handler with all functions
 export const { GET, POST, PUT } = serve({
   client: inngest,
   functions: [
     researchPipelineFunction,
-    weeklyDigestFunction,
+    weeklyStrategicReportFunction,
     reevaluationFunction,
     sendVerificationEmailFunction,
     sendWelcomeEmailFunction,

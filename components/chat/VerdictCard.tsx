@@ -54,7 +54,7 @@ export function VerdictCard({ data }: { data: VerdictData }) {
       <CardHeader
         className={cn(
           "flex flex-row items-center justify-between space-y-0 pb-2",
-          verdictColors[data.verdict]
+          verdictColors[data.verdict],
         )}
       >
         <CardTitle className="text-xl font-bold flex items-center gap-2">
@@ -95,7 +95,7 @@ export function VerdictCard({ data }: { data: VerdictData }) {
               variant="outline"
               className={cn(
                 "text-[10px] font-bold uppercase",
-                riskColors[data.topRisk.category]
+                riskColors[data.topRisk.category],
               )}
             >
               {data.topRisk.category}
@@ -137,15 +137,15 @@ export function VerdictCard({ data }: { data: VerdictData }) {
                           delta > 0
                             ? "text-green-600"
                             : delta < 0
-                            ? "text-red-600"
-                            : "text-gray-600"
+                              ? "text-red-600"
+                              : "text-gray-600",
                         )}
                       >
                         {delta > 0 ? "+" : ""}
                         {delta}%
                       </span>
                     </div>
-                  )
+                  ),
                 )}
               </div>
             </div>

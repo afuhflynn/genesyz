@@ -115,7 +115,7 @@ async function handleSubscriptionChange(
   data:
     | WebhookSubscriptionCreatedPayload
     | WebhookSubscriptionUpdatedPayload
-    | WebhookSubscriptionActivePayload
+    | WebhookSubscriptionActivePayload,
 ) {
   const userId = data.data.customerId;
   if (!userId) return;
@@ -151,7 +151,7 @@ async function handleSubscriptionChange(
 }
 
 async function handleSubscriptionCanceled(
-  data: WebhookSubscriptionCanceledPayload
+  data: WebhookSubscriptionCanceledPayload,
 ) {
   const userId = data.data.customerId;
   if (!userId) return;
@@ -178,7 +178,7 @@ async function handleSubscriptionCanceled(
 }
 
 async function handleSubscriptionRevoked(
-  data: WebhookSubscriptionRevokedPayload
+  data: WebhookSubscriptionRevokedPayload,
 ) {
   const userId = data.data.customerId;
   if (!userId) return;

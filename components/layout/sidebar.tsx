@@ -88,7 +88,7 @@ export function Sidebar({ className }: SidebarProps) {
     <ScrollArea
       className={cn(
         "h-full! overflow-auto flex-col justify-between border-r bg-background relative",
-        className
+        className,
       )}
     >
       <div className="space-y-4 py-4">

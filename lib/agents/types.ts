@@ -271,6 +271,8 @@ export const StrategicAdvisorySchema = z.object({
       }),
       evidence: z.array(z.string()),
       counterArgument: z.string(),
+      timeAllocation: z.number().min(0).max(100).optional(),
+      status: z.enum(["primary", "validation", "monitoring"]).optional(),
     }),
   ),
   brainDrillingQuestions: z.array(z.string()),
@@ -278,8 +280,33 @@ export const StrategicAdvisorySchema = z.object({
     sentiment: z.string().describe("Current VC sentiment for these categories"),
     brutalHonesty: z.string().describe("The hard truth about these ideas"),
     investmentPotential: z.enum(["high", "medium", "low"]),
+    investorAngle: z.string().describe("Investor Angle of the Week"),
   }),
-  weeklyActionPlan: z.array(z.string()),
+  weeklyActionPlan: z.array(
+    z.object({
+      id: z.string(),
+      title: z.string(),
+      owner: z.string(),
+      due_date: z.string(),
+      priority: z.enum(["High", "Medium", "Low"]),
+      estimated_time_allocation: z.union([z.string(), z.number()]),
+      success_criteria: z.string(),
+      kill_criteria: z.string(),
+      description: z.string().optional(),
+      linked_resources: z.array(z.string()).optional(),
+    }),
+  ),
+  primaryFocus: z.object({
+    ideaTitle: z.string(),
+    allocation: z.number().min(0).max(100),
+  }),
+  riskCliffs: z.array(
+    z.object({
+      ideaTitle: z.string(),
+      failureReason: z.string(),
+    }),
+  ),
+  failureReasons: z.array(z.string()).optional(),
 });
 
 export type StrategicAdvisory = z.infer<typeof StrategicAdvisorySchema>;

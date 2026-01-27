@@ -74,7 +74,7 @@ export default function IdeaDetailPage() {
   const exportPdf = useExportIdeaPdf();
 
   const [researchProgress, setResearchProgress] = useState<IResearchProgress[]>(
-    []
+    [],
   );
 
   useEffect(() => {
@@ -283,7 +283,7 @@ export default function IdeaDetailPage() {
               <Card
                 className={cn(
                   "border-l-4",
-                  getVerdictBorderColor(synthesis.verdict)
+                  getVerdictBorderColor(synthesis.verdict),
                 )}
               >
                 <CardHeader>
@@ -318,7 +318,7 @@ export default function IdeaDetailPage() {
                               </Badge>
                               <span>{rec.action}</span>
                             </li>
-                          )
+                          ),
                         )}
                       </ul>
                     </div>
