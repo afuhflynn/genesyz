@@ -322,7 +322,7 @@ export const StateSchema = z.object({
     cac: z.number().nullable(),
     ltv: z.number().nullable(),
     revenue: z.number().nullable(),
-    other: z.record(z.any()).optional(),
+    other: z.record(z.any(), z.any()).nullable(),
   }),
   assumptions: z.array(
     z.object({
