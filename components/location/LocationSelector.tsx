@@ -25,6 +25,7 @@ interface LocationSelectorProps {
   value?: LocationContext | null;
   onChange: (location: LocationContext | null) => void;
   disabled?: boolean;
+  id?: string;
 }
 
 // Common locations for quick selection
@@ -49,6 +50,7 @@ export function LocationSelector({
   value,
   onChange,
   disabled = false,
+  id,
 }: LocationSelectorProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -82,6 +84,7 @@ export function LocationSelector({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
+          id={id}
           variant="outline"
           role="combobox"
           aria-expanded={open}
