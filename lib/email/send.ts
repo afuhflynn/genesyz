@@ -233,29 +233,35 @@ export async function sendWeeklyStrategicReportEmail(options: {
   const { to, userName, advisory } = options;
 
   const primaryFocus = advisory.primaryFocus || {
-    ideaTitle: "CropGuard",
-    allocation: 80,
+    ideaTitle: "Your Top Idea",
+    allocation: 60,
   };
   const marketPulse = advisory.marketPulse?.slice(0, 3) || [];
   const vcCorner = advisory.vcCorner || {};
   const riskCliffs = advisory.riskCliffs || [];
   const actionPlan = advisory.weeklyActionPlan || [];
+  const totalIdeas = advisory.verdicts?.length || 0;
+  const topIdeas = advisory.verdicts?.slice(0, 3) || [];
 
-  // Generate subject line variants
+  // Get current date for the brief
+  const now = new Date();
+  const weekNumber = Math.ceil(
+    (now.getTime() - new Date(now.getFullYear(), 0, 1).getTime()) /
+      (7 * 24 * 60 * 60 * 1000),
+  );
+
+  // Generate subject line variants for The Catalyst Brief
   const subjectVariants = [
-    `🎯 Weekly Focus: ${primaryFocus.ideaTitle} (${primaryFocus.allocation}%) — Strategic Update`,
-    `🚀 Founder Focus: ${primaryFocus.ideaTitle} Priority Actions`,
-    `📈 Weekly Strategy: ${primaryFocus.ideaTitle} Leads with ${primaryFocus.allocation}% Allocation`,
+    `Your Catalyst Brief: ${primaryFocus.ideaTitle} leads with momentum`,
+    `The Catalyst Brief Week ${weekNumber}: Portfolio momentum check`,
+    `Your Catalyst Brief: Strategic priorities for ${now.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`,
   ];
 
   // Generate preheader variants
   const preheaderVariants = [
-    `Your primary focus this week is ${primaryFocus.ideaTitle} with ${primaryFocus.allocation}% allocation`,
-    `Key actions: ${actionPlan
-      .slice(0, 2)
-      .map((a) => a.title)
-      .join(", ")}`,
-    `VC insight: ${vcCorner.investorAngle || "Market trends favor your top ideas"}`,
+    `Portfolio: ${totalIdeas} ideas • Primary focus: ${primaryFocus.ideaTitle} (${primaryFocus.allocation}%)`,
+    `VC Corner: ${vcCorner.sentiment ? "Market analysis ready" : "Strategic insights inside"}`,
+    `Action required: ${actionPlan.filter((a) => a.priority === "High").length} high-priority tasks`,
   ];
 
   // Generate Markdown version
@@ -307,13 +313,37 @@ ${riskCliffs.map((risk) => `- **${risk.ideaTitle}:** ${risk.failureReason}`).joi
 
   // Generate HTML version
   const contentHtml = `
+    <!-- Portfolio Snapshot -->
+    <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; padding: 20px; border-radius: 12px; margin-bottom: 24px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h2 style="font-size: 18px; font-weight: 800; margin: 0; color: #fbbf24;">Portfolio Snapshot</h2>
+        <span style="font-size: 12px; color: #94a3b8;">Week ${weekNumber}, ${now.getFullYear()}</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; text-align: center;">
+        <div>
+          <p style="font-size: 28px; font-weight: 800; color: #fbbf24; margin: 0;">${totalIdeas}</p>
+          <p style="font-size: 11px; color: #94a3b8; margin: 4px 0 0 0; text-transform: uppercase; font-weight: 700;">Total Ideas</p>
+        </div>
+        <div>
+          <p style="font-size: 28px; font-weight: 800; color: #fbbf24; margin: 0;">${primaryFocus.allocation}%</p>
+          <p style="font-size: 11px; color: #94a3b8; margin: 4px 0 0 0; text-transform: uppercase; font-weight: 700;">Focus Allocation</p>
+        </div>
+        <div>
+          <p style="font-size: 28px; font-weight: 800; color: #fbbf24; margin: 0;">${actionPlan.filter((a) => a.priority === "High").length}</p>
+          <p style="font-size: 11px; color: #94a3b8; margin: 4px 0 0 0; text-transform: uppercase; font-weight: 700;">High Priority</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Primary Focus -->
     <div style="background: #F5A623; color: white; padding: 16px; border-radius: 12px 12px 0 0; text-align: center; font-weight: 800;">
-      Founder Focus This Week
+      This Week's Focus
     </div>
     <div style="background: #fef3c7; padding: 16px; border-radius: 0 0 12px 12px; margin-bottom: 24px;">
       <h2 style="font-size: 20px; font-weight: 800; color: #a16207; margin: 0 0 8px 0;">
-        ${primaryFocus.ideaTitle} — ${primaryFocus.allocation}% time allocation
+        ${primaryFocus.ideaTitle}
       </h2>
+      <p style="font-size: 14px; color: #a16207; margin: 0; font-weight: 600;">${primaryFocus.allocation}% time allocation</p>
     </div>
 
     <h3 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0 0 12px 0;">Executive Summary</h3>
@@ -386,13 +416,43 @@ ${riskCliffs.map((risk) => `- **${risk.ideaTitle}:** ${risk.failureReason}`).joi
       </tbody>
     </table>
 
-    <h3 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0 0 12px 0;">VC Corner</h3>
-    <p style="font-size: 14px; color: #475569; margin: 0 0 12px 0; line-height: 1.6;">
-      ${vcCorner.sentiment}
-    </p>
-    <p style="font-size: 14px; color: #475569; margin: 0 0 24px 0; line-height: 1.6; font-weight: 800;">
-      <em>Investor Angle:</em> ${vcCorner.investorAngle}
-    </p>
+    <!-- VC Corner Section with Dark Background -->
+    <div style="background-color: #0f172a; border-radius: 12px; padding: 24px; margin-bottom: 24px; color: #f8fafc;">
+      <!-- VC Corner Header -->
+      <h3 style="font-size: 14px; font-weight: 800; color: #fbbf24; margin: 0 0 16px 0; text-transform: uppercase; letter-spacing: 0.05em;">
+        VC Corner
+      </h3>
+      
+      <!-- Market Sentiment -->
+      <div style="margin-bottom: 20px;">
+        <h4 style="font-size: 11px; font-weight: 700; color: #94a3b8; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.05em;">
+          Market Sentiment
+        </h4>
+        <p style="font-size: 14px; color: #f8fafc; margin: 0; line-height: 1.6; font-weight: 600;">
+          ${vcCorner.sentiment}
+        </p>
+      </div>
+      
+      <!-- The Hard Truth -->
+      <div style="margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #334155;">
+        <h4 style="font-size: 11px; font-weight: 700; color: #94a3b8; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.05em;">
+          The Hard Truth
+        </h4>
+        <p style="font-size: 14px; color: #cbd5e1; margin: 0; line-height: 1.6; font-style: italic;">
+          "${vcCorner.brutalHonesty}"
+        </p>
+      </div>
+      
+      <!-- Investment Potential -->
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <span style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">
+          Investment Potential
+        </span>
+        <span style="font-size: 14px; font-weight: 800; color: ${vcCorner.investmentPotential === "high" ? "#34d399" : vcCorner.investmentPotential === "medium" ? "#fbbf24" : "#f87171"}; text-transform: uppercase;">
+          ${vcCorner.investmentPotential}
+        </span>
+      </div>
+    </div>
 
     <h3 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0 0 12px 0;">Why This Might Fail</h3>
     <ul style="margin: 0 0 24px 0; padding: 0 0 0 20px;">
@@ -416,9 +476,9 @@ ${riskCliffs.map((risk) => `- **${risk.ideaTitle}:** ${risk.failureReason}`).joi
   `;
 
   const html = renderPremiumEmail({
-    title: "Weekly Strategic Report",
+    title: "The Catalyst Brief",
     contentHtml,
-    badge: "Premium Advisory",
+    badge: "Strategic Intelligence",
   });
 
   // Generate Slack/Telegram summary
