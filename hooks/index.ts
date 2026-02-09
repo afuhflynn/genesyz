@@ -207,6 +207,12 @@ export function useDashboard() {
   });
 }
 
+export {
+  useAnalytics,
+  useCompleteOnboarding,
+  useOnboardingStatus,
+} from "./useAnalytics";
+
 // ===========================================
 // Profile Hooks
 // ===========================================
