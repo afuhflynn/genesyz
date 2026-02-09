@@ -15,6 +15,15 @@ export interface AgentInput {
   ideaId: string;
   rawInput: IdeaInputData;
   previousOutputs?: Record<ResearchAgentType, AgentOutput>;
+  locationContext?: {
+    country?: string;
+    countryCode?: string;
+    region?: string;
+    city?: string;
+    timezone?: string;
+    currency?: string;
+    isGlobal?: boolean;
+  };
 }
 
 export interface PortfolioInput {
@@ -80,24 +89,42 @@ export type InterpretedIdea = z.infer<typeof InterpretedIdeaSchema>;
 // Market Research Agent
 // ===========================================
 
+export const MarketSizeDataSchema = z.object({
+  value: z.string(),
+  methodology: z.string(),
+  confidence: z.enum(["high", "medium", "low"]).optional(),
+  year: z.number().optional(),
+  currency: z.string().optional(),
+});
+
+export type MarketSizeData = z.infer<typeof MarketSizeDataSchema>;
+
+export const LocationMarketSizeSchema = z.object({
+  location: z.string(), // e.g., "United States", "Global"
+  tam: MarketSizeDataSchema,
+  sam: MarketSizeDataSchema,
+  som: MarketSizeDataSchema,
+  growthRate: z.object({
+    value: z.string(),
+    methodology: z.string(),
+    period: z.string().optional(), // e.g., "CAGR 2024-2029"
+  }),
+  confidence: z.enum(["high", "medium", "low"]),
+  dataSource: z.string().optional(),
+});
+
+export type LocationMarketSize = z.infer<typeof LocationMarketSizeSchema>;
+
 export const MarketResearchSchema = z.object({
   marketSize: z.object({
-    tam: z.object({
-      value: z.string(),
-      methodology: z.string(),
-    }),
-    sam: z.object({
-      value: z.string(),
-      methodology: z.string(),
-    }),
-    som: z.object({
-      value: z.string(),
-      methodology: z.string(),
-    }),
-    growthRate: z.object({
-      value: z.string(),
-      methodology: z.string(),
-    }),
+    global: LocationMarketSizeSchema,
+    regional: LocationMarketSizeSchema.optional(),
+    local: LocationMarketSizeSchema.optional(),
+    year: z.number().optional(),
+    currency: z.string().optional(),
+    methodology: z
+      .string()
+      .describe("Overall methodology used for market sizing"),
   }),
   competitors: z
     .array(

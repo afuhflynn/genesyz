@@ -67,10 +67,22 @@ export async function runResearchPipeline(
 
   const outputs: Partial<Record<ResearchAgentType, AgentOutput>> = {};
 
+  // Parse location context if available
+  const locationContext = idea.locationContext as {
+    country?: string;
+    countryCode?: string;
+    region?: string;
+    city?: string;
+    timezone?: string;
+    currency?: string;
+    isGlobal?: boolean;
+  } | null;
+
   const baseInput: AgentInput = {
     ideaId,
     rawInput,
     previousOutputs: outputs as Record<ResearchAgentType, AgentOutput>,
+    locationContext: locationContext || undefined,
   };
 
   try {

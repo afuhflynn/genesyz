@@ -3,6 +3,10 @@ import { mistral } from "@ai-sdk/mistral";
 import { generateObject, generateText, stepCountIs } from "ai";
 import { tools } from "@/lib/ai/tools";
 import { db } from "@/lib/db";
+import {
+  buildLocationResearchContext,
+  formatLocationForPrompt,
+} from "@/lib/location";
 import { hashString } from "@/lib/utils";
 import {
   type AgentInput,
@@ -34,13 +38,28 @@ Focus on:
 export async function runDeepResearchAgent(
   input: AgentInput,
 ): Promise<AgentOutput> {
-  const { ideaId, previousOutputs } = input;
+  const { ideaId, previousOutputs, locationContext } = input;
 
   const interpretedIdea = previousOutputs?.INTERPRETER
     ?.content as InterpretedIdea;
 
   if (!interpretedIdea) {
     throw new Error("DeepResearchAgent requires INTERPRETER output");
+  }
+
+  // Build location context for research
+  let locationPromptSection = "";
+  if (locationContext) {
+    const locationResearchContext = buildLocationResearchContext({
+      country: locationContext.country || "Global",
+      countryCode: locationContext.countryCode || "GLOBAL",
+      region: locationContext.region,
+      city: locationContext.city,
+      timezone: locationContext.timezone,
+      currency: locationContext.currency,
+      isGlobal: locationContext.isGlobal ?? !locationContext.country,
+    });
+    locationPromptSection = `\n\n${formatLocationForPrompt(locationResearchContext)}`;
   }
 
   const startTime = Date.now();
@@ -60,9 +79,9 @@ Title: ${interpretedIdea.title}
 Summary: ${interpretedIdea.summary}
 Problem: ${interpretedIdea.problemStatement}
 Solution: ${interpretedIdea.proposedSolution}
-Category: ${interpretedIdea.category}
+Category: ${interpretedIdea.category}${locationPromptSection}
 
-Search for real competitors, market gaps, and technical challenges.`,
+Search for real competitors, market gaps, and technical challenges. Consider location-specific factors.`,
       tools,
       stopWhen: stepCountIs(5), // Allow up to 5 steps of research
     });

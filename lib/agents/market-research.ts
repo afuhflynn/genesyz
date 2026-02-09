@@ -2,6 +2,10 @@ import { google } from "@ai-sdk/google";
 import { mistral } from "@ai-sdk/mistral";
 import { generateObject, generateText } from "ai";
 import { db } from "@/lib/db";
+import {
+  buildLocationResearchContext,
+  formatLocationForPrompt,
+} from "@/lib/location";
 import { hashString } from "@/lib/utils";
 import {
   type AgentInput,
@@ -27,13 +31,28 @@ Guidelines:
 export async function runMarketResearchAgent(
   input: AgentInput,
 ): Promise<AgentOutput> {
-  const { ideaId, previousOutputs } = input;
+  const { ideaId, previousOutputs, locationContext } = input;
 
   const interpretedIdea = previousOutputs?.INTERPRETER
     ?.content as InterpretedIdea;
 
   if (!interpretedIdea) {
     throw new Error("MarketResearchAgent requires INTERPRETER output");
+  }
+
+  // Build location context for research
+  let locationPromptSection = "";
+  if (locationContext) {
+    const locationResearchContext = buildLocationResearchContext({
+      country: locationContext.country || "Global",
+      countryCode: locationContext.countryCode || "GLOBAL",
+      region: locationContext.region,
+      city: locationContext.city,
+      timezone: locationContext.timezone,
+      currency: locationContext.currency,
+      isGlobal: locationContext.isGlobal ?? !locationContext.country,
+    });
+    locationPromptSection = `\n\n${formatLocationForPrompt(locationResearchContext)}`;
   }
 
   const prompt = `Conduct market research for the following startup idea:
@@ -43,7 +62,7 @@ export async function runMarketResearchAgent(
 **Problem:** ${interpretedIdea.problemStatement}
 **Solution:** ${interpretedIdea.proposedSolution}
 **Target Audience:** ${interpretedIdea.targetAudience.join(", ")}
-**Category:** ${interpretedIdea.category}
+**Category:** ${interpretedIdea.category}${locationPromptSection}
 
 Provide market research with market size, up to 5 competitors (each with up to 3 strengths/weaknesses), up to 4 trends, up to 4 barriers, up to 4 opportunities. Keep total under 1500 words. Output valid JSON only.`;
 
@@ -115,9 +134,17 @@ Provide market research with market size, up to 5 competitors (each with up to 3
 
   // Calculate confidence based on market data availability
   const competitorCount = marketResearch.competitors.length;
-  const hasMarketSize = Boolean(marketResearch.marketSize.tam);
+  const hasMarketSize = Boolean(marketResearch.marketSize.global?.tam);
+  const marketConfidence =
+    marketResearch.marketSize.global?.confidence || "medium";
+  const confidenceBonus =
+    marketConfidence === "high"
+      ? 0.3
+      : marketConfidence === "medium"
+        ? 0.2
+        : 0.1;
   const confidence = Math.min(
-    0.4 + competitorCount * 0.1 + (hasMarketSize ? 0.2 : 0),
+    0.4 + competitorCount * 0.1 + (hasMarketSize ? confidenceBonus : 0),
     0.9,
   );
 
@@ -125,6 +152,6 @@ Provide market research with market size, up to 5 competitors (each with up to 3
     agentType: "MARKET_RESEARCH",
     content: marketResearch,
     confidence,
-    reasoning: `Identified ${competitorCount} competitors and market sizing data`,
+    reasoning: `Identified ${competitorCount} competitors and ${marketResearch.marketSize.regional ? "regional + " : ""}global market sizing data`,
   };
 }

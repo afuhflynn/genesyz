@@ -2,6 +2,10 @@ import { google } from "@ai-sdk/google";
 import { mistral } from "@ai-sdk/mistral";
 import { generateObject } from "ai";
 import { db } from "@/lib/db";
+import {
+  buildLocationResearchContext,
+  formatLocationForPrompt,
+} from "@/lib/location";
 import { hashString } from "@/lib/utils";
 import {
   type AgentInput,
@@ -26,7 +30,7 @@ Guidelines:
 export async function runTrendAnalysisAgent(
   input: AgentInput,
 ): Promise<AgentOutput> {
-  const { ideaId, previousOutputs } = input;
+  const { ideaId, previousOutputs, locationContext } = input;
 
   const interpretedIdea = previousOutputs?.INTERPRETER
     ?.content as InterpretedIdea;
@@ -35,14 +39,29 @@ export async function runTrendAnalysisAgent(
     throw new Error("TrendAnalysisAgent requires INTERPRETER output");
   }
 
+  // Build location context for analysis
+  let locationPromptSection = "";
+  if (locationContext) {
+    const locationResearchContext = buildLocationResearchContext({
+      country: locationContext.country || "Global",
+      countryCode: locationContext.countryCode || "GLOBAL",
+      region: locationContext.region,
+      city: locationContext.city,
+      timezone: locationContext.timezone,
+      currency: locationContext.currency,
+      isGlobal: locationContext.isGlobal ?? !locationContext.country,
+    });
+    locationPromptSection = `\n\n${formatLocationForPrompt(locationResearchContext)}`;
+  }
+
   const prompt = `Analyze market and technology trends for the following startup idea:
 
 **Title:** ${interpretedIdea.title}
 **Summary:** ${interpretedIdea.summary}
 **Category:** ${interpretedIdea.category}
-**Target Audience:** ${interpretedIdea.targetAudience.join(", ")}
+**Target Audience:** ${interpretedIdea.targetAudience.join(", ")}${locationPromptSection}
 
-Assess the timing, technology readiness, and relevant trends that could impact this idea's success.`;
+Assess the timing, technology readiness, and relevant trends that could impact this idea's success. Consider both global and location-specific trends.`;
 
   const promptHash = await hashString(prompt);
 

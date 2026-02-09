@@ -2,6 +2,10 @@ import { google } from "@ai-sdk/google";
 import { mistral } from "@ai-sdk/mistral";
 import { generateObject } from "ai";
 import { db } from "@/lib/db";
+import {
+  buildLocationResearchContext,
+  formatLocationForPrompt,
+} from "@/lib/location";
 import { hashString } from "@/lib/utils";
 import {
   type AgentInput,
@@ -29,7 +33,7 @@ Guidelines:
 export async function runSynthesisAgent(
   input: AgentInput,
 ): Promise<AgentOutput> {
-  const { ideaId, previousOutputs } = input;
+  const { ideaId, previousOutputs, locationContext } = input;
 
   const interpretedIdea = previousOutputs?.INTERPRETER
     ?.content as InterpretedIdea;
@@ -49,6 +53,21 @@ export async function runSynthesisAgent(
     throw new Error("SynthesisAgent requires all previous agent outputs");
   }
 
+  // Build location context for synthesis
+  let locationPromptSection = "";
+  if (locationContext) {
+    const locationResearchContext = buildLocationResearchContext({
+      country: locationContext.country || "Global",
+      countryCode: locationContext.countryCode || "GLOBAL",
+      region: locationContext.region,
+      city: locationContext.city,
+      timezone: locationContext.timezone,
+      currency: locationContext.currency,
+      isGlobal: locationContext.isGlobal ?? !locationContext.country,
+    });
+    locationPromptSection = `\n\n${formatLocationForPrompt(locationResearchContext)}`;
+  }
+
   const prompt = `Synthesize the following research into a final assessment:
 
 ## Idea Overview
@@ -59,8 +78,8 @@ export async function runSynthesisAgent(
 **Unique Value:** ${interpretedIdea.uniqueValue}
 
 ## Market Research
-**Market Size (TAM):** ${marketResearch.marketSize.tam}
-**Growth Rate:** ${marketResearch.marketSize.growthRate}
+**Market Size (TAM):** ${marketResearch.marketSize.global.tam.value}${marketResearch.marketSize.regional ? ` (Regional: ${marketResearch.marketSize.regional.tam.value})` : ""}
+**Growth Rate:** ${marketResearch.marketSize.global.growthRate.value}
 **Competitors:** ${marketResearch.competitors.map((c) => c.name).join(", ")}
 **Key Barriers:** ${marketResearch.barriers.join(", ")}
 
@@ -73,7 +92,7 @@ export async function runSynthesisAgent(
 **Technical Complexity:** ${executionFriction.technicalComplexity.score}/10
 **Time to MVP:** ${executionFriction.resourceRequirements.timeToMvp}
 **Team Size Needed:** ${executionFriction.resourceRequirements.teamSize}
-**Key Risks:** ${executionFriction.riskFactors.map((r) => r.risk).join(", ")}
+**Key Risks:** ${executionFriction.riskFactors.map((r) => r.risk).join(", ")}${locationPromptSection}
 
 Provide a comprehensive synthesis with scores, recommendations, and a clear verdict.`;
 

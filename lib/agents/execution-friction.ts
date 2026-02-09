@@ -2,6 +2,10 @@ import { google } from "@ai-sdk/google";
 import { mistral } from "@ai-sdk/mistral";
 import { generateObject } from "ai";
 import { db } from "@/lib/db";
+import {
+  buildLocationResearchContext,
+  formatLocationForPrompt,
+} from "@/lib/location";
 import { hashString } from "@/lib/utils";
 import {
   type AgentInput,
@@ -26,13 +30,28 @@ Guidelines:
 export async function runExecutionFrictionAgent(
   input: AgentInput,
 ): Promise<AgentOutput> {
-  const { ideaId, previousOutputs } = input;
+  const { ideaId, previousOutputs, locationContext } = input;
 
   const interpretedIdea = previousOutputs?.INTERPRETER
     ?.content as InterpretedIdea;
 
   if (!interpretedIdea) {
     throw new Error("ExecutionFrictionAgent requires INTERPRETER output");
+  }
+
+  // Build location context for analysis
+  let locationPromptSection = "";
+  if (locationContext) {
+    const locationResearchContext = buildLocationResearchContext({
+      country: locationContext.country || "Global",
+      countryCode: locationContext.countryCode || "GLOBAL",
+      region: locationContext.region,
+      city: locationContext.city,
+      timezone: locationContext.timezone,
+      currency: locationContext.currency,
+      isGlobal: locationContext.isGlobal ?? !locationContext.country,
+    });
+    locationPromptSection = `\n\n${formatLocationForPrompt(locationResearchContext)}`;
   }
 
   const prompt = `Assess the execution challenges for the following startup idea:
@@ -42,9 +61,9 @@ export async function runExecutionFrictionAgent(
 **Problem:** ${interpretedIdea.problemStatement}
 **Solution:** ${interpretedIdea.proposedSolution}
 **Key Features:** ${interpretedIdea.keyFeatures.join(", ")}
-**Category:** ${interpretedIdea.category}
+**Category:** ${interpretedIdea.category}${locationPromptSection}
 
-Analyze technical complexity, resource requirements, risks, and provide actionable recommendations.`;
+Analyze technical complexity, resource requirements, risks, and provide actionable recommendations. Consider location-specific factors like talent availability, infrastructure, and local regulations.`;
 
   const promptHash = await hashString(prompt);
 
