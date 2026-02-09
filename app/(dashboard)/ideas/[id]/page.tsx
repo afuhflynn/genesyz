@@ -18,6 +18,7 @@ import { useParams } from "next/navigation";
 import { useQueryStates } from "nuqs";
 import { useEffect, useState } from "react";
 import { fetchRealtimeSubscriptionToken } from "@/app/api/inngest/token/_actions/fetchRealtimeSubscriptionToken";
+import { GuideChat } from "@/components/guide";
 import { DeleteIdeaDialog } from "@/components/ideas/[id]/DeleteIdea";
 import { AssetTab } from "@/components/ideas/AssetTab";
 import {
@@ -550,6 +551,20 @@ export default function IdeaDetailPage() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        <GuideChat
+          ideaId={id}
+          onSendMessage={async (message: string) => {
+            const response = await fetch("/api/guide/chat", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ messages: [{ role: "user", content: message }], ideaId: id }),
+            });
+            if (!response.ok) throw new Error("Failed to send message");
+            const data = await response.json();
+            return { content: data.content };
+          }}
+        />
       )}
     </div>
   );
