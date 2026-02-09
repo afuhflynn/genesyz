@@ -4,7 +4,9 @@ import { ajAI } from "@/lib/arcjet";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { inngest } from "@/lib/inngest/client";
+import { detectBestLocation, validateLocation } from "@/lib/location";
 import { isAllowedToCreateIdea } from "@/lib/polar/entitlements";
+import { extractUrlsFromSources } from "@/lib/scraping";
 
 // GET /api/ideas - List all ideas for the authenticated user
 export async function GET(request: NextRequest) {
@@ -105,6 +107,9 @@ export async function POST(request: NextRequest) {
   const text = formData.get("text") as string | null;
   const audioData = formData.get("audio") as string | null;
   const imageData = formData.get("image") as string | null;
+  const targetLocation = formData.get("targetLocation") as string | null;
+  const transcription = formData.get("transcription") as string | null;
+  const ocrText = formData.get("ocrText") as string | null;
 
   // Validate at least one input is provided
   if (!text && !audioData && !imageData) {
@@ -114,11 +119,47 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Create the idea
+  // Build original prompt from all text sources
+  const originalPrompt = text || transcription || ocrText || "";
+
+  // Extract URLs from text sources
+  const extractedUrls = extractUrlsFromSources({
+    text: text || undefined,
+    transcription: transcription || undefined,
+    ocrText: ocrText || undefined,
+  });
+  const urlStrings = extractedUrls.map((u) => u.normalizedUrl);
+
+  // Detect or validate location
+  let locationContext = null;
+  if (targetLocation) {
+    // User provided location
+    const validation = await validateLocation(targetLocation);
+    if (validation.isValid) {
+      locationContext = validation.context;
+    }
+  } else {
+    // Try to detect from text or IP
+    const requestHeaders = await headers();
+    const ipAddress = requestHeaders.get("x-forwarded-for") || undefined;
+
+    const detectedLocation = await detectBestLocation({
+      textContent: originalPrompt,
+      ipAddress: ipAddress?.split(",")[0]?.trim(),
+    });
+
+    locationContext = detectedLocation.context;
+  }
+
+  // Create the idea with prompt and location data
   const idea = await db.idea.create({
     data: {
       userId: session.user.id,
       status: "PENDING",
+      originalPrompt: originalPrompt || null,
+      extractedUrls: urlStrings,
+      targetLocation: targetLocation || locationContext?.country || null,
+      locationContext: locationContext ? (locationContext as any) : null,
     },
   });
 
@@ -127,18 +168,23 @@ export async function POST(request: NextRequest) {
     ideaId: string;
     type: "TEXT" | "AUDIO" | "IMAGE";
     content?: string;
+    transcription?: string;
+    ocrText?: string;
     fileUrl?: string;
     fileName?: string;
     mimeType?: string;
     fileSize?: number;
+    extractedUrls: string[];
   }> = [];
 
   // Text input
   if (text) {
+    const textUrls = extractUrlsFromSources({ text });
     inputs.push({
       ideaId: idea.id,
       type: "TEXT",
       content: text,
+      extractedUrls: textUrls.map((u) => u.normalizedUrl),
     });
   }
 
@@ -146,6 +192,9 @@ export async function POST(request: NextRequest) {
   if (audioData) {
     try {
       const audio = JSON.parse(audioData);
+      const audioUrls = transcription
+        ? extractUrlsFromSources({ transcription }).map((u) => u.normalizedUrl)
+        : [];
       inputs.push({
         ideaId: idea.id,
         type: "AUDIO",
@@ -153,6 +202,8 @@ export async function POST(request: NextRequest) {
         fileName: audio.name,
         mimeType: audio.type,
         fileSize: audio.size,
+        transcription: transcription || undefined,
+        extractedUrls: audioUrls,
       });
     } catch (e) {
       console.error("Failed to parse audio data", e);
@@ -163,6 +214,9 @@ export async function POST(request: NextRequest) {
   if (imageData) {
     try {
       const image = JSON.parse(imageData);
+      const imageUrls = ocrText
+        ? extractUrlsFromSources({ ocrText }).map((u) => u.normalizedUrl)
+        : [];
       inputs.push({
         ideaId: idea.id,
         type: "IMAGE",
@@ -170,6 +224,8 @@ export async function POST(request: NextRequest) {
         fileName: image.name,
         mimeType: image.type,
         fileSize: image.size,
+        ocrText: ocrText || undefined,
+        extractedUrls: imageUrls,
       });
     } catch (e) {
       console.error("Failed to parse image data", e);
