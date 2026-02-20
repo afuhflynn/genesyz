@@ -46,6 +46,7 @@ IDEA CONTEXT:
 - Clarity: ${score?.clarityScore || "N/A"}
 - Market: ${score?.marketScore || "N/A"}
 - Execution: ${score?.executionScore || "N/A"}
+- Target Location: ${idea.targetLocation}
 
 ${
   latestSnapshot
@@ -54,6 +55,8 @@ ${
 `
     : ""
 }
+
+Full idea content: ${JSON.stringify(idea)}
 
 Your role:
 1. Answer questions about the research results

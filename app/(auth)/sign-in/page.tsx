@@ -34,7 +34,9 @@ export default function LoginPage() {
       email: formData.email,
       password: formData.password,
       callbackURL:
-        decodeURIComponent(redirect as string).trim() ?? "/dashboard",
+        redirect !== null
+          ? decodeURIComponent(redirect as string)
+          : "/dashboard",
     });
   }
 

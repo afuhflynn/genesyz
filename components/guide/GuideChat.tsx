@@ -18,11 +18,6 @@ interface GuideMessage {
 
 interface GuideChatProps {
   ideaId: string;
-  conversationId?: string;
-  initialMessages?: GuideMessage[];
-  onSendMessage: (message: string) => Promise<{ content: string }>;
-  onClose?: () => void;
-  isOpen?: boolean;
 }
 
 const SUGGESTED_QUESTIONS = [
@@ -33,19 +28,28 @@ const SUGGESTED_QUESTIONS = [
   "How should I validate this idea?",
 ];
 
-export function GuideChat({
-  ideaId,
-  conversationId,
-  initialMessages = [],
-  onSendMessage,
-  onClose,
-  isOpen = false,
-}: GuideChatProps) {
-  const [messages, setMessages] = useState<GuideMessage[]>(initialMessages);
+export function GuideChat({ ideaId }: GuideChatProps) {
+  const [messages, setMessages] = useState<GuideMessage[]>([]);
+  const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showQuestions, setShowQuestions] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const onSendMessage = async (message: string) => {
+    const response = await fetch("/api/guide/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        messages: [{ role: "user", content: message }],
+        ideaId,
+      }),
+    });
+
+    if (!response.ok) throw new Error("Failed to send message");
+    const data = await response.json();
+    return { content: data.content };
+  };
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -111,7 +115,7 @@ export function GuideChat({
   if (!isOpen) {
     return (
       <Button
-        onClick={() => {}}
+        onClick={() => setIsOpen((prev) => !prev)}
         className="fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg"
         size="icon"
       >
@@ -121,7 +125,7 @@ export function GuideChat({
   }
 
   return (
-    <Card className="fixed bottom-6 right-6 w-[400px] h-[600px] shadow-2xl flex flex-col z-50">
+    <Card className="fixed bottom-6 right-6 w-100 h-150 shadow-2xl flex flex-col z-50 overflow-auto">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b">
         <div className="flex items-center gap-2">
           <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
@@ -139,7 +143,7 @@ export function GuideChat({
         <Button
           variant="ghost"
           size="icon"
-          onClick={onClose}
+          onClick={() => setIsOpen((prev) => !prev)}
           className="h-8 w-8"
         >
           <X className="h-4 w-4" />

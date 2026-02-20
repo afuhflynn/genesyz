@@ -384,7 +384,7 @@ export function VCOnboarding() {
       </div>
 
       {/* Chat Area */}
-      <Card className="flex-1 flex flex-col overflow-hidden">
+      <Card className="flex-1 flex flex-col overflow-auto">
         <ScrollArea className="flex-1 p-4" ref={scrollRef}>
           <div className="space-y-4">
             {messages.map((message, index) => (
