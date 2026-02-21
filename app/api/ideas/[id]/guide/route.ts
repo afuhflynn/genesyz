@@ -138,7 +138,7 @@ export async function POST(
 // DELETE /api/ideas/[id]/guide - Archive a conversation
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -147,7 +147,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const ideaId = params.id;
+    const { id: ideaId } = await params;
     const { searchParams } = new URL(request.url);
     const conversationId = searchParams.get("conversationId");
 
