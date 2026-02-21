@@ -8,7 +8,6 @@ import {
   Mic,
   Sparkles,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { LocationSelector } from "@/components/location";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { IdeaSubmittedSuccess } from "./IdeaSubmittedSuccess";
 
 interface EnhancedNewIdeaFormProps {
   onClose?: () => void;
@@ -36,7 +36,6 @@ export function EnhancedNewIdeaForm({
   onClose,
   enabledModes = ["text"],
 }: EnhancedNewIdeaFormProps) {
-  const router = useRouter();
   const [mode, setMode] = useState<InputMode>("text");
   const [text, setText] = useState("");
   const [targetLocation, setTargetLocation] = useState<any>(null);
@@ -47,6 +46,7 @@ export function EnhancedNewIdeaForm({
   const [isRecording, setIsRecording] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isVoiceEnabled = enabledModes.includes("voice");
@@ -140,8 +140,7 @@ export function EnhancedNewIdeaForm({
       });
 
       if (response.ok) {
-        const { ideaId } = await response.json();
-        router.push(`/ideas/${ideaId}`);
+        setSubmitted(true);
       } else {
         throw new Error("Failed to create idea");
       }
@@ -151,6 +150,21 @@ export function EnhancedNewIdeaForm({
       setIsSubmitting(false);
     }
   };
+
+  const handleReset = () => {
+    setSubmitted(false);
+    setText("");
+    setTargetLocation(null);
+    setAudioUrl(null);
+    setImageUrl(null);
+    setTranscription("");
+    setOcrText("");
+    setMode("text");
+  };
+
+  if (submitted) {
+    return <IdeaSubmittedSuccess onReset={handleReset} />;
+  }
 
   return (
     <Card className="w-full max-w-2xl mx-auto">

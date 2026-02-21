@@ -26,9 +26,8 @@ export async function sendEmail(options: SendEmailOptions): Promise<boolean> {
 
   try {
     await transporter.sendMail({
-      from:
-        `IdeasVault <${process.env.SMTP_FROM}>` ||
-        "IdeasVault <noreply@ideasvault.com>",
+      from: `Flynn at ${process.env.NEXT_PUBLIC_APP_NAME} <${process.env.SMTP_USER}>`,
+      replyTo: "IdeasVault <noreply@ideasvault.com>",
       to: options.to,
       subject: options.subject,
       html: options.html,
