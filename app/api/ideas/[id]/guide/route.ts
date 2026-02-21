@@ -13,7 +13,7 @@ import { db } from "@/lib/db";
 // GET /api/ideas/[id]/guide - List conversations or get specific one
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -22,7 +22,7 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const ideaId = params.id;
+    const { id: ideaId } = await params;
     const { searchParams } = new URL(request.url);
     const conversationId = searchParams.get("conversationId");
 
