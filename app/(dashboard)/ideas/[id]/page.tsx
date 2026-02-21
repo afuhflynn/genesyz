@@ -337,6 +337,7 @@ export default function IdeaDetailPage() {
               {/* Convert to Startup CTA */}
               {idea.status === "RESEARCHED" && (
                 <ConvertToStartupCTA
+                  startUpSlug={startupData?.startup?.slug as string}
                   ideaId={id}
                   ideaTitle={idea.title}
                   ideaSummary={idea.summary}

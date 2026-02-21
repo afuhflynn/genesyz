@@ -13,6 +13,7 @@ import { Card, CardContent } from "@/components/ui/card";
 
 interface ConvertToStartupCTAProps {
   ideaId: string;
+  startUpSlug: string;
   ideaTitle?: string | null;
   ideaSummary?: string | null;
   hasExistingStartup?: boolean;
@@ -20,6 +21,7 @@ interface ConvertToStartupCTAProps {
 
 export function ConvertToStartupCTA({
   ideaId,
+  startUpSlug,
   ideaTitle,
   ideaSummary,
   hasExistingStartup = false,
@@ -46,7 +48,7 @@ export function ConvertToStartupCTA({
             variant="outline"
             className="border-green-600 text-green-700 hover:bg-green-100"
           >
-            <Link href={`/startups/${ideaId}`}>View Startup</Link>
+            <Link href={`/startups/${startUpSlug}`}>View Startup</Link>
           </Button>
         </CardContent>
       </Card>
