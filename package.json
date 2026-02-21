@@ -20,8 +20,8 @@
     "inngest:start": "inngest-cli dev",
     "dev:all": "mprocs",
     "db:push": "prisma db push",
-    "db:up": "sudo ./scripts/docker-up.sh",
-    "db:down": "sudo ./scripts/docker-down.sh",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage"

@@ -8,11 +8,11 @@ export default function NewIdeaPage() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Capture New Idea</h1>
         <p className="text-muted-foreground mt-2">
-          Describe your startup idea using text, voice, or an image. Our AI
-          agents will analyze it immediately with market insights.
+          Describe your startup idea in text. Our AI agents will analyze it
+          immediately with market insights.
         </p>
       </div>
-      <EnhancedNewIdeaForm />
+      <EnhancedNewIdeaForm enabledModes={["text"]} />
     </div>
   );
 }

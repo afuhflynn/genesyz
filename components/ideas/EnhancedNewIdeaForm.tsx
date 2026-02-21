@@ -11,6 +11,7 @@ import {
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { LocationSelector } from "@/components/location";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -26,11 +27,15 @@ import { cn } from "@/lib/utils";
 
 interface EnhancedNewIdeaFormProps {
   onClose?: () => void;
+  enabledModes?: ("text" | "voice" | "image")[];
 }
 
 type InputMode = "text" | "voice" | "image";
 
-export function EnhancedNewIdeaForm({ onClose }: EnhancedNewIdeaFormProps) {
+export function EnhancedNewIdeaForm({
+  onClose,
+  enabledModes = ["text"],
+}: EnhancedNewIdeaFormProps) {
   const router = useRouter();
   const [mode, setMode] = useState<InputMode>("text");
   const [text, setText] = useState("");
@@ -43,6 +48,16 @@ export function EnhancedNewIdeaForm({ onClose }: EnhancedNewIdeaFormProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const isVoiceEnabled = enabledModes.includes("voice");
+  const isImageEnabled = enabledModes.includes("image");
+
+  const handleModeChange = (value: string) => {
+    const newMode = value as InputMode;
+    if (newMode === "voice" && !isVoiceEnabled) return;
+    if (newMode === "image" && !isImageEnabled) return;
+    setMode(newMode);
+  };
 
   const handleFileUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -145,26 +160,50 @@ export function EnhancedNewIdeaForm({ onClose }: EnhancedNewIdeaFormProps) {
           Capture Your Idea
         </CardTitle>
         <CardDescription>
-          Describe your startup idea in any format. You can type, record voice,
-          or upload an image.
+          Describe your startup idea in text. Our AI agents will analyze it
+          immediately with market insights.
         </CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-6">
         {/* Input Mode Tabs */}
-        <Tabs value={mode} onValueChange={(v) => setMode(v as InputMode)}>
+        <Tabs value={mode} onValueChange={handleModeChange}>
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="text" className="flex items-center gap-2">
               <Sparkles className="h-4 w-4" />
               Text
             </TabsTrigger>
-            <TabsTrigger value="voice" className="flex items-center gap-2">
+            <TabsTrigger
+              value="voice"
+              disabled={!isVoiceEnabled}
+              className={cn(
+                "flex items-center gap-2",
+                !isVoiceEnabled && "opacity-50 cursor-not-allowed",
+              )}
+            >
               <Mic className="h-4 w-4" />
               Voice
+              {!isVoiceEnabled && (
+                <Badge variant="secondary" className="text-[10px] ml-1">
+                  Soon
+                </Badge>
+              )}
             </TabsTrigger>
-            <TabsTrigger value="image" className="flex items-center gap-2">
+            <TabsTrigger
+              value="image"
+              disabled={!isImageEnabled}
+              className={cn(
+                "flex items-center gap-2",
+                !isImageEnabled && "opacity-50 cursor-not-allowed",
+              )}
+            >
               <Image className="h-4 w-4" />
               Image
+              {!isImageEnabled && (
+                <Badge variant="secondary" className="text-[10px] ml-1">
+                  Soon
+                </Badge>
+              )}
             </TabsTrigger>
           </TabsList>
 
