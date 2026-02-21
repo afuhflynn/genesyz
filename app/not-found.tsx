@@ -12,13 +12,12 @@ export default function NotFound() {
               className="size-16 text-muted-foreground/30"
               strokeWidth={1}
             />
-            <span className="absolute -top-1 -right-1 text-4xl">?</span>
           </div>
         </div>
 
         <div className="space-y-2">
           <h1 className="text-4xl font-semibold tracking-tight">
-            Lost on the map
+            Oops! Page not found.
           </h1>
           <p className="text-muted-foreground text-lg">
             The page you&apos;re looking for doesn&apos;t exist or has been
