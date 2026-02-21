@@ -29,7 +29,11 @@ export default async function NewUpdatePage({ params }: NewUpdatePageProps) {
   const { slug } = await params;
 
   const startup = await db.startup.findFirst({
-    where: { slug, userId: session.user.id, isActive: true },
+    where: {
+      OR: [{ slug }, { id: slug }],
+      userId: session.user.id,
+      isActive: true,
+    },
     select: {
       id: true,
       name: true,
@@ -60,6 +64,7 @@ export default async function NewUpdatePage({ params }: NewUpdatePageProps) {
   return (
     <NewWeeklyUpdate
       startupId={startup.id}
+      startupSlug={startup.slug}
       startupName={startup.name}
       currentWeekNumber={startup.currentWeekNumber}
       isLaunched={startup.isLaunched}

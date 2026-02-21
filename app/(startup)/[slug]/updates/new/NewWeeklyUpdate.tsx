@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 
 interface NewWeeklyUpdateProps {
   startupId: string;
+  startupSlug: string;
   startupName: string;
   currentWeekNumber: number;
   isLaunched: boolean;
@@ -16,6 +17,7 @@ interface NewWeeklyUpdateProps {
 
 export function NewWeeklyUpdate({
   startupId,
+  startupSlug,
   startupName,
   currentWeekNumber,
   isLaunched,
@@ -27,7 +29,7 @@ export function NewWeeklyUpdate({
     <div className="space-y-6">
       <div className="flex items-center gap-4">
         <Button asChild variant="ghost" size="sm">
-          <Link href={`/startups/${startupId}/updates`}>
+          <Link href={`/startups/${startupSlug}/updates`}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back
           </Link>
@@ -47,7 +49,7 @@ export function NewWeeklyUpdate({
         isLaunched={isLaunched}
         currentPrimaryMetric={currentPrimaryMetric}
         onSuccess={() => {
-          router.push(`/startups/${startupId}/updates`);
+          router.push(`/startups/${startupSlug}/updates`);
         }}
       />
     </div>

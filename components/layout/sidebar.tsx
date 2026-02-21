@@ -3,6 +3,7 @@
 import {
   Archive,
   BotIcon,
+  Building2,
   CreditCard,
   LayoutDashboard,
   Lightbulb,
@@ -48,6 +49,12 @@ export function Sidebar({ className }: SidebarProps) {
       icon: PlusCircle,
       href: "/ideas/new",
       active: pathname === "/ideas/new",
+    },
+    {
+      label: "Startups",
+      icon: Building2,
+      href: "/startups",
+      active: pathname === "/startups",
     },
     {
       label: "Billing",

@@ -6,7 +6,6 @@ import {
   Calendar,
   Edit3,
   HeartHandshake,
-  Loader2,
   Plus,
   School,
   Target,
@@ -51,11 +50,7 @@ const VERDICT_CONFIG: Record<
   },
 };
 
-interface StartupDashboardProps {
-  slug: string;
-}
-
-export function StartupDashboard({ slug }: StartupDashboardProps) {
+export function StartupDashboard({ slug }: { slug: string }) {
   const { data: startup, isLoading, error } = useStartup(slug);
   const { data: updatesData } = useWeeklyUpdates(startup?.id || "");
 
@@ -79,7 +74,7 @@ export function StartupDashboard({ slug }: StartupDashboardProps) {
         <CardContent className="pt-6 text-center">
           <p className="text-destructive">Failed to load startup</p>
           <Button asChild variant="outline" className="mt-4">
-            <Link href="/startups">Back to Startups</Link>
+            <Link href="/dashboard">Back to Dashboard</Link>
           </Button>
         </CardContent>
       </Card>
@@ -227,7 +222,7 @@ export function StartupDashboard({ slug }: StartupDashboardProps) {
                   {latestUpdate.aiAnalysis.analysis.positives
                     .slice(0, 2)
                     .map((item: string, i: number) => (
-                      <li key={i}>{item}</li>
+                      <li key={`pos-${i}`}>{item}</li>
                     ))}
                 </ul>
               </div>
@@ -241,7 +236,7 @@ export function StartupDashboard({ slug }: StartupDashboardProps) {
                   {latestUpdate.aiAnalysis.analysis.concerns
                     .slice(0, 2)
                     .map((item: string, i: number) => (
-                      <li key={i}>{item}</li>
+                      <li key={`con-${i}`}>{item}</li>
                     ))}
                 </ul>
               </div>

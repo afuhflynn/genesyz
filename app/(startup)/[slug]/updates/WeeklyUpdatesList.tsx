@@ -3,7 +3,6 @@
 import { format } from "date-fns";
 import {
   ArrowLeft,
-  ArrowRight,
   Calendar,
   CheckCircle2,
   Circle,
@@ -23,7 +22,7 @@ import {
 } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useStartup, useWeeklyUpdates } from "@/hooks";
 
@@ -79,7 +78,7 @@ export function WeeklyUpdatesList({ slug }: WeeklyUpdatesListProps) {
         <CardContent className="pt-6 text-center">
           <p className="text-destructive">Startup not found</p>
           <Button asChild variant="outline" className="mt-4">
-            <Link href="/startups">Back to Startups</Link>
+            <Link href="/dashboard">Back to Dashboard</Link>
           </Button>
         </CardContent>
       </Card>
@@ -234,7 +233,10 @@ export function WeeklyUpdatesList({ slug }: WeeklyUpdatesListProps) {
                         <h4 className="mb-2 font-medium">Goals</h4>
                         <div className="space-y-2">
                           {update.goals.map((goal, idx) => (
-                            <div key={idx} className="flex items-start gap-2">
+                            <div
+                              key={`goal-${update.id}-${idx}`}
+                              className="flex items-start gap-2"
+                            >
                               {goal.completed ? (
                                 <CheckCircle2 className="mt-0.5 h-4 w-4 text-green-600" />
                               ) : (
@@ -293,7 +295,7 @@ export function WeeklyUpdatesList({ slug }: WeeklyUpdatesListProps) {
                             <ul className="list-inside list-disc text-sm text-muted-foreground">
                               {update.aiAnalysis.analysis.positives.map(
                                 (item: string, i: number) => (
-                                  <li key={`pos-${i}`}>{item}</li>
+                                  <li key={`pos-${update.id}-${i}`}>{item}</li>
                                 ),
                               )}
                             </ul>
@@ -307,7 +309,7 @@ export function WeeklyUpdatesList({ slug }: WeeklyUpdatesListProps) {
                             <ul className="list-inside list-disc text-sm text-muted-foreground">
                               {update.aiAnalysis.analysis.concerns.map(
                                 (item: string, i: number) => (
-                                  <li key={`con-${i}`}>{item}</li>
+                                  <li key={`con-${update.id}-${i}`}>{item}</li>
                                 ),
                               )}
                             </ul>
@@ -321,7 +323,7 @@ export function WeeklyUpdatesList({ slug }: WeeklyUpdatesListProps) {
                             <ul className="list-inside list-disc text-sm text-muted-foreground">
                               {update.aiRecommendations.map(
                                 (item: string, i: number) => (
-                                  <li key={`rec-${i}`}>{item}</li>
+                                  <li key={`rec-${update.id}-${i}`}>{item}</li>
                                 ),
                               )}
                             </ul>

@@ -23,7 +23,7 @@ export default function PricingPage() {
 
       <section className="py-24 bg-background">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 ">
             {/* Free Plan */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
@@ -104,7 +104,7 @@ export default function PricingPage() {
           </div>
 
           {/* Comparison Table */}
-          <div className="mt-24 max-w-5xl mx-auto">
+          <div className="mt-24 ">
             <h2 className="text-3xl font-bold text-center mb-16">
               Compare Plans
             </h2>

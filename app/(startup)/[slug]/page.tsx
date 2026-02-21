@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import { StartupDashboard } from "./StartupDashboard";
 
 interface StartupPageProps {
@@ -18,6 +17,5 @@ export async function generateMetadata({
 
 export default async function StartupPage({ params }: StartupPageProps) {
   const { slug } = await params;
-
   return <StartupDashboard slug={slug} />;
 }

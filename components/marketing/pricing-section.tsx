@@ -37,7 +37,7 @@ export function PricingSection() {
           </motion.p>
         </div>
 
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 max-w-5xl mx-auto items-stretch">
+        <div className="grid grid-cols-1 gap-8 md:grid-cols-2  items-stretch">
           {/* Free Plan */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
