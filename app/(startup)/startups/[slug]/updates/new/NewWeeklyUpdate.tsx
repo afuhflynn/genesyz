@@ -13,6 +13,7 @@ interface NewWeeklyUpdateProps {
   currentWeekNumber: number;
   isLaunched: boolean;
   currentPrimaryMetric: string;
+  previousGoals: string[];
 }
 
 export function NewWeeklyUpdate({
@@ -22,6 +23,7 @@ export function NewWeeklyUpdate({
   currentWeekNumber,
   isLaunched,
   currentPrimaryMetric,
+  previousGoals,
 }: NewWeeklyUpdateProps) {
   const router = useRouter();
 
@@ -48,6 +50,7 @@ export function NewWeeklyUpdate({
         currentWeekNumber={currentWeekNumber}
         isLaunched={isLaunched}
         currentPrimaryMetric={currentPrimaryMetric}
+        previousGoals={previousGoals}
         onSuccess={() => {
           router.push(`/startups/${startupSlug}/updates`);
         }}

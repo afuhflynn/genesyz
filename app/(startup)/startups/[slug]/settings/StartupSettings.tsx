@@ -165,7 +165,8 @@ export function StartupSettings({ slug }: StartupSettingsProps) {
             </div>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive" disabled={isDeleting}>
+                {/* @note Feature coming soon */}
+                <Button variant="destructive" disabled={isDeleting || true}>
                   {isDeleting ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : (

@@ -70,6 +70,19 @@ export const analyzeWeeklyUpdateFn = inngest.createFunction(
           primaryMetricType: update.primaryMetricType,
           primaryMetricValue: update.primaryMetricValue,
           primaryMetricDelta: update.primaryMetricDelta,
+          metricPeriod: update.metricPeriod,
+          customMetricName: update.customMetricName,
+          additionalMetrics: update.additionalMetrics as Array<{
+            type: string;
+            value: number;
+            period?: string | null;
+            customMetricName?: string | null;
+          }> | null,
+          previousGoalsReview: update.previousGoalsReview as Array<{
+            goalText: string;
+            completed: boolean;
+          }> | null,
+          goalsCompletionRate: update.goalsCompletionRate,
           moraleScore: update.moraleScore,
           topImprovements: update.topImprovements,
           biggestObstacle: update.biggestObstacle,

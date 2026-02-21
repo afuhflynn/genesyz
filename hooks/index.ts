@@ -691,6 +691,20 @@ export function useCreateWeeklyUpdate() {
         userLearnings: string;
         primaryMetricType: string;
         primaryMetricValue: number;
+        metricPeriod?: string | null;
+        metricFormat?: string | null;
+        customMetricName?: string | null;
+        additionalMetrics?: Array<{
+          type: string;
+          value: number;
+          period?: string | null;
+          customMetricName?: string | null;
+        }> | null;
+        previousGoalsReview?: Array<{
+          goalText: string;
+          completed: boolean;
+        }> | null;
+        goalsCompletionRate?: number | null;
         moraleScore: number;
         topImprovements?: string;
         biggestObstacle?: string;

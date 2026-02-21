@@ -11,8 +11,11 @@ export const startupStageSchema = z.enum([
 export const targetMarketSchema = z.enum(["CONSUMER", "SMB", "ENTERPRISE"]);
 
 export const primaryMetricTypeSchema = z.enum([
-  "ARR",
   "MRR",
+  "ARR",
+  "GROSS_REVENUE",
+  "NET_REVENUE",
+  "TAKE_RATE",
   "SOFTWARE_SALES",
   "HARDWARE_SALES",
   "PREORDER_SALES",
@@ -26,9 +29,45 @@ export const primaryMetricTypeSchema = z.enum([
   "DAU",
   "WAU",
   "MAU",
-  "WAITLIST_SIGNUPS",
+  "PAYING_CUSTOMERS",
+  "NEW_SIGNUPS",
+  "RETENTION_RATE",
+  "CHURN_RATE",
+  "GMV",
+  "COMPLETED_ORDERS",
+  "BOOKINGS",
+  "UNITS_SOLD",
+  "WEEK_OVER_WEEK_GROWTH",
+  "MONTH_OVER_MONTH_GROWTH",
+  "SIGNED_CONTRACTS",
+  "PIPELINE_VALUE",
+  "PRODUCT_MILESTONES",
   "USER_CONVERSATIONS",
+  "WAITLIST_SIGNUPS",
+  "CUSTOM",
 ]);
+
+export const metricPeriodSchema = z.enum([
+  "DAILY",
+  "WEEKLY",
+  "MONTHLY",
+  "QUARTERLY",
+  "YEARLY",
+]);
+
+export const metricFormatSchema = z.enum(["CURRENCY", "PERCENTAGE", "NUMBER"]);
+
+export const additionalMetricSchema = z.object({
+  type: primaryMetricTypeSchema,
+  value: z.number().min(0),
+  period: metricPeriodSchema.optional().nullable(),
+  customMetricName: z.string().max(100).optional().nullable(),
+});
+
+export const previousGoalReviewSchema = z.object({
+  goalText: z.string(),
+  completed: z.boolean(),
+});
 
 export const createStartupSchema = z.object({
   ideaId: z.string().cuid(),
@@ -95,6 +134,16 @@ export const createWeeklyUpdateSchema = z.object({
     .max(5000),
   primaryMetricType: primaryMetricTypeSchema,
   primaryMetricValue: z.number().min(0),
+  metricPeriod: metricPeriodSchema.optional().nullable(),
+  metricFormat: metricFormatSchema.optional().nullable(),
+  customMetricName: z.string().max(100).optional().nullable(),
+  additionalMetrics: z
+    .array(additionalMetricSchema)
+    .max(5)
+    .optional()
+    .nullable(),
+  previousGoalsReview: z.array(previousGoalReviewSchema).optional().nullable(),
+  goalsCompletionRate: z.number().min(0).max(1).optional().nullable(),
   moraleScore: z.number().int().min(1).max(10),
   topImprovements: z.string().max(5000).optional(),
   biggestObstacle: z.string().max(5000).optional(),
@@ -120,3 +169,7 @@ export type UpdateStartupInput = z.infer<typeof updateStartupSchema>;
 export type CreateWeeklyUpdateInput = z.infer<typeof createWeeklyUpdateSchema>;
 export type WeeklyGoalInput = z.infer<typeof weeklyGoalSchema>;
 export type CheckSlugInput = z.infer<typeof checkSlugSchema>;
+export type AdditionalMetricInput = z.infer<typeof additionalMetricSchema>;
+export type PreviousGoalReviewInput = z.infer<typeof previousGoalReviewSchema>;
+export type MetricPeriod = z.infer<typeof metricPeriodSchema>;
+export type MetricFormat = z.infer<typeof metricFormatSchema>;

@@ -25,7 +25,7 @@ export default async function StartupLayout({
 
   const startup = await db.startup.findFirst({
     where: {
-      OR: [{ slug }, { id: slug }],
+      slug,
       userId: session.user.id,
       isActive: true,
     },
@@ -55,8 +55,8 @@ export default async function StartupLayout({
         <MobileStartupNav startup={startup} />
 
         {/* Main Content */}
-        <main className="flex w-full h-full overflow-auto flex-col pt-6 px-6">
-          {children}
+        <main className="flex w-full h-full overflow-auto flex-col pt-6 px-6 items-center">
+          <div className="max-w-7xl h-full w-full">{children}</div>
         </main>
       </div>
     </div>

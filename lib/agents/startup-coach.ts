@@ -41,6 +41,19 @@ interface WeeklyUpdateData {
   primaryMetricType: string;
   primaryMetricValue: number;
   primaryMetricDelta: number | null;
+  metricPeriod?: string | null;
+  customMetricName?: string | null;
+  additionalMetrics?: Array<{
+    type: string;
+    value: number;
+    period?: string | null;
+    customMetricName?: string | null;
+  }> | null;
+  previousGoalsReview?: Array<{
+    goalText: string;
+    completed: boolean;
+  }> | null;
+  goalsCompletionRate: number | null;
   moraleScore: number;
   topImprovements: string | null;
   biggestObstacle: string | null;
@@ -76,6 +89,22 @@ export async function analyzeWeeklyUpdate(
   const primaryModel = mistral("open-mixtral-8x7b");
   const fallbackModel = google("gemini-2.5-flash");
 
+  const additionalMetricsText = update.additionalMetrics?.length
+    ? `\n- Additional metrics:\n${update.additionalMetrics
+        .map((m) => {
+          const name =
+            m.type === "CUSTOM" && m.customMetricName
+              ? m.customMetricName
+              : m.type;
+          return `  - ${name}: ${m.value}${m.period ? ` (${m.period.toLowerCase()})` : ""}`;
+        })
+        .join("\n")}`
+    : "";
+
+  const previousGoalsText = update.previousGoalsReview?.length
+    ? `\n- Last week's goals completion: ${update.goalsCompletionRate !== null ? `${Math.round(update.goalsCompletionRate * 100)}%` : "N/A"} (${update.previousGoalsReview.filter((g) => g.completed).length}/${update.previousGoalsReview.length} completed)`
+    : "";
+
   const prompt = `You are a blunt, direct startup coach analyzing a weekly update. Be honest, not encouraging. Your job is to help founders face reality.
 
 ## Startup Context
@@ -91,11 +120,15 @@ export async function analyzeWeeklyUpdate(
 - Launched: ${update.isLaunched ? "Yes" : `No (${update.weeksToLaunch ?? "?"} weeks to launch)`}
 - Users talked to: ${update.usersTalkedTo}
 - User learnings: ${update.userLearnings}
-- Primary metric (${update.primaryMetricType}): ${update.primaryMetricValue}
-- Metric change from last week: ${update.primaryMetricDelta !== null ? `${update.primaryMetricDelta >= 0 ? "+" : ""}${update.primaryMetricDelta}` : "No previous data"}
+${
+  update.isLaunched
+    ? `- Primary metric (${update.customMetricName || update.primaryMetricType}): ${update.primaryMetricValue}${update.metricPeriod ? ` (${update.metricPeriod.toLowerCase()})` : ""}
+- Metric change from last week: ${update.primaryMetricDelta !== null ? `${update.primaryMetricDelta >= 0 ? "+" : ""}${update.primaryMetricDelta}` : "No previous data"}${additionalMetricsText}`
+    : ""
+}
 - Founder morale: ${update.moraleScore}/10
 - What improved the metric: ${update.topImprovements || "Not specified"}
-- Biggest obstacle: ${update.biggestObstacle || "Not specified"}
+- Biggest obstacle: ${update.biggestObstacle || "Not specified"}${previousGoalsText}
 - Goals for next week: ${update.goals.map((g, i) => `${i + 1}. ${g.content}`).join("\n  ")}
 
 ${
@@ -116,11 +149,13 @@ ${history.updates
 Provide a brutally honest analysis. 
 
 Verdict guidelines:
-- ON_TRACK: Strong trajectory, metric growing, good user conversations
-- NEEDS_ATTENTION: Some warning signs, metric flat or declining, low user engagement
-- AT_RISK: Serious problems, no progress, founder burned out, no validation
+- ON_TRACK: Strong trajectory, metric growing, good user conversations, goals being completed
+- NEEDS_ATTENTION: Some warning signs, metric flat or declining, low user engagement, inconsistent goal completion
+- AT_RISK: Serious problems, no progress, founder burned out, no validation, goals not being met
 
 Be specific in recommendations. Don't say "talk to more users" - say "you need to talk to at least 10 users per week, not ${update.usersTalkedTo}".
+
+Consider the goals completion rate when assessing progress. If founders consistently don't complete their goals, that's a red flag.
 
 For trajectory, estimate weeks to next meaningful milestone (launch, first paying customer, etc) based on current pace. If unclear, set weeksToMilestone to null.`;
 

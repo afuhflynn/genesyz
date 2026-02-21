@@ -61,6 +61,22 @@ export default async function NewUpdatePage({ params }: NewUpdatePageProps) {
     redirect(`/startups/${slug}/updates`);
   }
 
+  const previousUpdate = await db.weeklyUpdate.findFirst({
+    where: {
+      startupId: startup.id,
+      weekNumber: { lt: startup.currentWeekNumber },
+    },
+    orderBy: { weekNumber: "desc" },
+    select: {
+      goals: {
+        select: { content: true },
+        orderBy: { priority: "asc" },
+      },
+    },
+  });
+
+  const previousGoals = previousUpdate?.goals.map((g) => g.content) || [];
+
   return (
     <NewWeeklyUpdate
       startupId={startup.id}
@@ -69,6 +85,7 @@ export default async function NewUpdatePage({ params }: NewUpdatePageProps) {
       currentWeekNumber={startup.currentWeekNumber}
       isLaunched={startup.isLaunched}
       currentPrimaryMetric={startup.primaryMetricType}
+      previousGoals={previousGoals}
     />
   );
 }

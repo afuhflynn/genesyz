@@ -2,7 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, PartyPopper, Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useFieldArray, useForm } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -34,6 +34,21 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useCreateWeeklyUpdate } from "@/hooks";
+import {
+  getDefaultPeriod,
+  getMetricFormat,
+  LAUNCHED_ONLY_METRICS,
+  METRIC_CATEGORIES,
+  METRIC_PERIODS,
+} from "@/lib/constants/metrics";
+import {
+  type AdditionalMetricInput,
+  type PreviousGoalReviewInput,
+  primaryMetricTypeSchema,
+} from "@/lib/validators/startup";
+import { AdditionalMetricsSection } from "./AdditionalMetricsSection";
+import { MetricValueInput } from "./MetricValueInput";
+import { PreviousGoalsReview } from "./PreviousGoalsReview";
 
 const weeklyUpdateSchema = z.object({
   isLaunched: z.boolean(),
@@ -43,26 +58,13 @@ const weeklyUpdateSchema = z.object({
     .string()
     .min(10, "Please share at least 10 characters")
     .max(5000),
-  primaryMetricType: z.enum([
-    "ARR",
-    "MRR",
-    "SOFTWARE_SALES",
-    "HARDWARE_SALES",
-    "PREORDER_SALES",
-    "LETTERS_OF_INTENT",
-    "PAID_TRIALS",
-    "PAID_CONTRACTS",
-    "ECOMMERCE_SALES",
-    "MARKETPLACE_VOLUME",
-    "TRANSACTION_VOLUME",
-    "ASSETS_UNDER_MANAGEMENT",
-    "DAU",
-    "WAU",
-    "MAU",
-    "WAITLIST_SIGNUPS",
-    "USER_CONVERSATIONS",
-  ]),
+  primaryMetricType: primaryMetricTypeSchema,
   primaryMetricValue: z.number().min(0),
+  metricPeriod: z
+    .enum(["DAILY", "WEEKLY", "MONTHLY", "QUARTERLY", "YEARLY"])
+    .optional()
+    .nullable(),
+  customMetricName: z.string().max(100).optional().nullable(),
   moraleScore: z.number().int().min(1).max(10),
   topImprovements: z.string().max(5000).optional(),
   biggestObstacle: z.string().max(5000).optional(),
@@ -78,34 +80,6 @@ const weeklyUpdateSchema = z.object({
 });
 
 type WeeklyUpdateFormValues = z.infer<typeof weeklyUpdateSchema>;
-
-const PRIMARY_METRIC_GROUPS = {
-  "Recurring Revenue (USD)": [
-    { value: "ARR", label: "Annual Recurring Revenue" },
-    { value: "MRR", label: "Monthly Recurring Revenue" },
-  ],
-  "Revenue (USD)": [
-    { value: "SOFTWARE_SALES", label: "Software Sales" },
-    { value: "HARDWARE_SALES", label: "Hardware Sales" },
-    { value: "PREORDER_SALES", label: "Preorder Sales" },
-    { value: "LETTERS_OF_INTENT", label: "Letters of Intent" },
-    { value: "PAID_TRIALS", label: "Paid Trials" },
-    { value: "PAID_CONTRACTS", label: "Paid Contracts" },
-    { value: "ECOMMERCE_SALES", label: "Ecommerce Sales" },
-    { value: "MARKETPLACE_VOLUME", label: "Marketplace Transaction Volume" },
-    { value: "TRANSACTION_VOLUME", label: "Transaction Volume (other)" },
-    { value: "ASSETS_UNDER_MANAGEMENT", label: "Assets Under Management" },
-  ],
-  Engagement: [
-    { value: "DAU", label: "Daily Active Users (DAU)" },
-    { value: "WAU", label: "Weekly Active Users (WAU)" },
-    { value: "MAU", label: "Monthly Active Users (MAU)" },
-  ],
-  "Pre-Launch": [
-    { value: "USER_CONVERSATIONS", label: "User Conversations" },
-    { value: "WAITLIST_SIGNUPS", label: "Waitlist Signups" },
-  ],
-};
 
 const MORALE_LABELS: Record<number, string> = {
   1: "Totally burned out",
@@ -126,6 +100,7 @@ interface WeeklyUpdateFormProps {
   currentWeekNumber: number;
   isLaunched: boolean;
   currentPrimaryMetric: string;
+  previousGoals?: string[];
   onSuccess?: () => void;
 }
 
@@ -135,9 +110,17 @@ export function WeeklyUpdateForm({
   currentWeekNumber,
   isLaunched: initialIsLaunched,
   currentPrimaryMetric,
+  previousGoals = [],
   onSuccess,
 }: WeeklyUpdateFormProps) {
   const [submitted, setSubmitted] = useState(false);
+  const [additionalMetrics, setAdditionalMetrics] = useState<
+    AdditionalMetricInput[]
+  >([]);
+  const [previousGoalsReview, setPreviousGoalsReview] = useState<
+    PreviousGoalReviewInput[]
+  >([]);
+  const [goalsCompletionRate, setGoalsCompletionRate] = useState<number>(0);
   const mutation = useCreateWeeklyUpdate();
 
   const form = useForm<WeeklyUpdateFormValues>({
@@ -147,10 +130,17 @@ export function WeeklyUpdateForm({
       weeksToLaunch: null,
       usersTalkedTo: 0,
       userLearnings: "",
-      primaryMetricType:
-        (currentPrimaryMetric as WeeklyUpdateFormValues["primaryMetricType"]) ||
-        "USER_CONVERSATIONS",
+      primaryMetricType: initialIsLaunched
+        ? (currentPrimaryMetric as WeeklyUpdateFormValues["primaryMetricType"]) ||
+          "MRR"
+        : "USER_CONVERSATIONS",
       primaryMetricValue: 0,
+      metricPeriod: getDefaultPeriod(
+        initialIsLaunched
+          ? currentPrimaryMetric || "MRR"
+          : "USER_CONVERSATIONS",
+      ) as WeeklyUpdateFormValues["metricPeriod"],
+      customMetricName: null,
       moraleScore: 5,
       topImprovements: "",
       biggestObstacle: "",
@@ -165,14 +155,40 @@ export function WeeklyUpdateForm({
 
   const isLaunched = form.watch("isLaunched");
   const moraleScore = form.watch("moraleScore");
+  const primaryMetricType = form.watch("primaryMetricType");
+
+  useEffect(() => {
+    if (isLaunched) {
+      const defaultPeriod = getDefaultPeriod(primaryMetricType);
+      form.setValue(
+        "metricPeriod",
+        defaultPeriod as WeeklyUpdateFormValues["metricPeriod"],
+      );
+    }
+  }, [primaryMetricType, isLaunched, form]);
+
+  useEffect(() => {
+    if (!isLaunched) {
+      form.setValue("primaryMetricType", "USER_CONVERSATIONS");
+    }
+  }, [isLaunched, form]);
 
   const onSubmit = (data: WeeklyUpdateFormValues) => {
+    const metricFormat = getMetricFormat(data.primaryMetricType);
+
     mutation.mutate(
       {
         startupId,
         data: {
           ...data,
           weeksToLaunch: data.isLaunched ? null : data.weeksToLaunch,
+          metricFormat: metricFormat as "CURRENCY" | "PERCENTAGE" | "NUMBER",
+          additionalMetrics:
+            additionalMetrics.length > 0 ? additionalMetrics : null,
+          previousGoalsReview:
+            previousGoalsReview.length > 0 ? previousGoalsReview : null,
+          goalsCompletionRate:
+            previousGoalsReview.length > 0 ? goalsCompletionRate : null,
         },
       },
       {
@@ -186,11 +202,11 @@ export function WeeklyUpdateForm({
 
   if (submitted) {
     return (
-      <Card className="border-green-200 bg-green-50">
+      <Card className="border-green-200 bg-green-50 dark:bg-green-950/20">
         <CardContent className="pt-6 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900">
             <svg
-              className="h-8 w-8 text-green-600"
+              className="h-8 w-8 text-green-600 dark:text-green-400"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -203,10 +219,10 @@ export function WeeklyUpdateForm({
               />
             </svg>
           </div>
-          <h3 className="text-lg font-semibold text-green-900">
+          <h3 className="text-lg font-semibold text-green-900 dark:text-green-100">
             Week {currentWeekNumber} Update Submitted!
           </h3>
-          <p className="mt-2 text-green-700">
+          <p className="mt-2 text-green-700 dark:text-green-300">
             Your weekly progress has been recorded. AI analysis will be
             generated shortly.
           </p>
@@ -215,10 +231,24 @@ export function WeeklyUpdateForm({
     );
   }
 
+  const metricFormat = getMetricFormat(primaryMetricType);
+  const isCustomMetric = primaryMetricType === "CUSTOM";
+
+  const getFilteredMetricCategories = () => {
+    if (isLaunched) {
+      return METRIC_CATEGORIES;
+    }
+    return METRIC_CATEGORIES.filter((cat) => cat.name === "Special Cases").map(
+      (cat) => ({
+        ...cat,
+        metrics: cat.metrics.filter((m) => m.value === "USER_CONVERSATIONS"),
+      }),
+    );
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        {/* Launch Section */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Launch Status</CardTitle>
@@ -249,9 +279,9 @@ export function WeeklyUpdateForm({
             </div>
 
             {isLaunched ? (
-              <div className="mt-4 rounded-lg bg-green-50 p-4 text-center">
-                <PartyPopper className="mx-auto h-8 w-8 text-green-600" />
-                <p className="mt-2 font-medium text-green-900">
+              <div className="mt-4 rounded-lg bg-green-50 dark:bg-green-950/20 p-4 text-center">
+                <PartyPopper className="mx-auto h-8 w-8 text-green-600 dark:text-green-400" />
+                <p className="mt-2 font-medium text-green-900 dark:text-green-100">
                   Woohoo! Huge congrats on launching!
                 </p>
               </div>
@@ -287,7 +317,15 @@ export function WeeklyUpdateForm({
           </CardContent>
         </Card>
 
-        {/* Users Section */}
+        {previousGoals.length > 0 && (
+          <PreviousGoalsReview
+            previousGoals={previousGoals}
+            value={previousGoalsReview}
+            onChange={setPreviousGoalsReview}
+            onCompletionRateChange={setGoalsCompletionRate}
+          />
+        )}
+
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">User Conversations</CardTitle>
@@ -340,36 +378,38 @@ export function WeeklyUpdateForm({
           </CardContent>
         </Card>
 
-        {/* Primary Metric Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Primary Metric</CardTitle>
-            <CardDescription>
-              Choose one metric to focus on this week
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              <FormField
-                control={form.control}
-                name="primaryMetricType"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Choose your primary metric *</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select metric" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {Object.entries(PRIMARY_METRIC_GROUPS).map(
-                          ([group, metrics]) => (
-                            <div key={group}>
+        {isLaunched && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Primary Metric</CardTitle>
+              <CardDescription>
+                Choose one metric to focus on this week
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+                <FormField
+                  control={form.control}
+                  name="primaryMetricType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Choose your primary metric *</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select metric" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {getFilteredMetricCategories().map((category) => (
+                            <div key={category.name}>
                               <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-                                {group}
+                                {category.name}
                               </div>
-                              {metrics.map((metric) => (
+                              {category.metrics.map((metric) => (
                                 <SelectItem
                                   key={metric.value}
                                   value={metric.value}
@@ -378,42 +418,94 @@ export function WeeklyUpdateForm({
                                 </SelectItem>
                               ))}
                             </div>
-                          ),
-                        )}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="primaryMetricValue"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Current Value *</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        min={0}
-                        step="any"
-                        placeholder="0"
-                        {...field}
-                        onChange={(e) =>
-                          field.onChange(parseFloat(e.target.value) || 0)
-                        }
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-          </CardContent>
-        </Card>
+                <FormField
+                  control={form.control}
+                  name="metricPeriod"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Period *</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value || "WEEKLY"}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {METRIC_PERIODS.map((period) => (
+                            <SelectItem key={period.value} value={period.value}>
+                              {period.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-        {/* Goals Section */}
+                <FormField
+                  control={form.control}
+                  name="primaryMetricValue"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Current Value *</FormLabel>
+                      <FormControl>
+                        <MetricValueInput
+                          value={field.value}
+                          onChange={field.onChange}
+                          format={
+                            metricFormat as "CURRENCY" | "PERCENTAGE" | "NUMBER"
+                          }
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {isCustomMetric && (
+                <FormField
+                  control={form.control}
+                  name="customMetricName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Custom Metric Name *</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="e.g., Newsletter Open Rate"
+                          {...field}
+                          value={field.value ?? ""}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {isLaunched && (
+          <AdditionalMetricsSection
+            value={additionalMetrics}
+            onChange={setAdditionalMetrics}
+            primaryMetricType={primaryMetricType}
+          />
+        )}
+
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Goals for Next Week</CardTitle>
@@ -478,7 +570,6 @@ export function WeeklyUpdateForm({
           </CardContent>
         </Card>
 
-        {/* Morale Section */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Morale & Reflection</CardTitle>

@@ -34,15 +34,6 @@ export function StartupWorkspaceHeader({
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur-md supports-backdrop-filter:bg-background/60">
       <div className="flex h-14 items-center px-4 gap-4">
-        {/* Left: Back to Ideas */}
-        <Link
-          href="/dashboard"
-          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          <span className="hidden sm:inline">Back to Ideas</span>
-        </Link>
-
         <Separator orientation="vertical" className="h-6" />
 
         {/* Center: Startup Info */}

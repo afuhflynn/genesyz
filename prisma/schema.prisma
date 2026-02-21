@@ -539,6 +539,16 @@ model WeeklyUpdate {
   primaryMetricType  PrimaryMetricType @default(USER_CONVERSATIONS)
   primaryMetricValue Float
   primaryMetricDelta Float?
+  metricPeriod       MetricPeriod?
+  metricFormat       MetricFormat?
+  customMetricName   String?
+
+  // Additional Metrics (expandable section)
+  additionalMetrics Json?
+
+  // Goals Review
+  previousGoalsReview Json?
+  goalsCompletionRate Float?
 
   // Goals & Morale
   moraleScore     Int     // 1-10
@@ -630,11 +640,12 @@ enum TargetMarket {
 }
 
 enum PrimaryMetricType {
-  // Recurring Revenue
-  ARR
+  // Revenue & Financial
   MRR
-
-  // Revenue
+  ARR
+  GROSS_REVENUE
+  NET_REVENUE
+  TAKE_RATE
   SOFTWARE_SALES
   HARDWARE_SALES
   PREORDER_SALES
@@ -646,12 +657,46 @@ enum PrimaryMetricType {
   TRANSACTION_VOLUME
   ASSETS_UNDER_MANAGEMENT
 
-  // Engagement
+  // User & Engagement
   DAU
   WAU
   MAU
+  PAYING_CUSTOMERS
+  NEW_SIGNUPS
+  RETENTION_RATE
+  CHURN_RATE
 
-  // Pre-Launch
-  WAITLIST_SIGNUPS
+  // Marketplace & Transactions
+  GMV
+  COMPLETED_ORDERS
+  BOOKINGS
+  UNITS_SOLD
+
+  // Growth & Trajectory
+  WEEK_OVER_WEEK_GROWTH
+  MONTH_OVER_MONTH_GROWTH
+
+  // Special Cases
+  SIGNED_CONTRACTS
+  PIPELINE_VALUE
+  PRODUCT_MILESTONES
   USER_CONVERSATIONS
+  WAITLIST_SIGNUPS
+
+  // Custom
+  CUSTOM
+}
+
+enum MetricPeriod {
+  DAILY
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+enum MetricFormat {
+  CURRENCY
+  PERCENTAGE
+  NUMBER
 }

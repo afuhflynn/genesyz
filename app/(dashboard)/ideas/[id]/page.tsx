@@ -568,7 +568,7 @@ export default function IdeaDetailPage() {
             </TabsContent>
           </Tabs>
 
-          <GuideChat ideaId={id} />
+          {/* <GuideChat ideaId={id} /> */}
         </>
       )}
     </div>

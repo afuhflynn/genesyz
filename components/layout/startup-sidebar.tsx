@@ -93,44 +93,6 @@ export function StartupSidebar({ startup, className }: StartupSidebarProps) {
       )}
     >
       <div className="space-y-4 py-4">
-        {/* Back to Ideas */}
-        <div className="px-3">
-          <Button
-            variant="ghost"
-            className="w-full justify-start text-muted-foreground hover:text-foreground"
-            asChild
-          >
-            <Link href="/dashboard">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Ideas
-            </Link>
-          </Button>
-        </div>
-
-        <Separator />
-
-        {/* Startup Info */}
-        <div className="px-3 py-2">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="font-semibold text-lg truncate">
-              {startup.name}
-            </span>
-            {startup.isLaunched && (
-              <Badge variant="default" className="bg-green-600 text-xs">
-                Live
-              </Badge>
-            )}
-          </div>
-          <Badge
-            variant="secondary"
-            className={cn("text-xs", STAGE_COLORS[startup.stage] || "")}
-          >
-            {startup.stage}
-          </Badge>
-        </div>
-
-        <Separator />
-
         {/* Navigation */}
         <div className="px-3">
           <div className="space-y-1">

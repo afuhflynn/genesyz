@@ -2,95 +2,101 @@ import { db } from "@/lib/db";
 import { sendEmail } from "@/lib/email/client";
 import { inngest } from "@/lib/inngest/client";
 
-const STARTUP_FEATURE_ANNOUNCEMENT_HTML = `
+const FEATURE_ANNOUNCEMENT_HTML = `
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>New Feature: Startup Profiles</title>
+  <title>What's New | IdeasVault Update</title>
 </head>
 <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; margin: 0; padding: 20px;">
   <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; overflow: hidden;">
     <!-- Header -->
-    <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; padding: 40px 24px; text-align: center;">
-      <div style="display: inline-block; background: rgba(255,255,255,0.1); border-radius: 50%; padding: 16px; margin-bottom: 16px;">
-        <span style="font-size: 32px;">🚀</span>
-      </div>
-      <h1 style="margin: 0; font-size: 28px; font-weight: 600;">Introducing Startup Profiles</h1>
-      <p style="margin: 12px 0 0; opacity: 0.9; font-size: 16px;">Your validated ideas just got more powerful</p>
+    <div style="background: #0f172a; color: white; padding: 32px 24px;">
+      <h1 style="margin: 0; font-size: 24px; font-weight: 600;">What's New at IdeasVault</h1>
+      <p style="margin: 8px 0 0; opacity: 0.8; font-size: 15px;">Enhanced metrics, goal tracking, and more</p>
     </div>
 
     <!-- Content -->
     <div style="padding: 32px 24px;">
-      <p style="margin: 0 0 24px; font-size: 16px; line-height: 1.6; color: #374151;">
+      <p style="margin: 0 0 20px; font-size: 16px; line-height: 1.6; color: #374151;">
         Hi {{name}},
       </p>
       
       <p style="margin: 0 0 24px; font-size: 16px; line-height: 1.6; color: #374151;">
-        We've been working on something exciting. Today, we're launching <strong>Startup Profiles</strong> — 
-        a new way to turn your validated ideas into active, trackable startups.
+        We've shipped some significant improvements to Startup Profiles. Here's what's new:
       </p>
 
-      <div style="background: #f8fafc; border-radius: 8px; padding: 24px; margin-bottom: 24px;">
-        <h2 style="margin: 0 0 16px; font-size: 18px; color: #0f172a;">What's Included</h2>
+      <!-- New Metrics Section - Highlighted -->
+      <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 24px; margin-bottom: 24px;">
+        <h2 style="margin: 0 0 16px; font-size: 17px; color: #166534;">Enhanced Metrics Tracking</h2>
         
-        <div style="margin-bottom: 16px;">
-          <div style="display: flex; align-items: flex-start; gap: 12px;">
-            <span style="font-size: 20px;">📊</span>
-            <div>
-              <strong style="color: #0f172a;">Weekly KPI Tracking</strong>
-              <p style="margin: 4px 0 0; font-size: 14px; color: #64748b;">Track your primary metrics week over week with custom KPIs</p>
-            </div>
-          </div>
-        </div>
+        <p style="margin: 0 0 16px; font-size: 15px; line-height: 1.5; color: #374151;">
+          Your weekly updates just got more powerful. You can now track metrics the way that makes sense for your startup:
+        </p>
+        
+        <ul style="margin: 0; padding-left: 20px; color: #374151; font-size: 15px; line-height: 1.8;">
+          <li><strong>35+ categorized metrics</strong> — Revenue, engagement, marketplace, growth metrics and more</li>
+          <li><strong>Smart formatting</strong> — Currency shows as $1,234, percentages as 15.5%</li>
+          <li><strong>Flexible periods</strong> — Track daily, weekly, monthly, quarterly, or yearly</li>
+          <li><strong>Additional metrics</strong> — Add up to 5 extra metrics per update</li>
+          <li><strong>Custom metrics</strong> — Define your own when standard ones don't fit</li>
+        </ul>
+      </div>
 
-        <div style="margin-bottom: 16px;">
-          <div style="display: flex; align-items: flex-start; gap: 12px;">
-            <span style="font-size: 20px;">🤖</span>
-            <div>
-              <strong style="color: #0f172a;">AI Coaching</strong>
-              <p style="margin: 4px 0 0; font-size: 14px; color: #64748b;">Get blunt, honest feedback and recommendations every week</p>
-            </div>
-          </div>
-        </div>
+      <!-- Goal Review Section -->
+      <div style="background: #fef3c7; border: 1px solid #fcd34d; border-radius: 8px; padding: 24px; margin-bottom: 24px;">
+        <h2 style="margin: 0 0 12px; font-size: 17px; color: #92400e;">Goal Completion Review</h2>
+        
+        <p style="margin: 0; font-size: 15px; line-height: 1.5; color: #374151;">
+          Each week, you'll now review last week's goals with simple checkboxes. See your completion rate (e.g., "2/3 completed, 67%") and the AI coach factors this into its analysis.
+        </p>
+      </div>
 
-        <div style="margin-bottom: 16px;">
-          <div style="display: flex; align-items: flex-start; gap: 12px;">
-            <span style="font-size: 20px;">📚</span>
-            <div>
-              <strong style="color: #0f172a;">Startup School</strong>
-              <p style="margin: 4px 0 0; font-size: 14px; color: #64748b;">Curated learning resources (coming soon)</p>
-            </div>
-          </div>
+      <!-- Existing Features Recap -->
+      <div style="margin-bottom: 24px;">
+        <h2 style="margin: 0 0 16px; font-size: 17px; color: #0f172a;">Platform Features</h2>
+        
+        <div style="margin-bottom: 20px;">
+          <strong style="color: #0f172a; font-size: 15px;">Ideas Validation</strong>
+          <ul style="margin: 8px 0 0; padding-left: 20px; color: #64748b; font-size: 14px; line-height: 1.7;">
+            <li>AI-powered market, competitor, and feasibility research</li>
+            <li>Multi-dimensional scoring (Clarity, Market, Execution)</li>
+            <li>Conversational AI Guide for deeper exploration</li>
+            <li>PDF export for sharing</li>
+          </ul>
         </div>
-
+        
         <div>
-          <div style="display: flex; align-items: flex-start; gap: 12px;">
-            <span style="font-size: 20px;">🤝</span>
-            <div>
-              <strong style="color: #0f172a;">Co-Founder Match</strong>
-              <p style="margin: 4px 0 0; font-size: 14px; color: #64748b;">Find your perfect co-founder (coming soon)</p>
-            </div>
-          </div>
+          <strong style="color: #0f172a; font-size: 15px;">Startup Tracking</strong>
+          <ul style="margin: 8px 0 0; padding-left: 20px; color: #64748b; font-size: 14px; line-height: 1.7;">
+            <li>Weekly progress updates with launch status tracking</li>
+            <li>AI coaching with blunt, honest feedback</li>
+            <li>Metrics dashboard with trends and history</li>
+            <li>User conversation tracking for pre-launch startups</li>
+          </ul>
         </div>
       </div>
 
-      <p style="margin: 0 0 24px; font-size: 16px; line-height: 1.6; color: #374151;">
-        Converting an idea to a startup takes seconds. Just open any researched idea and click 
-        "Create Startup Profile" to get started.
-      </p>
+      <!-- Coming Soon -->
+      <div style="border-top: 1px solid #e5e7eb; padding-top: 20px; margin-bottom: 24px;">
+        <p style="margin: 0 0 8px; font-size: 13px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Coming Soon</p>
+        <p style="margin: 0; font-size: 14px; color: #64748b;">
+          Startup School (curated learning resources) and Co-Founder Match
+        </p>
+      </div>
 
       <!-- CTA -->
-      <div style="text-align: center; margin: 32px 0;">
-        <a href="{{appUrl}}/ideas" 
-           style="display: inline-block; background: #0f172a; color: white; padding: 14px 32px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 16px;">
-          Create Your First Startup Profile
+      <div style="text-align: center; padding-top: 8px;">
+        <a href="{{appUrl}}/startups" 
+           style="display: inline-block; background: #0f172a; color: white; padding: 14px 28px; border-radius: 6px; text-decoration: none; font-weight: 500; font-size: 15px;">
+          View Your Startups
         </a>
       </div>
 
-      <p style="margin: 24px 0 0; font-size: 14px; color: #64748b; text-align: center;">
-        Best,<br>The IdeasVault Team
+      <p style="margin: 32px 0 0; font-size: 14px; color: #64748b; text-align: center;">
+        — The IdeasVault Team
       </p>
     </div>
   </div>
@@ -120,15 +126,16 @@ export const sendStartupFeatureAnnouncement = inngest.createFunction(
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
-    const html = STARTUP_FEATURE_ANNOUNCEMENT_HTML.replace(
+    const html = FEATURE_ANNOUNCEMENT_HTML.replace(
       /{{name}}/g,
-      user.name || "Founder",
+      user.name || "there",
     ).replace(/{{appUrl}}/g, appUrl);
 
     await step.run("send-email", async () => {
       await sendEmail({
         to: user.email,
-        subject: "🚀 New Feature: Turn Your Ideas into Startups",
+        subject:
+          "What's New: Enhanced Metrics & Goal Tracking | IdeasVault Update",
         html,
       });
     });
