@@ -726,3 +726,19 @@ export function useCreateWeeklyUpdate() {
     },
   });
 }
+
+export function useIdeaStartup(ideaId: string) {
+  return useQuery({
+    queryKey: [...queryKeys.ideas.detail(ideaId), "startup"],
+    queryFn: async () => {
+      const response = await fetch(`/api/ideas/${ideaId}/startup`);
+      if (!response.ok) throw new Error("Failed to check startup");
+      return response.json() as Promise<{
+        hasStartup: boolean;
+        startup: { id: string; slug: string; name: string } | null;
+      }>;
+    },
+    enabled: !!ideaId,
+    staleTime: 5 * 60 * 1000,
+  });
+}

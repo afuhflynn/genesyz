@@ -10,6 +10,10 @@ import { reevaluationFunction } from "@/lib/inngest/functions/re-evaluation";
 import { researchPipelineFunction } from "@/lib/inngest/functions/research-pipeline";
 import { analyzeWeeklyUpdateFn } from "@/lib/inngest/functions/startup-analysis";
 import {
+  broadcastStartupFeatureAnnouncement,
+  sendStartupFeatureAnnouncement,
+} from "@/lib/inngest/functions/startup-feature-announcement";
+import {
   weeklyStartupReportCron,
   weeklyStartupReportFn,
 } from "@/lib/inngest/functions/startup-weekly-report";
@@ -29,5 +33,7 @@ export const { GET, POST, PUT } = serve({
     analyzeWeeklyUpdateFn,
     weeklyStartupReportFn,
     weeklyStartupReportCron,
+    sendStartupFeatureAnnouncement,
+    broadcastStartupFeatureAnnouncement,
   ],
 });

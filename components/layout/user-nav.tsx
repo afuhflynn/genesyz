@@ -1,10 +1,11 @@
 "use client";
 
 import type { User } from "better-auth";
-import { Building2, Loader2, Plus } from "lucide-react";
+import { Building2, Loader2, Plus, Rocket, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -33,6 +34,7 @@ export function UserNav({ user }: UserNavProps) {
   if (!user) return null;
 
   const startups = startupsData?.data || [];
+  const hasStartups = startups.length > 0;
 
   return (
     <DropdownMenu>
@@ -60,34 +62,51 @@ export function UserNav({ user }: UserNavProps) {
           <DropdownMenuSub>
             <DropdownMenuSubTrigger className="gap-2">
               <Building2 className="h-4 w-4" />
-              <span>Your Startups</span>
+              <span>Startups</span>
+              {!hasStartups && (
+                <Badge
+                  variant="default"
+                  className="ml-auto bg-primary px-1.5 py-0 text-[10px] font-semibold"
+                >
+                  NEW
+                </Badge>
+              )}
             </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent className="w-48">
+            <DropdownMenuSubContent className="w-64">
               {startupsLoading ? (
-                <DropdownMenuItem disabled>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Loading...
-                </DropdownMenuItem>
-              ) : startups.length === 0 ? (
-                <DropdownMenuItem asChild>
-                  <Link href="/ideas">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create from Idea
-                  </Link>
-                </DropdownMenuItem>
-              ) : (
+                <div className="p-2">
+                  <DropdownMenuItem disabled>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Loading...
+                  </DropdownMenuItem>
+                </div>
+              ) : hasStartups ? (
                 <>
+                  <DropdownMenuLabel className="text-xs text-muted-foreground">
+                    Your Startups
+                  </DropdownMenuLabel>
                   {startups.slice(0, 5).map((startup: any) => (
                     <DropdownMenuItem
                       key={startup.id}
                       onClick={() => router.push(`/startups/${startup.slug}`)}
                     >
+                      <Building2 className="mr-2 h-4 w-4 text-muted-foreground" />
                       <span className="truncate">{startup.name}</span>
+                      {startup.isLaunched && (
+                        <Badge
+                          variant="outline"
+                          className="ml-auto border-green-600 text-green-600 text-[10px]"
+                        >
+                          Live
+                        </Badge>
+                      )}
                     </DropdownMenuItem>
                   ))}
                   {startups.length > 5 && (
                     <DropdownMenuItem asChild>
-                      <Link href="/startups">View all ({startups.length})</Link>
+                      <Link href="/startups" className="text-muted-foreground">
+                        View all ({startups.length})
+                      </Link>
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuSeparator />
@@ -95,6 +114,37 @@ export function UserNav({ user }: UserNavProps) {
                     <Link href="/ideas">
                       <Plus className="mr-2 h-4 w-4" />
                       New Startup
+                    </Link>
+                  </DropdownMenuItem>
+                </>
+              ) : (
+                <>
+                  <div className="p-3">
+                    <div className="flex items-center gap-2">
+                      <div className="rounded-md bg-primary/10 p-1.5">
+                        <Rocket className="h-4 w-4 text-primary" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Startup Profiles</p>
+                        <Badge
+                          variant="default"
+                          className="bg-primary px-1.5 py-0 text-[10px]"
+                        >
+                          NEW
+                        </Badge>
+                      </div>
+                    </div>
+                    <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                      Turn your validated ideas into active startups. Track
+                      weekly progress with KPIs and get AI coaching to stay on
+                      track.
+                    </p>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild className="bg-primary/5">
+                    <Link href="/ideas" className="font-medium">
+                      <Sparkles className="mr-2 h-4 w-4 text-primary" />
+                      Create Your First Startup
                     </Link>
                   </DropdownMenuItem>
                 </>

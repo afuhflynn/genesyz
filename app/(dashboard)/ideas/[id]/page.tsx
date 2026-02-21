@@ -17,6 +17,16 @@ import { useQueryStates } from "nuqs";
 import { useEffect, useState } from "react";
 import { fetchRealtimeSubscriptionToken } from "@/app/api/inngest/token/_actions/fetchRealtimeSubscriptionToken";
 import { GuideChat } from "@/components/guide";
+import { IdeaDetailSkeleton } from "@/components/idea/idea-detail-skeleton";
+import { IdeaNotFound } from "@/components/idea/idea-notfound";
+import { ResearchingState } from "@/components/idea/research-state";
+import { ScoreCard } from "@/components/idea/score-card";
+import {
+  getPriorityColor,
+  getStatusVariant,
+  getVerdictBorderColor,
+} from "@/components/idea/utils";
+import { ConvertToStartupCTA } from "@/components/ideas/[id]/ConvertToStartupCTA";
 import { DeleteIdeaDialog } from "@/components/ideas/[id]/DeleteIdea";
 import { AssetTab } from "@/components/ideas/AssetTab";
 import {
@@ -47,20 +57,12 @@ import {
   useArchiveIdea,
   useExportIdeaPdf,
   useIdea,
+  useIdeaStartup,
   useRerunResearch,
   useUnArchiveIdea,
 } from "@/hooks";
 import { cn, formatRelativeTime } from "@/lib/utils";
 import { searchParamsSchema } from "@/nuqs";
-import { IdeaDetailSkeleton } from "@/components/idea/idea-detail-skeleton";
-import { IdeaNotFound } from "@/components/idea/idea-notfound";
-import {
-  getPriorityColor,
-  getStatusVariant,
-  getVerdictBorderColor,
-} from "@/components/idea/utils";
-import { ResearchingState } from "@/components/idea/research-state";
-import { ScoreCard } from "@/components/idea/score-card";
 
 export default function IdeaDetailPage() {
   const params = useParams();
@@ -68,6 +70,7 @@ export default function IdeaDetailPage() {
   const [searchParams, setSearchParams] = useQueryStates(searchParamsSchema);
 
   const { data: idea, isLoading, error } = useIdea(id);
+  const { data: startupData } = useIdeaStartup(id);
   const rerunResearch = useRerunResearch();
   const archiveIdea = useArchiveIdea();
   const unarchiveIdea = useUnArchiveIdea();
@@ -329,6 +332,16 @@ export default function IdeaDetailPage() {
                     </div>
                   </CardContent>
                 </Card>
+              )}
+
+              {/* Convert to Startup CTA */}
+              {idea.status === "RESEARCHED" && (
+                <ConvertToStartupCTA
+                  ideaId={id}
+                  ideaTitle={idea.title}
+                  ideaSummary={idea.summary}
+                  hasExistingStartup={startupData?.hasStartup ?? false}
+                />
               )}
 
               {/* Summary */}

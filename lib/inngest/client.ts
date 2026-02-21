@@ -74,4 +74,12 @@ export type InngestEvents = {
       userId: string;
     };
   };
+  "announcement.startupFeature": {
+    data: {
+      userId: string;
+    };
+  };
+  "announcement.startupFeature.broadcast": {
+    data: Record<string, never>;
+  };
 };
