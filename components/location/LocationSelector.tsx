@@ -1,7 +1,14 @@
 "use client";
 
-import { Globe, MapPin } from "lucide-react";
-import { useState } from "react";
+import {
+  continents,
+  countries,
+  getEmojiFlag,
+  type TContinentCode,
+  type TCountryCode,
+} from "countries-list";
+import { ChevronDown, ChevronRight, Globe, MapPin, Search } from "lucide-react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -10,14 +17,13 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
 
 interface LocationContext {
   country?: string;
   countryCode?: string;
-  region?: string;
-  city?: string;
-  timezone?: string;
-  currency?: string;
+  continent?: string;
+  continentCode?: string;
   isGlobal?: boolean;
 }
 
@@ -28,23 +34,49 @@ interface LocationSelectorProps {
   id?: string;
 }
 
-// Common locations for quick selection
-const COMMON_LOCATIONS = [
-  { name: "Global", code: "GLOBAL", isGlobal: true },
-  { name: "United States", code: "US" },
-  { name: "United Kingdom", code: "GB" },
-  { name: "Canada", code: "CA" },
-  { name: "Australia", code: "AU" },
-  { name: "Germany", code: "DE" },
-  { name: "France", code: "FR" },
-  { name: "Nigeria", code: "NG" },
-  { name: "Kenya", code: "KE" },
-  { name: "South Africa", code: "ZA" },
-  { name: "Ghana", code: "GH" },
-  { name: "India", code: "IN" },
-  { name: "Singapore", code: "SG" },
-  { name: "Brazil", code: "BR" },
+interface CountryWithFlag {
+  code: string;
+  name: string;
+  emoji: string;
+  continent: TContinentCode;
+}
+
+type GroupedCountries = Record<TContinentCode, CountryWithFlag[]>;
+
+const CONTINENT_ORDER: TContinentCode[] = [
+  "AF",
+  "AS",
+  "EU",
+  "NA",
+  "SA",
+  "OC",
+  "AN",
 ];
+
+function groupCountriesByContinent(): GroupedCountries {
+  const grouped: Partial<GroupedCountries> = {};
+
+  for (const [code, data] of Object.entries(countries)) {
+    const continentCode = data.continent as TContinentCode;
+    if (!grouped[continentCode]) {
+      grouped[continentCode] = [];
+    }
+    grouped[continentCode]!.push({
+      code,
+      name: data.name,
+      emoji: getEmojiFlag(code as TCountryCode) || "",
+      continent: continentCode,
+    });
+  }
+
+  for (const continentCode of Object.keys(grouped) as TContinentCode[]) {
+    grouped[continentCode]!.sort((a, b) => a.name.localeCompare(b.name));
+  }
+
+  return grouped as GroupedCountries;
+}
+
+const GROUPED_COUNTRIES = groupCountriesByContinent();
 
 export function LocationSelector({
   value,
@@ -54,22 +86,72 @@ export function LocationSelector({
 }: LocationSelectorProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [expandedContinents, setExpandedContinents] = useState<
+    Set<TContinentCode>
+  >(new Set());
 
   const displayValue = value?.isGlobal
     ? "Global"
-    : value?.city && value?.country
-      ? `${value.city}, ${value.country}`
-      : value?.country || "Select location...";
+    : value?.country || "Select location...";
 
-  const filteredLocations = COMMON_LOCATIONS.filter((loc) =>
-    loc.name.toLowerCase().includes(search.toLowerCase()),
-  );
+  const filteredGroups = useMemo(() => {
+    if (!search.trim()) {
+      return GROUPED_COUNTRIES;
+    }
 
-  const handleSelect = (location: (typeof COMMON_LOCATIONS)[0]) => {
+    const query = search.toLowerCase();
+    const filtered: Partial<GroupedCountries> = {};
+
+    for (const continentCode of CONTINENT_ORDER) {
+      const continentName = continents[continentCode]?.toLowerCase() || "";
+      const countryList = GROUPED_COUNTRIES[continentCode];
+
+      if (!countryList) continue;
+
+      if (continentName.includes(query)) {
+        filtered[continentCode] = countryList;
+      } else {
+        const matchingCountries = countryList.filter(
+          (country) =>
+            country.name.toLowerCase().includes(query) ||
+            country.code.toLowerCase().includes(query),
+        );
+        if (matchingCountries.length > 0) {
+          filtered[continentCode] = matchingCountries;
+        }
+      }
+    }
+
+    return filtered as GroupedCountries;
+  }, [search]);
+
+  const toggleContinent = (continentCode: TContinentCode) => {
+    setExpandedContinents((prev) => {
+      const next = new Set(prev);
+      if (next.has(continentCode)) {
+        next.delete(continentCode);
+      } else {
+        next.add(continentCode);
+      }
+      return next;
+    });
+  };
+
+  const handleSelectGlobal = () => {
     onChange({
-      country: location.name,
-      countryCode: location.code,
-      isGlobal: location.isGlobal || false,
+      isGlobal: true,
+    });
+    setOpen(false);
+    setSearch("");
+  };
+
+  const handleSelectCountry = (country: CountryWithFlag) => {
+    onChange({
+      country: country.name,
+      countryCode: country.code,
+      continent: continents[country.continent],
+      continentCode: country.continent,
+      isGlobal: false,
     });
     setOpen(false);
     setSearch("");
@@ -79,6 +161,10 @@ export function LocationSelector({
     onChange(null);
     setOpen(false);
   };
+
+  const visibleContinents = CONTINENT_ORDER.filter(
+    (code) => filteredGroups[code] && filteredGroups[code].length > 0,
+  );
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -94,6 +180,10 @@ export function LocationSelector({
           <span className="flex items-center gap-2 truncate">
             {value?.isGlobal ? (
               <Globe className="h-4 w-4 shrink-0 text-muted-foreground" />
+            ) : value?.countryCode ? (
+              <span className="text-base leading-none">
+                {getEmojiFlag(value.countryCode as TCountryCode)}
+              </span>
             ) : (
               <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" />
             )}
@@ -101,47 +191,108 @@ export function LocationSelector({
           </span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[300px] p-0" align="start">
-        <div className="p-2">
-          <Input
-            placeholder="Search location..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="h-8"
-          />
+      <PopoverContent className="w-[320px] p-0" align="start">
+        <div className="p-2 border-b">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Search countries or continents..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="h-9 pl-8"
+            />
+          </div>
         </div>
-        <ScrollArea className="h-[200px]">
-          <div className="p-2">
-            {filteredLocations.length === 0 ? (
+
+        <ScrollArea className="h-[300px]">
+          <div className="p-1">
+            {/* Global Option */}
+            <button
+              type="button"
+              onClick={handleSelectGlobal}
+              className={cn(
+                "w-full flex items-center gap-2 px-2 py-2 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground transition-colors",
+                value?.isGlobal && "bg-accent",
+              )}
+            >
+              <Globe className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <span className="flex-1 text-left">Global</span>
+              {value?.isGlobal && (
+                <span className="text-xs text-primary font-medium">
+                  Selected
+                </span>
+              )}
+            </button>
+
+            <div className="my-1 h-px bg-border" />
+
+            {/* Continents and Countries */}
+            {visibleContinents.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-4">
-                No locations found
+                No countries found
               </p>
             ) : (
-              <div className="space-y-1">
-                {filteredLocations.map((location) => (
-                  <button
-                    type="button"
-                    key={location.code}
-                    onClick={() => handleSelect(location)}
-                    className="w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground transition-colors"
-                  >
-                    {location.isGlobal ? (
-                      <Globe className="h-4 w-4 shrink-0" />
-                    ) : (
-                      <MapPin className="h-4 w-4 shrink-0" />
-                    )}
-                    <span className="flex-1 text-left">{location.name}</span>
-                    {value?.countryCode === location.code && (
-                      <span className="text-xs text-primary font-medium">
-                        Selected
+              visibleContinents.map((continentCode) => {
+                const continentName = continents[continentCode];
+                const countryList = filteredGroups[continentCode];
+                const isExpanded = expandedContinents.has(continentCode);
+                const countryCount = countryList?.length || 0;
+
+                if (!countryList) return null;
+
+                return (
+                  <div key={continentCode}>
+                    <button
+                      type="button"
+                      onClick={() => toggleContinent(continentCode)}
+                      className="w-full flex items-center gap-2 px-2 py-2 text-sm font-medium rounded-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                    >
+                      {isExpanded ? (
+                        <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      )}
+                      <span className="flex-1 text-left">{continentName}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {countryCount}
                       </span>
+                    </button>
+
+                    {isExpanded && (
+                      <div className="ml-2 pl-4 border-l border-border">
+                        {countryList.map((country) => (
+                          <button
+                            type="button"
+                            key={country.code}
+                            onClick={() => handleSelectCountry(country)}
+                            className={cn(
+                              "w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground transition-colors",
+                              value?.countryCode === country.code &&
+                                "bg-accent",
+                            )}
+                          >
+                            <span className="text-base leading-none">
+                              {country.emoji}
+                            </span>
+                            <span className="flex-1 text-left">
+                              {country.name}
+                            </span>
+                            {value?.countryCode === country.code && (
+                              <span className="text-xs text-primary font-medium">
+                                Selected
+                              </span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
                     )}
-                  </button>
-                ))}
-              </div>
+                  </div>
+                );
+              })
             )}
           </div>
         </ScrollArea>
+
         {value && (
           <div className="border-t p-2">
             <button
@@ -158,7 +309,6 @@ export function LocationSelector({
   );
 }
 
-// Display component for showing location in read-only mode
 export function LocationBadge({
   location,
 }: {
@@ -168,14 +318,20 @@ export function LocationBadge({
 
   const displayText = location.isGlobal
     ? "Global"
-    : location.city
-      ? `${location.city}, ${location.country}`
-      : location.country;
+    : location.country || "Unknown";
+
+  const flag = location.isGlobal
+    ? null
+    : location.countryCode
+      ? getEmojiFlag(location.countryCode as TCountryCode)
+      : null;
 
   return (
     <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground text-sm">
       {location.isGlobal ? (
         <Globe className="h-3.5 w-3.5" />
+      ) : flag ? (
+        <span className="text-sm leading-none">{flag}</span>
       ) : (
         <MapPin className="h-3.5 w-3.5" />
       )}
