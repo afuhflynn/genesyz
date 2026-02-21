@@ -65,7 +65,7 @@ export async function GET(
 // POST /api/ideas/[id]/guide - Initialize new conversation or send message
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -74,7 +74,7 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const ideaId = params.id;
+    const { id: ideaId } = await params;
     const body = await request.json();
     const { action } = body;
 
