@@ -9,7 +9,7 @@ import { extractUrlsFromSources } from "@/lib/scraping";
 // GET /api/ideas/[id]/prompt - Get prompt history
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -18,7 +18,7 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const ideaId = params.id;
+    const { id: ideaId } = await params;
 
     // Get idea with prompt versions
     const idea = await db.idea.findFirst({
@@ -57,7 +57,7 @@ export async function GET(
 // PUT /api/ideas/[id]/prompt - Update prompt
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -66,7 +66,7 @@ export async function PUT(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const ideaId = params.id;
+    const { id: ideaId } = await params;
     const { prompt, triggerResearch = false } = await request.json();
 
     if (!prompt || typeof prompt !== "string") {
@@ -218,7 +218,7 @@ export async function PUT(
 // DELETE /api/ideas/[id]/prompt/versions/[versionId] - Delete a version
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
@@ -227,7 +227,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const ideaId = params.id;
+    const { id: ideaId } = await params;
     const { searchParams } = new URL(request.url);
     const versionId = searchParams.get("versionId");
 
