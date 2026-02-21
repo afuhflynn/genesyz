@@ -43,6 +43,7 @@ model User {
   ideas        Idea[]
   entitlements Entitlement[]
   auditLogs    AuditLog[]
+  startups     Startup[]
 
   @@map("users")
 }
@@ -150,6 +151,9 @@ model Idea {
 
   // AI Guide
   guideConversations GuideConversation[]
+
+  // Startup Profile
+  startup Startup?
 
   @@index([userId])
   @@index([status])
@@ -460,4 +464,194 @@ enum GuideMessageRole {
   USER
   ASSISTANT
   SYSTEM
+}
+
+// ===========================================
+// Startup Profiles
+// ===========================================
+
+model Startup {
+  id        String   @id @default(cuid())
+  ideaId    String   @unique
+  userId    String
+
+  // Profile Data
+  name        String
+  slug        String   @unique
+  tagline     String?
+  description String?  @db.Text
+  industry    String?
+  stage       StartupStage @default(IDEA)
+  targetMarket TargetMarket?
+
+  // Branding
+  logoUrl  String?
+  website  String?
+  location String?
+
+  // Launch Status
+  isLaunched    Boolean   @default(false)
+  launchDate    DateTime?
+  weeksToLaunch Int?
+
+  // Primary Metric
+  primaryMetricType   PrimaryMetricType @default(USER_CONVERSATIONS)
+  primaryMetricValue  Float?
+  primaryMetricTarget Float?
+
+  // Weekly Tracking
+  currentWeekNumber Int       @default(1)
+  lastUpdateAt      DateTime?
+
+  // Status
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  // Relations
+  idea          Idea           @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weeklyUpdates WeeklyUpdate[]
+  metrics       StartupMetric[]
+  goals         StartupGoal[]
+
+  @@index([userId])
+  @@index([slug])
+  @@map("startups")
+}
+
+model WeeklyUpdate {
+  id        String   @id @default(cuid())
+  startupId String
+  weekNumber Int
+  weekStart  DateTime
+  weekEnd    DateTime
+
+  // Launch Section
+  isLaunched    Boolean @default(false)
+  weeksToLaunch Int?
+
+  // User Conversations
+  usersTalkedTo Int     @default(0)
+  userLearnings String? @db.Text
+
+  // Primary Metric
+  primaryMetricType  PrimaryMetricType @default(USER_CONVERSATIONS)
+  primaryMetricValue Float
+  primaryMetricDelta Float?
+
+  // Goals & Morale
+  moraleScore     Int     // 1-10
+  topImprovements String? @db.Text
+  biggestObstacle String? @db.Text
+
+  // AI Coaching
+  aiAnalysis        Json?
+  aiVerdict         String?
+  aiRecommendations Json?
+
+  createdAt DateTime @default(now())
+
+  startup       Startup              @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  goals         WeeklyGoal[]
+  metricHistory WeeklyMetricEntry[]
+
+  @@unique([startupId, weekNumber])
+  @@index([startupId])
+  @@index([weekStart])
+  @@map("weekly_updates")
+}
+
+model WeeklyGoal {
+  id              String @id @default(cuid())
+  weeklyUpdateId  String
+  content         String
+  priority        Int    @default(1)
+  completed       Boolean @default(false)
+
+  weeklyUpdate WeeklyUpdate @relation(fields: [weeklyUpdateId], references: [id], onDelete: Cascade)
+
+  @@index([weeklyUpdateId])
+  @@map("weekly_goals")
+}
+
+model WeeklyMetricEntry {
+  id             String            @id @default(cuid())
+  weeklyUpdateId String
+  metricType     PrimaryMetricType
+  value          Float
+
+  weeklyUpdate WeeklyUpdate @relation(fields: [weeklyUpdateId], references: [id], onDelete: Cascade)
+
+  @@index([weeklyUpdateId])
+  @@map("weekly_metric_entries")
+}
+
+model StartupMetric {
+  id        String   @id @default(cuid())
+  startupId String
+  name      String
+  value     Float
+  target    Float?
+  updatedAt DateTime @updatedAt
+
+  startup Startup @relation(fields: [startupId], references: [id], onDelete: Cascade)
+
+  @@unique([startupId, name])
+  @@map("startup_metrics")
+}
+
+model StartupGoal {
+  id        String    @id @default(cuid())
+  startupId String
+  content   String
+  completed Boolean   @default(false)
+  dueDate   DateTime?
+  createdAt DateTime  @default(now())
+
+  startup Startup @relation(fields: [startupId], references: [id], onDelete: Cascade)
+
+  @@index([startupId])
+  @@map("startup_goals")
+}
+
+enum StartupStage {
+  IDEA
+  VALIDATION
+  BUILDING
+  LAUNCHED
+  SCALING
+}
+
+enum TargetMarket {
+  CONSUMER
+  SMB
+  ENTERPRISE
+}
+
+enum PrimaryMetricType {
+  // Recurring Revenue
+  ARR
+  MRR
+
+  // Revenue
+  SOFTWARE_SALES
+  HARDWARE_SALES
+  PREORDER_SALES
+  LETTERS_OF_INTENT
+  PAID_TRIALS
+  PAID_CONTRACTS
+  ECOMMERCE_SALES
+  MARKETPLACE_VOLUME
+  TRANSACTION_VOLUME
+  ASSETS_UNDER_MANAGEMENT
+
+  // Engagement
+  DAU
+  WAU
+  MAU
+
+  // Pre-Launch
+  WAITLIST_SIGNUPS
+  USER_CONVERSATIONS
 }

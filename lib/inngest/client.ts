@@ -61,4 +61,17 @@ export type InngestEvents = {
   "digest.weekly": {
     data: Record<string, never>;
   };
+  "weeklyUpdate.created": {
+    data: {
+      updateId: string;
+      startupId: string;
+      userId: string;
+    };
+  };
+  "startup.weeklyReport": {
+    data: {
+      startupId: string;
+      userId: string;
+    };
+  };
 };

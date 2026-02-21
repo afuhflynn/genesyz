@@ -27,6 +27,14 @@ export const queryKeys = {
     detail: (id: string) => [...queryKeys.ideas.all, "detail", id] as const,
     research: (id: string) => [...queryKeys.ideas.all, "research", id] as const,
   },
+  startups: {
+    all: ["startups"] as const,
+    list: (params?: PaginationParams) =>
+      [...queryKeys.startups.all, "list", params] as const,
+    detail: (id: string) => [...queryKeys.startups.all, "detail", id] as const,
+    updates: (id: string) =>
+      [...queryKeys.startups.all, "updates", id] as const,
+  },
   dashboard: {
     all: ["dashboard"] as const,
     data: () => [...queryKeys.dashboard.all, "data"] as const,
@@ -398,6 +406,323 @@ export function useSignUp() {
     },
     onError: (error: Error) => {
       toast.error(error.message || "An unexpected error occurred");
+    },
+  });
+}
+
+// ===========================================
+// Startup Hooks
+// ===========================================
+
+export interface StartupWithDetails {
+  id: string;
+  ideaId: string;
+  userId: string;
+  name: string;
+  slug: string;
+  tagline: string | null;
+  description: string | null;
+  industry: string | null;
+  stage: string;
+  targetMarket: string | null;
+  logoUrl: string | null;
+  website: string | null;
+  location: string | null;
+  isLaunched: boolean;
+  launchDate: Date | null;
+  weeksToLaunch: number | null;
+  primaryMetricType: string;
+  primaryMetricValue: number | null;
+  primaryMetricTarget: number | null;
+  currentWeekNumber: number;
+  lastUpdateAt: Date | null;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  idea: IdeaWithDetails & { scores: Array<{ overallScore: number | null }> };
+  weeklyUpdates: Array<{
+    id: string;
+    weekNumber: number;
+    weekStart: Date;
+    weekEnd: Date;
+    isLaunched: boolean;
+    weeksToLaunch: number | null;
+    usersTalkedTo: number;
+    userLearnings: string | null;
+    primaryMetricType: string;
+    primaryMetricValue: number;
+    primaryMetricDelta: number | null;
+    moraleScore: number;
+    topImprovements: string | null;
+    biggestObstacle: string | null;
+    aiAnalysis: any;
+    aiVerdict: string | null;
+    aiRecommendations: any;
+    goals: Array<{ content: string; completed: boolean; priority: number }>;
+  }>;
+  goals: Array<{
+    id: string;
+    content: string;
+    completed: boolean;
+    dueDate: Date | null;
+  }>;
+  metrics: Array<{
+    id: string;
+    name: string;
+    value: number;
+    target: number | null;
+  }>;
+  _count: { weeklyUpdates: number };
+}
+
+export interface WeeklyUpdateWithGoals {
+  id: string;
+  startupId: string;
+  weekNumber: number;
+  weekStart: Date;
+  weekEnd: Date;
+  isLaunched: boolean;
+  weeksToLaunch: number | null;
+  usersTalkedTo: number;
+  userLearnings: string | null;
+  primaryMetricType: string;
+  primaryMetricValue: number;
+  primaryMetricDelta: number | null;
+  moraleScore: number;
+  topImprovements: string | null;
+  biggestObstacle: string | null;
+  aiAnalysis: any;
+  aiVerdict: string | null;
+  aiRecommendations: any;
+  createdAt: Date;
+  goals: Array<{
+    id: string;
+    content: string;
+    priority: number;
+    completed: boolean;
+  }>;
+}
+
+export function useStartups(params?: PaginationParams) {
+  return useQuery({
+    queryKey: queryKeys.startups.list(params),
+    queryFn: async () => {
+      const queryParams = new URLSearchParams({
+        page: String(params?.page || 1),
+        limit: String(params?.limit || 10),
+      });
+      const response = await fetch(`/api/startups?${queryParams}`);
+      if (!response.ok) throw new Error("Failed to fetch startups");
+      return response.json();
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useStartup(id: string) {
+  return useQuery({
+    queryKey: queryKeys.startups.detail(id),
+    queryFn: async () => {
+      const response = await fetch(`/api/startups/${id}`);
+      if (!response.ok) throw new Error("Failed to fetch startup");
+      return response.json() as Promise<StartupWithDetails>;
+    },
+    enabled: !!id,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useWeeklyUpdates(startupId: string, params?: PaginationParams) {
+  return useQuery({
+    queryKey: queryKeys.startups.updates(startupId),
+    queryFn: async () => {
+      const queryParams = new URLSearchParams({
+        page: String(params?.page || 1),
+        limit: String(params?.limit || 10),
+      });
+      const response = await fetch(
+        `/api/startups/${startupId}/updates?${queryParams}`,
+      );
+      if (!response.ok) throw new Error("Failed to fetch weekly updates");
+      return response.json() as Promise<{
+        data: WeeklyUpdateWithGoals[];
+        pagination: {
+          page: number;
+          limit: number;
+          total: number;
+          totalPages: number;
+        };
+      }>;
+    },
+    enabled: !!startupId,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useCheckSlug() {
+  return useMutation({
+    mutationFn: async (slug: string) => {
+      const response = await fetch("/api/startups/check-slug", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ slug }),
+      });
+      if (!response.ok) throw new Error("Failed to check slug");
+      return response.json() as Promise<{ available: boolean }>;
+    },
+  });
+}
+
+export function useCreateStartup() {
+  const queryClient = useQueryClient();
+  const router = useRouter();
+
+  return useMutation({
+    mutationFn: async (data: {
+      ideaId: string;
+      name: string;
+      slug: string;
+      tagline?: string;
+      description?: string;
+      industry?: string;
+      stage?: string;
+      targetMarket?: string;
+      logoUrl?: string;
+      website?: string;
+      location?: string;
+    }) => {
+      const response = await fetch("/api/startups", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to create startup");
+      }
+      return response.json();
+    },
+    onSuccess: (startup) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.startups.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.ideas.all });
+      toast.success("Startup profile created!");
+      router.push(`/startups/${startup.slug}`);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to create startup");
+    },
+  });
+}
+
+export function useUpdateStartup() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Record<string, unknown>;
+    }) => {
+      const response = await fetch(`/api/startups/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to update startup");
+      }
+      return response.json();
+    },
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.startups.all });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.startups.detail(id),
+      });
+      toast.success("Startup updated");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to update startup");
+    },
+  });
+}
+
+export function useDeleteStartup() {
+  const queryClient = useQueryClient();
+  const router = useRouter();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await fetch(`/api/startups/${id}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to delete startup");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.startups.all });
+      toast.success("Startup archived");
+      router.push("/startups");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to archive startup");
+    },
+  });
+}
+
+export function useCreateWeeklyUpdate() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      startupId,
+      data,
+    }: {
+      startupId: string;
+      data: {
+        isLaunched: boolean;
+        weeksToLaunch?: number | null;
+        usersTalkedTo: number;
+        userLearnings: string;
+        primaryMetricType: string;
+        primaryMetricValue: number;
+        moraleScore: number;
+        topImprovements?: string;
+        biggestObstacle?: string;
+        goals: Array<{
+          content: string;
+          priority: number;
+          completed?: boolean;
+        }>;
+      };
+    }) => {
+      const response = await fetch(`/api/startups/${startupId}/updates`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to create weekly update");
+      }
+      return response.json();
+    },
+    onSuccess: (_, { startupId }) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.startups.detail(startupId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.startups.updates(startupId),
+      });
+      toast.success("Weekly update submitted!");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to submit weekly update");
     },
   });
 }

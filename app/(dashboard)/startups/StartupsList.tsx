@@ -1,0 +1,157 @@
+"use client";
+
+import {
+  ArrowRight,
+  Building2,
+  Loader2,
+  Plus,
+  Target,
+  TrendingUp,
+} from "lucide-react";
+import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useStartups } from "@/hooks";
+
+const STAGE_COLORS: Record<string, string> = {
+  IDEA: "bg-gray-100 text-gray-800",
+  VALIDATION: "bg-blue-100 text-blue-800",
+  BUILDING: "bg-yellow-100 text-yellow-800",
+  LAUNCHED: "bg-green-100 text-green-800",
+  SCALING: "bg-purple-100 text-purple-800",
+};
+
+const VERDICT_COLORS: Record<string, string> = {
+  ON_TRACK: "text-green-600",
+  NEEDS_ATTENTION: "text-yellow-600",
+  AT_RISK: "text-red-600",
+};
+
+export function StartupsList() {
+  const { data, isLoading, error } = useStartups();
+
+  if (isLoading) {
+    return (
+      <div className="flex h-48 items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="border-destructive">
+        <CardContent className="pt-6 text-center text-destructive">
+          Failed to load startups. Please try again.
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const startups = data?.data || [];
+
+  if (startups.length === 0) {
+    return (
+      <Card>
+        <CardContent className="flex flex-col items-center justify-center py-12">
+          <Building2 className="h-12 w-12 text-muted-foreground/50" />
+          <h3 className="mt-4 text-lg font-medium">No startups yet</h3>
+          <p className="mt-2 text-center text-sm text-muted-foreground">
+            Convert one of your validated ideas into a startup to start tracking
+            weekly progress
+          </p>
+          <Button asChild className="mt-4">
+            <Link href="/ideas">
+              View Ideas
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {startups.map((startup: any) => {
+        const latestUpdate = startup.weeklyUpdates?.[0];
+        const score = startup.idea?.scores?.[0]?.overallScore;
+
+        return (
+          <Link
+            key={startup.id}
+            href={`/startups/${startup.slug}`}
+            className="group"
+          >
+            <Card className="h-full transition-colors hover:border-primary/50 hover:shadow-md">
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                  <div className="space-y-1">
+                    <CardTitle className="line-clamp-1 text-lg">
+                      {startup.name}
+                    </CardTitle>
+                    {startup.tagline && (
+                      <p className="line-clamp-1 text-sm text-muted-foreground">
+                        {startup.tagline}
+                      </p>
+                    )}
+                  </div>
+                  <Badge
+                    variant="secondary"
+                    className={STAGE_COLORS[startup.stage] || ""}
+                  >
+                    {startup.stage}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-1 text-muted-foreground">
+                    <Target className="h-4 w-4" />
+                    <span>Week {startup.currentWeekNumber}</span>
+                  </div>
+                  {score && (
+                    <div className="flex items-center gap-1">
+                      <TrendingUp className="h-4 w-4 text-primary" />
+                      <span className="font-medium">{score}/100</span>
+                    </div>
+                  )}
+                </div>
+
+                {latestUpdate && (
+                  <div className="rounded-lg bg-muted/50 p-3">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">
+                        Latest Verdict
+                      </span>
+                      <span
+                        className={`font-medium ${
+                          VERDICT_COLORS[latestUpdate.aiVerdict] ||
+                          "text-muted-foreground"
+                        }`}
+                      >
+                        {latestUpdate.aiVerdict?.replace(/_/g, " ") ||
+                          "Pending"}
+                      </span>
+                    </div>
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      {startup.primaryMetricType}:{" "}
+                      {startup.primaryMetricValue ??
+                        latestUpdate.primaryMetricValue}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>{startup._count?.weeklyUpdates || 0} updates</span>
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
