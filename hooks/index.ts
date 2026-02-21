@@ -756,3 +756,6 @@ export function useIdeaStartup(ideaId: string) {
     staleTime: 5 * 60 * 1000,
   });
 }
+
+export { useInfiniteIdeas } from "./useInfiniteIdeas";
+export { useInfiniteStartups } from "./useInfiniteStartups";

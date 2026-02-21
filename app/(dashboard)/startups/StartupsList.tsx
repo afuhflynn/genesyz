@@ -4,15 +4,14 @@ import {
   ArrowRight,
   Building2,
   Loader2,
-  Plus,
   Target,
   TrendingUp,
 } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useStartups } from "@/hooks";
+import { InfiniteScroll } from "@/components/ui/InfiniteScroll";
+import { type StartupWithDetails, useInfiniteStartups } from "@/hooks";
 
 const STAGE_COLORS: Record<string, string> = {
   IDEA: "bg-gray-100 text-gray-800",
@@ -29,7 +28,15 @@ const VERDICT_COLORS: Record<string, string> = {
 };
 
 export function StartupsList() {
-  const { data, isLoading, error } = useStartups();
+  const {
+    data,
+    isLoading,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isFetching,
+  } = useInfiniteStartups();
 
   if (isLoading) {
     return (
@@ -49,7 +56,7 @@ export function StartupsList() {
     );
   }
 
-  const startups = data?.data || [];
+  const startups = data?.pages.flatMap((page) => page.data) ?? [];
 
   if (startups.length === 0) {
     return (
@@ -61,97 +68,107 @@ export function StartupsList() {
             Convert one of your validated ideas into a startup to start tracking
             weekly progress
           </p>
-          <Button asChild className="mt-4">
+          <Badge asChild className="mt-4">
             <Link href="/ideas">
               View Ideas
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
-          </Button>
+          </Badge>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-      {startups.map((startup: any) => {
-        const latestUpdate = startup.weeklyUpdates?.[0];
-        const score = startup.idea?.scores?.[0]?.overallScore;
+    <>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {startups.map((startup: StartupWithDetails) => {
+          const latestUpdate = startup.weeklyUpdates?.[0];
+          const score = startup.idea?.scores?.[0]?.overallScore;
 
-        return (
-          <Link
-            key={startup.id}
-            href={`/startups/${startup.slug}`}
-            className="group"
-          >
-            <Card className="h-full transition-colors hover:border-primary/50 hover:shadow-md">
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <CardTitle className="line-clamp-1 text-lg">
-                      {startup.name}
-                    </CardTitle>
-                    {startup.tagline && (
-                      <p className="line-clamp-1 text-sm text-muted-foreground">
-                        {startup.tagline}
-                      </p>
+          return (
+            <Link
+              key={startup.id}
+              href={`/startups/${startup.slug}`}
+              className="group"
+            >
+              <Card className="h-full transition-colors hover:border-primary/50 hover:shadow-md">
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-1">
+                      <CardTitle className="line-clamp-1 text-lg">
+                        {startup.name}
+                      </CardTitle>
+                      {startup.tagline && (
+                        <p className="line-clamp-1 text-sm text-muted-foreground">
+                          {startup.tagline}
+                        </p>
+                      )}
+                    </div>
+                    <Badge
+                      variant="secondary"
+                      className={STAGE_COLORS[startup.stage] || ""}
+                    >
+                      {startup.stage}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-1 text-muted-foreground">
+                      <Target className="h-4 w-4" />
+                      <span>Week {startup.currentWeekNumber}</span>
+                    </div>
+                    {score && (
+                      <div className="flex items-center gap-1">
+                        <TrendingUp className="h-4 w-4 text-primary" />
+                        <span className="font-medium">{score}/100</span>
+                      </div>
                     )}
                   </div>
-                  <Badge
-                    variant="secondary"
-                    className={STAGE_COLORS[startup.stage] || ""}
-                  >
-                    {startup.stage}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-1 text-muted-foreground">
-                    <Target className="h-4 w-4" />
-                    <span>Week {startup.currentWeekNumber}</span>
-                  </div>
-                  {score && (
-                    <div className="flex items-center gap-1">
-                      <TrendingUp className="h-4 w-4 text-primary" />
-                      <span className="font-medium">{score}/100</span>
+
+                  {latestUpdate && (
+                    <div className="rounded-lg bg-muted/50 p-3">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">
+                          Latest Verdict
+                        </span>
+                        <span
+                          className={`font-medium ${
+                            (latestUpdate.aiVerdict &&
+                              VERDICT_COLORS[latestUpdate.aiVerdict]) ||
+                            "text-muted-foreground"
+                          }`}
+                        >
+                          {latestUpdate.aiVerdict?.replace(/_/g, " ") ||
+                            "Pending"}
+                        </span>
+                      </div>
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        {startup.primaryMetricType}:{" "}
+                        {startup.primaryMetricValue ??
+                          latestUpdate.primaryMetricValue}
+                      </div>
                     </div>
                   )}
-                </div>
 
-                {latestUpdate && (
-                  <div className="rounded-lg bg-muted/50 p-3">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">
-                        Latest Verdict
-                      </span>
-                      <span
-                        className={`font-medium ${
-                          VERDICT_COLORS[latestUpdate.aiVerdict] ||
-                          "text-muted-foreground"
-                        }`}
-                      >
-                        {latestUpdate.aiVerdict?.replace(/_/g, " ") ||
-                          "Pending"}
-                      </span>
-                    </div>
-                    <div className="mt-1 text-xs text-muted-foreground">
-                      {startup.primaryMetricType}:{" "}
-                      {startup.primaryMetricValue ??
-                        latestUpdate.primaryMetricValue}
-                    </div>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>{startup._count?.weeklyUpdates || 0} updates</span>
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                   </div>
-                )}
+                </CardContent>
+              </Card>
+            </Link>
+          );
+        })}
+      </div>
 
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>{startup._count?.weeklyUpdates || 0} updates</span>
-                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-        );
-      })}
-    </div>
+      <InfiniteScroll
+        hasNextPage={hasNextPage}
+        isFetchingNextPage={isFetchingNextPage}
+        fetchNextPage={fetchNextPage}
+        isFetching={isFetching}
+      />
+    </>
   );
 }
