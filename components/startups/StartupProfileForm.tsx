@@ -388,7 +388,7 @@ export function StartupProfileForm({
                 name="location"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Location</FormLabel>
+                    <FormLabel>Startup Location</FormLabel>
                     <FormControl>
                       <Input placeholder="San Francisco, CA" {...field} />
                     </FormControl>
