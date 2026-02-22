@@ -223,7 +223,7 @@ function generateEmailHtml(
     }
 
     <div style="padding: 24px; text-align: center; border-top: 1px solid #e5e7eb;">
-      <a href="${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/startups/${startup.slug}" 
+      <a href="${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/startups/${startup.slug}"
          style="display: inline-block; background: #0f172a; color: white; padding: 12px 24px; border-radius: 6px; text-decoration: none; font-weight: 500;">
         View Full Dashboard
       </a>
@@ -243,6 +243,9 @@ export const weeklyStartupReportFn = inngest.createFunction(
     const { startupId, userId } = event.data;
 
     const data = await step.run("fetch-data", async () => {
+      if (!startupId) {
+        throw new Error("Startup ID is required");
+      }
       const startup = await db.startup.findUnique({
         where: { id: startupId },
         include: {

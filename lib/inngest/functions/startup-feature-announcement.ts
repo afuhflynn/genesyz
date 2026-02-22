@@ -12,6 +12,9 @@ export const sendStartupFeatureAnnouncement = inngest.createFunction(
     const { userId } = event.data;
 
     const user = await step.run("fetch-user", async () => {
+      if (!userId) {
+        throw new Error("User ID is required");
+      }
       return db.user.findUnique({
         where: { id: userId },
         select: { id: true, email: true, name: true },
