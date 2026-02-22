@@ -34,7 +34,7 @@ export function StartupSettings({ slug }: StartupSettingsProps) {
   const router = useRouter();
   const { data: startup, isLoading } = useStartup(slug);
   const deleteStartup = useDeleteStartup();
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [isArchiving, setIsArchiving] = useState(false);
 
   if (isLoading) {
     return (
@@ -55,12 +55,13 @@ export function StartupSettings({ slug }: StartupSettingsProps) {
     );
   }
 
-  const handleDelete = async () => {
-    setIsDeleting(true);
+  const handleArchive = async () => {
+    setIsArchiving(true);
     try {
       await deleteStartup.mutateAsync(startup.id);
+      router.push("/startups");
     } catch (error) {
-      setIsDeleting(false);
+      setIsArchiving(false);
     }
   };
 
@@ -165,9 +166,8 @@ export function StartupSettings({ slug }: StartupSettingsProps) {
             </div>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                {/* @note Feature coming soon */}
-                <Button variant="destructive" disabled={isDeleting || true}>
-                  {isDeleting ? (
+                <Button variant="destructive" disabled={isArchiving}>
+                  {isArchiving ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : (
                     <Archive className="mr-2 h-4 w-4" />
@@ -180,16 +180,23 @@ export function StartupSettings({ slug }: StartupSettingsProps) {
                   <AlertDialogTitle>Archive {startup.name}?</AlertDialogTitle>
                   <AlertDialogDescription>
                     This will archive the startup and hide it from your
-                    dashboard. All your weekly updates and data will be
-                    preserved. You can restore it later if needed.
+                    dashboard. All your weekly updates, metrics, and progress
+                    data will be preserved. You can restore it later from the
+                    Settings page.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogCancel disabled={isArchiving}>
+                    Cancel
+                  </AlertDialogCancel>
                   <AlertDialogAction
-                    onClick={handleDelete}
+                    onClick={handleArchive}
+                    disabled={isArchiving}
                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   >
+                    {isArchiving && (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
                     Archive Startup
                   </AlertDialogAction>
                 </AlertDialogFooter>

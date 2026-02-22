@@ -1,13 +1,9 @@
 "use client";
 
-import {
-  Archive,
-  ArchiveRestore,
-  MoreVertical,
-  PlusCircle,
-} from "lucide-react";
+import { MoreVertical, PlusCircle } from "lucide-react";
 import Link from "next/link";
 import { useQueryStates } from "nuqs";
+import { ArchiveIdeaDialog } from "@/components/ideas/[id]/ArchiveIdeaDialog";
 import { DeleteIdeaDialog } from "@/components/ideas/[id]/DeleteIdea";
 import { EditIdeaDialog } from "@/components/ideas/[id]/EditIdea";
 import { SearchBar } from "@/components/ideas/SearchBar";
@@ -23,7 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { InfiniteScroll } from "@/components/ui/InfiniteScroll";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useArchiveIdea, useInfiniteIdeas } from "@/hooks";
+import { useInfiniteIdeas } from "@/hooks";
 import type { IdeaWithDetails } from "@/lib/api-client";
 import { formatRelativeTime } from "@/lib/utils";
 import { searchParamsSchema } from "@/nuqs";
@@ -41,7 +37,6 @@ export default function IdeasPage() {
     query: params.search as string,
     archived: false,
   });
-  const archiveIdea = useArchiveIdea();
 
   const ideas = data?.pages.flatMap((page) => page.data) ?? [];
 
@@ -152,20 +147,8 @@ export default function IdeasPage() {
                           summary={idea.summary as string}
                         />
                       </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => archiveIdea.mutate(idea.id)}
-                      >
-                        {idea.isArchived ? (
-                          <>
-                            <ArchiveRestore className="mr-2 h-4 w-4" />
-                            Unarchive
-                          </>
-                        ) : (
-                          <>
-                            <Archive className="mr-2 h-4 w-4" />
-                            Archive
-                          </>
-                        )}
+                      <DropdownMenuItem asChild>
+                        <ArchiveIdeaDialog id={idea.id} title={idea.title} />
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem asChild>

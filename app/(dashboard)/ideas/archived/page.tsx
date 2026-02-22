@@ -1,10 +1,11 @@
 "use client";
 
-import { ArchiveRestore, MoreVertical, PlusCircle } from "lucide-react";
+import { MoreVertical, PlusCircle } from "lucide-react";
 import Link from "next/link";
 import { useQueryStates } from "nuqs";
 import { DeleteIdeaDialog } from "@/components/ideas/[id]/DeleteIdea";
 import { EditIdeaDialog } from "@/components/ideas/[id]/EditIdea";
+import { UnarchiveIdeaDialog } from "@/components/ideas/[id]/UnarchiveIdeaDialog";
 import { SearchBar } from "@/components/ideas/SearchBar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,7 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { InfiniteScroll } from "@/components/ui/InfiniteScroll";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useInfiniteIdeas, useUnArchiveIdea } from "@/hooks";
+import { useInfiniteIdeas } from "@/hooks";
 import { formatRelativeTime } from "@/lib/utils";
 import { searchParamsSchema } from "@/nuqs";
 
@@ -35,7 +36,6 @@ export default function ArchivedIdeasPage() {
     query: params.search as string,
     archived: true,
   });
-  const unarchiveIdea = useUnArchiveIdea();
 
   const ideas = data?.pages.flatMap((page) => page.data) ?? [];
 
@@ -146,11 +146,8 @@ export default function ArchivedIdeasPage() {
                           summary={idea.summary as string}
                         />
                       </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => unarchiveIdea.mutate(idea.id)}
-                      >
-                        <ArchiveRestore className="mr-2 h-4 w-4" />
-                        Unarchive
+                      <DropdownMenuItem asChild>
+                        <UnarchiveIdeaDialog id={idea.id} title={idea.title} />
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem asChild>

@@ -3,8 +3,6 @@
 import { useInngestSubscription } from "@inngest/realtime/hooks";
 import {
   AlertTriangle,
-  Archive,
-  ArchiveRestore,
   ArrowLeft,
   Calendar,
   Download,
@@ -26,8 +24,10 @@ import {
   getStatusVariant,
   getVerdictBorderColor,
 } from "@/components/idea/utils";
+import { ArchiveIdeaDialog } from "@/components/ideas/[id]/ArchiveIdeaDialog";
 import { ConvertToStartupCTA } from "@/components/ideas/[id]/ConvertToStartupCTA";
 import { DeleteIdeaDialog } from "@/components/ideas/[id]/DeleteIdea";
+import { UnarchiveIdeaDialog } from "@/components/ideas/[id]/UnarchiveIdeaDialog";
 import { AssetTab } from "@/components/ideas/AssetTab";
 import {
   Accordion,
@@ -54,12 +54,10 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  useArchiveIdea,
   useExportIdeaPdf,
   useIdea,
   useIdeaStartup,
   useRerunResearch,
-  useUnArchiveIdea,
 } from "@/hooks";
 import { cn, formatRelativeTime } from "@/lib/utils";
 import { searchParamsSchema } from "@/nuqs";
@@ -72,8 +70,6 @@ export default function IdeaDetailPage() {
   const { data: idea, isLoading, error } = useIdea(id);
   const { data: startupData } = useIdeaStartup(id);
   const rerunResearch = useRerunResearch();
-  const archiveIdea = useArchiveIdea();
-  const unarchiveIdea = useUnArchiveIdea();
   const exportPdf = useExportIdeaPdf();
 
   const [researchProgress, setResearchProgress] = useState<IResearchProgress[]>(
@@ -214,25 +210,11 @@ export default function IdeaDetailPage() {
                 Rerun Research
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => {
-                  if (idea.isArchived) {
-                    unarchiveIdea.mutate(id);
-                  } else {
-                    archiveIdea.mutate(id);
-                  }
-                }}
-              >
+              <DropdownMenuItem asChild>
                 {idea.isArchived ? (
-                  <>
-                    <ArchiveRestore className="mr-2 h-4 w-4" />
-                    Unarchive
-                  </>
+                  <UnarchiveIdeaDialog id={id} title={idea.title} />
                 ) : (
-                  <>
-                    <Archive className="mr-2 h-4 w-4" />
-                    Archive
-                  </>
+                  <ArchiveIdeaDialog id={id} title={idea.title} />
                 )}
               </DropdownMenuItem>
               <DropdownMenuItem asChild>

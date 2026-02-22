@@ -59,7 +59,11 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
   const idea = await db.idea.findUnique({
     where: { id },
-    select: { userId: true },
+    include: {
+      startup: {
+        select: { id: true },
+      },
+    },
   });
 
   if (!idea) {
@@ -68,6 +72,16 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
 
   if (idea.userId !== session.user.id) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  if (idea.startup) {
+    return NextResponse.json(
+      {
+        error:
+          "Cannot delete idea with an active startup. Delete or archive the startup first.",
+      },
+      { status: 400 },
+    );
   }
 
   await db.idea.delete({ where: { id } });
