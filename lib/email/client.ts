@@ -32,6 +32,14 @@ export async function sendEmail(options: SendEmailOptions): Promise<boolean> {
       subject: options.subject,
       html: options.html,
       text: options.text,
+      attachments: [
+        {
+          filename: "IdeasVault Logo",
+          path: "../../public/images/logo/source-icon.png", // path to your image
+          cid: "unique-app-logo", // must match the src in HTML
+          contentDisposition: "inline", // helps prevent showing as a separate attachment
+        },
+      ],
     });
     console.log(`[Email] Sent to ${options.to}: ${options.subject}`);
     return true;

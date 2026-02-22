@@ -185,7 +185,7 @@ export default function DashboardPage() {
                   {data?.researchedIdeas || 0}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Fully analyzed by IdeasVault
+                  Fully analyzed by
                 </p>
               </CardContent>
             </Card>

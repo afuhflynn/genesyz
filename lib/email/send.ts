@@ -33,7 +33,7 @@ function renderPremiumEmail(options: {
   <div style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);">
     <!-- Header -->
     <div style="background: #0f172a; padding: 32px; text-align: center; color: #ffffff;">
-      <img src="${APP_URL}/images/logo/logo-email-white.png" alt="IdeasVault" width="120" style="margin-bottom: 16px;">
+      <img src="cid:unique-app-logo" alt="IdeasVault" width="120" style="margin-bottom: 16px;">
       ${
         badge
           ? `
@@ -315,7 +315,7 @@ ${riskCliffs.map((risk) => `- **${risk.ideaTitle}:** ${risk.failureReason}`).joi
   const contentHtml = `
     <!-- Portfolio Snapshot -->
     <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; padding: 20px; border-radius: 12px; margin-bottom: 24px;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-direction: row;">
         <h2 style="font-size: 18px; font-weight: 800; margin: 0; color: #fbbf24;">Portfolio Snapshot</h2>
         <span style="font-size: 12px; color: #94a3b8;">Week ${weekNumber}, ${now.getFullYear()}</span>
       </div>
@@ -422,7 +422,7 @@ ${riskCliffs.map((risk) => `- **${risk.ideaTitle}:** ${risk.failureReason}`).joi
       <h3 style="font-size: 14px; font-weight: 800; color: #fbbf24; margin: 0 0 16px 0; text-transform: uppercase; letter-spacing: 0.05em;">
         VC Corner
       </h3>
-      
+
       <!-- Market Sentiment -->
       <div style="margin-bottom: 20px;">
         <h4 style="font-size: 11px; font-weight: 700; color: #94a3b8; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.05em;">
@@ -432,7 +432,7 @@ ${riskCliffs.map((risk) => `- **${risk.ideaTitle}:** ${risk.failureReason}`).joi
           ${vcCorner.sentiment}
         </p>
       </div>
-      
+
       <!-- The Hard Truth -->
       <div style="margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #334155;">
         <h4 style="font-size: 11px; font-weight: 700; color: #94a3b8; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.05em;">
@@ -442,9 +442,9 @@ ${riskCliffs.map((risk) => `- **${risk.ideaTitle}:** ${risk.failureReason}`).joi
           "${vcCorner.brutalHonesty}"
         </p>
       </div>
-      
+
       <!-- Investment Potential -->
-      <div style="display: flex; align-items: center; justify-content: space-between;">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
         <span style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">
           Investment Potential
         </span>
@@ -830,7 +830,7 @@ export async function sendStartupFeatureAnnouncementEmail(options: {
 
   const contentHtml = `
     <p style="font-size: 16px; color: #475569; margin: 0 0 24px 0; line-height: 1.6;">
-      Hi ${userName}, IdeasVault is evolving. We started as an idea validation 
+      Hi ${userName}, IdeasVault is evolving. We started as an idea validation
       tool. Now we're a startup operating system for execution-focused founders.
     </p>
 
