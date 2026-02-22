@@ -907,3 +907,281 @@ export async function sendStartupFeatureAnnouncementEmail(options: {
     text: `Hi ${userName}, we've shipped improvements to Startup Profiles including 35+ categorized metrics, smart formatting, and goal completion review. View your startups at ${APP_URL}/startups`,
   });
 }
+
+interface WeeklyReportMetric {
+  type: string;
+  value: number;
+  period?: string | null;
+  customMetricName?: string | null;
+}
+
+interface WeeklyReportGoal {
+  goalText: string;
+  completed: boolean;
+}
+
+interface WeeklyReportAnalysis {
+  positives?: string[];
+  concerns?: string[];
+}
+
+interface WeeklyReportTrajectory {
+  summary?: string;
+}
+
+interface WeeklyReportData {
+  weekNumber: number;
+  isLaunched: boolean;
+  primaryMetricType: string;
+  primaryMetricValue: number;
+  primaryMetricDelta: number | null;
+  metricPeriod?: string | null;
+  metricFormat?: "CURRENCY" | "PERCENTAGE" | "NUMBER" | null;
+  customMetricName?: string | null;
+  additionalMetrics?: WeeklyReportMetric[] | null;
+  usersTalkedTo: number;
+  moraleScore: number;
+  previousGoalsReview?: WeeklyReportGoal[] | null;
+  goalsCompletionRate?: number | null;
+  aiVerdict: string | null;
+  aiAnalysis: WeeklyReportAnalysis;
+  aiTrajectory: WeeklyReportTrajectory;
+  aiRecommendations: string[];
+}
+
+function formatMetricValue(
+  value: number,
+  format: "CURRENCY" | "PERCENTAGE" | "NUMBER",
+): string {
+  switch (format) {
+    case "CURRENCY":
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(value);
+    case "PERCENTAGE":
+      return `${value.toFixed(1)}%`;
+    default:
+      return new Intl.NumberFormat("en-US").format(value);
+  }
+}
+
+function formatMetricLabel(
+  metricType: string,
+  customName?: string | null,
+): string {
+  if (metricType === "CUSTOM" && customName) {
+    return customName;
+  }
+  return metricType.replace(/_/g, " ").toLowerCase();
+}
+
+export async function sendStartupWeeklyReportEmail(options: {
+  to: string;
+  userName: string;
+  startupName: string;
+  startupSlug: string;
+  report: WeeklyReportData;
+}): Promise<boolean> {
+  const { to, userName, startupName, startupSlug, report } = options;
+
+  const VERDICT_STYLES: Record<string, { color: string; label: string }> = {
+    ON_TRACK: { color: "#16a34a", label: "On Track" },
+    NEEDS_ATTENTION: { color: "#ca8a04", label: "Needs Attention" },
+    AT_RISK: { color: "#dc2626", label: "At Risk" },
+  };
+
+  const verdict = report.aiVerdict ? VERDICT_STYLES[report.aiVerdict] : null;
+
+  const primaryFormat = report.metricFormat || "NUMBER";
+  const primaryValueDisplay = formatMetricValue(
+    report.primaryMetricValue,
+    primaryFormat,
+  );
+
+  const metricDelta = report.primaryMetricDelta;
+  const metricDeltaDisplay =
+    metricDelta !== null
+      ? `${metricDelta >= 0 ? "+" : ""}${primaryFormat === "PERCENTAGE" ? `${metricDelta.toFixed(1)}%` : formatMetricValue(Math.abs(metricDelta), primaryFormat)}`
+      : "No change";
+
+  const completedGoals =
+    report.previousGoalsReview?.filter((g) => g.completed).length || 0;
+  const totalGoals = report.previousGoalsReview?.length || 0;
+  const goalsPercentage =
+    totalGoals > 0 ? Math.round((completedGoals / totalGoals) * 100) : 0;
+
+  const additionalMetricsHtml = report.additionalMetrics?.length
+    ? report.additionalMetrics
+        .map((metric) => {
+          const format = (
+            metric.type.includes("PERCENTAGE")
+              ? "PERCENTAGE"
+              : metric.type.includes("REVENUE") ||
+                  metric.type.includes("MRR") ||
+                  metric.type.includes("ARR")
+                ? "CURRENCY"
+                : "NUMBER"
+          ) as "CURRENCY" | "PERCENTAGE" | "NUMBER";
+          const value = formatMetricValue(metric.value, format);
+          const label = formatMetricLabel(metric.type, metric.customMetricName);
+          return `
+          <div style="background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
+            <div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 700;">${label}</div>
+            <div style="font-size: 18px; font-weight: 800; color: #0f172a;">${value}</div>
+            ${metric.period ? `<div style="font-size: 10px; color: #94a3b8;">${metric.period.toLowerCase()}</div>` : ""}
+          </div>
+        `;
+        })
+        .join("")
+    : "";
+
+  const verdictHtml = verdict
+    ? `
+    <div style="background: ${verdict.color}15; border-left: 4px solid ${verdict.color}; padding: 16px; margin-bottom: 24px; border-radius: 0 8px 8px 0;">
+      <div style="font-weight: 800; color: ${verdict.color}; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em;">${verdict.label}</div>
+    </div>
+  `
+    : "";
+
+  const goalsHtml =
+    totalGoals > 0
+      ? `
+    <div style="background: ${goalsPercentage >= 67 ? "#dcfce7" : goalsPercentage >= 33 ? "#fef3c7" : "#fee2e2"}; padding: 16px; border-radius: 12px; margin-bottom: 24px;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <span style="font-size: 14px; font-weight: 700; color: #374151;">Last Week's Goals</span>
+          <span style="margin-left: 8px; font-size: 12px; color: #64748b;">${completedGoals}/${totalGoals} completed</span>
+        </div>
+        <div style="font-size: 24px; font-weight: 800; color: ${goalsPercentage >= 67 ? "#16a34a" : goalsPercentage >= 33 ? "#ca8a04" : "#dc2626"};">${goalsPercentage}%</div>
+      </div>
+    </div>
+  `
+      : "";
+
+  const metricsHtml = `
+    <h3 style="font-size: 14px; font-weight: 800; color: #0f172a; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 0.05em;">This Week's Numbers</h3>
+    <div style="display: grid; grid-template-columns: repeat(${report.isLaunched ? "3" : "2"}, 1fr); gap: 12px; margin-bottom: 24px;">
+      ${
+        report.isLaunched
+          ? `<div style="background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0;">
+          <div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 700;">${formatMetricLabel(report.primaryMetricType, report.customMetricName)}</div>
+          <div style="font-size: 24px; font-weight: 800; color: #0f172a;">${primaryValueDisplay}</div>
+          <div style="font-size: 12px; color: ${metricDelta && metricDelta >= 0 ? "#16a34a" : "#dc2626"}; font-weight: 600;">${metricDeltaDisplay}</div>
+        </div>`
+          : ""
+      }
+      <div style="background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0;">
+        <div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 700;">Users Talked To</div>
+        <div style="font-size: 24px; font-weight: 800; color: #0f172a;">${report.usersTalkedTo}</div>
+      </div>
+      <div style="background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0;">
+        <div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 700;">Morale</div>
+        <div style="font-size: 24px; font-weight: 800; color: #0f172a;">${report.moraleScore}/10</div>
+      </div>
+    </div>
+  `;
+
+  const additionalMetricsSection = additionalMetricsHtml
+    ? `
+    <h3 style="font-size: 14px; font-weight: 800; color: #0f172a; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 0.05em;">Additional Metrics</h3>
+    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 24px;">
+      ${additionalMetricsHtml}
+    </div>
+  `
+    : "";
+
+  const positivesHtml = report.aiAnalysis?.positives?.length
+    ? `
+    <div style="margin-bottom: 24px;">
+      <h3 style="font-size: 14px; font-weight: 800; color: #16a34a; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 0.05em;">What's Working</h3>
+      <ul style="margin: 0; padding-left: 20px; color: #374151; font-size: 14px;">
+        ${report.aiAnalysis.positives.map((p) => `<li style="margin-bottom: 8px;">${p}</li>`).join("")}
+      </ul>
+    </div>
+  `
+    : "";
+
+  const concernsHtml = report.aiAnalysis?.concerns?.length
+    ? `
+    <div style="margin-bottom: 24px;">
+      <h3 style="font-size: 14px; font-weight: 800; color: #ca8a04; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 0.05em;">Watch Out</h3>
+      <ul style="margin: 0; padding-left: 20px; color: #374151; font-size: 14px;">
+        ${report.aiAnalysis.concerns.map((c) => `<li style="margin-bottom: 8px;">${c}</li>`).join("")}
+      </ul>
+    </div>
+  `
+    : "";
+
+  const trajectoryHtml = report.aiTrajectory?.summary
+    ? `
+    <div style="background: #fef3c7; border-radius: 12px; padding: 16px; margin-bottom: 24px;">
+      <h3 style="font-size: 12px; font-weight: 800; color: #92400e; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.05em;">Is It Going To Work?</h3>
+      <p style="margin: 0; font-size: 14px; color: #78350f; line-height: 1.6;">${report.aiTrajectory.summary}</p>
+    </div>
+  `
+    : "";
+
+  const recommendationsHtml = report.aiRecommendations?.length
+    ? `
+    <div style="background: #f8fafc; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+      <h3 style="font-size: 14px; font-weight: 800; color: #0f172a; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 0.05em;">Next Week's Focus</h3>
+      <ul style="margin: 0; padding-left: 20px; color: #374151; font-size: 14px;">
+        ${report.aiRecommendations
+          .slice(0, 3)
+          .map((r) => `<li style="margin-bottom: 8px;">${r}</li>`)
+          .join("")}
+      </ul>
+    </div>
+  `
+    : "";
+
+  const contentHtml = `
+    <p style="font-size: 16px; color: #475569; margin: 0 0 24px 0;">
+      Hi ${userName}, here's your weekly progress report for <strong>${startupName}</strong>.
+    </p>
+
+    ${verdictHtml}
+    ${goalsHtml}
+    ${metricsHtml}
+    ${additionalMetricsSection}
+    ${positivesHtml}
+    ${concernsHtml}
+    ${trajectoryHtml}
+    ${recommendationsHtml}
+
+    <div style="text-align: center;">
+      <a href="${APP_URL}/startups/${startupSlug}" style="display: inline-block; background: #F5A623; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(245, 166, 35, 0.2);">
+        View Full Dashboard
+      </a>
+    </div>
+  `;
+
+  const html = renderPremiumEmail({
+    title: startupName,
+    contentHtml,
+    badge: `Week ${report.weekNumber} Report`,
+  });
+
+  const textSummary = `
+Hi ${userName}, here's your weekly progress report for ${startupName}.
+
+Week ${report.weekNumber} Summary:
+- Primary Metric: ${primaryValueDisplay} (${metricDeltaDisplay})
+- Users Talked To: ${report.usersTalkedTo}
+- Morale: ${report.moraleScore}/10
+${verdict ? `- Status: ${verdict.label}` : ""}
+${totalGoals > 0 ? `- Goals: ${completedGoals}/${totalGoals} completed (${goalsPercentage}%)` : ""}
+
+View full details at ${APP_URL}/startups/${startupSlug}
+  `.trim();
+
+  return sendEmail({
+    to,
+    subject: `${startupName} Weekly Report - Week ${report.weekNumber}`,
+    html,
+    text: textSummary,
+  });
+}
