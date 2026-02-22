@@ -758,3 +758,66 @@ export async function sendMagicLinkEmail(options: {
     text: `Sign in to IdeasVault here: ${url}`,
   });
 }
+
+export async function sendWeeklyUpdateReminderEmail(options: {
+  to: string;
+  userName: string;
+  startupName: string;
+  startupSlug: string;
+  weekNumber: number;
+  reminderDay: "friday" | "saturday";
+}): Promise<boolean> {
+  const { to, userName, startupName, startupSlug, weekNumber, reminderDay } =
+    options;
+
+  const isFriday = reminderDay === "friday";
+  const urgencyText = isFriday
+    ? "Take a moment this weekend to log your progress."
+    : "Last chance to submit your update before the week ends.";
+
+  const contentHtml = `
+    <h2 style="font-size: 22px; font-weight: 800; color: #0f172a; margin-bottom: 16px;">
+      Time for your weekly update
+    </h2>
+
+    <p style="font-size: 16px; color: #475569; margin-bottom: 24px;">
+      Hi ${userName}, you haven't submitted your weekly update for <strong>${startupName}</strong> yet.
+    </p>
+
+    <div style="background: #f8fafc; border-radius: 12px; padding: 24px; margin-bottom: 24px; border: 1px solid #e2e8f0; text-align: center;">
+      <p style="font-size: 14px; color: #64748b; margin: 0 0 8px 0; text-transform: uppercase; font-weight: 700;">Week ${weekNumber}</p>
+      <p style="font-size: 32px; font-weight: 800; color: #0f172a; margin: 0;">${startupName}</p>
+    </div>
+
+    <p style="font-size: 15px; color: #475569; margin-bottom: 24px;">
+      ${urgencyText} Consistent tracking helps you spot patterns and stay accountable to your goals.
+    </p>
+
+    <div style="text-align: center; margin-bottom: 24px;">
+      <a href="${APP_URL}/startups/${startupSlug}" style="display: inline-block; background: #F5A623; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(245, 166, 35, 0.2);">
+        Submit Weekly Update
+      </a>
+    </div>
+
+    <p style="font-size: 13px; color: #94a3b8; text-align: center; margin: 0;">
+      You're receiving this because you have an active startup on IdeasVault.
+    </p>
+  `;
+
+  const html = renderPremiumEmail({
+    title: "Weekly Update Reminder",
+    contentHtml,
+    badge: isFriday ? "Reminder" : "Final Reminder",
+  });
+
+  const subject = isFriday
+    ? `Weekly update due for ${startupName} — Week ${weekNumber}`
+    : `Last chance: Submit your weekly update for ${startupName}`;
+
+  return sendEmail({
+    to,
+    subject,
+    html,
+    text: `Hi ${userName}, please submit your weekly update for ${startupName} (Week ${weekNumber}). ${urgencyText} Visit ${APP_URL}/startups/${startupSlug}`,
+  });
+}

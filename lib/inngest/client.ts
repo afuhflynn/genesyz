@@ -82,4 +82,11 @@ export type InngestEvents = {
   "announcement.startupFeature.broadcast": {
     data: Record<string, never>;
   };
+  "startup.weeklyReminder": {
+    data: {
+      startupId: string;
+      userId: string;
+      reminderDay: "friday" | "saturday";
+    };
+  };
 };
