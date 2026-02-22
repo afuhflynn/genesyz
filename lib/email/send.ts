@@ -821,3 +821,89 @@ export async function sendWeeklyUpdateReminderEmail(options: {
     text: `Hi ${userName}, please submit your weekly update for ${startupName} (Week ${weekNumber}). ${urgencyText} Visit ${APP_URL}/startups/${startupSlug}`,
   });
 }
+
+export async function sendStartupFeatureAnnouncementEmail(options: {
+  to: string;
+  userName: string;
+}): Promise<boolean> {
+  const { to, userName } = options;
+
+  const contentHtml = `
+    <h2 style="font-size: 22px; font-weight: 800; color: #0f172a; margin-bottom: 16px;">
+      What's New at IdeasVault
+    </h2>
+
+    <p style="font-size: 16px; color: #475569; margin-bottom: 24px;">
+      Hi ${userName}, we've shipped some significant improvements to Startup Profiles. Here's what's new:
+    </p>
+
+    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+      <h3 style="font-size: 16px; font-weight: 800; color: #166534; margin: 0 0 12px 0;">Enhanced Metrics Tracking</h3>
+      <p style="font-size: 14px; color: #374151; margin: 0 0 12px 0; line-height: 1.6;">
+        Your weekly updates just got more powerful. You can now track metrics the way that makes sense for your startup:
+      </p>
+      <ul style="margin: 0; padding-left: 20px; color: #374151; font-size: 14px; line-height: 1.7;">
+        <li><strong>35+ categorized metrics</strong> — Revenue, engagement, marketplace, growth metrics and more</li>
+        <li><strong>Smart formatting</strong> — Currency shows as $1,234, percentages as 15.5%</li>
+        <li><strong>Flexible periods</strong> — Track daily, weekly, monthly, quarterly, or yearly</li>
+        <li><strong>Additional metrics</strong> — Add up to 5 extra metrics per update</li>
+        <li><strong>Custom metrics</strong> — Define your own when standard ones don't fit</li>
+      </ul>
+    </div>
+
+    <div style="background: #fef3c7; border: 1px solid #fcd34d; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+      <h3 style="font-size: 16px; font-weight: 800; color: #92400e; margin: 0 0 12px 0;">Goal Completion Review</h3>
+      <p style="font-size: 14px; color: #374151; margin: 0; line-height: 1.6;">
+        Each week, you'll now review last week's goals with simple checkboxes. See your completion rate (e.g., "2/3 completed, 67%") and the AI coach factors this into its analysis.
+      </p>
+    </div>
+
+    <div style="margin-bottom: 24px;">
+      <h3 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0 0 12px 0;">Platform Features</h3>
+      
+      <div style="margin-bottom: 16px;">
+        <p style="font-size: 14px; font-weight: 700; color: #0f172a; margin: 0 0 4px 0;">Ideas Validation</p>
+        <ul style="margin: 0; padding-left: 20px; color: #64748b; font-size: 13px; line-height: 1.6;">
+          <li>AI-powered market, competitor, and feasibility research</li>
+          <li>Multi-dimensional scoring (Clarity, Market, Execution)</li>
+          <li>Conversational AI Guide for deeper exploration</li>
+          <li>PDF export for sharing</li>
+        </ul>
+      </div>
+      
+      <div>
+        <p style="font-size: 14px; font-weight: 700; color: #0f172a; margin: 0 0 4px 0;">Startup Tracking</p>
+        <ul style="margin: 0; padding-left: 20px; color: #64748b; font-size: 13px; line-height: 1.6;">
+          <li>Weekly progress updates with launch status tracking</li>
+          <li>AI coaching with blunt, honest feedback</li>
+          <li>Metrics dashboard with trends and history</li>
+          <li>User conversation tracking for pre-launch startups</li>
+        </ul>
+      </div>
+    </div>
+
+    <div style="border-top: 1px solid #e2e8f0; padding-top: 16px; margin-bottom: 24px;">
+      <p style="font-size: 11px; color: #94a3b8; margin: 0 0 4px 0; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700;">Coming Soon</p>
+      <p style="font-size: 14px; color: #64748b; margin: 0;">Startup School (curated learning resources) and Co-Founder Match</p>
+    </div>
+
+    <div style="text-align: center;">
+      <a href="${APP_URL}/startups" style="display: inline-block; background: #F5A623; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(245, 166, 35, 0.2);">
+        View Your Startups
+      </a>
+    </div>
+  `;
+
+  const html = renderPremiumEmail({
+    title: "What's New",
+    contentHtml,
+    badge: "Update",
+  });
+
+  return sendEmail({
+    to,
+    subject: "What's New: Enhanced Metrics & Goal Tracking | IdeasVault Update",
+    html,
+    text: `Hi ${userName}, we've shipped improvements to Startup Profiles including 35+ categorized metrics, smart formatting, and goal completion review. View your startups at ${APP_URL}/startups`,
+  });
+}
