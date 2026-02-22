@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { InfiniteScroll } from "@/components/ui/InfiniteScroll";
 import { type StartupWithDetails, useInfiniteStartups } from "@/hooks";
+import { getWeeksSinceCreation } from "@/lib/utils/date";
 
 const STAGE_COLORS: Record<string, string> = {
   IDEA: "bg-gray-100 text-gray-800",
@@ -85,6 +86,8 @@ export function StartupsList() {
         {startups.map((startup: StartupWithDetails) => {
           const latestUpdate = startup.weeklyUpdates?.[0];
           const score = startup.idea?.scores?.[0]?.overallScore;
+          const weekNumber = getWeeksSinceCreation(startup.createdAt);
+          const submissionCount = startup._count?.weeklyUpdates || 0;
 
           return (
             <Link
@@ -117,7 +120,10 @@ export function StartupsList() {
                   <div className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-1 text-muted-foreground">
                       <Target className="h-4 w-4" />
-                      <span>Week {startup.currentWeekNumber}</span>
+                      <span>
+                        Week {weekNumber} ({submissionCount} update
+                        {submissionCount !== 1 ? "s" : ""})
+                      </span>
                     </div>
                     {score && (
                       <div className="flex items-center gap-1">
@@ -152,8 +158,7 @@ export function StartupsList() {
                     </div>
                   )}
 
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>{startup._count?.weeklyUpdates || 0} updates</span>
+                  <div className="flex items-center justify-end text-xs text-muted-foreground">
                     <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                   </div>
                 </CardContent>

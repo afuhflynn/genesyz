@@ -10,7 +10,8 @@ interface NewWeeklyUpdateProps {
   startupId: string;
   startupSlug: string;
   startupName: string;
-  currentWeekNumber: number;
+  weekNumber: number;
+  submissionCount: number;
   isLaunched: boolean;
   currentPrimaryMetric: string;
   previousGoals: string[];
@@ -20,7 +21,8 @@ export function NewWeeklyUpdate({
   startupId,
   startupSlug,
   startupName,
-  currentWeekNumber,
+  weekNumber,
+  submissionCount,
   isLaunched,
   currentPrimaryMetric,
   previousGoals,
@@ -38,16 +40,18 @@ export function NewWeeklyUpdate({
         </Button>
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">
-            Week {currentWeekNumber} Update
+            Week {weekNumber} Update
           </h1>
-          <p className="text-muted-foreground">{startupName}</p>
+          <p className="text-muted-foreground">
+            {startupName} • {submissionCount} update
+            {submissionCount !== 1 ? "s" : ""} submitted
+          </p>
         </div>
       </div>
 
       <WeeklyUpdateForm
         startupId={startupId}
-        startupName={startupName}
-        currentWeekNumber={currentWeekNumber}
+        currentWeekNumber={weekNumber}
         isLaunched={isLaunched}
         currentPrimaryMetric={currentPrimaryMetric}
         previousGoals={previousGoals}

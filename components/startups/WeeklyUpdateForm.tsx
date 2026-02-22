@@ -96,7 +96,6 @@ const MORALE_LABELS: Record<number, string> = {
 
 interface WeeklyUpdateFormProps {
   startupId: string;
-  startupName: string;
   currentWeekNumber: number;
   isLaunched: boolean;
   currentPrimaryMetric: string;
@@ -106,7 +105,6 @@ interface WeeklyUpdateFormProps {
 
 export function WeeklyUpdateForm({
   startupId,
-  startupName,
   currentWeekNumber,
   isLaunched: initialIsLaunched,
   currentPrimaryMetric,

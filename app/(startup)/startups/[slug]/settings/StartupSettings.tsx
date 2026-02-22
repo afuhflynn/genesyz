@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDeleteStartup, useStartup } from "@/hooks";
+import { getWeeksSinceCreation } from "@/lib/utils/date";
 
 interface StartupSettingsProps {
   slug: string;
@@ -55,7 +56,8 @@ export function StartupSettings({ slug }: StartupSettingsProps) {
     );
   }
 
-  const weeklyUpdatesCount = startup._count?.weeklyUpdates ?? 0;
+  const weekNumber = getWeeksSinceCreation(startup.createdAt);
+  const submissionCount = startup._count?.weeklyUpdates ?? 0;
 
   const handleDelete = async () => {
     setIsDeleting(true);
@@ -130,7 +132,10 @@ export function StartupSettings({ slug }: StartupSettingsProps) {
         <CardContent className="space-y-4">
           <div>
             <p className="text-sm text-muted-foreground">Current Week</p>
-            <p className="font-medium">Week {startup.currentWeekNumber}</p>
+            <p className="font-medium">
+              Week {weekNumber} ({submissionCount} update
+              {submissionCount !== 1 ? "s" : ""})
+            </p>
           </div>
           <div>
             <p className="text-sm text-muted-foreground">Primary Metric</p>
@@ -185,8 +190,8 @@ export function StartupSettings({ slug }: StartupSettingsProps) {
                   <AlertDialogDescription className="space-y-2">
                     This action cannot be undone. This will permanently delete:
                     <ul className="list-disc list-inside mt-2 space-y-1">
-                      {weeklyUpdatesCount > 0 && (
-                        <li>All {weeklyUpdatesCount} weekly updates</li>
+                      {submissionCount > 0 && (
+                        <li>All {submissionCount} weekly updates</li>
                       )}
                       <li>All metrics history</li>
                       <li>All goals and progress data</li>

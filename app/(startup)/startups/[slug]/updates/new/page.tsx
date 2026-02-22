@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { getWeeksSinceCreation } from "@/lib/utils/date";
 import { NewWeeklyUpdate } from "./NewWeeklyUpdate";
 
 interface NewUpdatePageProps {
@@ -38,9 +39,12 @@ export default async function NewUpdatePage({ params }: NewUpdatePageProps) {
       id: true,
       name: true,
       slug: true,
-      currentWeekNumber: true,
+      createdAt: true,
       isLaunched: true,
       primaryMetricType: true,
+      _count: {
+        select: { weeklyUpdates: true },
+      },
     },
   });
 
@@ -48,11 +52,14 @@ export default async function NewUpdatePage({ params }: NewUpdatePageProps) {
     notFound();
   }
 
+  const weekNumber = getWeeksSinceCreation(startup.createdAt);
+  const submissionCount = startup._count.weeklyUpdates;
+
   const existingUpdate = await db.weeklyUpdate.findUnique({
     where: {
       startupId_weekNumber: {
         startupId: startup.id,
-        weekNumber: startup.currentWeekNumber,
+        weekNumber,
       },
     },
   });
@@ -64,7 +71,6 @@ export default async function NewUpdatePage({ params }: NewUpdatePageProps) {
   const previousUpdate = await db.weeklyUpdate.findFirst({
     where: {
       startupId: startup.id,
-      weekNumber: { lt: startup.currentWeekNumber },
     },
     orderBy: { weekNumber: "desc" },
     select: {
@@ -82,7 +88,8 @@ export default async function NewUpdatePage({ params }: NewUpdatePageProps) {
       startupId={startup.id}
       startupSlug={startup.slug}
       startupName={startup.name}
-      currentWeekNumber={startup.currentWeekNumber}
+      weekNumber={weekNumber}
+      submissionCount={submissionCount}
       isLaunched={startup.isLaunched}
       currentPrimaryMetric={startup.primaryMetricType}
       previousGoals={previousGoals}

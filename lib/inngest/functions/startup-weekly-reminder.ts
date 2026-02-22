@@ -1,13 +1,7 @@
 import { db } from "@/lib/db";
 import { sendWeeklyUpdateReminderEmail } from "@/lib/email/send";
+import { getWeekStartForDate, getWeeksSinceCreation } from "@/lib/utils/date";
 import { inngest } from "../client";
-
-function getWeekStart(date: Date): Date {
-  const d = new Date(date);
-  const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-  return new Date(d.setDate(diff));
-}
 
 export const weeklyUpdateReminderFn = inngest.createFunction(
   {
@@ -25,11 +19,11 @@ export const weeklyUpdateReminderFn = inngest.createFunction(
           id: true,
           name: true,
           slug: true,
-          currentWeekNumber: true,
+          createdAt: true,
           isActive: true,
           weeklyUpdates: {
             where: {
-              weekStart: getWeekStart(new Date()),
+              weekStart: getWeekStartForDate(new Date()),
             },
             select: { id: true },
           },
@@ -67,7 +61,7 @@ export const weeklyUpdateReminderFn = inngest.createFunction(
     const userName = data.user.name || "Founder";
     const startupName = data.startup.name;
     const startupSlug = data.startup.slug;
-    const weekNumber = data.startup.currentWeekNumber;
+    const weekNumber = getWeeksSinceCreation(new Date(data.startup.createdAt));
 
     await step.run("send-reminder-email", async () => {
       await sendWeeklyUpdateReminderEmail({
@@ -99,7 +93,7 @@ export const weeklyUpdateReminderCronFriday = inngest.createFunction(
     const startupsNeedingReminder = await step.run(
       "fetch-startups-without-update",
       async () => {
-        const currentWeekStart = getWeekStart(new Date());
+        const currentWeekStart = getWeekStartForDate(new Date());
 
         const startups = await db.startup.findMany({
           where: {
@@ -165,7 +159,7 @@ export const weeklyUpdateReminderCronSaturday = inngest.createFunction(
     const startupsNeedingReminder = await step.run(
       "fetch-startups-without-update",
       async () => {
-        const currentWeekStart = getWeekStart(new Date());
+        const currentWeekStart = getWeekStartForDate(new Date());
 
         const startups = await db.startup.findMany({
           where: {

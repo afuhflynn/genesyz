@@ -3,24 +3,15 @@ import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { inngest } from "@/lib/inngest/client";
+import {
+  getWeekEndForDate,
+  getWeekStartForDate,
+  getWeeksSinceCreation,
+} from "@/lib/utils/date";
 import { createWeeklyUpdateSchema } from "@/lib/validators/startup";
 
-function getWeekStart(date: Date): Date {
-  const d = new Date(date);
-  const day = d.getDay();
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-  return new Date(d.setDate(diff));
-}
-
-function getWeekEnd(date: Date): Date {
-  const start = getWeekStart(date);
-  const end = new Date(start);
-  end.setDate(start.getDate() + 6);
-  return end;
-}
-
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -39,7 +30,7 @@ export async function GET(
     return NextResponse.json({ error: "Startup not found" }, { status: 404 });
   }
 
-  const { searchParams } = new URL(request.url);
+  const { searchParams } = new URL(_request.url);
   const page = parseInt(searchParams.get("page") || "1");
   const limit = parseInt(searchParams.get("limit") || "10");
   const skip = (page - 1) * limit;
@@ -95,11 +86,16 @@ export async function POST(
     return NextResponse.json({ error: "Startup not found" }, { status: 404 });
   }
 
+  const now = new Date();
+  const weekNumber = getWeeksSinceCreation(startup.createdAt);
+  const weekStart = getWeekStartForDate(now);
+  const weekEnd = getWeekEndForDate(now);
+
   const existingUpdate = await db.weeklyUpdate.findUnique({
     where: {
       startupId_weekNumber: {
         startupId: startup.id,
-        weekNumber: startup.currentWeekNumber,
+        weekNumber,
       },
     },
   });
@@ -111,9 +107,20 @@ export async function POST(
     );
   }
 
-  const now = new Date();
-  const weekStart = getWeekStart(now);
-  const weekEnd = getWeekEnd(now);
+  const existingByDateRange = await db.weeklyUpdate.findFirst({
+    where: {
+      startupId: startup.id,
+      weekStart: { lte: now },
+      weekEnd: { gte: now },
+    },
+  });
+
+  if (existingByDateRange) {
+    return NextResponse.json(
+      { error: "A weekly update already exists within this calendar week" },
+      { status: 400 },
+    );
+  }
 
   let previousMetricValue: number | null = null;
   const lastUpdate = await db.weeklyUpdate.findFirst({
@@ -133,7 +140,7 @@ export async function POST(
   const update = await db.weeklyUpdate.create({
     data: {
       startupId: startup.id,
-      weekNumber: startup.currentWeekNumber,
+      weekNumber,
       weekStart,
       weekEnd,
       isLaunched: parsed.data.isLaunched,
@@ -166,7 +173,7 @@ export async function POST(
   await db.startup.update({
     where: { id: startup.id },
     data: {
-      currentWeekNumber: { increment: 1 },
+      currentWeekNumber: weekNumber + 1,
       lastUpdateAt: now,
       isLaunched: parsed.data.isLaunched,
       primaryMetricType: parsed.data.primaryMetricType,

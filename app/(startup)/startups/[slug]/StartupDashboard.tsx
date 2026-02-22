@@ -11,7 +11,6 @@ import {
   Target,
   TrendingDown,
   TrendingUp,
-  Users,
   Zap,
 } from "lucide-react";
 import Link from "next/link";
@@ -19,7 +18,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useStartup, useWeeklyUpdates } from "@/hooks";
+import { useStartup } from "@/hooks";
+import { getWeeksSinceCreation } from "@/lib/utils/date";
 
 const STAGE_COLORS: Record<string, string> = {
   IDEA: "bg-gray-100 text-gray-800",
@@ -52,7 +52,6 @@ const VERDICT_CONFIG: Record<
 
 export function StartupDashboard({ slug }: { slug: string }) {
   const { data: startup, isLoading, error } = useStartup(slug);
-  const { data: updatesData } = useWeeklyUpdates(startup?.id || "");
 
   if (isLoading) {
     return (
@@ -81,6 +80,8 @@ export function StartupDashboard({ slug }: { slug: string }) {
     );
   }
 
+  const weekNumber = getWeeksSinceCreation(startup.createdAt);
+  const submissionCount = startup._count?.weeklyUpdates ?? 0;
   const latestUpdate = startup.weeklyUpdates?.[0];
   const verdict = latestUpdate?.aiVerdict
     ? VERDICT_CONFIG[latestUpdate.aiVerdict]
@@ -111,7 +112,8 @@ export function StartupDashboard({ slug }: { slug: string }) {
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <span className="flex items-center gap-1">
               <Calendar className="h-4 w-4" />
-              Week {startup.currentWeekNumber}
+              Week {weekNumber} ({submissionCount} update
+              {submissionCount !== 1 ? "s" : ""})
             </span>
             {startup.industry && (
               <span className="flex items-center gap-1">
