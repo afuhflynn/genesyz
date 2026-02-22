@@ -78,8 +78,8 @@ export const DeleteIdeaDialog = ({
           </TooltipTrigger>
           <TooltipContent side="left" className="max-w-xs">
             <p>
-              This idea has an active startup. Delete or archive the startup
-              first to delete this idea.
+              This idea has an associated startup. Permanently delete the
+              startup to delete this idea.
             </p>
           </TooltipContent>
         </Tooltip>

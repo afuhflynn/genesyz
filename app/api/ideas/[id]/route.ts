@@ -2,7 +2,6 @@ import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { inngest } from "@/lib/inngest/client";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -78,7 +77,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json(
       {
         error:
-          "Cannot delete idea with an active startup. Delete or archive the startup first.",
+          "Cannot delete idea with an associated startup. Permanently delete the startup first.",
       },
       { status: 400 },
     );

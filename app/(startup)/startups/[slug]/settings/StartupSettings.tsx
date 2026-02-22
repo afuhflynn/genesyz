@@ -1,6 +1,6 @@
 "use client";
 
-import { Archive, ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -34,7 +34,7 @@ export function StartupSettings({ slug }: StartupSettingsProps) {
   const router = useRouter();
   const { data: startup, isLoading } = useStartup(slug);
   const deleteStartup = useDeleteStartup();
-  const [isArchiving, setIsArchiving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   if (isLoading) {
     return (
@@ -55,13 +55,15 @@ export function StartupSettings({ slug }: StartupSettingsProps) {
     );
   }
 
-  const handleArchive = async () => {
-    setIsArchiving(true);
+  const weeklyUpdatesCount = startup._count?.weeklyUpdates ?? 0;
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
     try {
       await deleteStartup.mutateAsync(startup.id);
       router.push("/startups");
-    } catch (error) {
-      setIsArchiving(false);
+    } catch {
+      setIsDeleting(false);
     }
   };
 
@@ -158,46 +160,54 @@ export function StartupSettings({ slug }: StartupSettingsProps) {
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between rounded-lg border border-destructive/50 p-4">
             <div>
-              <p className="font-medium">Archive this startup</p>
+              <p className="font-medium">Permanently delete this startup</p>
               <p className="text-sm text-muted-foreground">
-                This will hide the startup from your dashboard. You can restore
-                it later.
+                This cannot be undone. All weekly updates, metrics, and goals
+                will be deleted. The original idea can be deleted afterward.
               </p>
             </div>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive" disabled={isArchiving}>
-                  {isArchiving ? (
+                <Button variant="destructive" disabled={isDeleting}>
+                  {isDeleting ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : (
-                    <Archive className="mr-2 h-4 w-4" />
+                    <Trash2 className="mr-2 h-4 w-4" />
                   )}
-                  Archive
+                  Delete
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Archive {startup.name}?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This will archive the startup and hide it from your
-                    dashboard. All your weekly updates, metrics, and progress
-                    data will be preserved. You can restore it later from the
-                    Settings page.
+                  <AlertDialogTitle>
+                    Permanently delete {startup.name}?
+                  </AlertDialogTitle>
+                  <AlertDialogDescription className="space-y-2">
+                    This action cannot be undone. This will permanently delete:
+                    <ul className="list-disc list-inside mt-2 space-y-1">
+                      {weeklyUpdatesCount > 0 && (
+                        <li>All {weeklyUpdatesCount} weekly updates</li>
+                      )}
+                      <li>All metrics history</li>
+                      <li>All goals and progress data</li>
+                    </ul>
+                    <br />
+                    The original idea will remain and can be deleted afterward.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel disabled={isArchiving}>
+                  <AlertDialogCancel disabled={isDeleting}>
                     Cancel
                   </AlertDialogCancel>
                   <AlertDialogAction
-                    onClick={handleArchive}
-                    disabled={isArchiving}
+                    onClick={handleDelete}
+                    disabled={isDeleting}
                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   >
-                    {isArchiving && (
+                    {isDeleting && (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     )}
-                    Archive Startup
+                    Permanently Delete
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>

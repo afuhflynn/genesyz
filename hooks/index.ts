@@ -666,11 +666,12 @@ export function useDeleteStartup() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.startups.all });
-      toast.success("Startup archived");
+      queryClient.invalidateQueries({ queryKey: queryKeys.ideas.all });
+      toast.success("Startup deleted");
       router.push("/startups");
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Failed to archive startup");
+      toast.error(error.message || "Failed to delete startup");
     },
   });
 }

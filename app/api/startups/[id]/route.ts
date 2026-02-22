@@ -121,23 +121,30 @@ export async function DELETE(
 
   const startup = await db.startup.findFirst({
     where: { OR: [{ id }, { slug: id }], userId: session.user.id },
+    include: {
+      _count: { select: { weeklyUpdates: true } },
+    },
   });
 
   if (!startup) {
     return NextResponse.json({ error: "Startup not found" }, { status: 404 });
   }
 
-  await db.startup.update({
+  await db.startup.delete({
     where: { id: startup.id },
-    data: { isActive: false },
   });
 
   await db.auditLog.create({
     data: {
       userId: session.user.id,
-      action: "startup.archived",
+      action: "startup.deleted",
       resource: "startup",
       resourceId: startup.id,
+      metadata: {
+        name: startup.name,
+        slug: startup.slug,
+        weeklyUpdatesCount: startup._count.weeklyUpdates,
+      },
     },
   });
 
