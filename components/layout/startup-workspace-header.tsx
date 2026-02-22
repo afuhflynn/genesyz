@@ -58,8 +58,8 @@ export function StartupWorkspaceHeader({
         {/* Right: Workspace Switcher + User */}
         <div className="flex items-center gap-3">
           <WorkspaceSwitcher currentStartupId={startup.id} />
-          <Separator orientation="vertical" className="h-6" />
-          <UserNav user={session?.user} />
+          {/* <Separator orientation="vertical" className="h-6" /> */}
+          {/* <UserNav user={session?.user} /> */}
         </div>
       </div>
     </header>
