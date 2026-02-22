@@ -29,7 +29,7 @@ export function Header() {
             <span className="text-xl font-semibold">IdeasVault</span>
           </Link>
           <div className="md:mr-5 absolute md:relative right-5 self-center md:right-0 flex items-center gap-3">
-            <WorkspaceSwitcher />
+            {/* <WorkspaceSwitcher /> */}
             <UserNav user={session?.user} />
           </div>
         </div>
