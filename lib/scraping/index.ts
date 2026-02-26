@@ -22,4 +22,5 @@ export {
   isSocialMediaUrl,
   isValidUrl,
   normalizeUrl,
+  sanitizeUrlStrings,
 } from "./url-extractor";

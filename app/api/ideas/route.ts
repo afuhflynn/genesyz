@@ -6,7 +6,7 @@ import { db } from "@/lib/db";
 import { inngest } from "@/lib/inngest/client";
 import { detectBestLocation, validateLocation } from "@/lib/location";
 import { isAllowedToCreateIdea } from "@/lib/polar/entitlements";
-import { extractUrlsFromSources } from "@/lib/scraping";
+import { extractUrlsFromSources, sanitizeUrlStrings } from "@/lib/scraping";
 
 // GET /api/ideas - List all ideas for the authenticated user
 export async function GET(request: NextRequest) {
@@ -96,6 +96,7 @@ export async function POST(request: NextRequest) {
 
   // Check entitlement
   const entitlementCheck = await isAllowedToCreateIdea(session.user.id);
+  console.log({ entitlementCheck });
   if (!entitlementCheck.allowed) {
     return NextResponse.json(
       { error: entitlementCheck.reason },
@@ -159,7 +160,7 @@ export async function POST(request: NextRequest) {
     transcription: transcription || undefined,
     ocrText: ocrText || undefined,
   });
-  const urlStrings = extractedUrls.map((u) => u.normalizedUrl);
+  const urlStrings = sanitizeUrlStrings(extractedUrls);
 
   // Detect or validate location
   let locationContext = null;
@@ -238,7 +239,7 @@ export async function POST(request: NextRequest) {
       ideaId: idea.id,
       type: "TEXT",
       content: text,
-      extractedUrls: textUrls.map((u) => u.normalizedUrl),
+      extractedUrls: sanitizeUrlStrings(textUrls),
     });
   }
 
@@ -247,7 +248,7 @@ export async function POST(request: NextRequest) {
     try {
       const audio = JSON.parse(audioData);
       const audioUrls = transcription
-        ? extractUrlsFromSources({ transcription }).map((u) => u.normalizedUrl)
+        ? sanitizeUrlStrings(extractUrlsFromSources({ transcription }))
         : [];
       inputs.push({
         ideaId: idea.id,
@@ -269,7 +270,7 @@ export async function POST(request: NextRequest) {
     try {
       const image = JSON.parse(imageData);
       const imageUrls = ocrText
-        ? extractUrlsFromSources({ ocrText }).map((u) => u.normalizedUrl)
+        ? sanitizeUrlStrings(extractUrlsFromSources({ ocrText }))
         : [];
       inputs.push({
         ideaId: idea.id,
