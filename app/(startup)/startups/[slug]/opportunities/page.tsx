@@ -100,28 +100,23 @@ export default function OpportunitiesPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = (params as any).then ? {} : { slug: "" };
-  const [slugResolved, setSlugResolved] = useState("");
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [filterStatus, setFilterStatus] = useState("all");
 
-  const { data: startup } = useStartup(
-    slugResolved || (params as any).slug || "",
-  );
+  const { data: startup } = useStartup(slug!);
 
   // eslint-disable-next-line react-hooks/rules-of-hooks
   const resolvedParams = (params as any).then ? {} : { slug };
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const effectiveSlug = slugResolved || (params as any).slug || "";
 
   // eslint-disable-next-line react-hooks/rules-of-hooks
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const fetchOpportunities = async () => {
-    if (!effectiveSlug) return;
+    if (!slug) return;
     setIsLoading(true);
     try {
-      const res = await fetch(`/api/startups/${effectiveSlug}/opportunities`);
+      const res = await fetch(`/api/startups/${slug}/opportunities`);
       if (res.ok) {
         const data = await res.json();
         setOpportunities(data.data || []);
@@ -162,7 +157,7 @@ export default function OpportunitiesPage({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button asChild variant="ghost" size="sm">
-            <Link href={`/startups/${effectiveSlug}`}>
+            <Link href={`/startups/${slug}`}>
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back
             </Link>
