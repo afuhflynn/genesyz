@@ -153,6 +153,11 @@ export default function IdeaDetailPage() {
   const trends = getPacket("TREND_ANALYSIS");
   const execution = getPacket("EXECUTION_FRICTION");
   const synthesis = getPacket("SYNTHESIS");
+  const preferredMarket =
+    market?.marketSize?.regional ?? market?.marketSize?.global;
+  const tam = preferredMarket?.tam;
+  const sam = preferredMarket?.sam;
+  const som = preferredMarket?.som;
 
   const score = idea.scores[0];
 
@@ -374,23 +379,14 @@ export default function IdeaDetailPage() {
                           TAM
                         </p>
                         <p className="text-lg font-bold">
-                          {market?.marketSize?.regional?.tam?.usdValue ||
-                            market?.marketSize?.global?.tam?.usdValue ||
-                            market?.marketSize?.tam?.value ||
-                            "N/A"}
+                          {tam?.usdValue || tam?.value || "N/A"}
                         </p>
-                        {market?.marketSize?.regional?.tam?.value ||
-                        market?.marketSize?.global?.tam?.value ? (
+                        {tam?.value && tam?.value !== tam?.usdValue ? (
                           <p className="text-xs text-muted-foreground">
-                            {market?.marketSize?.regional?.tam?.value ||
-                              market?.marketSize?.global?.tam?.value}{" "}
-                            {market?.marketSize?.regional?.tam?.currency ||
-                              market?.marketSize?.global?.tam?.currency ||
-                              ""}
+                            {tam.value} {tam.currency || ""}
                           </p>
                         ) : null}
-                        {(market?.marketSize?.regional?.tam?.isEstimated ||
-                          market?.marketSize?.global?.tam?.isEstimated) && (
+                        {tam?.isEstimated && (
                           <Badge variant="secondary" className="mt-1 text-xs">
                             <AlertCircle className="h-3 w-3 mr-1" />
                             Estimated
@@ -402,22 +398,14 @@ export default function IdeaDetailPage() {
                           SAM
                         </p>
                         <p className="text-lg font-bold">
-                          {market?.marketSize?.regional?.sam?.usdValue ||
-                            market?.marketSize?.global?.sam?.usdValue ||
-                            "N/A"}
+                          {sam?.usdValue || sam?.value || "N/A"}
                         </p>
-                        {market?.marketSize?.regional?.sam?.value ||
-                        market?.marketSize?.global?.sam?.value ? (
+                        {sam?.value && sam?.value !== sam?.usdValue ? (
                           <p className="text-xs text-muted-foreground">
-                            {market?.marketSize?.regional?.sam?.value ||
-                              market?.marketSize?.global?.sam?.value}{" "}
-                            {market?.marketSize?.regional?.sam?.currency ||
-                              market?.marketSize?.global?.sam?.currency ||
-                              ""}
+                            {sam.value} {sam.currency || ""}
                           </p>
                         ) : null}
-                        {(market?.marketSize?.regional?.sam?.isEstimated ||
-                          market?.marketSize?.global?.sam?.isEstimated) && (
+                        {sam?.isEstimated && (
                           <Badge variant="secondary" className="mt-1 text-xs">
                             <AlertCircle className="h-3 w-3 mr-1" />
                             Estimated
@@ -429,22 +417,14 @@ export default function IdeaDetailPage() {
                           SOM
                         </p>
                         <p className="text-lg font-bold">
-                          {market?.marketSize?.regional?.som?.usdValue ||
-                            market?.marketSize?.global?.som?.usdValue ||
-                            "N/A"}
+                          {som?.usdValue || som?.value || "N/A"}
                         </p>
-                        {market?.marketSize?.regional?.som?.value ||
-                        market?.marketSize?.global?.som?.value ? (
+                        {som?.value && som?.value !== som?.usdValue ? (
                           <p className="text-xs text-muted-foreground">
-                            {market?.marketSize?.regional?.som?.value ||
-                              market?.marketSize?.global?.som?.value}{" "}
-                            {market?.marketSize?.regional?.som?.currency ||
-                              market?.marketSize?.global?.som?.currency ||
-                              ""}
+                            {som.value} {som.currency || ""}
                           </p>
                         ) : null}
-                        {(market?.marketSize?.regional?.som?.isEstimated ||
-                          market?.marketSize?.global?.som?.isEstimated) && (
+                        {som?.isEstimated && (
                           <Badge variant="secondary" className="mt-1 text-xs">
                             <AlertCircle className="h-3 w-3 mr-1" />
                             Estimated
