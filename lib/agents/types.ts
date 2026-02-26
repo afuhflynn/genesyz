@@ -304,6 +304,10 @@ export const DeepResearchSchema = z.object({
 });
 
 export type DeepResearch = z.infer<typeof DeepResearchSchema>;
+export type DeepResearchOutput = AgentOutput & {
+  agentType: "DEEP_RESEARCH";
+  content: DeepResearch;
+};
 
 // ===========================================
 // Strategic Advisory Agent (Portfolio Level)

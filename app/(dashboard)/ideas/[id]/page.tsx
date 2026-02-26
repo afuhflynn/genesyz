@@ -719,14 +719,16 @@ export default function IdeaDetailPage() {
                   <Accordion type="single" collapsible className="w-full">
                     {researchPackets.map((packet) => (
                       <AccordionItem key={packet.id} value={packet.id}>
-                        <AccordionTrigger className="font-mono text-sm flex-row-reverse justify-end gap-2">
-                          <span>{packet.agentType}</span>
+                        <div className="relative">
+                          <AccordionTrigger className="pr-12 font-mono text-sm flex-row-reverse justify-end gap-2">
+                            <span>{packet.agentType}</span>
+                          </AccordionTrigger>
                           <Button
+                            type="button"
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8"
-                            onClick={(e) => {
-                              e.stopPropagation();
+                            className="absolute top-1/2 right-10 h-8 w-8 -translate-y-1/2"
+                            onClick={() => {
                               const content = JSON.stringify(
                                 packet.content,
                                 null,
@@ -746,7 +748,7 @@ export default function IdeaDetailPage() {
                               <Copy className="h-4 w-4" />
                             )}
                           </Button>
-                        </AccordionTrigger>
+                        </div>
                         <AccordionContent>
                           <ScrollArea className="h-100 w-full rounded-md border p-4">
                             <pre className="text-xs font-mono">

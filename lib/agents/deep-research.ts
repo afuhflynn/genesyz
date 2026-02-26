@@ -10,7 +10,8 @@ import {
 import { hashString } from "@/lib/utils";
 import {
   type AgentInput,
-  type AgentOutput,
+  type DeepResearch,
+  type DeepResearchOutput,
   DeepResearchSchema,
   type InterpretedIdea,
 } from "./types";
@@ -37,7 +38,7 @@ Focus on:
 
 export async function runDeepResearchAgent(
   input: AgentInput,
-): Promise<AgentOutput> {
+): Promise<DeepResearchOutput> {
   const { ideaId, previousOutputs, locationContext } = input;
 
   const interpretedIdea = previousOutputs?.INTERPRETER
@@ -126,6 +127,9 @@ ${JSON.stringify(toolResults, null, 2)}`,
   });
 
   const latencyMs = Date.now() - startTime;
+  const deepResearchContent: DeepResearch = DeepResearchSchema.parse(
+    result.object,
+  );
 
   // Log research call
   await db.researchLog.create({
@@ -134,7 +138,7 @@ ${JSON.stringify(toolResults, null, 2)}`,
       agentType: "DEEP_RESEARCH",
       promptHash: await hashString(researchData),
       prompt: researchData,
-      response: JSON.stringify(result.object),
+      response: JSON.stringify(deepResearchContent),
       model: modelUsed,
       tokensUsed: result.usage?.totalTokens,
       latencyMs,
@@ -143,7 +147,7 @@ ${JSON.stringify(toolResults, null, 2)}`,
 
   return {
     agentType: "DEEP_RESEARCH",
-    content: result.object,
+    content: deepResearchContent,
     confidence: 0.85,
     reasoning: `Performed ${toolResults.length} web searches to validate market gaps and technical feasibility.`,
   };
