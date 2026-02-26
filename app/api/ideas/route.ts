@@ -107,9 +107,40 @@ export async function POST(request: NextRequest) {
   const text = formData.get("text") as string | null;
   const audioData = formData.get("audio") as string | null;
   const imageData = formData.get("image") as string | null;
-  const targetLocation = formData.get("targetLocation") as string | null;
+  const targetLocationRaw = formData.get("targetLocation");
   const transcription = formData.get("transcription") as string | null;
   const ocrText = formData.get("ocrText") as string | null;
+
+  type TargetLocationInput = {
+    continent?: string;
+    continentCode?: string;
+    country?: string;
+    countryCode?: string;
+    region?: string;
+    regionCode?: string;
+    city?: string;
+    isGlobal?: boolean;
+  };
+
+  let targetLocation: string | null = null;
+  let targetLocationInput: TargetLocationInput | null = null;
+
+  if (typeof targetLocationRaw === "string" && targetLocationRaw.trim()) {
+    const raw = targetLocationRaw.trim();
+    try {
+      const parsed = JSON.parse(raw) as TargetLocationInput;
+      if (parsed && typeof parsed === "object") {
+        targetLocationInput = parsed;
+        targetLocation = parsed.isGlobal
+          ? "Global"
+          : [parsed.city, parsed.region, parsed.country, parsed.continent]
+              .filter(Boolean)
+              .join(", ");
+      }
+    } catch {
+      targetLocation = raw;
+    }
+  }
 
   // Validate at least one input is provided
   if (!text && !audioData && !imageData) {
@@ -132,7 +163,30 @@ export async function POST(request: NextRequest) {
 
   // Detect or validate location
   let locationContext = null;
-  if (targetLocation) {
+  if (targetLocationInput) {
+    if (targetLocationInput.isGlobal) {
+      locationContext = {
+        country: "Global",
+        countryCode: "GLOBAL",
+        isGlobal: true,
+      };
+    } else if (targetLocationInput.country) {
+      locationContext = {
+        country: targetLocationInput.country,
+        countryCode: targetLocationInput.countryCode || "UNKNOWN",
+        region: targetLocationInput.region,
+        regionCode: targetLocationInput.regionCode,
+        city: targetLocationInput.city,
+        isGlobal: false,
+      };
+    } else if (targetLocationInput.continent) {
+      locationContext = {
+        country: targetLocationInput.continent,
+        countryCode: targetLocationInput.continentCode || "CONTINENT",
+        isGlobal: false,
+      };
+    }
+  } else if (targetLocation) {
     // User provided location
     const validation = await validateLocation(targetLocation);
     if (validation.isValid) {

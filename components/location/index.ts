@@ -1,1 +1,5 @@
-export { LocationBadge, LocationSelector } from "./LocationSelector";
+export {
+  LocationBadge,
+  LocationSelector,
+  type LocationContext,
+} from "./LocationSelector";
