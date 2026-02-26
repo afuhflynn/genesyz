@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { inngest } from "@/lib/inngest/client";
 import { detectLocationFromText } from "@/lib/location";
-import { extractUrlsFromSources } from "@/lib/scraping";
+import { extractUrlsFromSources, sanitizeUrlStrings } from "@/lib/scraping";
 
 // GET /api/ideas/[id]/prompt - Get prompt history
 export async function GET(
@@ -105,7 +105,7 @@ export async function PUT(
 
     // Extract URLs from new prompt
     const extractedUrls = extractUrlsFromSources({ text: prompt });
-    const urlStrings = extractedUrls.map((u) => u.normalizedUrl);
+    const urlStrings = sanitizeUrlStrings(extractedUrls);
 
     // Detect location mentions in new prompt
     const locationMentions = detectLocationFromText(prompt);
@@ -123,12 +123,20 @@ export async function PUT(
       });
 
       // Update idea with new prompt and merge URLs
+      const mergedUrls = sanitizeUrlStrings([...idea.extractedUrls, ...urlStrings]);
+      console.debug("[prompt.update] extractedUrls merge", {
+        ideaId,
+        incomingCount: urlStrings.length,
+        existingCount: idea.extractedUrls.length,
+        mergedCount: mergedUrls.length,
+        sampleType: typeof mergedUrls[0],
+      });
       const updated = await tx.idea.update({
         where: { id: ideaId },
         data: {
           originalPrompt: prompt,
           extractedUrls: {
-            push: urlStrings,
+            set: mergedUrls,
           },
           // Update location if detected in new prompt
           ...(locationMentions.length > 0 && {
