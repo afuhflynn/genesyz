@@ -1,6 +1,7 @@
 import { google } from "@ai-sdk/google";
 import { mistral } from "@ai-sdk/mistral";
 import { generateObject } from "ai";
+import { z } from "zod";
 import { db } from "@/lib/db";
 import { detectLocationFromText } from "@/lib/location";
 import { extractUrlsFromSources } from "@/lib/scraping";
@@ -23,10 +24,23 @@ Guidelines:
 - Use clear, professional language
 - If information is genuinely missing, make reasonable inferences but note uncertainty`;
 
+const ChangeSignificanceSchema = z.object({
+  significance: z.enum(["major_change", "minor_change"]),
+  reason: z.string(),
+});
+
 export async function runInterpreterAgent(
   input: AgentInput,
 ): Promise<AgentOutput> {
   const { ideaId, rawInput } = input;
+  const existingIdea = await db.idea.findUnique({
+    where: { id: ideaId },
+    select: {
+      title: true,
+      summary: true,
+      originalPrompt: true,
+    },
+  });
 
   // Combine all input sources
   const combinedInput = [
@@ -116,12 +130,71 @@ Transform this into a structured idea representation. Be thorough but concise.`;
   // Update idea with interpreted prompt and extracted data
   const interpretedPrompt = `Title: ${result.object.title}\n\nSummary: ${result.object.summary}\n\nProblem: ${result.object.problemStatement}\n\nSolution: ${result.object.proposedSolution}`;
 
+  let shouldReplaceTitleAndSummary = true;
+  let changeAssessmentReason = "No existing title/summary to compare.";
+
+  if (existingIdea?.title && existingIdea.summary) {
+    const comparisonPrompt = `You are comparing two interpretations of the same idea to determine if the new prompt materially changes the idea framing.
+
+Current user prompt:
+${rawInput.text || "N/A"}
+
+Previous stored title:
+${existingIdea.title}
+
+Previous stored summary:
+${existingIdea.summary}
+
+New generated title:
+${result.object.title}
+
+New generated summary:
+${result.object.summary}
+
+Classify as:
+- major_change: framing, positioning, user segment, or core value proposition materially changed.
+- minor_change: mostly wording/style/clarity updates with same core idea.
+
+Return valid JSON only.`;
+
+    try {
+      const assessment = await generateObject({
+        model: primaryModel,
+        schema: ChangeSignificanceSchema,
+        prompt: comparisonPrompt,
+      });
+
+      shouldReplaceTitleAndSummary =
+        assessment.object.significance === "major_change";
+      changeAssessmentReason = assessment.object.reason;
+    } catch (primaryAssessmentError) {
+      console.warn(
+        `[INTERPRETER] Change assessment with primary model failed, falling back:`,
+        primaryAssessmentError,
+      );
+
+      const assessment = await generateObject({
+        model: fallbackModel,
+        schema: ChangeSignificanceSchema,
+        prompt: comparisonPrompt,
+      });
+
+      shouldReplaceTitleAndSummary =
+        assessment.object.significance === "major_change";
+      changeAssessmentReason = assessment.object.reason;
+    }
+  }
+
   await db.idea.update({
     where: { id: ideaId },
     data: {
       interpretedPrompt,
-      title: result.object.title,
-      summary: result.object.summary,
+      ...(shouldReplaceTitleAndSummary
+        ? {
+            title: result.object.title,
+            summary: result.object.summary,
+          }
+        : {}),
       // Merge with existing URLs if any
       extractedUrls: {
         push: extractedUrls.map((u) => u.normalizedUrl),
@@ -133,6 +206,6 @@ Transform this into a structured idea representation. Be thorough but concise.`;
     agentType: "INTERPRETER",
     content: result.object,
     confidence,
-    reasoning: `Interpreted from ${inputSources} input source(s). ${extractedUrls.length > 0 ? `Found ${extractedUrls.length} URL(s).` : ""} ${locationMentions.length > 0 ? `Detected ${locationMentions.length} location mention(s).` : ""}`,
+    reasoning: `Interpreted from ${inputSources} input source(s). ${extractedUrls.length > 0 ? `Found ${extractedUrls.length} URL(s).` : ""} ${locationMentions.length > 0 ? `Detected ${locationMentions.length} location mention(s).` : ""} ${shouldReplaceTitleAndSummary ? "Major prompt shift detected; refreshed title/summary." : "Minor prompt shift detected; preserved title/summary."} ${changeAssessmentReason}`,
   };
 }

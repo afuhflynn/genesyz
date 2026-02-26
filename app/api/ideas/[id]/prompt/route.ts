@@ -138,8 +138,6 @@ export async function PUT(
           // Reset status if triggering research
           ...(triggerResearch && {
             status: "PENDING",
-            title: null,
-            summary: null,
             interpretedPrompt: null,
           }),
         },

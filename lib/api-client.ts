@@ -25,6 +25,21 @@ export interface IdeaWithDetails extends Idea {
   researchPackets: ResearchPacket[];
 }
 
+export interface PromptVersion {
+  id: string;
+  ideaId: string;
+  prompt: string;
+  editedAt: string;
+  triggeredResearch: boolean;
+  editedBy: string | null;
+}
+
+export interface PromptHistoryResponse {
+  originalPrompt: string | null;
+  interpretedPrompt: string | null;
+  versions: PromptVersion[];
+}
+
 export interface CreateIdeaInput {
   text?: string;
   audioFile?: File;
@@ -147,6 +162,9 @@ export const api = {
 
       getResearchPackets: (id: string): Promise<ResearchPacket[]> =>
         apiRequest(`/ideas/${id}/research`, { method: "GET" }),
+
+      getPromptHistory: (id: string): Promise<PromptHistoryResponse> =>
+        apiRequest(`/ideas/${id}/prompt`, { method: "GET" }),
     },
 
     // Dashboard
@@ -251,6 +269,14 @@ export const api = {
 
       exportPdf: (id: string): Promise<{ url: string }> =>
         apiRequest(`/ideas/${id}/export`, { method: "POST" }),
+
+      updatePrompt: (
+        id: string,
+        data: { prompt: string; triggerResearch: boolean },
+      ): Promise<{
+        success: boolean;
+        researchTriggered: boolean;
+      }> => apiRequest(`/ideas/${id}/prompt`, { method: "PUT", body: data }),
     },
 
     // Assets

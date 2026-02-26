@@ -59,8 +59,9 @@ export async function runResearchPipeline(
   }
 
   // Combine all inputs into a single object
+  const textInput = idea.inputs.find((i) => i.type === "TEXT")?.content;
   const rawInput: IdeaInputData = {
-    text: idea.inputs.find((i) => i.type === "TEXT")?.content || undefined,
+    text: idea.originalPrompt || textInput || undefined,
     transcription:
       idea.inputs.find((i) => i.type === "AUDIO")?.transcription || undefined,
     ocrText: idea.inputs.find((i) => i.type === "IMAGE")?.ocrText || undefined,

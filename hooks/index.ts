@@ -26,6 +26,7 @@ export const queryKeys = {
       [...queryKeys.ideas.all, "list", params] as const,
     detail: (id: string) => [...queryKeys.ideas.all, "detail", id] as const,
     research: (id: string) => [...queryKeys.ideas.all, "research", id] as const,
+    prompt: (id: string) => [...queryKeys.ideas.all, "prompt", id] as const,
   },
   startups: {
     all: ["startups"] as const,
@@ -85,6 +86,15 @@ export function useIdeaResearch(id: string) {
     queryFn: () => api.queries.ideas.getResearchPackets(id),
     enabled: !!id,
     staleTime: 10 * 60 * 1000, // 10 minutes - research doesn't change often
+  });
+}
+
+export function useIdeaPromptHistory(id: string) {
+  return useQuery({
+    queryKey: queryKeys.ideas.prompt(id),
+    queryFn: () => api.queries.ideas.getPromptHistory(id),
+    enabled: !!id,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -185,6 +195,31 @@ export function useRerunResearch() {
     },
     onError: (error: Error) => {
       toast.error(error.message || "Failed to restart research");
+    },
+  });
+}
+
+export function useUpdateIdeaPrompt() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      prompt,
+      triggerResearch,
+    }: {
+      id: string;
+      prompt: string;
+      triggerResearch: boolean;
+    }) => api.mutations.ideas.updatePrompt(id, { prompt, triggerResearch }),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.ideas.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.ideas.detail(id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.ideas.prompt(id) });
+      toast.success("Idea prompt updated");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to update prompt");
     },
   });
 }
