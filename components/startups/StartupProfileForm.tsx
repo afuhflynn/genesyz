@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { LocationSelector, type LocationContext } from "@/components/location";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -81,6 +82,15 @@ function generateSlug(name: string): string {
     .slice(0, 100);
 }
 
+function formatLocationValue(location: LocationContext | null): string {
+  if (!location) return "";
+  if (location.isGlobal) return "Global";
+
+  return [location.city, location.region, location.country]
+    .filter(Boolean)
+    .join(", ");
+}
+
 export function StartupProfileForm({
   ideaId,
   ideaTitle,
@@ -91,6 +101,9 @@ export function StartupProfileForm({
   const router = useRouter();
   const [slugChecking, setSlugChecking] = useState(false);
   const [slugAvailable, setSlugAvailable] = useState<boolean | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState<LocationContext | null>(
+    null,
+  );
 
   const createMutation = useCreateStartup();
   const updateMutation = useUpdateStartup();
@@ -157,7 +170,8 @@ export function StartupProfileForm({
       stage: data.stage,
       targetMarket: data.targetMarket,
       website: data.website || undefined,
-      location: data.location || undefined,
+      location:
+        formatLocationValue(selectedLocation) || data.location || undefined,
     };
 
     if (isEditing) {
@@ -390,8 +404,20 @@ export function StartupProfileForm({
                   <FormItem>
                     <FormLabel>Startup Location</FormLabel>
                     <FormControl>
-                      <Input placeholder="San Francisco, CA" {...field} />
+                      <LocationSelector
+                        id="startup-location-selector"
+                        value={selectedLocation}
+                        onChange={(location) => {
+                          setSelectedLocation(location);
+                          field.onChange(formatLocationValue(location));
+                        }}
+                      />
                     </FormControl>
+                    <FormDescription>
+                      {field.value
+                        ? `Selected: ${field.value}`
+                        : "Pick a country, then region/state and city (optional)."}
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
