@@ -3,6 +3,17 @@
 import { format } from "date-fns";
 import { ArrowLeft, Target, TrendingDown, TrendingUp } from "lucide-react";
 import Link from "next/link";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -48,6 +59,20 @@ export function MetricsDashboard({ slug }: MetricsDashboardProps) {
   const primaryMetricLabel = startup.primaryMetricType
     .replace(/_/g, " ")
     .toLowerCase();
+
+  // Prepare chart data (reverse to show chronological order)
+  const metricChartData = [...latestUpdates].reverse().map((update) => ({
+    week: `W${update.weekNumber}`,
+    value: update.primaryMetricValue,
+    delta: update.primaryMetricDelta,
+    fullDate: format(new Date(update.weekStart), "MMM d"),
+  }));
+
+  const conversationsChartData = [...latestUpdates].reverse().map((update) => ({
+    week: `W${update.weekNumber}`,
+    value: update.usersTalkedTo,
+    fullDate: format(new Date(update.weekStart), "MMM d"),
+  }));
 
   const calculateTrend = () => {
     if (latestUpdates.length < 2) return null;
@@ -140,45 +165,132 @@ export function MetricsDashboard({ slug }: MetricsDashboardProps) {
         </Card>
       </div>
 
-      {/* Primary Metric History */}
+      {/* Primary Metric History - Chart */}
       <Card>
         <CardHeader>
           <CardTitle>{primaryMetricLabel} History</CardTitle>
         </CardHeader>
         <CardContent>
           {latestUpdates.length > 0 ? (
-            <div className="space-y-4">
-              {latestUpdates.map((update) => (
-                <div
-                  key={update.id}
-                  className="flex items-center justify-between rounded-lg border p-4"
-                >
-                  <div>
-                    <p className="font-medium">Week {update.weekNumber}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {format(new Date(update.weekStart), "MMM d")} -{" "}
-                      {format(new Date(update.weekEnd), "MMM d, yyyy")}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xl font-bold">
-                      {update.primaryMetricValue}
-                    </p>
-                    {update.primaryMetricDelta !== null && (
-                      <p
-                        className={`text-sm ${
-                          update.primaryMetricDelta >= 0
-                            ? "text-green-600"
-                            : "text-red-600"
-                        }`}
-                      >
-                        {update.primaryMetricDelta >= 0 ? "+" : ""}
-                        {update.primaryMetricDelta.toFixed(1)}
-                      </p>
-                    )}
-                  </div>
+            <div className="space-y-6">
+              {/* Chart */}
+              {metricChartData.length > 1 && (
+                <div className="h-64 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={metricChartData}>
+                      <defs>
+                        <linearGradient
+                          id="colorValue"
+                          x1="0"
+                          y1="0"
+                          x2="0"
+                          y2="1"
+                        >
+                          <stop
+                            offset="5%"
+                            stopColor="#3b82f6"
+                            stopOpacity={0.3}
+                          />
+                          <stop
+                            offset="95%"
+                            stopColor="#3b82f6"
+                            stopOpacity={0}
+                          />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        className="stroke-muted"
+                      />
+                      <XAxis
+                        dataKey="week"
+                        className="text-xs"
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <YAxis
+                        className="text-xs"
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <Tooltip
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            const data = payload[0].payload;
+                            return (
+                              <div className="rounded-lg border bg-background p-2 shadow-md">
+                                <p className="text-sm font-medium">
+                                  {data.fullDate}
+                                </p>
+                                <p className="text-lg font-bold text-primary">
+                                  {data.value}
+                                </p>
+                                {data.delta !== null &&
+                                  data.delta !== undefined && (
+                                    <p
+                                      className={`text-xs ${
+                                        data.delta >= 0
+                                          ? "text-green-600"
+                                          : "text-red-600"
+                                      }`}
+                                    >
+                                      {data.delta >= 0 ? "+" : ""}
+                                      {data.delta.toFixed(1)}%
+                                    </p>
+                                  )}
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="value"
+                        stroke="#3b82f6"
+                        strokeWidth={2}
+                        fillOpacity={1}
+                        fill="url(#colorValue)"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
                 </div>
-              ))}
+              )}
+
+              {/* List */}
+              <div className="space-y-2">
+                {latestUpdates.map((update) => (
+                  <div
+                    key={update.id}
+                    className="flex items-center justify-between rounded-lg border p-3"
+                  >
+                    <div>
+                      <p className="font-medium">Week {update.weekNumber}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {format(new Date(update.weekStart), "MMM d")} -{" "}
+                        {format(new Date(update.weekEnd), "MMM d, yyyy")}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xl font-bold">
+                        {update.primaryMetricValue}
+                      </p>
+                      {update.primaryMetricDelta !== null && (
+                        <p
+                          className={`text-sm ${
+                            update.primaryMetricDelta >= 0
+                              ? "text-green-600"
+                              : "text-red-600"
+                          }`}
+                        >
+                          {update.primaryMetricDelta >= 0 ? "+" : ""}
+                          {update.primaryMetricDelta.toFixed(1)}%
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           ) : (
             <div className="py-8 text-center text-muted-foreground">
@@ -192,33 +304,89 @@ export function MetricsDashboard({ slug }: MetricsDashboardProps) {
         </CardContent>
       </Card>
 
-      {/* Users Talked To */}
+      {/* User Conversations - Chart */}
       <Card>
         <CardHeader>
           <CardTitle>User Conversations</CardTitle>
         </CardHeader>
         <CardContent>
           {latestUpdates.length > 0 ? (
-            <div className="space-y-4">
-              {latestUpdates.map((update) => (
-                <div
-                  key={`users-${update.id}`}
-                  className="flex items-center justify-between rounded-lg border p-4"
-                >
-                  <div>
-                    <p className="font-medium">Week {update.weekNumber}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {format(new Date(update.weekStart), "MMM d, yyyy")}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xl font-bold">{update.usersTalkedTo}</p>
-                    <p className="text-sm text-muted-foreground">
-                      conversations
-                    </p>
-                  </div>
+            <div className="space-y-6">
+              {/* Chart */}
+              {conversationsChartData.length > 1 && (
+                <div className="h-48 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={conversationsChartData}>
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        className="stroke-muted"
+                      />
+                      <XAxis
+                        dataKey="week"
+                        className="text-xs"
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <YAxis
+                        className="text-xs"
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <Tooltip
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            const data = payload[0].payload;
+                            return (
+                              <div className="rounded-lg border bg-background p-2 shadow-md">
+                                <p className="text-sm font-medium">
+                                  {data.fullDate}
+                                </p>
+                                <p className="text-lg font-bold text-primary">
+                                  {data.value} conversations
+                                </p>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="value"
+                        stroke="#10b981"
+                        strokeWidth={2}
+                        dot={{ fill: "#10b981", strokeWidth: 2 }}
+                        activeDot={{ r: 6 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
                 </div>
-              ))}
+              )}
+
+              {/* List */}
+              <div className="space-y-2">
+                {latestUpdates.map((update) => (
+                  <div
+                    key={`users-${update.id}`}
+                    className="flex items-center justify-between rounded-lg border p-3"
+                  >
+                    <div>
+                      <p className="font-medium">Week {update.weekNumber}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {format(new Date(update.weekStart), "MMM d, yyyy")}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xl font-bold">
+                        {update.usersTalkedTo}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        conversations
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           ) : (
             <div className="py-8 text-center text-muted-foreground">
