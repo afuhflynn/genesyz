@@ -44,6 +44,7 @@ model User {
   entitlements Entitlement[]
   auditLogs    AuditLog[]
   startups     Startup[]
+  accelerators Accelerator[]
 
   @@map("users")
 }
@@ -514,6 +515,9 @@ model Startup {
   weeklyUpdates WeeklyUpdate[]
   metrics       StartupMetric[]
   goals         StartupGoal[]
+  opportunities StartupOpportunity[]
+  cohortStartups CohortStartup[]
+  acceleratorApplications AcceleratorApplication[]
 
   @@index([userId])
   @@index([slug])
@@ -559,6 +563,11 @@ model WeeklyUpdate {
   aiAnalysis        Json?
   aiVerdict         String?
   aiRecommendations Json?
+
+  // Editability
+  editableUntil DateTime?  // Can be edited until this time (createdAt + 3 days)
+  isLocked      Boolean   @default(false)
+  lockedAt      DateTime?
 
   createdAt DateTime @default(now())
 
@@ -617,11 +626,13 @@ model StartupGoal {
   content   String
   completed Boolean   @default(false)
   dueDate   DateTime?
+  priority  Int       @default(0)  // 1=Top Priority, 2=Secondary, 3=Third, 0=Normal
   createdAt DateTime  @default(now())
 
   startup Startup @relation(fields: [startupId], references: [id], onDelete: Cascade)
 
   @@index([startupId])
+  @@index([priority])
   @@map("startup_goals")
 }
 
@@ -699,4 +710,181 @@ enum MetricFormat {
   CURRENCY
   PERCENTAGE
   NUMBER
+}
+
+// ===========================================
+// Startup Opportunities
+// ===========================================
+
+enum OpportunityCategory {
+  FELLOWSHIP
+  SCHOLARSHIP
+  FUNDING
+  COMPETITION
+  ACCELERATOR
+  GRANT
+  MENTORSHIP
+  OTHER
+}
+
+enum OpportunityStatus {
+  DISCOVERED
+  BOOKMARKED
+  TO_APPLY
+  APPLIED
+  INTERVIEWING
+  ACCEPTED
+  REJECTED
+}
+
+model StartupOpportunity {
+  id            String   @id @default(cuid())
+  startupId     String
+  title         String
+  description   String   @db.Text
+  url           String
+  category      OpportunityCategory
+  eligibility   String?  @db.Text
+  benefits      String?  @db.Text
+  deadline      DateTime?
+  
+  // Tracking
+  status        OpportunityStatus @default(DISCOVERED)
+  appliedAt     DateTime?
+  notes         String?  @db.Text
+  
+  // Source
+  source        String   @default("manual") // manual, ai_generated
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  startup       Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  
+  @@index([startupId])
+  @@index([status])
+  @@index([category])
+  @@map("startup_opportunities")
+}
+
+// ===========================================
+// Accelerator Program
+// ===========================================
+
+model Accelerator {
+  id            String   @id @default(cuid())
+  name          String
+  slug          String   @unique
+  
+  // Description
+  description   String?  @db.Text
+  programType   String   @default("accelerator") // incubator, accelerator, cohort_based
+  
+  // Branding
+  logoUrl       String?
+  website       String?
+  contactEmail  String?
+  
+  // Program Details
+  durationWeeks Int?
+  benefits      String?  @db.Text
+  requirements  String?  @db.Text
+  maxStartups  Int?
+  fundingAmount String?
+  
+  // Visibility
+  isPublic     Boolean  @default(true)
+  isActive     Boolean  @default(true)
+  
+  // Owner
+  ownerId       String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  owner         User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  cohorts       Cohort[]
+  events        AcceleratorEvent[]
+  applications  AcceleratorApplication[]
+  
+  @@index([slug])
+  @@index([ownerId])
+  @@index([isPublic])
+  @@map("accelerators")
+}
+
+model Cohort {
+  id              String   @id @default(cuid())
+  acceleratorId   String
+  name            String   // "Winter 2026"
+  description     String?
+  startDate       DateTime
+  endDate         DateTime
+  isActive        Boolean  @default(true)
+  
+  accelerator     Accelerator @relation(fields: [acceleratorId], references: [id], onDelete: Cascade)
+  startups        CohortStartup[]
+  events          AcceleratorEvent[]
+  
+  @@index([acceleratorId])
+  @@map("cohorts")
+}
+
+model CohortStartup {
+  cohortId      String
+  startupId     String
+  joinedAt      DateTime @default(now())
+  
+  cohort        Cohort   @relation(fields: [cohortId], references: [id], onDelete: Cascade)
+  startup       Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  
+  @@id([cohortId, startupId])
+  @@index([startupId])
+  @@map("cohort_startups")
+}
+
+model AcceleratorEvent {
+  id            String   @id @default(cuid())
+  cohortId      String?
+  acceleratorId String
+  
+  title         String
+  description   String?  @db.Text
+  eventType     String   // mentor_session, office_hours, demo_day, workshop, networking
+  scheduledAt   DateTime
+  duration      Int      // minutes
+  location      String?  // physical, virtual, hybrid
+  meetingUrl    String?
+  
+  cohort        Cohort?   @relation(fields: [cohortId], references: [id], onDelete: Cascade)
+  accelerator   Accelerator @relation(fields: [acceleratorId], references: [id], onDelete: Cascade)
+  
+  @@index([acceleratorId])
+  @@index([cohortId])
+  @@index([scheduledAt])
+  @@map("accelerator_events")
+}
+
+model AcceleratorApplication {
+  id            String   @id @default(cuid())
+  acceleratorId String
+  startupId     String?
+  founderEmail  String
+  founderName   String
+  founderPhone  String?
+  
+  // Application
+  status        String   @default("pending") // pending, accepted, waitlisted, rejected
+  notes         String?  @db.Text
+  answers       Json?    // Custom application answers
+  
+  // Timestamps
+  appliedAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  accelerator   Accelerator @relation(fields: [acceleratorId], references: [id], onDelete: Cascade)
+  startup       Startup?    @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  
+  @@index([acceleratorId])
+  @@index([startupId])
+  @@map("accelerator_applications")
 }
