@@ -39,6 +39,9 @@ export default async function AcceleratorPage({
       cohorts: {
         where: { isActive: true },
         orderBy: { startDate: "desc" },
+        include: {
+          _count: { select: { startups: true } },
+        },
       },
       _count: { select: { applications: true, cohorts: true } },
     },
