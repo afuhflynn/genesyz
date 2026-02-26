@@ -36,8 +36,174 @@ export const ideaChannel = channel((ideaId: string) => `idea:${ideaId}`)
             MARKET_RESEARCH: z.object({
               content: z.object({
                 marketSize: z.object({
-                  tam: z.number(),
-                  growthRate: z.number(),
+                  global: z.object({
+                    location: z.string(),
+                    tam: z.object({
+                      value: z.string(),
+                      usdValue: z.string(),
+                      currency: z.string(),
+                      isEstimated: z.boolean(),
+                      methodology: z.string(),
+                      confidence: z.enum(["high", "medium", "low"]).optional(),
+                      year: z.number().optional(),
+                    }),
+                    sam: z.object({
+                      value: z.string(),
+                      usdValue: z.string(),
+                      currency: z.string(),
+                      isEstimated: z.boolean(),
+                      methodology: z.string(),
+                      confidence: z.enum(["high", "medium", "low"]).optional(),
+                      year: z.number().optional(),
+                    }),
+                    som: z.object({
+                      value: z.string(),
+                      usdValue: z.string(),
+                      currency: z.string(),
+                      isEstimated: z.boolean(),
+                      methodology: z.string(),
+                      confidence: z.enum(["high", "medium", "low"]).optional(),
+                      year: z.number().optional(),
+                    }),
+                    marketCap: z
+                      .object({
+                        globalMarketCap: z.object({
+                          value: z.string(),
+                          usdValue: z.string(),
+                          currency: z.string(),
+                          isEstimated: z.boolean(),
+                          methodology: z.string(),
+                          confidence: z
+                            .enum(["high", "medium", "low"])
+                            .optional(),
+                          year: z.number().optional(),
+                        }),
+                        industryMarketCap: z.object({
+                          value: z.string(),
+                          usdValue: z.string(),
+                          currency: z.string(),
+                          isEstimated: z.boolean(),
+                          methodology: z.string(),
+                          confidence: z
+                            .enum(["high", "medium", "low"])
+                            .optional(),
+                          year: z.number().optional(),
+                        }),
+                        potentialStartupValuation: z.object({
+                          value: z.string(),
+                          usdValue: z.string(),
+                          currency: z.string(),
+                          isEstimated: z.boolean(),
+                          methodology: z.string(),
+                          confidence: z
+                            .enum(["high", "medium", "low"])
+                            .optional(),
+                          year: z.number().optional(),
+                        }),
+                        methodology: z.string(),
+                      })
+                      .optional(),
+                    growthRate: z.object({
+                      value: z.string(),
+                      methodology: z.string(),
+                      period: z.string().optional(),
+                    }),
+                    confidence: z.enum(["high", "medium", "low"]),
+                    dataSource: z.string().optional(),
+                  }),
+                  regional: z
+                    .object({
+                      location: z.string(),
+                      tam: z.object({
+                        value: z.string(),
+                        usdValue: z.string(),
+                        currency: z.string(),
+                        isEstimated: z.boolean(),
+                        methodology: z.string(),
+                        confidence: z
+                          .enum(["high", "medium", "low"])
+                          .optional(),
+                        year: z.number().optional(),
+                      }),
+                      sam: z.object({
+                        value: z.string(),
+                        usdValue: z.string(),
+                        currency: z.string(),
+                        isEstimated: z.boolean(),
+                        methodology: z.string(),
+                        confidence: z
+                          .enum(["high", "medium", "low"])
+                          .optional(),
+                        year: z.number().optional(),
+                      }),
+                      som: z.object({
+                        value: z.string(),
+                        usdValue: z.string(),
+                        currency: z.string(),
+                        isEstimated: z.boolean(),
+                        methodology: z.string(),
+                        confidence: z
+                          .enum(["high", "medium", "low"])
+                          .optional(),
+                        year: z.number().optional(),
+                      }),
+                      growthRate: z.object({
+                        value: z.string(),
+                        methodology: z.string(),
+                        period: z.string().optional(),
+                      }),
+                      confidence: z.enum(["high", "medium", "low"]),
+                      dataSource: z.string().optional(),
+                    })
+                    .optional(),
+                  local: z
+                    .object({
+                      location: z.string(),
+                      tam: z.object({
+                        value: z.string(),
+                        usdValue: z.string(),
+                        currency: z.string(),
+                        isEstimated: z.boolean(),
+                        methodology: z.string(),
+                        confidence: z
+                          .enum(["high", "medium", "low"])
+                          .optional(),
+                        year: z.number().optional(),
+                      }),
+                      sam: z.object({
+                        value: z.string(),
+                        usdValue: z.string(),
+                        currency: z.string(),
+                        isEstimated: z.boolean(),
+                        methodology: z.string(),
+                        confidence: z
+                          .enum(["high", "medium", "low"])
+                          .optional(),
+                        year: z.number().optional(),
+                      }),
+                      som: z.object({
+                        value: z.string(),
+                        usdValue: z.string(),
+                        currency: z.string(),
+                        isEstimated: z.boolean(),
+                        methodology: z.string(),
+                        confidence: z
+                          .enum(["high", "medium", "low"])
+                          .optional(),
+                        year: z.number().optional(),
+                      }),
+                      growthRate: z.object({
+                        value: z.string(),
+                        methodology: z.string(),
+                        period: z.string().optional(),
+                      }),
+                      confidence: z.enum(["high", "medium", "low"]),
+                      dataSource: z.string().optional(),
+                    })
+                    .optional(),
+                  year: z.number().optional(),
+                  currency: z.string().optional(),
+                  methodology: z.string(),
                 }),
                 competitors: z.array(
                   z.object({
@@ -47,6 +213,9 @@ export const ideaChannel = channel((ideaId: string) => `idea:${ideaId}`)
                     weaknesses: z.array(z.string()),
                   }),
                 ),
+                marketTrends: z.array(z.string()),
+                barriers: z.array(z.string()),
+                opportunities: z.array(z.string()),
               }),
               confidence: z.number(),
             }),
@@ -81,8 +250,174 @@ export const ideaChannel = channel((ideaId: string) => `idea:${ideaId}`)
             DEEP_RESEARCH: z.object({
               content: z.object({
                 marketSize: z.object({
-                  tam: z.number(),
-                  growthRate: z.number(),
+                  global: z.object({
+                    location: z.string(),
+                    tam: z.object({
+                      value: z.string(),
+                      usdValue: z.string(),
+                      currency: z.string(),
+                      isEstimated: z.boolean(),
+                      methodology: z.string(),
+                      confidence: z.enum(["high", "medium", "low"]).optional(),
+                      year: z.number().optional(),
+                    }),
+                    sam: z.object({
+                      value: z.string(),
+                      usdValue: z.string(),
+                      currency: z.string(),
+                      isEstimated: z.boolean(),
+                      methodology: z.string(),
+                      confidence: z.enum(["high", "medium", "low"]).optional(),
+                      year: z.number().optional(),
+                    }),
+                    som: z.object({
+                      value: z.string(),
+                      usdValue: z.string(),
+                      currency: z.string(),
+                      isEstimated: z.boolean(),
+                      methodology: z.string(),
+                      confidence: z.enum(["high", "medium", "low"]).optional(),
+                      year: z.number().optional(),
+                    }),
+                    marketCap: z
+                      .object({
+                        globalMarketCap: z.object({
+                          value: z.string(),
+                          usdValue: z.string(),
+                          currency: z.string(),
+                          isEstimated: z.boolean(),
+                          methodology: z.string(),
+                          confidence: z
+                            .enum(["high", "medium", "low"])
+                            .optional(),
+                          year: z.number().optional(),
+                        }),
+                        industryMarketCap: z.object({
+                          value: z.string(),
+                          usdValue: z.string(),
+                          currency: z.string(),
+                          isEstimated: z.boolean(),
+                          methodology: z.string(),
+                          confidence: z
+                            .enum(["high", "medium", "low"])
+                            .optional(),
+                          year: z.number().optional(),
+                        }),
+                        potentialStartupValuation: z.object({
+                          value: z.string(),
+                          usdValue: z.string(),
+                          currency: z.string(),
+                          isEstimated: z.boolean(),
+                          methodology: z.string(),
+                          confidence: z
+                            .enum(["high", "medium", "low"])
+                            .optional(),
+                          year: z.number().optional(),
+                        }),
+                        methodology: z.string(),
+                      })
+                      .optional(),
+                    growthRate: z.object({
+                      value: z.string(),
+                      methodology: z.string(),
+                      period: z.string().optional(),
+                    }),
+                    confidence: z.enum(["high", "medium", "low"]),
+                    dataSource: z.string().optional(),
+                  }),
+                  regional: z
+                    .object({
+                      location: z.string(),
+                      tam: z.object({
+                        value: z.string(),
+                        usdValue: z.string(),
+                        currency: z.string(),
+                        isEstimated: z.boolean(),
+                        methodology: z.string(),
+                        confidence: z
+                          .enum(["high", "medium", "low"])
+                          .optional(),
+                        year: z.number().optional(),
+                      }),
+                      sam: z.object({
+                        value: z.string(),
+                        usdValue: z.string(),
+                        currency: z.string(),
+                        isEstimated: z.boolean(),
+                        methodology: z.string(),
+                        confidence: z
+                          .enum(["high", "medium", "low"])
+                          .optional(),
+                        year: z.number().optional(),
+                      }),
+                      som: z.object({
+                        value: z.string(),
+                        usdValue: z.string(),
+                        currency: z.string(),
+                        isEstimated: z.boolean(),
+                        methodology: z.string(),
+                        confidence: z
+                          .enum(["high", "medium", "low"])
+                          .optional(),
+                        year: z.number().optional(),
+                      }),
+                      growthRate: z.object({
+                        value: z.string(),
+                        methodology: z.string(),
+                        period: z.string().optional(),
+                      }),
+                      confidence: z.enum(["high", "medium", "low"]),
+                      dataSource: z.string().optional(),
+                    })
+                    .optional(),
+                  local: z
+                    .object({
+                      location: z.string(),
+                      tam: z.object({
+                        value: z.string(),
+                        usdValue: z.string(),
+                        currency: z.string(),
+                        isEstimated: z.boolean(),
+                        methodology: z.string(),
+                        confidence: z
+                          .enum(["high", "medium", "low"])
+                          .optional(),
+                        year: z.number().optional(),
+                      }),
+                      sam: z.object({
+                        value: z.string(),
+                        usdValue: z.string(),
+                        currency: z.string(),
+                        isEstimated: z.boolean(),
+                        methodology: z.string(),
+                        confidence: z
+                          .enum(["high", "medium", "low"])
+                          .optional(),
+                        year: z.number().optional(),
+                      }),
+                      som: z.object({
+                        value: z.string(),
+                        usdValue: z.string(),
+                        currency: z.string(),
+                        isEstimated: z.boolean(),
+                        methodology: z.string(),
+                        confidence: z
+                          .enum(["high", "medium", "low"])
+                          .optional(),
+                        year: z.number().optional(),
+                      }),
+                      growthRate: z.object({
+                        value: z.string(),
+                        methodology: z.string(),
+                        period: z.string().optional(),
+                      }),
+                      confidence: z.enum(["high", "medium", "low"]),
+                      dataSource: z.string().optional(),
+                    })
+                    .optional(),
+                  year: z.number().optional(),
+                  currency: z.string().optional(),
+                  methodology: z.string(),
                 }),
                 competitors: z.array(
                   z.object({
@@ -92,6 +427,9 @@ export const ideaChannel = channel((ideaId: string) => `idea:${ideaId}`)
                     weaknesses: z.array(z.string()),
                   }),
                 ),
+                marketTrends: z.array(z.string()),
+                barriers: z.array(z.string()),
+                opportunities: z.array(z.string()),
               }),
               confidence: z.number(),
             }),
