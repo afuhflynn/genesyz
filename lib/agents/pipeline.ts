@@ -11,6 +11,7 @@ import { runTrendAnalysisAgent } from "./trend-analysis";
 import type {
   AgentInput,
   AgentOutput,
+  DeepResearchOutput,
   IdeaInputData,
   Synthesis,
 } from "./types";
@@ -205,7 +206,7 @@ export async function runResearchPipeline(
       },
     });
     console.log(`[Pipeline] Running DeepResearchAgent for idea ${ideaId}`);
-    const deepResearchOutput = await runDeepResearchAgent({
+    const deepResearchOutput: DeepResearchOutput = await runDeepResearchAgent({
       ...baseInput,
       previousOutputs: outputs as Record<ResearchAgentType, AgentOutput>,
     });

@@ -2,9 +2,12 @@
 
 import { useInngestSubscription } from "@inngest/realtime/hooks";
 import {
+  AlertCircle,
   AlertTriangle,
   ArrowLeft,
   Calendar,
+  Check,
+  Copy,
   Download,
   MoreVertical,
   RefreshCw,
@@ -13,6 +16,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useQueryStates } from "nuqs";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { fetchRealtimeSubscriptionToken } from "@/app/api/inngest/token/_actions/fetchRealtimeSubscriptionToken";
 import { GuideChat } from "@/components/guide";
 import { IdeaDetailSkeleton } from "@/components/idea/idea-detail-skeleton";
@@ -75,6 +79,8 @@ export default function IdeaDetailPage() {
   const [researchProgress, setResearchProgress] = useState<IResearchProgress[]>(
     [],
   );
+  const [copiedAll, setCopiedAll] = useState(false);
+  const [copiedPacketId, setCopiedPacketId] = useState<string | null>(null);
 
   useEffect(() => {
     if (idea) {
@@ -362,23 +368,100 @@ export default function IdeaDetailPage() {
                     <CardTitle>Market Size</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-3 gap-4">
                       <div>
                         <p className="text-sm font-medium text-muted-foreground">
                           TAM
                         </p>
                         <p className="text-lg font-bold">
-                          {market?.marketSize?.tam?.value}
+                          {market?.marketSize?.regional?.tam?.usdValue ||
+                            market?.marketSize?.global?.tam?.usdValue ||
+                            market?.marketSize?.tam?.value ||
+                            "N/A"}
                         </p>
+                        {market?.marketSize?.regional?.tam?.value ||
+                        market?.marketSize?.global?.tam?.value ? (
+                          <p className="text-xs text-muted-foreground">
+                            {market?.marketSize?.regional?.tam?.value ||
+                              market?.marketSize?.global?.tam?.value}{" "}
+                            {market?.marketSize?.regional?.tam?.currency ||
+                              market?.marketSize?.global?.tam?.currency ||
+                              ""}
+                          </p>
+                        ) : null}
+                        {(market?.marketSize?.regional?.tam?.isEstimated ||
+                          market?.marketSize?.global?.tam?.isEstimated) && (
+                          <Badge variant="secondary" className="mt-1 text-xs">
+                            <AlertCircle className="h-3 w-3 mr-1" />
+                            Estimated
+                          </Badge>
+                        )}
                       </div>
                       <div>
                         <p className="text-sm font-medium text-muted-foreground">
-                          Growth
+                          SAM
                         </p>
                         <p className="text-lg font-bold">
-                          {market?.marketSize?.growthRate?.value}
+                          {market?.marketSize?.regional?.sam?.usdValue ||
+                            market?.marketSize?.global?.sam?.usdValue ||
+                            "N/A"}
                         </p>
+                        {market?.marketSize?.regional?.sam?.value ||
+                        market?.marketSize?.global?.sam?.value ? (
+                          <p className="text-xs text-muted-foreground">
+                            {market?.marketSize?.regional?.sam?.value ||
+                              market?.marketSize?.global?.sam?.value}{" "}
+                            {market?.marketSize?.regional?.sam?.currency ||
+                              market?.marketSize?.global?.sam?.currency ||
+                              ""}
+                          </p>
+                        ) : null}
+                        {(market?.marketSize?.regional?.sam?.isEstimated ||
+                          market?.marketSize?.global?.sam?.isEstimated) && (
+                          <Badge variant="secondary" className="mt-1 text-xs">
+                            <AlertCircle className="h-3 w-3 mr-1" />
+                            Estimated
+                          </Badge>
+                        )}
                       </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">
+                          SOM
+                        </p>
+                        <p className="text-lg font-bold">
+                          {market?.marketSize?.regional?.som?.usdValue ||
+                            market?.marketSize?.global?.som?.usdValue ||
+                            "N/A"}
+                        </p>
+                        {market?.marketSize?.regional?.som?.value ||
+                        market?.marketSize?.global?.som?.value ? (
+                          <p className="text-xs text-muted-foreground">
+                            {market?.marketSize?.regional?.som?.value ||
+                              market?.marketSize?.global?.som?.value}{" "}
+                            {market?.marketSize?.regional?.som?.currency ||
+                              market?.marketSize?.global?.som?.currency ||
+                              ""}
+                          </p>
+                        ) : null}
+                        {(market?.marketSize?.regional?.som?.isEstimated ||
+                          market?.marketSize?.global?.som?.isEstimated) && (
+                          <Badge variant="secondary" className="mt-1 text-xs">
+                            <AlertCircle className="h-3 w-3 mr-1" />
+                            Estimated
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 pt-2 border-t">
+                      <p className="text-sm font-medium text-muted-foreground">
+                        Growth:
+                      </p>
+                      <p className="text-sm font-medium">
+                        {market?.marketSize?.regional?.growthRate?.value ||
+                          market?.marketSize?.global?.growthRate?.value ||
+                          market?.marketSize?.growthRate?.value ||
+                          "N/A"}
+                      </p>
                     </div>
                     <div>
                       <p className="text-sm font-medium text-muted-foreground mb-2">
@@ -392,6 +475,73 @@ export default function IdeaDetailPage() {
                     </div>
                   </CardContent>
                 </Card>
+
+                {(market?.marketSize?.regional?.marketCap ||
+                  market?.marketSize?.global?.marketCap) && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Market Capitalization</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-3 gap-4">
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">
+                            Industry
+                          </p>
+                          <p className="text-lg font-bold">
+                            {market?.marketSize?.regional?.marketCap
+                              ?.industryMarketCap?.usdValue ||
+                              market?.marketSize?.global?.marketCap
+                                ?.industryMarketCap?.usdValue ||
+                              "N/A"}
+                          </p>
+                          {(market?.marketSize?.regional?.marketCap
+                            ?.industryMarketCap?.isEstimated ||
+                            market?.marketSize?.global?.marketCap
+                              ?.industryMarketCap?.isEstimated) && (
+                            <Badge variant="secondary" className="mt-1 text-xs">
+                              <AlertCircle className="h-3 w-3 mr-1" />
+                              Estimated
+                            </Badge>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">
+                            Global
+                          </p>
+                          <p className="text-lg font-bold">
+                            {market?.marketSize?.regional?.marketCap
+                              ?.globalMarketCap?.usdValue ||
+                              market?.marketSize?.global?.marketCap
+                                ?.globalMarketCap?.usdValue ||
+                              "N/A"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">
+                            Potential Valuation
+                          </p>
+                          <p className="text-lg font-bold">
+                            {market?.marketSize?.regional?.marketCap
+                              ?.potentialStartupValuation?.usdValue ||
+                              market?.marketSize?.global?.marketCap
+                                ?.potentialStartupValuation?.usdValue ||
+                              "N/A"}
+                          </p>
+                          {(market?.marketSize?.regional?.marketCap
+                            ?.potentialStartupValuation?.isEstimated ||
+                            market?.marketSize?.global?.marketCap
+                              ?.potentialStartupValuation?.isEstimated) && (
+                            <Badge variant="secondary" className="mt-1 text-xs">
+                              <AlertCircle className="h-3 w-3 mr-1" />
+                              Estimated
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
 
                 <Card>
                   <CardHeader>
@@ -524,18 +674,81 @@ export default function IdeaDetailPage() {
             <TabsContent value="raw">
               <Card className="w-full!">
                 <CardHeader>
-                  <CardTitle>Raw Agent Outputs</CardTitle>
-                  <CardDescription>
-                    Direct JSON output from the research agents
-                  </CardDescription>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Raw Agent Outputs</CardTitle>
+                      <CardDescription>
+                        Direct JSON output from the research agents
+                      </CardDescription>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const rawData = JSON.stringify(
+                          researchPackets.map((p) => ({
+                            agentType: p.agentType,
+                            content: p.content,
+                          })),
+                          null,
+                          2,
+                        );
+                        navigator.clipboard.writeText(rawData);
+                        toast.success("Copied to clipboard", {
+                          description: "Raw agent outputs copied successfully",
+                        });
+                        setCopiedAll(true);
+                        setTimeout(() => setCopiedAll(false), 2000);
+                      }}
+                    >
+                      {copiedAll ? (
+                        <>
+                          <Check className="mr-2 h-4 w-4" />
+                          Copied
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="mr-2 h-4 w-4" />
+                          Copy All
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent className="w-full!">
                   <Accordion type="single" collapsible className="w-full">
                     {researchPackets.map((packet) => (
                       <AccordionItem key={packet.id} value={packet.id}>
-                        <AccordionTrigger className="font-mono text-sm">
-                          {packet.agentType}
-                        </AccordionTrigger>
+                        <div className="relative">
+                          <AccordionTrigger className="pr-12 font-mono text-sm flex-row-reverse justify-end gap-2">
+                            <span>{packet.agentType}</span>
+                          </AccordionTrigger>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="absolute top-1/2 right-10 h-8 w-8 -translate-y-1/2"
+                            onClick={() => {
+                              const content = JSON.stringify(
+                                packet.content,
+                                null,
+                                2,
+                              );
+                              navigator.clipboard.writeText(content);
+                              toast.success("Copied to clipboard", {
+                                description: `${packet.agentType} data copied`,
+                              });
+                              setCopiedPacketId(packet.id);
+                              setTimeout(() => setCopiedPacketId(null), 2000);
+                            }}
+                          >
+                            {copiedPacketId === packet.id ? (
+                              <Check className="h-4 w-4" />
+                            ) : (
+                              <Copy className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
                         <AccordionContent>
                           <ScrollArea className="h-100 w-full rounded-md border p-4">
                             <pre className="text-xs font-mono">

@@ -88,22 +88,56 @@ export type InterpretedIdea = z.infer<typeof InterpretedIdeaSchema>;
 // ===========================================
 // Market Research Agent
 // ===========================================
+// Market Research Agent
+// ===========================================
 
 export const MarketSizeDataSchema = z.object({
-  value: z.string(),
-  methodology: z.string(),
-  confidence: z.enum(["high", "medium", "low"]).optional(),
-  year: z.number().optional(),
-  currency: z.string().optional(),
+  value: z.string().describe("Market size value in local currency"),
+  usdValue: z
+    .string()
+    .describe("Market size value converted to USD for global comparison"),
+  currency: z.string().describe("Local currency code (e.g., USD, INR, EUR)"),
+  isEstimated: z
+    .boolean()
+    .default(false)
+    .describe("Whether this value is an estimate vs. verified data"),
+  methodology: z.string().describe("How this value was calculated"),
+  confidence: z
+    .enum(["high", "medium", "low"])
+    .optional()
+    .describe("Confidence level in the accuracy of this estimate"),
+  year: z.number().optional().describe("Year of the data"),
 });
 
 export type MarketSizeData = z.infer<typeof MarketSizeDataSchema>;
 
+export const MarketCapitalizationSchema = z.object({
+  globalMarketCap: MarketSizeDataSchema.describe(
+    "Total market capitalization of the industry globally",
+  ),
+  industryMarketCap: MarketSizeDataSchema.describe(
+    "Market cap of the specific industry/sector",
+  ),
+  potentialStartupValuation: MarketSizeDataSchema.describe(
+    "Potential valuation context for fundraising (e.g., comparable exits)",
+  ),
+  methodology: z.string().describe("Methodology used for market cap analysis"),
+});
+
+export type MarketCapitalization = z.infer<typeof MarketCapitalizationSchema>;
+
 export const LocationMarketSizeSchema = z.object({
   location: z.string(), // e.g., "United States", "Global"
   tam: MarketSizeDataSchema,
-  sam: MarketSizeDataSchema,
-  som: MarketSizeDataSchema,
+  sam: MarketSizeDataSchema.describe(
+    "Serviceable Addressable Market - portion you can target",
+  ),
+  som: MarketSizeDataSchema.describe(
+    "Serviceable Obtainable Market - realistic capture in 3-5 years",
+  ),
+  marketCap: MarketCapitalizationSchema.optional().describe(
+    "Market capitalization data for the industry",
+  ),
   growthRate: z.object({
     value: z.string(),
     methodology: z.string(),
@@ -270,6 +304,10 @@ export const DeepResearchSchema = z.object({
 });
 
 export type DeepResearch = z.infer<typeof DeepResearchSchema>;
+export type DeepResearchOutput = AgentOutput & {
+  agentType: "DEEP_RESEARCH";
+  content: DeepResearch;
+};
 
 // ===========================================
 // Strategic Advisory Agent (Portfolio Level)
