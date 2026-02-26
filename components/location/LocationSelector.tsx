@@ -64,9 +64,12 @@ function formatLocationDisplay(value?: LocationContext | null): string {
   if (!value) return "Select location...";
   if (value.isGlobal) return "Global";
 
-  const parts = [value.city, value.region, value.country, value.continent].filter(
-    Boolean,
-  );
+  const parts = [
+    value.city,
+    value.region,
+    value.country,
+    value.continent,
+  ].filter(Boolean);
   return parts.length > 0 ? parts.join(", ") : "Select location...";
 }
 
@@ -140,7 +143,7 @@ export function LocationSelector({
     const query = search.trim().toLowerCase();
     if (!query) return list;
 
-    return list.filter((city) => city.name.toLowerCase().includes(query));
+    return list?.filter((city) => city.name.toLowerCase().includes(query));
   }, [search, selectedCountry, selectedRegion]);
 
   const resetPicker = () => {
@@ -181,7 +184,7 @@ export function LocationSelector({
     }
 
     const countryCities = City.getCitiesOfCountry(country.isoCode);
-    if (countryCities.length > 0) {
+    if (countryCities?.length! > 0) {
       setStep("city");
       return;
     }
@@ -336,7 +339,9 @@ export function LocationSelector({
                   <Globe className="h-4 w-4 shrink-0 text-muted-foreground" />
                   <span className="flex-1 text-left">Global</span>
                   {value?.isGlobal && (
-                    <span className="text-xs text-primary font-medium">Selected</span>
+                    <span className="text-xs text-primary font-medium">
+                      Selected
+                    </span>
                   )}
                 </button>
 
@@ -358,9 +363,12 @@ export function LocationSelector({
                     )}
                   >
                     <span className="flex-1 text-left">{continent.name}</span>
-                    {value?.continentCode === continent.code && !value?.country && (
-                      <span className="text-xs text-primary font-medium">Selected</span>
-                    )}
+                    {value?.continentCode === continent.code &&
+                      !value?.country && (
+                        <span className="text-xs text-primary font-medium">
+                          Selected
+                        </span>
+                      )}
                   </button>
                 ))}
 
@@ -387,9 +395,13 @@ export function LocationSelector({
                         {country.flag || isoToFlag(country.isoCode)}
                       </span>
                       <span className="flex-1 text-left">{country.name}</span>
-                      {value?.countryCode === country.isoCode && !value?.region && !value?.city && (
-                        <span className="text-xs text-primary font-medium">Selected</span>
-                      )}
+                      {value?.countryCode === country.isoCode &&
+                        !value?.region &&
+                        !value?.city && (
+                          <span className="text-xs text-primary font-medium">
+                            Selected
+                          </span>
+                        )}
                     </button>
                   ))
                 )}
@@ -441,7 +453,9 @@ export function LocationSelector({
 
                 <button
                   type="button"
-                  onClick={selectedRegion ? handleUseRegionOnly : handleUseCountryOnly}
+                  onClick={
+                    selectedRegion ? handleUseRegionOnly : handleUseCountryOnly
+                  }
                   className="w-full text-left px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground"
                 >
                   {selectedRegion ? "Use region only" : "Use country only"}
@@ -449,12 +463,12 @@ export function LocationSelector({
 
                 <div className="my-1 h-px bg-border" />
 
-                {cities.length === 0 ? (
+                {cities?.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-4">
                     No cities found
                   </p>
                 ) : (
-                  cities.map((city) => (
+                  cities?.map((city) => (
                     <button
                       type="button"
                       key={`${city.name}-${city.latitude}-${city.longitude}`}
