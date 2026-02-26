@@ -106,16 +106,13 @@ export const EditIdeaDialog = ({
   };
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={setOpen}
-    >
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger className="flex-row! flex items-center text-muted-foreground px-2 py-1 hover:bg-muted-foreground/10 rounded-md w-full my-1 gap-2 cursor-default">
         <Edit className="mr-2 h-4 w-4" />
         <span className="text-foreground">Edit</span>
       </DialogTrigger>
 
-      <DialogContent>
+      <DialogContent className="max-h-full overflow-auto overflow-x-hidden">
         <DialogHeader>
           <DialogTitle>Edit Idea</DialogTitle>
           <DialogDescription>
