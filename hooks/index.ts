@@ -541,15 +541,7 @@ export interface WeeklyUpdateWithGoals {
 export function useStartups(params?: PaginationParams) {
   return useQuery({
     queryKey: queryKeys.startups.list(params),
-    queryFn: async () => {
-      const queryParams = new URLSearchParams({
-        page: String(params?.page || 1),
-        limit: String(params?.limit || 10),
-      });
-      const response = await fetch(`/api/startups?${queryParams}`);
-      if (!response.ok) throw new Error("Failed to fetch startups");
-      return response.json();
-    },
+    queryFn: () => api.queries.startups.getAll(params),
     staleTime: 5 * 60 * 1000,
   });
 }
@@ -557,11 +549,8 @@ export function useStartups(params?: PaginationParams) {
 export function useStartup(id: string) {
   return useQuery({
     queryKey: queryKeys.startups.detail(id),
-    queryFn: async () => {
-      const response = await fetch(`/api/startups/${id}`);
-      if (!response.ok) throw new Error("Failed to fetch startup");
-      return response.json() as Promise<StartupWithDetails>;
-    },
+    queryFn: () =>
+      api.queries.startups.getById(id) as Promise<StartupWithDetails>,
     enabled: !!id,
     staleTime: 5 * 60 * 1000,
   });
@@ -570,16 +559,8 @@ export function useStartup(id: string) {
 export function useWeeklyUpdates(startupId: string, params?: PaginationParams) {
   return useQuery({
     queryKey: queryKeys.startups.updates(startupId),
-    queryFn: async () => {
-      const queryParams = new URLSearchParams({
-        page: String(params?.page || 1),
-        limit: String(params?.limit || 10),
-      });
-      const response = await fetch(
-        `/api/startups/${startupId}/updates?${queryParams}`,
-      );
-      if (!response.ok) throw new Error("Failed to fetch weekly updates");
-      return response.json() as Promise<{
+    queryFn: () =>
+      api.queries.startups.getUpdates(startupId, params) as Promise<{
         data: WeeklyUpdateWithGoals[];
         pagination: {
           page: number;
@@ -587,8 +568,16 @@ export function useWeeklyUpdates(startupId: string, params?: PaginationParams) {
           total: number;
           totalPages: number;
         };
-      }>;
-    },
+      }>,
+    enabled: !!startupId,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useStartupStreak(startupId: string) {
+  return useQuery({
+    queryKey: [...queryKeys.startups.detail(startupId), "streak"],
+    queryFn: () => api.queries.startups.getStreak(startupId),
     enabled: !!startupId,
     staleTime: 5 * 60 * 1000,
   });
@@ -596,15 +585,7 @@ export function useWeeklyUpdates(startupId: string, params?: PaginationParams) {
 
 export function useCheckSlug() {
   return useMutation({
-    mutationFn: async (slug: string) => {
-      const response = await fetch("/api/startups/check-slug", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug }),
-      });
-      if (!response.ok) throw new Error("Failed to check slug");
-      return response.json() as Promise<{ available: boolean }>;
-    },
+    mutationFn: (slug: string) => api.queries.startups.checkSlug(slug),
   });
 }
 
@@ -613,7 +594,7 @@ export function useCreateStartup() {
   const router = useRouter();
 
   return useMutation({
-    mutationFn: async (data: {
+    mutationFn: (data: {
       ideaId: string;
       name: string;
       slug: string;
@@ -625,23 +606,12 @@ export function useCreateStartup() {
       logoUrl?: string;
       website?: string;
       location?: string;
-    }) => {
-      const response = await fetch("/api/startups", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to create startup");
-      }
-      return response.json();
-    },
+    }) => api.mutations.startups.create(data),
     onSuccess: (startup) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.startups.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.ideas.all });
       toast.success("Startup profile created!");
-      router.push(`/startups/${startup.slug}`);
+      router.push(`/startups/${(startup as { slug: string }).slug}`);
     },
     onError: (error: Error) => {
       toast.error(error.message || "Failed to create startup");
@@ -653,24 +623,8 @@ export function useUpdateStartup() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      id,
-      data,
-    }: {
-      id: string;
-      data: Record<string, unknown>;
-    }) => {
-      const response = await fetch(`/api/startups/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to update startup");
-      }
-      return response.json();
-    },
+    mutationFn: ({ id, data }: { id: string; data: Record<string, unknown> }) =>
+      api.mutations.startups.update(id, data),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.startups.all });
       queryClient.invalidateQueries({
@@ -689,16 +643,7 @@ export function useDeleteStartup() {
   const router = useRouter();
 
   return useMutation({
-    mutationFn: async (id: string) => {
-      const response = await fetch(`/api/startups/${id}`, {
-        method: "DELETE",
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to delete startup");
-      }
-      return response.json();
-    },
+    mutationFn: (id: string) => api.mutations.startups.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.startups.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.ideas.all });
@@ -715,7 +660,7 @@ export function useCreateWeeklyUpdate() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
+    mutationFn: ({
       startupId,
       data,
     }: {
@@ -750,18 +695,7 @@ export function useCreateWeeklyUpdate() {
           completed?: boolean;
         }>;
       };
-    }) => {
-      const response = await fetch(`/api/startups/${startupId}/updates`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to create weekly update");
-      }
-      return response.json();
-    },
+    }) => api.mutations.startups.createWeeklyUpdate(startupId, data),
     onSuccess: (_, { startupId }) => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.startups.detail(startupId),
@@ -780,14 +714,11 @@ export function useCreateWeeklyUpdate() {
 export function useIdeaStartup(ideaId: string) {
   return useQuery({
     queryKey: [...queryKeys.ideas.detail(ideaId), "startup"],
-    queryFn: async () => {
-      const response = await fetch(`/api/ideas/${ideaId}/startup`);
-      if (!response.ok) throw new Error("Failed to check startup");
-      return response.json() as Promise<{
+    queryFn: () =>
+      api.queries.startups.getIdeaStartup(ideaId) as Promise<{
         hasStartup: boolean;
         startup: { id: string; slug: string; name: string } | null;
-      }>;
-    },
+      }>,
     enabled: !!ideaId,
     staleTime: 5 * 60 * 1000,
   });

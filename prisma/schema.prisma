@@ -518,6 +518,7 @@ model Startup {
   opportunities StartupOpportunity[]
   cohortStartups CohortStartup[]
   acceleratorApplications AcceleratorApplication[]
+  streak         StartupStreak?
 
   @@index([userId])
   @@index([slug])
@@ -634,6 +635,20 @@ model StartupGoal {
   @@index([startupId])
   @@index([priority])
   @@map("startup_goals")
+}
+
+model StartupStreak {
+  id              String    @id @default(cuid())
+  startupId       String    @unique
+  currentStreak   Int       @default(0)
+  longestStreak   Int       @default(0)
+  lastUpdateWeek  DateTime?
+  streakStartDate DateTime?
+  updatedAt       DateTime  @updatedAt
+
+  startup Startup @relation(fields: [startupId], references: [id], onDelete: Cascade)
+
+  @@map("startup_streaks")
 }
 
 enum StartupStage {

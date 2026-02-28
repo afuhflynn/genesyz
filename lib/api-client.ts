@@ -221,6 +221,27 @@ export const api = {
           { method: "GET" },
         ),
     },
+
+    // Startups
+    startups: {
+      getAll: (params?: PaginationParams) =>
+        apiRequest(
+          `/startups?page=${params?.page || 1}&limit=${params?.limit || 10}`,
+          { method: "GET" },
+        ),
+      getById: (id: string) => apiRequest(`/startups/${id}`, { method: "GET" }),
+      getUpdates: (id: string, params?: PaginationParams) =>
+        apiRequest(
+          `/startups/${id}/updates?page=${params?.page || 1}&limit=${params?.limit || 10}`,
+          { method: "GET" },
+        ),
+      getStreak: (id: string) =>
+        apiRequest(`/startups/${id}/streak`, { method: "GET" }),
+      checkSlug: (slug: string) =>
+        apiRequest("/startups/check-slug", { method: "POST", body: { slug } }),
+      getIdeaStartup: (ideaId: string) =>
+        apiRequest(`/ideas/${ideaId}/startup`, { method: "GET" }),
+    },
   },
 
   mutations: {
@@ -319,6 +340,22 @@ export const api = {
           method: "PUT",
           body: { email },
         }),
+    },
+
+    // Startups
+    startups: {
+      create: (data: Record<string, unknown>) =>
+        apiRequest("/startups", { method: "POST", body: data }),
+      update: (id: string, data: Record<string, unknown>) =>
+        apiRequest(`/startups/${id}`, { method: "PATCH", body: data }),
+      delete: (id: string) =>
+        apiRequest(`/startups/${id}`, { method: "DELETE" }),
+      createWeeklyUpdate: (id: string, data: Record<string, unknown>) =>
+        apiRequest(`/startups/${id}/updates`, { method: "POST", body: data }),
+      updateStreak: (
+        id: string,
+        data: { weekNumber: number; weekStart: Date },
+      ) => apiRequest(`/startups/${id}/streak`, { method: "POST", body: data }),
     },
   },
 };

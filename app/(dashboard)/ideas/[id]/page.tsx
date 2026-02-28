@@ -9,6 +9,7 @@ import {
   Check,
   Copy,
   Download,
+  Edit,
   MoreVertical,
   RefreshCw,
 } from "lucide-react";
@@ -31,6 +32,7 @@ import {
 import { ArchiveIdeaDialog } from "@/components/ideas/[id]/ArchiveIdeaDialog";
 import { ConvertToStartupCTA } from "@/components/ideas/[id]/ConvertToStartupCTA";
 import { DeleteIdeaDialog } from "@/components/ideas/[id]/DeleteIdea";
+import { EditIdeaDialog } from "@/components/ideas/[id]/EditIdea";
 import { UnarchiveIdeaDialog } from "@/components/ideas/[id]/UnarchiveIdeaDialog";
 import { AssetTab } from "@/components/ideas/AssetTab";
 import {
@@ -364,6 +366,34 @@ export default function IdeaDetailPage() {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Original Prompt */}
+              {idea.originalPrompt && (
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <div>
+                      <CardTitle>Original Prompt</CardTitle>
+                      <CardDescription>
+                        What you submitted when creating this idea
+                      </CardDescription>
+                    </div>
+                    <EditIdeaDialog
+                      id={idea.id}
+                      title={idea.title}
+                      summary={idea.summary}
+                      originalPrompt={idea.originalPrompt}
+                      archived={idea.isArchived}
+                    />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="rounded-lg bg-muted p-4">
+                      <p className="whitespace-pre-wrap text-sm">
+                        {idea.originalPrompt}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
 
             <TabsContent value="market" className="space-y-4">
