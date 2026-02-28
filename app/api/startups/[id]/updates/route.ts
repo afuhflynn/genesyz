@@ -196,6 +196,19 @@ export async function POST(
     },
   });
 
+  // Update streak
+  await fetch(
+    `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/startups/${startup.id}/streak`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        weekNumber: update.weekNumber,
+        weekStart: update.weekStart,
+      }),
+    },
+  ).catch(console.error);
+
   await inngest.send({
     name: "weeklyUpdate.created",
     data: {

@@ -1,10 +1,22 @@
+import { google } from "@ai-sdk/google";
+import { mistral } from "@ai-sdk/mistral";
+import { generateObject } from "ai";
 import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { inngest } from "@/lib/inngest/client";
 import { detectLocationFromText } from "@/lib/location";
 import { extractUrlsFromSources } from "@/lib/scraping";
+
+const ChangeSignificanceSchema = z.object({
+  significance: z.enum(["major_change", "minor_change"]),
+  reason: z.string(),
+});
+
+const primaryModel = mistral("open-mixtral-8x7b");
+const fallbackModel = google("gemini-2.5-flash");
 
 // GET /api/ideas/[id]/prompt - Get prompt history
 export async function GET(
@@ -146,8 +158,111 @@ export async function PUT(
       return [updated, version];
     });
 
-    // If triggerResearch is true, delete old research and start new pipeline
+    // If triggerResearch is true, do early AI check to see if prompt significantly changed
     if (triggerResearch) {
+      // First, do a quick AI comparison to check if prompt significantly changed
+      const comparisonPrompt = `Compare the old and new prompt for a startup idea:
+
+Old prompt:
+${idea.originalPrompt}
+
+New prompt:
+${prompt}
+
+Analyze if the core idea, problem, solution, or target audience has materially changed.
+
+Classify as:
+- major_change: core idea, problem, solution, target audience, or value proposition materially changed
+- minor_change: mostly wording/style/clarity updates with same core idea
+
+Return valid JSON only.`;
+
+      let shouldRunFullResearch = true;
+
+      try {
+        const assessment = await generateObject({
+          model: primaryModel,
+          schema: ChangeSignificanceSchema,
+          prompt: comparisonPrompt,
+        });
+
+        shouldRunFullResearch =
+          assessment.object.significance === "major_change";
+
+        // If minor change, skip full research to save resources
+        if (!shouldRunFullResearch) {
+          // Just update prompt and add a note
+          await db.auditLog.create({
+            data: {
+              userId: session.user.id,
+              action: "idea.prompt_edited_research_skipped",
+              resource: "idea",
+              resourceId: ideaId,
+              metadata: {
+                versionId: newVersion.id,
+                reason: assessment.object.reason,
+              },
+            },
+          });
+
+          return NextResponse.json({
+            success: true,
+            idea: updatedIdea,
+            version: newVersion,
+            researchTriggered: false,
+            skipped: true,
+            skipReason: assessment.object.reason,
+            message:
+              "Prompt change was minor; full research skipped to save resources",
+          });
+        }
+      } catch (primaryError) {
+        console.warn(
+          "Primary model failed for change assessment:",
+          primaryError,
+        );
+        try {
+          const assessment = await generateObject({
+            model: fallbackModel,
+            schema: ChangeSignificanceSchema,
+            prompt: comparisonPrompt,
+          });
+
+          shouldRunFullResearch =
+            assessment.object.significance === "major_change";
+
+          if (!shouldRunFullResearch) {
+            await db.auditLog.create({
+              data: {
+                userId: session.user.id,
+                action: "idea.prompt_edited_research_skipped",
+                resource: "idea",
+                resourceId: ideaId,
+                metadata: {
+                  versionId: newVersion.id,
+                  reason: assessment.object.reason,
+                },
+              },
+            });
+
+            return NextResponse.json({
+              success: true,
+              idea: updatedIdea,
+              version: newVersion,
+              researchTriggered: false,
+              skipped: true,
+              skipReason: assessment.object.reason,
+              message:
+                "Prompt change was minor; full research skipped to save resources",
+            });
+          }
+        } catch (fallbackError) {
+          console.warn("Fallback model also failed:", fallbackError);
+          // If both fail, proceed with full research as fallback
+          shouldRunFullResearch = true;
+        }
+      }
+
       // Delete old research data
       await db.$transaction([
         db.researchPacket.deleteMany({ where: { ideaId } }),
