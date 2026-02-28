@@ -225,22 +225,52 @@ export const api = {
     // Startups
     startups: {
       getAll: (params?: PaginationParams) =>
-        apiRequest(
-          `/startups?page=${params?.page || 1}&limit=${params?.limit || 10}`,
-          { method: "GET" },
-        ),
-      getById: (id: string) => apiRequest(`/startups/${id}`, { method: "GET" }),
+        apiRequest<{
+          data: unknown[];
+          pagination: {
+            page: number;
+            limit: number;
+            total: number;
+            totalPages: number;
+          };
+        }>(`/startups?page=${params?.page || 1}&limit=${params?.limit || 10}`, {
+          method: "GET",
+        }),
+      getById: (id: string) =>
+        apiRequest<unknown>(`/startups/${id}`, { method: "GET" }),
       getUpdates: (id: string, params?: PaginationParams) =>
-        apiRequest(
+        apiRequest<{
+          data: unknown[];
+          pagination: {
+            page: number;
+            limit: number;
+            total: number;
+            totalPages: number;
+          };
+        }>(
           `/startups/${id}/updates?page=${params?.page || 1}&limit=${params?.limit || 10}`,
           { method: "GET" },
         ),
       getStreak: (id: string) =>
-        apiRequest(`/startups/${id}/streak`, { method: "GET" }),
+        apiRequest<{
+          currentStreak: number;
+          longestStreak: number;
+          lastUpdateWeek: string | null;
+          streakStartDate: string | null;
+          isAtRisk: boolean;
+          nextMilestone: number;
+          weeksToMilestone: number;
+        }>(`/startups/${id}/streak`, { method: "GET" }),
       checkSlug: (slug: string) =>
-        apiRequest("/startups/check-slug", { method: "POST", body: { slug } }),
+        apiRequest<{ available: boolean }>("/startups/check-slug", {
+          method: "POST",
+          body: { slug },
+        }),
       getIdeaStartup: (ideaId: string) =>
-        apiRequest(`/ideas/${ideaId}/startup`, { method: "GET" }),
+        apiRequest<{
+          hasStartup: boolean;
+          startup: { id: string; slug: string; name: string } | null;
+        }>(`/ideas/${ideaId}/startup`, { method: "GET" }),
     },
   },
 
@@ -345,17 +375,26 @@ export const api = {
     // Startups
     startups: {
       create: (data: Record<string, unknown>) =>
-        apiRequest("/startups", { method: "POST", body: data }),
+        apiRequest<unknown>("/startups", { method: "POST", body: data }),
       update: (id: string, data: Record<string, unknown>) =>
-        apiRequest(`/startups/${id}`, { method: "PATCH", body: data }),
+        apiRequest<unknown>(`/startups/${id}`, { method: "PATCH", body: data }),
       delete: (id: string) =>
-        apiRequest(`/startups/${id}`, { method: "DELETE" }),
+        apiRequest<{ success: boolean }>(`/startups/${id}`, {
+          method: "DELETE",
+        }),
       createWeeklyUpdate: (id: string, data: Record<string, unknown>) =>
-        apiRequest(`/startups/${id}/updates`, { method: "POST", body: data }),
+        apiRequest<unknown>(`/startups/${id}/updates`, {
+          method: "POST",
+          body: data,
+        }),
       updateStreak: (
         id: string,
         data: { weekNumber: number; weekStart: Date },
-      ) => apiRequest(`/startups/${id}/streak`, { method: "POST", body: data }),
+      ) =>
+        apiRequest<unknown>(`/startups/${id}/streak`, {
+          method: "POST",
+          body: data,
+        }),
     },
   },
 };
