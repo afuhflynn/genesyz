@@ -1,3 +1,4 @@
+import { differenceInWeeks, isAfter, startOfWeek } from "date-fns";
 import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
@@ -196,18 +197,92 @@ export async function POST(
     },
   });
 
-  // Update streak
-  await fetch(
-    `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/startups/${startup.id}/streak`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        weekNumber: update.weekNumber,
-        weekStart: update.weekStart,
-      }),
-    },
-  ).catch(console.error);
+  // Update streak directly via DB (avoiding auth issues with fetch)
+  try {
+    const now = new Date();
+    const currentWeekStart = startOfWeek(now, { weekStartsOn: 1 });
+
+    // Get current streak
+    const streak = await db.startupStreak.findUnique({
+      where: { startupId: startup.id },
+    });
+
+    // Get latest weekly update to verify progress
+    const latestUpdate = await db.weeklyUpdate.findFirst({
+      where: { startupId: startup.id },
+      orderBy: { weekStart: "desc" },
+    });
+
+    // Idempotency check
+    if (latestUpdate) {
+      const latestWeekStart = startOfWeek(latestUpdate.weekStart, {
+        weekStartsOn: 1,
+      });
+      const submittedWeekStart = startOfWeek(update.weekStart, {
+        weekStartsOn: 1,
+      });
+
+      // Skip if not newer
+      if (!isAfter(submittedWeekStart, latestWeekStart)) {
+        // Streak already counted, skip
+      } else if (!streak) {
+        // First streak
+        await db.startupStreak.create({
+          data: {
+            startupId: startup.id,
+            currentStreak: 1,
+            longestStreak: 1,
+            lastUpdateWeek: now,
+            streakStartDate: now,
+          },
+        });
+      } else {
+        const lastWeekStart = streak.lastUpdateWeek
+          ? startOfWeek(streak.lastUpdateWeek, { weekStartsOn: 1 })
+          : null;
+
+        if (lastWeekStart) {
+          const weeksDiff = differenceInWeeks(currentWeekStart, lastWeekStart);
+
+          if (weeksDiff <= 1) {
+            // Consecutive - increment
+            const newStreak = streak.currentStreak + 1;
+            await db.startupStreak.update({
+              where: { startupId: startup.id },
+              data: {
+                currentStreak: newStreak,
+                longestStreak: Math.max(streak.longestStreak, newStreak),
+                lastUpdateWeek: now,
+              },
+            });
+          } else {
+            // Streak broken - reset
+            await db.startupStreak.update({
+              where: { startupId: startup.id },
+              data: {
+                currentStreak: 1,
+                lastUpdateWeek: now,
+                streakStartDate: now,
+              },
+            });
+          }
+        } else {
+          // First update ever
+          await db.startupStreak.update({
+            where: { startupId: startup.id },
+            data: {
+              currentStreak: 1,
+              longestStreak: Math.max(1, streak.longestStreak),
+              lastUpdateWeek: now,
+              streakStartDate: now,
+            },
+          });
+        }
+      }
+    }
+  } catch (streakError) {
+    console.error("Failed to update streak:", streakError);
+  }
 
   await inngest.send({
     name: "weeklyUpdate.created",

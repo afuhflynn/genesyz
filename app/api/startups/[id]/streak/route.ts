@@ -76,7 +76,7 @@ export async function GET(
   });
 }
 
-// POST - Record an update and update streak
+// POST - Record an update and update streak (idempotent)
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -110,7 +110,49 @@ export async function POST(
     where: { startupId: startup.id },
   });
 
+  // Get the latest weekly update for this startup to verify new progress
+  const latestUpdate = await db.weeklyUpdate.findFirst({
+    where: { startupId: startup.id },
+    orderBy: { weekStart: "desc" },
+  });
+
+  // Idempotency check: If we already have an update for this week or later, don't increment
+  if (latestUpdate) {
+    const latestWeekStart = startOfWeek(latestUpdate.weekStart, {
+      weekStartsOn: 1,
+    });
+    const submittedWeekStart = weekStart
+      ? startOfWeek(new Date(weekStart), { weekStartsOn: 1 })
+      : null;
+
+    // If the submitted week is not newer than what we already have, skip increment
+    if (submittedWeekStart && !isAfter(submittedWeekStart, latestWeekStart)) {
+      // Return current streak without incrementing
+      const milestones = [4, 8, 12, 16, 20, 24, 52];
+      const achievedMilestones = milestones.filter(
+        (m) => (streak?.currentStreak || 0) >= m,
+      );
+      const nextMilestone =
+        milestones.find((m) => m > (streak?.currentStreak || 0)) || 52;
+      const weeksToMilestone = nextMilestone - (streak?.currentStreak || 0);
+
+      return NextResponse.json({
+        currentStreak: streak?.currentStreak || 0,
+        longestStreak: streak?.longestStreak || 0,
+        lastUpdateWeek: streak?.lastUpdateWeek,
+        streakStartDate: streak?.streakStartDate,
+        achievedMilestones,
+        nextMilestone,
+        weeksToMilestone,
+        isNewMilestone: false,
+        idempotent: true,
+        message: "Streak already counted for this week",
+      });
+    }
+  }
+
   if (!streak) {
+    // First streak ever
     streak = await db.startupStreak.create({
       data: {
         startupId: startup.id,
@@ -125,16 +167,12 @@ export async function POST(
       ? startOfWeek(streak.lastUpdateWeek, { weekStartsOn: 1 })
       : null;
 
-    let newStreak = streak.currentStreak;
-
     if (lastWeekStart) {
       const weeksDiff = differenceInWeeks(currentWeekStart, lastWeekStart);
 
       if (weeksDiff <= 1) {
         // Consecutive week - increase streak
-        newStreak = streak.currentStreak + 1;
-
-        // Update longest streak if needed
+        const newStreak = streak.currentStreak + 1;
         const newLongest = Math.max(streak.longestStreak, newStreak);
 
         streak = await db.startupStreak.update({
@@ -143,7 +181,6 @@ export async function POST(
             currentStreak: newStreak,
             longestStreak: newLongest,
             lastUpdateWeek: now,
-            ...(newStreak === 1 && { streakStartDate: now }),
           },
         });
       } else {
