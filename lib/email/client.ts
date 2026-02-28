@@ -35,7 +35,7 @@ export async function sendEmail(options: SendEmailOptions): Promise<boolean> {
       attachments: [
         {
           filename: "IdeasVault Logo",
-          path: "../../public/images/logo/source-icon.png", // path to your image
+          path: "https://res.cloudinary.com/duzg7l0eo/image/upload/v1772257771/logo-email_z85ejj.png", // path to your image
           cid: "unique-app-logo", // must match the src in HTML
           contentDisposition: "inline", // helps prevent showing as a separate attachment
         },
