@@ -15,6 +15,7 @@
     "db:migrate": "prisma migrate dev",
     "db:migrate:reset": "prisma migrate reset",
     "db:seed": "tsx prisma/seed.ts",
+    "db:repair:extracted-urls": "tsx scripts/repair-extracted-urls.ts",
     "db:studio": "prisma studio",
     "db:generate": "prisma generate",
     "inngest:start": "inngest-cli dev",
