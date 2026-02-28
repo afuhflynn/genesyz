@@ -4,7 +4,7 @@ import { generateObject } from "ai";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { detectLocationFromText } from "@/lib/location";
-import { extractUrlsFromSources } from "@/lib/scraping";
+import { extractUrlsFromSources, sanitizeUrlStrings } from "@/lib/scraping";
 import { hashString } from "@/lib/utils";
 import {
   type AgentInput,
@@ -39,6 +39,7 @@ export async function runInterpreterAgent(
       title: true,
       summary: true,
       originalPrompt: true,
+      extractedUrls: true,
     },
   });
 
@@ -185,6 +186,20 @@ Return valid JSON only.`;
     }
   }
 
+  const newUrls = sanitizeUrlStrings(extractedUrls);
+  const mergedUrls = sanitizeUrlStrings([
+    ...(existingIdea?.extractedUrls || []),
+    ...newUrls,
+  ]);
+
+  console.debug("[interpreter] extractedUrls merge", {
+    ideaId,
+    incomingCount: newUrls.length,
+    existingCount: existingIdea?.extractedUrls.length || 0,
+    mergedCount: mergedUrls.length,
+    sampleType: typeof mergedUrls[0],
+  });
+
   await db.idea.update({
     where: { id: ideaId },
     data: {
@@ -197,7 +212,7 @@ Return valid JSON only.`;
         : {}),
       // Merge with existing URLs if any
       extractedUrls: {
-        push: extractedUrls.map((u) => u.normalizedUrl),
+        set: mergedUrls,
       },
     },
   });

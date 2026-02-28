@@ -29,6 +29,10 @@ export function OnboardingModal() {
 
   const handleSkip = () => {
     setIsOpen(false);
+  };
+
+  const handleToQuickEntry = () => {
+    setIsOpen(false);
     router.push("/ideas/new");
   };
 
@@ -80,7 +84,7 @@ export function OnboardingModal() {
 
             <Button
               variant="outline"
-              onClick={handleSkip}
+              onClick={handleToQuickEntry}
               className="w-full h-12 text-base"
             >
               Skip to Quick Entry

@@ -268,3 +268,51 @@ export function getUniqueDomains(urls: ExtractedUrl[]): string[] {
   const domains = new Set(urls.map((u) => u.domain));
   return Array.from(domains).filter((d) => d.length > 0);
 }
+
+/**
+ * Coerce unknown URL-like values to normalized string URLs.
+ * Keeps only valid, non-empty, deduplicated strings.
+ */
+export function sanitizeUrlStrings(input: unknown[]): string[] {
+  const normalizedUrls: string[] = [];
+
+  for (const value of input) {
+    let candidate: string | null = null;
+
+    if (typeof value === "string") {
+      candidate = value;
+    } else if (value instanceof URL) {
+      candidate = value.toString();
+    } else if (value && typeof value === "object") {
+      const maybeRecord = value as Record<string, unknown>;
+      const normalizedUrl = maybeRecord.normalizedUrl;
+      const url = maybeRecord.url;
+
+      if (typeof normalizedUrl === "string") {
+        candidate = normalizedUrl;
+      } else if (normalizedUrl instanceof URL) {
+        candidate = normalizedUrl.toString();
+      } else if (typeof url === "string") {
+        candidate = url;
+      } else if (url instanceof URL) {
+        candidate = url.toString();
+      }
+    }
+
+    if (!candidate) continue;
+
+    const trimmed = candidate.trim();
+    if (!trimmed) continue;
+
+    try {
+      const normalized = normalizeUrl(trimmed);
+      if (isValidUrl(normalized)) {
+        normalizedUrls.push(normalized);
+      }
+    } catch {
+      // ignore malformed URL candidates
+    }
+  }
+
+  return Array.from(new Set(normalizedUrls));
+}
