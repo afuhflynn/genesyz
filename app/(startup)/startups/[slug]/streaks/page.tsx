@@ -26,7 +26,7 @@ export default function StreaksPage({
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    params.then((p) => setSlug(p.slug));
+    params?.then((p) => setSlug(p?.slug));
   }, [params]);
 
   useEffect(() => {
