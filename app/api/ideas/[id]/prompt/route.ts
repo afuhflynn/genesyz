@@ -123,6 +123,7 @@ export async function PUT(
     const locationMentions = detectLocationFromText(prompt);
 
     // Start a transaction to update prompt and create version
+    // Note: We don't change status here - we'll handle that after the AI check
     const [updatedIdea, newVersion] = await db.$transaction(async (tx) => {
       // Create new prompt version
       const version = await tx.promptVersion.create({
@@ -134,7 +135,7 @@ export async function PUT(
         },
       });
 
-      // Update idea with new prompt and merge URLs
+      // Update idea with new prompt and merge URLs (but don't reset status yet)
       const updated = await tx.idea.update({
         where: { id: ideaId },
         data: {
@@ -146,11 +147,6 @@ export async function PUT(
           ...(locationMentions.length > 0 && {
             targetLocation: locationMentions[0].name,
             locationContext: locationMentions[0].context as any,
-          }),
-          // Reset status if triggering research
-          ...(triggerResearch && {
-            status: "PENDING",
-            interpretedPrompt: null,
           }),
         },
       });
@@ -263,13 +259,20 @@ Return valid JSON only.`;
         }
       }
 
-      // Delete old research data
+      // Delete old research data and update idea status
       await db.$transaction([
         db.researchPacket.deleteMany({ where: { ideaId } }),
         db.ideaScore.deleteMany({ where: { ideaId } }),
         db.researchLog.deleteMany({ where: { ideaId } }),
         db.ideaSnapshot.deleteMany({ where: { ideaId } }),
         db.researchJob.deleteMany({ where: { ideaId } }),
+        db.idea.update({
+          where: { id: ideaId },
+          data: {
+            status: "PENDING",
+            interpretedPrompt: null,
+          },
+        }),
       ]);
 
       // Trigger new research
