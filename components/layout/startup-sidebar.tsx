@@ -3,6 +3,7 @@
 import {
   ArrowLeft,
   Calendar,
+  Flame,
   GraduationCap,
   LayoutDashboard,
   Settings,
@@ -52,6 +53,12 @@ export function StartupSidebar({ startup, className }: StartupSidebarProps) {
       icon: Calendar,
       href: `${basePath}/updates`,
       active: pathname.startsWith(`${basePath}/updates`),
+    },
+    {
+      label: "Streaks",
+      icon: Flame,
+      href: `${basePath}/streaks`,
+      active: pathname === `${basePath}/streaks`,
     },
     {
       label: "Metrics",

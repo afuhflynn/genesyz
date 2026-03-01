@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { StreakDashboard } from "@/components/startups/StreakDashboard";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useStartupStreak } from "@/hooks";
 
 interface StreakData {
   currentStreak: number;
@@ -22,33 +23,12 @@ export default function StreaksPage({
   params: Promise<{ slug: string }>;
 }) {
   const [slug, setSlug] = useState("");
-  const [streak, setStreak] = useState<StreakData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     params?.then((p) => setSlug(p?.slug));
   }, [params]);
 
-  useEffect(() => {
-    if (!slug) return;
-
-    const fetchStreak = async () => {
-      setIsLoading(true);
-      try {
-        const res = await fetch(`/api/startups/${slug}/streak`);
-        if (res.ok) {
-          const data = await res.json();
-          setStreak(data);
-        }
-      } catch (error) {
-        console.error("Failed to fetch streak:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchStreak();
-  }, [slug]);
+  const { data: streak, isLoading } = useStartupStreak(slug);
 
   return (
     <div className="container max-w-2xl mx-auto py-8 space-y-6">
