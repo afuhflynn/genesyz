@@ -1,12 +1,13 @@
 "use client";
 
-import { format } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import {
   ArrowLeft,
   Calendar,
   CheckCircle2,
   Circle,
   Loader2,
+  Pencil,
   Plus,
   Target,
   TrendingDown,
@@ -14,6 +15,7 @@ import {
   Zap,
 } from "lucide-react";
 import Link from "next/link";
+import { useMemo } from "react";
 import {
   Accordion,
   AccordionContent,
@@ -140,6 +142,18 @@ export function WeeklyUpdatesList({ slug }: WeeklyUpdatesListProps) {
             const completedGoals =
               update.goals?.filter((g) => g.completed).length || 0;
             const totalGoals = update.goals?.length || 0;
+
+            // Check if update is still editable
+            const now = new Date();
+            const editableUntil = update.editableUntil
+              ? new Date(update.editableUntil)
+              : null;
+            const isEditable =
+              editableUntil && !update.isLocked && editableUntil > now;
+            const timeLeft =
+              editableUntil && editableUntil > now
+                ? formatDistanceToNow(editableUntil, { addSuffix: true })
+                : null;
 
             return (
               <AccordionItem
@@ -331,6 +345,38 @@ export function WeeklyUpdatesList({ slug }: WeeklyUpdatesListProps) {
                         )}
                       </div>
                     )}
+
+                    {/* Edit Button & Time Remaining */}
+                    <div className="flex items-center justify-between pt-4 border-t">
+                      {isEditable && timeLeft ? (
+                        <div className="flex items-center gap-4">
+                          <Badge
+                            variant="outline"
+                            className="bg-blue-50 text-blue-700 border-blue-200"
+                          >
+                            Edit window: {timeLeft}
+                          </Badge>
+                          <Button asChild size="sm">
+                            <Link
+                              href={`/startups/${slug}/updates/${update.id}/edit`}
+                            >
+                              <Pencil className="mr-2 h-4 w-4" />
+                              Edit Update
+                            </Link>
+                          </Button>
+                        </div>
+                      ) : update.isLocked ||
+                        (editableUntil && editableUntil <= now) ? (
+                        <Badge
+                          variant="outline"
+                          className="bg-gray-50 text-gray-500 border-gray-200"
+                        >
+                          Editing window closed
+                        </Badge>
+                      ) : (
+                        <div />
+                      )}
+                    </div>
                   </div>
                 </AccordionContent>
               </AccordionItem>

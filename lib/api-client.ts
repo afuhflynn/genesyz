@@ -387,6 +387,32 @@ export const api = {
           method: "POST",
           body: data,
         }),
+      updateWeeklyUpdate: (
+        id: string,
+        data: {
+          updateId: string;
+          isLaunched?: boolean;
+          weeksToLaunch?: number | null;
+          usersTalkedTo?: number;
+          userLearnings?: string;
+          primaryMetricType?: string;
+          primaryMetricValue?: number;
+          metricPeriod?: string | null;
+          customMetricName?: string | null;
+          moraleScore?: number;
+          topImprovements?: string;
+          biggestObstacle?: string;
+          goals?: Array<{
+            content: string;
+            priority: number;
+            completed?: boolean;
+          }>;
+        },
+      ) =>
+        apiRequest<unknown>(`/startups/${id}/updates`, {
+          method: "PATCH",
+          body: data,
+        }),
       updateStreak: (
         id: string,
         data: { weekNumber: number; weekStart: Date },
@@ -395,6 +421,44 @@ export const api = {
           method: "POST",
           body: data,
         }),
+      getApplications: (id: string, status?: string) =>
+        apiRequest<{ data: any[] }>(
+          `/startups/${id}/applications${status ? `?status=${status}` : ""}`,
+          { method: "GET" },
+        ),
+      createApplication: (
+        id: string,
+        data: {
+          title: string;
+          description?: string;
+          url?: string;
+          organization?: string;
+          type?: string;
+          deadline?: string;
+        },
+      ) =>
+        apiRequest<unknown>(`/startups/${id}/applications`, {
+          method: "POST",
+          body: data,
+        }),
+      updateApplication: (
+        id: string,
+        data: {
+          applicationId: string;
+          status?: string;
+          notes?: string;
+          appliedAt?: string;
+        },
+      ) =>
+        apiRequest<unknown>(`/startups/${id}/applications`, {
+          method: "PATCH",
+          body: data,
+        }),
+      deleteApplication: (id: string, applicationId: string) =>
+        apiRequest<{ success: boolean }>(
+          `/startups/${id}/applications?applicationId=${applicationId}`,
+          { method: "DELETE" },
+        ),
     },
   },
 };

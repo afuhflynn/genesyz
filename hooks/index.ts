@@ -530,6 +530,8 @@ export interface WeeklyUpdateWithGoals {
   aiVerdict: string | null;
   aiRecommendations: any;
   createdAt: Date;
+  editableUntil: Date | null;
+  isLocked: boolean;
   goals: Array<{
     id: string;
     content: string;
@@ -711,6 +713,55 @@ export function useCreateWeeklyUpdate() {
   });
 }
 
+export function useUpdateWeeklyUpdate() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      startupId,
+      updateId,
+      data,
+    }: {
+      startupId: string;
+      updateId: string;
+      data: {
+        isLaunched?: boolean;
+        weeksToLaunch?: number | null;
+        usersTalkedTo?: number;
+        userLearnings?: string;
+        primaryMetricType?: string;
+        primaryMetricValue?: number;
+        metricPeriod?: string | null;
+        customMetricName?: string | null;
+        moraleScore?: number;
+        topImprovements?: string;
+        biggestObstacle?: string;
+        goals?: Array<{
+          content: string;
+          priority: number;
+          completed?: boolean;
+        }>;
+      };
+    }) =>
+      api.mutations.startups.updateWeeklyUpdate(startupId, {
+        updateId,
+        ...data,
+      }),
+    onSuccess: (_, { startupId }) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.startups.detail(startupId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.startups.updates(startupId),
+      });
+      toast.success("Weekly update saved!");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to save weekly update");
+    },
+  });
+}
+
 export function useIdeaStartup(ideaId: string) {
   return useQuery({
     queryKey: [...queryKeys.ideas.detail(ideaId), "startup"],
@@ -721,6 +772,112 @@ export function useIdeaStartup(ideaId: string) {
       }>,
     enabled: !!ideaId,
     staleTime: 5 * 60 * 1000,
+  });
+}
+
+export interface Application {
+  id: string;
+  startupId: string;
+  title: string;
+  description: string | null;
+  url: string | null;
+  organization: string | null;
+  type: string;
+  status: string;
+  deadline: Date | null;
+  appliedAt: Date | null;
+  notes: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export function useApplications(startupId: string) {
+  return useQuery({
+    queryKey: [...queryKeys.startups.detail(startupId), "applications"],
+    queryFn: () => api.queries.startups.getApplications(startupId),
+    enabled: !!startupId,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useCreateApplication() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      startupId,
+      data,
+    }: {
+      startupId: string;
+      data: {
+        title: string;
+        description?: string;
+        url?: string;
+        organization?: string;
+        type?: string;
+        deadline?: string;
+      };
+    }) => api.mutations.startups.createApplication(startupId, data),
+    onSuccess: (_, { startupId }) => {
+      queryClient.invalidateQueries({
+        queryKey: [...queryKeys.startups.detail(startupId), "applications"],
+      });
+      toast.success("Application added!");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to add application");
+    },
+  });
+}
+
+export function useUpdateApplication() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      startupId,
+      data,
+    }: {
+      startupId: string;
+      data: {
+        applicationId: string;
+        status?: string;
+        notes?: string;
+        appliedAt?: string;
+      };
+    }) => api.mutations.startups.updateApplication(startupId, data),
+    onSuccess: (_, { startupId }) => {
+      queryClient.invalidateQueries({
+        queryKey: [...queryKeys.startups.detail(startupId), "applications"],
+      });
+      toast.success("Application updated!");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to update application");
+    },
+  });
+}
+
+export function useDeleteApplication() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      startupId,
+      applicationId,
+    }: {
+      startupId: string;
+      applicationId: string;
+    }) => api.mutations.startups.deleteApplication(startupId, applicationId),
+    onSuccess: (_, { startupId }) => {
+      queryClient.invalidateQueries({
+        queryKey: [...queryKeys.startups.detail(startupId), "applications"],
+      });
+      toast.success("Application removed!");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to remove application");
+    },
   });
 }
 

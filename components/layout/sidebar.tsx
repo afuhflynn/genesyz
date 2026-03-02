@@ -3,8 +3,10 @@
 import {
   Archive,
   BotIcon,
+  Brain,
   Building2,
   CreditCard,
+  GraduationCap,
   LayoutDashboard,
   Lightbulb,
   LogOut,
@@ -45,6 +47,12 @@ export function Sidebar({ className }: SidebarProps) {
       active: pathname === "/ideas",
     },
     {
+      label: "Research Feed",
+      icon: Brain,
+      href: "/ideas/research-feed",
+      active: pathname === "/ideas/research-feed",
+    },
+    {
       label: "New Idea",
       icon: PlusCircle,
       href: "/ideas/new",
@@ -55,6 +63,12 @@ export function Sidebar({ className }: SidebarProps) {
       icon: Building2,
       href: "/startups",
       active: pathname === "/startups",
+    },
+    {
+      label: "Accelerators",
+      icon: GraduationCap,
+      href: "/accelerators",
+      active: pathname === "/accelerators",
     },
     {
       label: "Billing",
