@@ -71,9 +71,11 @@ export default async function SharedResearchPage({
 
             {latestResearch && (
               <div>
-                <h3 className="font-medium mb-2">Research Synthesis</h3>
+                <h3 className="font-medium mb-2">Research</h3>
                 <div className="prose prose-sm max-w-none text-muted-foreground">
-                  {latestResearch.synthesis || "No synthesis available"}
+                  {typeof latestResearch.content === "string"
+                    ? latestResearch.content
+                    : JSON.stringify(latestResearch.content).slice(0, 1000)}
                 </div>
               </div>
             )}
