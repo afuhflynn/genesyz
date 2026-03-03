@@ -337,6 +337,18 @@ export const api = {
           `/startups/${id}/applications${status ? `?status=${status}` : ""}`,
           { method: "GET" },
         ),
+      generateOpportunities: (id: string) =>
+        apiRequest<{
+          data: Array<{
+            title: string;
+            description: string;
+            url?: string;
+            category: string;
+            eligibility?: string;
+            benefits?: string;
+            deadline?: string;
+          }>;
+        }>(`/startups/${id}/opportunities/generate`, { method: "POST" }),
       checkSlug: (slug: string) =>
         apiRequest<{ available: boolean }>("/startups/check-slug", {
           method: "POST",

@@ -1,6 +1,5 @@
 "use client";
 
-import { format } from "date-fns";
 import {
   AlertCircle,
   ArrowLeft,
@@ -13,11 +12,12 @@ import {
   Plus,
   Rocket,
   Search,
+  Sparkles,
   Trophy,
   Users,
 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -46,7 +46,21 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useStartup } from "@/hooks";
+import { useGenerateOpportunities, useStartup } from "@/hooks";
+
+interface Opportunity {
+  id: string;
+  title: string;
+  description: string;
+  url: string;
+  category: string;
+  eligibility?: string;
+  benefits?: string;
+  deadline?: Date | null;
+  status: string;
+  source: string;
+  createdAt: Date;
+}
 
 interface Opportunity {
   id: string;
@@ -99,19 +113,26 @@ export default function OpportunitiesPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const { slug } = (params as any).then ? {} : { slug: "" };
+  const [slug, setSlug] = useState<string>("");
+
+  React.useEffect(() => {
+    params.then((p) => setSlug(p.slug));
+  }, [params]);
+
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [filterStatus, setFilterStatus] = useState("all");
+  const [generatedOpportunities, setGeneratedOpportunities] = useState<any[]>(
+    [],
+  );
+  const [isGenerateOpen, setIsGenerateOpen] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [selectedOpportunity, setSelectedOpportunity] = useState<any>(null);
 
-  const { data: startup } = useStartup(slug!);
+  const { data: startup } = useStartup(slug);
+  const generateMutation = useGenerateOpportunities(slug);
 
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const resolvedParams = (params as any).then ? {} : { slug };
-
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const fetchOpportunities = async () => {
     if (!slug) return;
     setIsLoading(true);
@@ -128,12 +149,61 @@ export default function OpportunitiesPage({
     }
   };
 
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  // useEffect(() => {
-  //   if (effectiveSlug) {
-  //     fetchOpportunities();
-  //   }
-  // }, [effectiveSlug]);
+  React.useEffect(() => {
+    if (slug) {
+      fetchOpportunities();
+    }
+  }, [slug]);
+
+  const handleGenerateOpportunities = async () => {
+    if (!slug) return;
+    setIsGenerating(true);
+    try {
+      const res = await fetch(`/api/startups/${slug}/opportunities/generate`, {
+        method: "POST",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setGeneratedOpportunities(data.data || []);
+        setIsGenerateOpen(true);
+      }
+    } catch (error) {
+      console.error("Failed to generate opportunities:", error);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleAddGeneratedOpportunity = async (opp: any) => {
+    if (!slug) return;
+    try {
+      const res = await fetch(`/api/startups/${slug}/opportunities`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: opp.title,
+          description: opp.description,
+          url: opp.url || "",
+          category: opp.category,
+          eligibility: opp.eligibility,
+          benefits: opp.benefits,
+          deadline: opp.deadline,
+          status: "DISCOVERED",
+        }),
+      });
+      if (res.ok) {
+        await fetchOpportunities();
+        setGeneratedOpportunities((prev) =>
+          prev.filter((o) => o.title !== opp.title),
+        );
+        if (generatedOpportunities.length === 1) {
+          setIsGenerateOpen(false);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to add opportunity:", error);
+    }
+  };
 
   const filteredOpportunities =
     filterStatus === "all"

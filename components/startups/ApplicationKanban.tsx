@@ -5,9 +5,10 @@ import {
   DndContext,
   type DragEndEvent,
   DragOverlay,
-  DragStartEvent,
+  type DragStartEvent,
   KeyboardSensor,
   PointerSensor,
+  useDraggable,
   useDroppable,
   useSensor,
   useSensors,
@@ -16,8 +17,10 @@ import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
+  useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { format } from "date-fns";
 import {
   Calendar,
@@ -26,7 +29,7 @@ import {
   Plus,
   Trash2,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -74,6 +77,123 @@ const APPLICATION_TYPES = [
 interface ApplicationKanbanProps {
   startupId: string;
   startupSlug: string;
+}
+
+function SortableApplicationCard({
+  application,
+  onDelete,
+}: {
+  application: Application;
+  onDelete: (id: string) => void;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: application.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="touch-none">
+      <ApplicationCardContent
+        application={application}
+        onDelete={onDelete}
+        dragHandleProps={{ ...attributes, ...listeners }}
+      />
+    </div>
+  );
+}
+
+function ApplicationCardContent({
+  application,
+  onDelete,
+  dragHandleProps,
+}: {
+  application: Application;
+  onDelete: (id: string) => void;
+  dragHandleProps?: Record<string, unknown>;
+}) {
+  return (
+    <Card className="cursor-grab active:cursor-grabbing shadow-sm hover:shadow-md transition-shadow">
+      <CardContent className="p-3">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-center gap-1 flex-1 min-w-0">
+            <button
+              className="cursor-grab active:cursor-grabbing touch-none p-1 -ml-1 hover:bg-muted rounded"
+              {...dragHandleProps}
+            >
+              <GripVertical className="h-4 w-4 text-muted-foreground" />
+            </button>
+            <div className="flex-1 min-w-0">
+              <h4 className="font-medium text-sm truncate">
+                {application.title}
+              </h4>
+              {application.organization && (
+                <p className="text-xs text-muted-foreground truncate">
+                  {application.organization}
+                </p>
+              )}
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 text-muted-foreground hover:text-destructive flex-shrink-0"
+            onClick={() => onDelete(application.id)}
+          >
+            <Trash2 className="h-3 w-3" />
+          </Button>
+        </div>
+
+        {application.deadline && (
+          <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
+            <Calendar className="h-3 w-3" />
+            <span>
+              Due: {format(new Date(application.deadline), "MMM d, yyyy")}
+            </span>
+          </div>
+        )}
+
+        {application.url && (
+          <a
+            href={application.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1 mt-1 text-xs text-blue-600 hover:underline"
+          >
+            <ExternalLink className="h-3 w-3" />
+            View
+          </a>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function DraggableApplicationCard({
+  application,
+  onDelete,
+}: {
+  application: Application;
+  onDelete: (id: string) => void;
+}) {
+  const { attributes, listeners, setNodeRef } = useDraggable({
+    id: application.id,
+  });
+
+  return (
+    <div ref={setNodeRef} {...listeners} {...attributes} className="touch-none">
+      <ApplicationCardContent application={application} onDelete={onDelete} />
+    </div>
+  );
 }
 
 function ApplicationCard({
@@ -153,21 +273,30 @@ function Column({
           {applications.length}
         </span>
       </div>
-      <div
-        ref={setNodeRef}
-        className={`space-y-2 min-h-[200px] p-2 rounded-lg transition-colors ${
-          isOver ? "bg-muted/50" : "bg-muted/20"
-        }`}
+      <SortableContext
+        items={applications.map((a) => a.id)}
+        strategy={verticalListSortingStrategy}
       >
-        {applications.map((app) => (
-          <ApplicationCard key={app.id} application={app} onDelete={onDelete} />
-        ))}
-        {applications.length === 0 && (
-          <div className="text-center py-8 text-sm text-muted-foreground">
-            No applications
-          </div>
-        )}
-      </div>
+        <div
+          ref={setNodeRef}
+          className={`space-y-2 min-h-[200px] p-2 rounded-lg transition-colors ${
+            isOver ? "bg-muted/50" : "bg-muted/20"
+          }`}
+        >
+          {applications.map((app) => (
+            <SortableApplicationCard
+              key={app.id}
+              application={app}
+              onDelete={onDelete}
+            />
+          ))}
+          {applications.length === 0 && (
+            <div className="text-center py-8 text-sm text-muted-foreground">
+              No applications
+            </div>
+          )}
+        </div>
+      </SortableContext>
     </div>
   );
 }
@@ -191,7 +320,16 @@ export function ApplicationKanban({
     deadline: "",
   });
 
-  const applications: Application[] = applicationsData?.data || [];
+  const [localApplications, setLocalApplications] = useState<Application[]>([]);
+  const [activeId, setActiveId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (applicationsData?.data) {
+      setLocalApplications(applicationsData.data);
+    }
+  }, [applicationsData]);
+
+  const applications: Application[] = localApplications;
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -204,8 +342,13 @@ export function ApplicationKanban({
     }),
   );
 
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+  };
+
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
+    setActiveId(null);
 
     if (!over) return;
 
@@ -213,17 +356,37 @@ export function ApplicationKanban({
     const newStatus = over.id as string;
 
     if (COLUMNS.some((col) => col.id === newStatus)) {
-      const app = applications.find((a: Application) => a.id === applicationId);
+      const app = applications.find((a) => a.id === applicationId);
       if (app && app.status !== newStatus) {
-        await updateMutation.mutateAsync({
-          startupId,
-          data: {
-            applicationId,
-            status: newStatus,
-          },
-        });
+        const oldStatus = app.status;
+
+        setLocalApplications((prev) =>
+          prev.map((a) =>
+            a.id === applicationId ? { ...a, status: newStatus } : a,
+          ),
+        );
+
+        try {
+          await updateMutation.mutateAsync({
+            startupId,
+            data: {
+              applicationId,
+              status: newStatus,
+            },
+          });
+        } catch (error) {
+          setLocalApplications((prev) =>
+            prev.map((a) =>
+              a.id === applicationId ? { ...a, status: oldStatus } : a,
+            ),
+          );
+        }
       }
     }
+  };
+
+  const handleDragCancel = () => {
+    setActiveId(null);
   };
 
   const handleAddApplication = async () => {
@@ -246,12 +409,25 @@ export function ApplicationKanban({
   };
 
   const handleDelete = async (id: string) => {
-    await deleteMutation.mutateAsync({ startupId, applicationId: id });
+    const appToDelete = applications.find((a) => a.id === id);
+    setLocalApplications((prev) => prev.filter((a) => a.id !== id));
+
+    try {
+      await deleteMutation.mutateAsync({ startupId, applicationId: id });
+    } catch (error) {
+      if (appToDelete) {
+        setLocalApplications((prev) => [...prev, appToDelete]);
+      }
+    }
   };
 
   const getApplicationsByStatus = (status: string) => {
-    return applications.filter((app: Application) => app.status === status);
+    return applications.filter((app) => app.status === status);
   };
+
+  const activeApplication = activeId
+    ? applications.find((a) => a.id === activeId)
+    : null;
 
   return (
     <div className="space-y-4">
@@ -355,7 +531,9 @@ export function ApplicationKanban({
       <DndContext
         sensors={sensors}
         collisionDetection={closestCorners}
+        onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
       >
         <div className="flex gap-4 overflow-x-auto pb-4">
           {COLUMNS.map((column) => (
@@ -368,6 +546,14 @@ export function ApplicationKanban({
             />
           ))}
         </div>
+        <DragOverlay>
+          {activeApplication ? (
+            <DraggableApplicationCard
+              application={activeApplication}
+              onDelete={() => {}}
+            />
+          ) : null}
+        </DragOverlay>
       </DndContext>
     </div>
   );

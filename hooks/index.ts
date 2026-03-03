@@ -868,6 +868,12 @@ export function useDeleteApplication() {
   });
 }
 
+export function useGenerateOpportunities(startupId: string) {
+  return useMutation({
+    mutationFn: () => api.queries.startups.generateOpportunities(startupId),
+  });
+}
+
 // ===========================================
 // Accelerator Hooks
 // ===========================================
