@@ -2,6 +2,7 @@
 
 import {
   ArrowLeft,
+  Briefcase,
   Calendar,
   FileText,
   Flame,
@@ -66,6 +67,12 @@ export function StartupSidebar({ startup, className }: StartupSidebarProps) {
       icon: FileText,
       href: `${basePath}/applications`,
       active: pathname === `${basePath}/applications`,
+    },
+    {
+      label: "Opportunities",
+      icon: Briefcase,
+      href: `${basePath}/opportunities`,
+      active: pathname === `${basePath}/opportunities`,
     },
     {
       label: "Metrics",
