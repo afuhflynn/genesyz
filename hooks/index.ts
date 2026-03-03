@@ -9,6 +9,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
+  type Accelerator,
+  type AcceleratorApplication,
   type Application,
   api,
   type IdeaWithDetails,
@@ -866,6 +868,146 @@ export function useDeleteApplication() {
   });
 }
 
-export type { Application } from "@/lib/api-client";
+// ===========================================
+// Accelerator Hooks
+// ===========================================
+
+export function useAccelerators(params?: { publicOnly?: boolean }) {
+  return useQuery({
+    queryKey: ["accelerators", params],
+    queryFn: () => api.queries.accelerators.getAll(params),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useAccelerator(slug: string) {
+  return useQuery({
+    queryKey: ["accelerators", slug],
+    queryFn: () => api.queries.accelerators.getBySlug(slug),
+    enabled: !!slug,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useCreateAccelerator() {
+  const queryClient = useQueryClient();
+  const router = useRouter();
+
+  return useMutation({
+    mutationFn: (data: {
+      name: string;
+      description?: string;
+      programType?: string;
+      logoUrl?: string;
+      website?: string;
+      contactEmail?: string;
+      durationWeeks?: number;
+      benefits?: string;
+      requirements?: string;
+      maxStartups?: number;
+      fundingAmount?: string;
+      isPublic?: boolean;
+    }) => api.mutations.accelerators.create(data),
+    onSuccess: (accelerator) => {
+      queryClient.invalidateQueries({ queryKey: ["accelerators"] });
+      toast.success("Accelerator created!");
+      router.push(`/accelerators/${accelerator.slug}`);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to create accelerator");
+    },
+  });
+}
+
+export function useUpdateAccelerator() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      slug,
+      data,
+    }: {
+      slug: string;
+      data: Partial<{
+        name: string;
+        description: string;
+        programType: string;
+        logoUrl: string;
+        website: string;
+        contactEmail: string;
+        durationWeeks: number;
+        benefits: string;
+        requirements: string;
+        maxStartups: number;
+        fundingAmount: string;
+        isPublic: boolean;
+        isActive: boolean;
+      }>;
+    }) => api.mutations.accelerators.update(slug, data),
+    onSuccess: (_, { slug }) => {
+      queryClient.invalidateQueries({ queryKey: ["accelerators"] });
+      queryClient.invalidateQueries({ queryKey: ["accelerators", slug] });
+      toast.success("Accelerator updated!");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to update accelerator");
+    },
+  });
+}
+
+export function useDeleteAccelerator() {
+  const queryClient = useQueryClient();
+  const router = useRouter();
+
+  return useMutation({
+    mutationFn: (slug: string) => api.mutations.accelerators.delete(slug),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["accelerators"] });
+      toast.success("Accelerator deleted");
+      router.push("/accelerators");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to delete accelerator");
+    },
+  });
+}
+
+export function useApplyToAccelerator(slug: string) {
+  const queryClient = useQueryClient();
+  const router = useRouter();
+
+  return useMutation({
+    mutationFn: (data: {
+      founderEmail: string;
+      founderName: string;
+      founderPhone?: string;
+      startupId?: string;
+      answers?: Record<string, string>;
+    }) => api.queries.accelerators.apply(slug, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["accelerators", slug] });
+      toast.success("Application submitted!");
+      router.push(`/accelerators/${slug}`);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to submit application");
+    },
+  });
+}
+
+export function useAcceleratorApplications(slug: string) {
+  return useQuery({
+    queryKey: ["accelerators", slug, "applications"],
+    queryFn: () => api.queries.accelerators.getApplications(slug),
+    enabled: !!slug,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export type {
+  Accelerator,
+  AcceleratorApplication,
+  Application,
+} from "@/lib/api-client";
 export { useInfiniteIdeas } from "./useInfiniteIdeas";
 export { useInfiniteStartups } from "./useInfiniteStartups";

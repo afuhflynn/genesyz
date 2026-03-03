@@ -53,7 +53,9 @@ export function AcceleratorsList({
             className="pl-10"
           />
         </div>
-        <Button>Create Accelerator</Button>
+        <Button asChild>
+          <Link href="/accelerators/new">Create Accelerator</Link>
+        </Button>
       </div>
 
       {filteredAccelerators.length === 0 ? (

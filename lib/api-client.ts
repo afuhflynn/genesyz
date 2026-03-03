@@ -35,6 +35,61 @@ export interface Application {
   updatedAt: Date;
 }
 
+export interface Accelerator {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  programType: string;
+  logoUrl: string | null;
+  website: string | null;
+  contactEmail: string | null;
+  durationWeeks: number | null;
+  benefits: string | null;
+  requirements: string | null;
+  maxStartups: number | null;
+  fundingAmount: string | null;
+  isPublic: boolean;
+  isActive: boolean;
+  ownerId: string;
+  createdAt: Date;
+  updatedAt: Date;
+  owner: { id: string; name: string | null; image: string | null };
+  cohorts: Array<{
+    id: string;
+    name: string;
+    description: string | null;
+    startDate: Date;
+    endDate: Date;
+    _count: { startups: number };
+  }>;
+  _count: { applications: number; cohorts: number };
+}
+
+export interface AcceleratorWithDetails extends Accelerator {
+  owner: {
+    id: string;
+    name: string | null;
+    image: string | null;
+    email: string | null;
+  };
+}
+
+export interface AcceleratorApplication {
+  id: string;
+  acceleratorId: string;
+  startupId: string | null;
+  founderEmail: string;
+  founderName: string;
+  founderPhone: string | null;
+  status: string;
+  notes: string | null;
+  answers: Record<string, unknown> | null;
+  appliedAt: Date;
+  updatedAt: Date;
+  startup: { id: string; name: string; slug: string } | null;
+}
+
 export interface IdeaWithDetails extends Idea {
   inputs: IdeaInput[];
   scores: IdeaScore[];
@@ -293,6 +348,48 @@ export const api = {
           startup: { id: string; slug: string; name: string } | null;
         }>(`/ideas/${ideaId}/startup`, { method: "GET" }),
     },
+
+    // Accelerators
+    accelerators: {
+      getAll: (params?: { publicOnly?: boolean }) =>
+        apiRequest<{ data: Accelerator[] }>(
+          `/accelerators${params?.publicOnly ? "?public=true" : ""}`,
+          { method: "GET" },
+        ),
+      getBySlug: (slug: string) =>
+        apiRequest<{ data: AcceleratorWithDetails }>(`/accelerators/${slug}`, {
+          method: "GET",
+        }),
+      checkSlug: (name: string) => {
+        const slug = name
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/(^-|-$)/g, "");
+        return apiRequest<{ available: boolean }>("/accelerators/check-slug", {
+          method: "POST",
+          body: { slug },
+        });
+      },
+      apply: (
+        slug: string,
+        data: {
+          founderEmail: string;
+          founderName: string;
+          founderPhone?: string;
+          startupId?: string;
+          answers?: Record<string, string>;
+        },
+      ) =>
+        apiRequest<AcceleratorApplication>(`/accelerators/${slug}/apply`, {
+          method: "POST",
+          body: data,
+        }),
+      getApplications: (slug: string) =>
+        apiRequest<{ data: AcceleratorApplication[] }>(
+          `/accelerators/${slug}/apply`,
+          { method: "GET" },
+        ),
+    },
   },
 
   mutations: {
@@ -480,6 +577,54 @@ export const api = {
           `/startups/${id}/applications?applicationId=${applicationId}`,
           { method: "DELETE" },
         ),
+    },
+
+    // Accelerators
+    accelerators: {
+      create: (data: {
+        name: string;
+        description?: string;
+        programType?: string;
+        logoUrl?: string;
+        website?: string;
+        contactEmail?: string;
+        durationWeeks?: number;
+        benefits?: string;
+        requirements?: string;
+        maxStartups?: number;
+        fundingAmount?: string;
+        isPublic?: boolean;
+      }) =>
+        apiRequest<Accelerator>("/accelerators", {
+          method: "POST",
+          body: data,
+        }),
+      update: (
+        slug: string,
+        data: Partial<{
+          name: string;
+          description: string;
+          programType: string;
+          logoUrl: string;
+          website: string;
+          contactEmail: string;
+          durationWeeks: number;
+          benefits: string;
+          requirements: string;
+          maxStartups: number;
+          fundingAmount: string;
+          isPublic: boolean;
+          isActive: boolean;
+        }>,
+      ) =>
+        apiRequest<Accelerator>(`/accelerators/${slug}`, {
+          method: "PATCH",
+          body: data,
+        }),
+      delete: (slug: string) =>
+        apiRequest<{ success: boolean }>(`/accelerators/${slug}`, {
+          method: "DELETE",
+        }),
     },
   },
 };
