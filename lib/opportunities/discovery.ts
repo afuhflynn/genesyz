@@ -136,10 +136,12 @@ export function normalizeGeneratedOpportunity(input: {
   };
 }
 
-export function dedupeOpportunities(
+export function dedupeOpportunities<
+  T extends { title: string; url?: string | null },
+>(
   existing: Array<{ title: string; url?: string | null }>,
-  candidates: GeneratedOpportunity[],
-): GeneratedOpportunity[] {
+  candidates: T[],
+): T[] {
   const existingKeys = new Set(existing.map(buildOpportunityKey));
   const candidateKeys = new Set<string>();
 
