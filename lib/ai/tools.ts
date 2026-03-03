@@ -10,6 +10,52 @@ const client = tavily({
 });
 const search_depth = "advanced";
 
+export interface TavilySearchResult {
+  title: string;
+  url: string;
+  content: string;
+  score: number;
+}
+
+export interface TavilySearchResponse {
+  query: string;
+  answer: string;
+  results: TavilySearchResult[];
+}
+
+export async function searchWithTavily(
+  query: string,
+  options: {
+    searchDepth?: "basic" | "advanced";
+    maxResults?: number;
+  } = {},
+): Promise<TavilySearchResponse> {
+  if (!TAVILY_API_KEY) {
+    throw new Error("TAVILY_API_KEY is not set");
+  }
+
+  const response = await client.search(query, {
+    searchDepth: options.searchDepth || search_depth,
+    includeAnswer: true,
+    maxResults: options.maxResults ?? 5,
+  });
+
+  if (!response) {
+    throw new Error("No response from Tavily API");
+  }
+
+  return {
+    query,
+    answer: response.answer ?? "",
+    results: (response.results ?? []).map((result) => ({
+      title: result.title ?? "",
+      url: result.url ?? "",
+      content: result.content ?? "",
+      score: result.score ?? 0,
+    })),
+  };
+}
+
 /**
  * Web search tool
  */
@@ -25,21 +71,10 @@ export const webSearch = tool({
       .describe("The depth of the search"),
   }),
   execute: async ({ query, searchDepth }) => {
-    if (!TAVILY_API_KEY) {
-      throw new Error("TAVILY_API_KEY is not set");
-    }
-
-    const response = await client.search(query, {
-      searchDepth: searchDepth,
-      includeAnswer: true,
+    const response = await searchWithTavily(query, {
+      searchDepth,
       maxResults: 5,
     });
-
-    if (!response) {
-      throw new Error("No response from Tavily API");
-    }
-
-    response.results;
 
     return response.results;
   },
@@ -60,21 +95,12 @@ export const getIndustryNews = tool({
       .describe("How many days back to search for news"),
   }),
   execute: async ({ category, daysBack }) => {
-    if (!TAVILY_API_KEY) {
-      throw new Error("TAVILY_API_KEY is not set");
-    }
-
     const query = `latest news and trends in ${category} startup ecosystem last ${daysBack} days`;
 
-    const response = await client.search(query, {
+    const response = await searchWithTavily(query, {
       searchDepth: search_depth,
-      includeAnswer: true,
       maxResults: 5,
     });
-
-    if (!response) {
-      throw new Error("No response from Tavily API");
-    }
 
     return response.results;
   },
@@ -87,21 +113,12 @@ export const getCompetitorUpdates = tool({
     competitorName: z.string().describe("The name of the competitor"),
   }),
   execute: async ({ competitorName }) => {
-    if (!TAVILY_API_KEY) {
-      throw new Error("TAVILY_API_KEY is not set");
-    }
-
     const query = `${competitorName} startup latest news funding product launch 2024 2025`;
 
-    const response = await client.search(query, {
+    const response = await searchWithTavily(query, {
       searchDepth: search_depth,
-      includeAnswer: true,
       maxResults: 3,
     });
-
-    if (!response) {
-      throw new Error("No response from Tavily API");
-    }
 
     return response.results;
   },

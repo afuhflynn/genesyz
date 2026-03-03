@@ -6,6 +6,7 @@ import {
   sendVerificationEmailFunction,
   sendWelcomeEmailFunction,
 } from "@/lib/inngest/functions/auth-emails";
+import { opportunityDiscoveryCron } from "@/lib/inngest/functions/opportunity-discovery";
 import { reevaluationFunction } from "@/lib/inngest/functions/re-evaluation";
 import { researchPipelineFunction } from "@/lib/inngest/functions/research-pipeline";
 import { analyzeWeeklyUpdateFn } from "@/lib/inngest/functions/startup-analysis";
@@ -43,5 +44,6 @@ export const { GET, POST, PUT } = serve({
     weeklyUpdateReminderFn,
     weeklyUpdateReminderCronFriday,
     weeklyUpdateReminderCronSaturday,
+    opportunityDiscoveryCron,
   ],
 });

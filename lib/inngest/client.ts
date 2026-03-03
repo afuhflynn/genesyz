@@ -89,4 +89,14 @@ export type InngestEvents = {
       reminderDay: "friday" | "saturday";
     };
   };
+  "startup.opportunities.discovery.completed": {
+    data: {
+      startupsScanned: number;
+      startupsWithInsertions: number;
+      generatedCandidates: number;
+      insertedOpportunities: number;
+      dedupedOpportunities: number;
+      failedStartups: number;
+    };
+  };
 };

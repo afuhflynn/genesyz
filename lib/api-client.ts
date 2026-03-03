@@ -346,8 +346,12 @@ export const api = {
             category: string;
             eligibility?: string;
             benefits?: string;
-            deadline?: string;
+            deadline?: string | null;
           }>;
+          meta?: {
+            usedTavilySearch: boolean;
+            searchWarning?: string;
+          };
         }>(`/startups/${id}/opportunities/generate`, { method: "POST" }),
       checkSlug: (slug: string) =>
         apiRequest<{ available: boolean }>("/startups/check-slug", {

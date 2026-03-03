@@ -1,5 +1,6 @@
 "use client";
 
+import { format } from "date-fns";
 import {
   AlertCircle,
   ArrowLeft,
@@ -17,7 +18,8 @@ import {
   Users,
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -46,7 +48,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useGenerateOpportunities, useStartup } from "@/hooks";
+import { useGenerateOpportunities } from "@/hooks";
 
 interface Opportunity {
   id: string;
@@ -56,24 +58,20 @@ interface Opportunity {
   category: string;
   eligibility?: string;
   benefits?: string;
-  deadline?: Date | null;
+  deadline?: string | null;
   status: string;
   source: string;
-  createdAt: Date;
+  createdAt: string;
 }
 
-interface Opportunity {
-  id: string;
+interface GeneratedOpportunity {
   title: string;
   description: string;
-  url: string;
+  url?: string;
   category: string;
   eligibility?: string;
   benefits?: string;
-  deadline?: Date | null;
-  status: string;
-  source: string;
-  createdAt: Date;
+  deadline?: string | null;
 }
 
 const CATEGORY_ICONS: Record<string, typeof Rocket> = {
@@ -113,113 +111,132 @@ export default function OpportunitiesPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const [slug, setSlug] = useState<string>("");
-
-  React.useEffect(() => {
-    params.then((p) => setSlug(p.slug));
-  }, [params]);
-
+  const [slug, setSlug] = useState("");
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [filterStatus, setFilterStatus] = useState("all");
-  const [generatedOpportunities, setGeneratedOpportunities] = useState<any[]>(
-    [],
-  );
-  const [isGenerateOpen, setIsGenerateOpen] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [selectedOpportunity, setSelectedOpportunity] = useState<any>(null);
 
-  const { data: startup } = useStartup(slug);
+  const [generatedOpportunities, setGeneratedOpportunities] = useState<
+    GeneratedOpportunity[]
+  >([]);
+  const [isGenerateOpen, setIsGenerateOpen] = useState(false);
+  const [generationWarning, setGenerationWarning] = useState<string | null>(
+    null,
+  );
+  const [addingOpportunityTitle, setAddingOpportunityTitle] = useState<
+    string | null
+  >(null);
+
   const generateMutation = useGenerateOpportunities(slug);
 
-  const fetchOpportunities = async () => {
+  useEffect(() => {
+    params.then((resolvedParams) => setSlug(resolvedParams.slug));
+  }, [params]);
+
+  const fetchOpportunities = useCallback(async () => {
     if (!slug) return;
+
     setIsLoading(true);
     try {
       const res = await fetch(`/api/startups/${slug}/opportunities`);
-      if (res.ok) {
-        const data = await res.json();
-        setOpportunities(data.data || []);
+      if (!res.ok) {
+        throw new Error("Failed to fetch opportunities");
       }
+
+      const data = await res.json();
+      setOpportunities(data.data || []);
     } catch (error) {
       console.error("Failed to fetch opportunities:", error);
+      toast.error("Failed to load opportunities");
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [slug]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (slug) {
       fetchOpportunities();
     }
-  }, [slug]);
+  }, [slug, fetchOpportunities]);
 
   const handleGenerateOpportunities = async () => {
     if (!slug) return;
-    setIsGenerating(true);
+
     try {
-      const res = await fetch(`/api/startups/${slug}/opportunities/generate`, {
-        method: "POST",
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setGeneratedOpportunities(data.data || []);
-        setIsGenerateOpen(true);
-      }
+      const result = await generateMutation.mutateAsync();
+      setGeneratedOpportunities(result.data || []);
+      setGenerationWarning(result.meta?.searchWarning || null);
+      setIsGenerateOpen(true);
     } catch (error) {
       console.error("Failed to generate opportunities:", error);
-    } finally {
-      setIsGenerating(false);
     }
   };
 
-  const handleAddGeneratedOpportunity = async (opp: any) => {
+  const handleAddGeneratedOpportunity = async (
+    opportunity: GeneratedOpportunity,
+  ) => {
     if (!slug) return;
+
+    setAddingOpportunityTitle(opportunity.title);
     try {
       const res = await fetch(`/api/startups/${slug}/opportunities`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title: opp.title,
-          description: opp.description,
-          url: opp.url || "",
-          category: opp.category,
-          eligibility: opp.eligibility,
-          benefits: opp.benefits,
-          deadline: opp.deadline,
+          title: opportunity.title,
+          description: opportunity.description,
+          url: opportunity.url || "",
+          category: opportunity.category,
+          eligibility: opportunity.eligibility,
+          benefits: opportunity.benefits,
+          deadline: opportunity.deadline,
           status: "DISCOVERED",
         }),
       });
-      if (res.ok) {
-        await fetchOpportunities();
-        setGeneratedOpportunities((prev) =>
-          prev.filter((o) => o.title !== opp.title),
-        );
-        if (generatedOpportunities.length === 1) {
-          setIsGenerateOpen(false);
-        }
+
+      if (!res.ok) {
+        throw new Error("Failed to add opportunity");
       }
+
+      await fetchOpportunities();
+      setGeneratedOpportunities((previous) =>
+        previous.filter((item) => item.title !== opportunity.title),
+      );
+      toast.success("Opportunity added to tracked list");
     } catch (error) {
       console.error("Failed to add opportunity:", error);
+      toast.error("Failed to add opportunity");
+    } finally {
+      setAddingOpportunityTitle(null);
     }
+  };
+
+  const handleDismissGeneratedOpportunity = (
+    opportunity: GeneratedOpportunity,
+  ) => {
+    setGeneratedOpportunities((previous) =>
+      previous.filter((item) => item.title !== opportunity.title),
+    );
   };
 
   const filteredOpportunities =
     filterStatus === "all"
       ? opportunities
-      : opportunities.filter((o) => o.status === filterStatus);
+      : opportunities.filter((item) => item.status === filterStatus);
 
   const statusCounts = {
     all: opportunities.length,
-    DISCOVERED: opportunities.filter((o) => o.status === "DISCOVERED").length,
-    BOOKMARKED: opportunities.filter((o) => o.status === "BOOKMARKED").length,
-    TO_APPLY: opportunities.filter((o) => o.status === "TO_APPLY").length,
-    APPLIED: opportunities.filter((o) => o.status === "APPLIED").length,
-    INTERVIEWING: opportunities.filter((o) => o.status === "INTERVIEWING")
+    DISCOVERED: opportunities.filter((item) => item.status === "DISCOVERED")
       .length,
-    ACCEPTED: opportunities.filter((o) => o.status === "ACCEPTED").length,
-    REJECTED: opportunities.filter((o) => o.status === "REJECTED").length,
+    BOOKMARKED: opportunities.filter((item) => item.status === "BOOKMARKED")
+      .length,
+    TO_APPLY: opportunities.filter((item) => item.status === "TO_APPLY").length,
+    APPLIED: opportunities.filter((item) => item.status === "APPLIED").length,
+    INTERVIEWING: opportunities.filter((item) => item.status === "INTERVIEWING")
+      .length,
+    ACCEPTED: opportunities.filter((item) => item.status === "ACCEPTED").length,
+    REJECTED: opportunities.filter((item) => item.status === "REJECTED").length,
   };
 
   return (
@@ -236,71 +253,183 @@ export default function OpportunitiesPage({
             Opportunities
           </h1>
         </div>
-        <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Opportunity
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>Add New Opportunity</DialogTitle>
-              <DialogDescription>
-                Add a fellowship, scholarship, funding opportunity, or
-                competition to track.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="title">Title</Label>
-                <Input id="title" placeholder="Y Combinator W26" />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="category">Category</Label>
-                <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ACCELERATOR">Accelerator</SelectItem>
-                    <SelectItem value="FELLOWSHIP">Fellowship</SelectItem>
-                    <SelectItem value="SCHOLARSHIP">Scholarship</SelectItem>
-                    <SelectItem value="FUNDING">Funding</SelectItem>
-                    <SelectItem value="COMPETITION">Competition</SelectItem>
-                    <SelectItem value="GRANT">Grant</SelectItem>
-                    <SelectItem value="MENTORSHIP">Mentorship</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="url">URL</Label>
-                <Input id="url" placeholder="https://..." />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="description">Description</Label>
-                <Input id="description" placeholder="Brief description..." />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="deadline">Deadline</Label>
-                <Input id="deadline" type="date" />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsAddOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={() => setIsAddOpen(false)}>
+
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={handleGenerateOpportunities}
+            disabled={generateMutation.isPending}
+          >
+            {generateMutation.isPending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Sparkles className="mr-2 h-4 w-4" />
+            )}
+            Generate AI Recommendations
+          </Button>
+
+          <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
                 Add Opportunity
               </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>Add New Opportunity</DialogTitle>
+                <DialogDescription>
+                  Add a fellowship, scholarship, funding opportunity, or
+                  competition to track.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="title">Title</Label>
+                  <Input id="title" placeholder="Y Combinator W26" />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="category">Category</Label>
+                  <Select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ACCELERATOR">Accelerator</SelectItem>
+                      <SelectItem value="FELLOWSHIP">Fellowship</SelectItem>
+                      <SelectItem value="SCHOLARSHIP">Scholarship</SelectItem>
+                      <SelectItem value="FUNDING">Funding</SelectItem>
+                      <SelectItem value="COMPETITION">Competition</SelectItem>
+                      <SelectItem value="GRANT">Grant</SelectItem>
+                      <SelectItem value="MENTORSHIP">Mentorship</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="url">URL</Label>
+                  <Input id="url" placeholder="https://..." />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Input id="description" placeholder="Brief description..." />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="deadline">Deadline</Label>
+                  <Input id="deadline" type="date" />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsAddOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={() => setIsAddOpen(false)}>
+                  Add Opportunity
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
-      {/* Status Filter Tabs */}
+      <Dialog open={isGenerateOpen} onOpenChange={setIsGenerateOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>AI Opportunity Recommendations</DialogTitle>
+            <DialogDescription>
+              Review suggestions before adding them to your tracked
+              opportunities.
+            </DialogDescription>
+          </DialogHeader>
+
+          {generationWarning && (
+            <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+              {generationWarning}
+            </div>
+          )}
+
+          <div className="max-h-[60vh] space-y-3 overflow-y-auto pr-1">
+            {generatedOpportunities.length === 0 ? (
+              <div className="rounded-md border p-6 text-center text-sm text-muted-foreground">
+                No pending generated opportunities.
+              </div>
+            ) : (
+              generatedOpportunities.map((opportunity, index) => {
+                const icon = CATEGORY_ICONS[opportunity.category] || Lightbulb;
+                const Icon = icon;
+
+                return (
+                  <Card key={`${opportunity.title}-${index}`}>
+                    <CardHeader className="pb-2">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                          <div className="rounded-md bg-primary/10 p-2">
+                            <Icon className="h-4 w-4 text-primary" />
+                          </div>
+                          <div>
+                            <CardTitle className="text-base">
+                              {opportunity.title}
+                            </CardTitle>
+                            <CardDescription>
+                              {CATEGORY_LABELS[opportunity.category] ||
+                                opportunity.category}
+                            </CardDescription>
+                          </div>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <p className="text-sm text-muted-foreground">
+                        {opportunity.description}
+                      </p>
+
+                      {opportunity.deadline && (
+                        <div className="text-xs text-muted-foreground">
+                          Deadline:{" "}
+                          {format(
+                            new Date(opportunity.deadline),
+                            "MMM d, yyyy",
+                          )}
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() =>
+                            handleAddGeneratedOpportunity(opportunity)
+                          }
+                          disabled={
+                            addingOpportunityTitle === opportunity.title
+                          }
+                        >
+                          {addingOpportunityTitle === opportunity.title ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : (
+                            <Plus className="mr-2 h-4 w-4" />
+                          )}
+                          Add to Tracked
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            handleDismissGeneratedOpportunity(opportunity)
+                          }
+                        >
+                          Dismiss
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Tabs value={filterStatus} onValueChange={setFilterStatus}>
-        <TabsList className="flex flex-wrap h-auto">
+        <TabsList className="flex h-auto flex-wrap">
           <TabsTrigger value="all" className="flex items-center gap-2">
             All
             <span className="ml-1 rounded-full bg-secondary px-2 py-0.5 text-xs">
@@ -342,8 +471,8 @@ export default function OpportunitiesPage({
         <TabsContent value={filterStatus} className="mt-4">
           {isLoading ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-48" />
+              {[1, 2, 3].map((index) => (
+                <Skeleton key={index} className="h-48" />
               ))}
             </div>
           ) : filteredOpportunities.length === 0 ? (
@@ -392,7 +521,7 @@ export default function OpportunitiesPage({
                       </span>
                     </CardHeader>
                     <CardContent className="flex-1">
-                      <p className="text-sm text-muted-foreground line-clamp-3">
+                      <p className="line-clamp-3 text-sm text-muted-foreground">
                         {opportunity.description}
                       </p>
                       {opportunity.deadline && (

@@ -871,6 +871,9 @@ export function useDeleteApplication() {
 export function useGenerateOpportunities(startupId: string) {
   return useMutation({
     mutationFn: () => api.queries.startups.generateOpportunities(startupId),
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to generate opportunities");
+    },
   });
 }
 
