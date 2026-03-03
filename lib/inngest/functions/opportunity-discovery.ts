@@ -1,5 +1,8 @@
 import { db } from "@/lib/db";
-import { dedupeOpportunities } from "@/lib/opportunities/discovery";
+import {
+  dedupeOpportunities,
+  isTrackableOpportunity,
+} from "@/lib/opportunities/discovery";
 import { generateStartupOpportunities } from "@/lib/opportunities/generator";
 import { inngest } from "../client";
 
@@ -36,6 +39,7 @@ export const opportunityDiscoveryCron = inngest.createFunction(
       startupsScanned: startups.length,
       startupsWithInsertions: 0,
       generatedCandidates: 0,
+      filteredIneligible: 0,
       insertedOpportunities: 0,
       dedupedOpportunities: 0,
       failedStartups: 0,
@@ -73,12 +77,23 @@ export const opportunityDiscoveryCron = inngest.createFunction(
 
         summary.generatedCandidates += opportunities.length;
 
-        const deduped = dedupeOpportunities(existing, opportunities).slice(
+        const eligibleOpportunities = opportunities.filter((opportunity) =>
+          isTrackableOpportunity(opportunity),
+        );
+
+        summary.filteredIneligible +=
+          opportunities.length - eligibleOpportunities.length;
+
+        const deduped = dedupeOpportunities(
+          existing,
+          eligibleOpportunities,
+        ).slice(
           0,
           MAX_GENERATED_PER_STARTUP,
         );
 
-        summary.dedupedOpportunities += opportunities.length - deduped.length;
+        summary.dedupedOpportunities +=
+          eligibleOpportunities.length - deduped.length;
 
         if (deduped.length > 0) {
           await step.run(`insert-opportunities-${startup.id}`, async () => {

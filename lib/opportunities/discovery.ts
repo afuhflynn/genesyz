@@ -32,6 +32,12 @@ export interface GeneratedOpportunity {
   deadline?: Date | null;
 }
 
+function getUtcStartOfDay(date: Date): Date {
+  return new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
+  );
+}
+
 function normalizeTitle(title: string): string {
   return title
     .toLowerCase()
@@ -74,6 +80,37 @@ export function normalizeOpportunityUrl(url?: string): string | undefined {
   } catch {
     return undefined;
   }
+}
+
+export function isValidOpportunityUrl(url?: string | null): boolean {
+  if (!url) return false;
+  return Boolean(normalizeOpportunityUrl(url));
+}
+
+export function isDeadlineOnOrAfterTodayUTC(
+  deadline?: Date | string | null,
+): boolean {
+  if (!deadline) return false;
+
+  const parsedDeadline = deadline instanceof Date ? deadline : new Date(deadline);
+  if (Number.isNaN(parsedDeadline.getTime())) {
+    return false;
+  }
+
+  const todayUtc = getUtcStartOfDay(new Date());
+  const deadlineUtc = getUtcStartOfDay(parsedDeadline);
+
+  return deadlineUtc.getTime() >= todayUtc.getTime();
+}
+
+export function isTrackableOpportunity(opportunity: {
+  deadline?: Date | string | null;
+  url?: string | null;
+}): boolean {
+  return (
+    isValidOpportunityUrl(opportunity.url) &&
+    isDeadlineOnOrAfterTodayUTC(opportunity.deadline)
+  );
 }
 
 function parseDeadline(deadline?: string): Date | null {

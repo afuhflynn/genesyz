@@ -10,6 +10,7 @@ import {
   GraduationCap,
   Lightbulb,
   Loader2,
+  MoreHorizontal,
   Plus,
   Rocket,
   Search,
@@ -37,6 +38,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -50,6 +57,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useGenerateOpportunities } from "@/hooks";
 
+type OpportunityStatus =
+  | "DISCOVERED"
+  | "BOOKMARKED"
+  | "TO_APPLY"
+  | "APPLIED"
+  | "INTERVIEWING"
+  | "ACCEPTED"
+  | "REJECTED";
+
 interface Opportunity {
   id: string;
   title: string;
@@ -59,7 +75,7 @@ interface Opportunity {
   eligibility?: string;
   benefits?: string;
   deadline?: string | null;
-  status: string;
+  status: OpportunityStatus;
   source: string;
   createdAt: string;
 }
@@ -96,7 +112,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   OTHER: "Other",
 };
 
-const STATUS_COLORS: Record<string, string> = {
+const STATUS_COLORS: Record<OpportunityStatus, string> = {
   DISCOVERED: "bg-gray-100 text-gray-800",
   BOOKMARKED: "bg-blue-100 text-blue-800",
   TO_APPLY: "bg-yellow-100 text-yellow-800",
@@ -105,6 +121,24 @@ const STATUS_COLORS: Record<string, string> = {
   ACCEPTED: "bg-green-100 text-green-800",
   REJECTED: "bg-red-100 text-red-800",
 };
+
+const MARK_STATUS_OPTIONS: Array<{
+  label: string;
+  value: OpportunityStatus;
+}> = [
+  { label: "Mark as Applied", value: "APPLIED" },
+  { label: "Mark as Interviewing", value: "INTERVIEWING" },
+  { label: "Mark as Accepted", value: "ACCEPTED" },
+  { label: "Mark as Rejected", value: "REJECTED" },
+];
+
+function parseApiError(defaultMessage: string, fallback: unknown): string {
+  if (fallback instanceof Error) {
+    return fallback.message || defaultMessage;
+  }
+
+  return defaultMessage;
+}
 
 export default function OpportunitiesPage({
   params,
@@ -121,10 +155,11 @@ export default function OpportunitiesPage({
     GeneratedOpportunity[]
   >([]);
   const [isGenerateOpen, setIsGenerateOpen] = useState(false);
-  const [generationWarning, setGenerationWarning] = useState<string | null>(
-    null,
-  );
+  const [generationWarning, setGenerationWarning] = useState<string | null>(null);
   const [addingOpportunityTitle, setAddingOpportunityTitle] = useState<
+    string | null
+  >(null);
+  const [updatingOpportunityId, setUpdatingOpportunityId] = useState<
     string | null
   >(null);
 
@@ -160,6 +195,48 @@ export default function OpportunitiesPage({
     }
   }, [slug, fetchOpportunities]);
 
+  const updateOpportunityStatus = async (
+    opportunityId: string,
+    nextStatus: OpportunityStatus,
+    successMessage: string,
+  ) => {
+    if (!slug) return;
+
+    const previous = opportunities;
+    setUpdatingOpportunityId(opportunityId);
+    setOpportunities((current) =>
+      current.map((item) =>
+        item.id === opportunityId ? { ...item, status: nextStatus } : item,
+      ),
+    );
+
+    try {
+      const response = await fetch(`/api/startups/${slug}/opportunities`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ opportunityId, status: nextStatus }),
+      });
+
+      if (!response.ok) {
+        let message = "Failed to update opportunity status";
+        try {
+          const body = await response.json();
+          message = body.error || message;
+        } catch {
+          // ignore
+        }
+        throw new Error(message);
+      }
+
+      toast.success(successMessage);
+    } catch (error) {
+      setOpportunities(previous);
+      toast.error(parseApiError("Failed to update opportunity status", error));
+    } finally {
+      setUpdatingOpportunityId(null);
+    }
+  };
+
   const handleGenerateOpportunities = async () => {
     if (!slug) return;
 
@@ -180,7 +257,7 @@ export default function OpportunitiesPage({
 
     setAddingOpportunityTitle(opportunity.title);
     try {
-      const res = await fetch(`/api/startups/${slug}/opportunities`, {
+      const response = await fetch(`/api/startups/${slug}/opportunities`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -191,22 +268,29 @@ export default function OpportunitiesPage({
           eligibility: opportunity.eligibility,
           benefits: opportunity.benefits,
           deadline: opportunity.deadline,
-          status: "DISCOVERED",
+          status: "TO_APPLY",
         }),
       });
 
-      if (!res.ok) {
-        throw new Error("Failed to add opportunity");
+      if (!response.ok) {
+        let message = "Failed to add opportunity";
+        try {
+          const body = await response.json();
+          message = body.error || message;
+        } catch {
+          // ignore
+        }
+        throw new Error(message);
       }
 
       await fetchOpportunities();
       setGeneratedOpportunities((previous) =>
         previous.filter((item) => item.title !== opportunity.title),
       );
-      toast.success("Opportunity added to tracked list");
+      toast.success("Opportunity saved to To Apply");
     } catch (error) {
       console.error("Failed to add opportunity:", error);
-      toast.error("Failed to add opportunity");
+      toast.error(parseApiError("Failed to add opportunity", error));
     } finally {
       setAddingOpportunityTitle(null);
     }
@@ -249,9 +333,7 @@ export default function OpportunitiesPage({
               Back
             </Link>
           </Button>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Opportunities
-          </h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Opportunities</h1>
         </div>
 
         <div className="flex items-center gap-2">
@@ -322,9 +404,7 @@ export default function OpportunitiesPage({
                 <Button variant="outline" onClick={() => setIsAddOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={() => setIsAddOpen(false)}>
-                  Add Opportunity
-                </Button>
+                <Button onClick={() => setIsAddOpen(false)}>Add Opportunity</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -336,8 +416,7 @@ export default function OpportunitiesPage({
           <DialogHeader>
             <DialogTitle>AI Opportunity Recommendations</DialogTitle>
             <DialogDescription>
-              Review suggestions before adding them to your tracked
-              opportunities.
+              Review suggestions before adding them to your tracked opportunities.
             </DialogDescription>
           </DialogHeader>
 
@@ -354,8 +433,7 @@ export default function OpportunitiesPage({
               </div>
             ) : (
               generatedOpportunities.map((opportunity, index) => {
-                const icon = CATEGORY_ICONS[opportunity.category] || Lightbulb;
-                const Icon = icon;
+                const Icon = CATEGORY_ICONS[opportunity.category] || Lightbulb;
 
                 return (
                   <Card key={`${opportunity.title}-${index}`}>
@@ -366,9 +444,7 @@ export default function OpportunitiesPage({
                             <Icon className="h-4 w-4 text-primary" />
                           </div>
                           <div>
-                            <CardTitle className="text-base">
-                              {opportunity.title}
-                            </CardTitle>
+                            <CardTitle className="text-base">{opportunity.title}</CardTitle>
                             <CardDescription>
                               {CATEGORY_LABELS[opportunity.category] ||
                                 opportunity.category}
@@ -384,23 +460,15 @@ export default function OpportunitiesPage({
 
                       {opportunity.deadline && (
                         <div className="text-xs text-muted-foreground">
-                          Deadline:{" "}
-                          {format(
-                            new Date(opportunity.deadline),
-                            "MMM d, yyyy",
-                          )}
+                          Deadline: {format(new Date(opportunity.deadline), "MMM d, yyyy")}
                         </div>
                       )}
 
                       <div className="flex items-center gap-2">
                         <Button
                           size="sm"
-                          onClick={() =>
-                            handleAddGeneratedOpportunity(opportunity)
-                          }
-                          disabled={
-                            addingOpportunityTitle === opportunity.title
-                          }
+                          onClick={() => handleAddGeneratedOpportunity(opportunity)}
+                          disabled={addingOpportunityTitle === opportunity.title}
                         >
                           {addingOpportunityTitle === opportunity.title ? (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -412,9 +480,7 @@ export default function OpportunitiesPage({
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() =>
-                            handleDismissGeneratedOpportunity(opportunity)
-                          }
+                          onClick={() => handleDismissGeneratedOpportunity(opportunity)}
                         >
                           Dismiss
                         </Button>
@@ -479,9 +545,7 @@ export default function OpportunitiesPage({
             <Card>
               <CardContent className="py-12 text-center">
                 <Search className="mx-auto h-12 w-12 text-muted-foreground opacity-50" />
-                <h3 className="mt-4 text-lg font-semibold">
-                  No opportunities found
-                </h3>
+                <h3 className="mt-4 text-lg font-semibold">No opportunities found</h3>
                 <p className="mt-2 text-sm text-muted-foreground">
                   Add opportunities to track or generate AI recommendations.
                 </p>
@@ -495,6 +559,12 @@ export default function OpportunitiesPage({
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {filteredOpportunities.map((opportunity) => {
                 const Icon = CATEGORY_ICONS[opportunity.category] || Lightbulb;
+                const canVisit = Boolean(opportunity.url);
+                const canSave =
+                  opportunity.status === "DISCOVERED" ||
+                  opportunity.status === "BOOKMARKED";
+                const isStatusUpdating = updatingOpportunityId === opportunity.id;
+
                 return (
                   <Card key={opportunity.id} className="flex flex-col">
                     <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
@@ -503,9 +573,7 @@ export default function OpportunitiesPage({
                           <Icon className="h-4 w-4 text-primary" />
                         </div>
                         <div>
-                          <CardTitle className="text-base">
-                            {opportunity.title}
-                          </CardTitle>
+                          <CardTitle className="text-base">{opportunity.title}</CardTitle>
                           <CardDescription className="text-xs">
                             {CATEGORY_LABELS[opportunity.category] ||
                               opportunity.category}
@@ -527,34 +595,80 @@ export default function OpportunitiesPage({
                       {opportunity.deadline && (
                         <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
                           <AlertCircle className="h-3 w-3" />
-                          Deadline:{" "}
-                          {format(
-                            new Date(opportunity.deadline),
-                            "MMM d, yyyy",
-                          )}
+                          Deadline: {format(new Date(opportunity.deadline), "MMM d, yyyy")}
                         </div>
                       )}
                     </CardContent>
                     <div className="flex items-center gap-2 border-t p-4">
-                      <Button variant="outline" size="sm" className="flex-1">
-                        <Bookmark className="mr-2 h-4 w-4" />
-                        Save
-                      </Button>
                       <Button
                         variant="outline"
                         size="sm"
                         className="flex-1"
-                        asChild
+                        disabled={!canSave || isStatusUpdating}
+                        onClick={() =>
+                          updateOpportunityStatus(
+                            opportunity.id,
+                            "TO_APPLY",
+                            "Opportunity saved to To Apply",
+                          )
+                        }
                       >
-                        <a
-                          href={opportunity.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <ExternalLink className="mr-2 h-4 w-4" />
-                          Visit
-                        </a>
+                        {isStatusUpdating ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <Bookmark className="mr-2 h-4 w-4" />
+                        )}
+                        {canSave ? "Save" : "Saved"}
                       </Button>
+
+                      {canVisit ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                          asChild
+                        >
+                          <a
+                            href={opportunity.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <ExternalLink className="mr-2 h-4 w-4" />
+                            Visit
+                          </a>
+                        </Button>
+                      ) : (
+                        <Button variant="outline" size="sm" className="flex-1" disabled>
+                          No URL
+                        </Button>
+                      )}
+
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" aria-label="More actions">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          {MARK_STATUS_OPTIONS.map((option) => (
+                            <DropdownMenuItem
+                              key={option.value}
+                              disabled={
+                                option.value === opportunity.status || isStatusUpdating
+                              }
+                              onClick={() =>
+                                updateOpportunityStatus(
+                                  opportunity.id,
+                                  option.value,
+                                  `Opportunity marked as ${option.label.replace("Mark as ", "")}`,
+                                )
+                              }
+                            >
+                              {option.label}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </Card>
                 );

@@ -5,6 +5,7 @@ import { z } from "zod";
 import { searchWithTavily } from "@/lib/ai/tools";
 import {
   type GeneratedOpportunity,
+  isTrackableOpportunity,
   normalizeGeneratedOpportunity,
   OPPORTUNITY_CATEGORIES,
 } from "./discovery";
@@ -101,8 +102,9 @@ ${
 Rules:
 - Return ${maxResults} opportunities if possible, minimum 3.
 - Focus on grants, accelerators, competitions, fellowships, and mentorships.
-- Provide official URLs when known; omit URL if uncertain.
-- Use ISO date format (YYYY-MM-DD) for deadlines when known.
+- Provide official application URLs for every opportunity (must be valid http/https).
+- Use ISO date format (YYYY-MM-DD) deadlines for every opportunity.
+- Only include opportunities with deadlines on or after today (UTC).
 - Keep descriptions concise and practical for founders.
 - Return only valid JSON array.`;
 
@@ -141,6 +143,7 @@ Rules:
   const normalized = modelOutput
     .map(normalizeGeneratedOpportunity)
     .filter((item): item is GeneratedOpportunity => item !== null)
+    .filter((item) => isTrackableOpportunity(item))
     .slice(0, maxResults);
 
   if (normalized.length === 0) {

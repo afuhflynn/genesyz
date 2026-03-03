@@ -1,7 +1,33 @@
 import { headers } from "next/headers";
+import { OpportunityCategory, OpportunityStatus } from "@prisma/client";
 import { type NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import {
+  isDeadlineOnOrAfterTodayUTC,
+  isValidOpportunityUrl,
+  normalizeOpportunityUrl,
+} from "@/lib/opportunities/discovery";
+
+const CreateOpportunitySchema = z.object({
+  title: z.string().trim().min(1),
+  description: z.string().trim().min(1),
+  url: z.string().trim().min(1),
+  category: z.nativeEnum(OpportunityCategory),
+  eligibility: z.string().trim().optional(),
+  benefits: z.string().trim().optional(),
+  deadline: z.string().trim().min(1),
+  status: z.nativeEnum(OpportunityStatus).optional(),
+});
+
+const PatchOpportunitySchema = z.object({
+  opportunityId: z.string().trim().min(1),
+  status: z.nativeEnum(OpportunityStatus).optional(),
+  notes: z.string().optional(),
+  title: z.string().optional(),
+  description: z.string().optional(),
+});
 
 export async function GET(
   request: NextRequest,
@@ -52,7 +78,31 @@ export async function POST(
   }
 
   const { id: startupIdOrSlug } = await params;
-  const body = await request.json();
+  const rawBody = await request.json();
+  const parsedBody = CreateOpportunitySchema.safeParse(rawBody);
+
+  if (!parsedBody.success) {
+    return NextResponse.json(
+      { error: "Invalid payload", details: parsedBody.error.flatten() },
+      { status: 400 },
+    );
+  }
+
+  const body = parsedBody.data;
+
+  if (!isValidOpportunityUrl(body.url)) {
+    return NextResponse.json(
+      { error: "A valid opportunity URL is required" },
+      { status: 400 },
+    );
+  }
+
+  if (!isDeadlineOnOrAfterTodayUTC(body.deadline)) {
+    return NextResponse.json(
+      { error: "Deadline must be today or a future date (UTC)" },
+      { status: 400 },
+    );
+  }
 
   const startup = await db.startup.findFirst({
     where: {
@@ -70,11 +120,11 @@ export async function POST(
       startupId: startup.id,
       title: body.title,
       description: body.description,
-      url: body.url,
+      url: normalizeOpportunityUrl(body.url) || body.url,
       category: body.category,
       eligibility: body.eligibility,
       benefits: body.benefits,
-      deadline: body.deadline ? new Date(body.deadline) : null,
+      deadline: new Date(body.deadline),
       status: body.status || "DISCOVERED",
       source: "manual",
     },
@@ -104,15 +154,17 @@ export async function PATCH(
   }
 
   const { id: startupIdOrSlug } = await params;
-  const body = await request.json();
-  const { opportunityId, ...updateData } = body;
+  const rawBody = await request.json();
+  const parsedBody = PatchOpportunitySchema.safeParse(rawBody);
 
-  if (!opportunityId) {
+  if (!parsedBody.success) {
     return NextResponse.json(
-      { error: "Opportunity ID is required" },
+      { error: "Invalid payload", details: parsedBody.error.flatten() },
       { status: 400 },
     );
   }
+
+  const { opportunityId, ...updateData } = parsedBody.data;
 
   const startup = await db.startup.findFirst({
     where: {
