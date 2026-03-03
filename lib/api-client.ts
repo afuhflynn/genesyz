@@ -261,6 +261,11 @@ export const api = {
           nextMilestone: number;
           weeksToMilestone: number;
         }>(`/startups/${id}/streak`, { method: "GET" }),
+      getApplications: (id: string, status?: string) =>
+        apiRequest<{ data: unknown[] }>(
+          `/startups/${id}/applications${status ? `?status=${status}` : ""}`,
+          { method: "GET" },
+        ),
       checkSlug: (slug: string) =>
         apiRequest<{ available: boolean }>("/startups/check-slug", {
           method: "POST",

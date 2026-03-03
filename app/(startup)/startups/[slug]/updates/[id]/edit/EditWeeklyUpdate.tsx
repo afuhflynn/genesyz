@@ -119,8 +119,8 @@ interface EditWeeklyUpdateProps {
     metricPeriod: string | null;
     customMetricName: string | null;
     moraleScore: number;
-    topImprovements: string | null;
-    biggestObstacle: string | null;
+    topImprovements: string;
+    biggestObstacle: string;
     editableUntil: Date | null;
     isLocked: boolean;
     goals: Array<{

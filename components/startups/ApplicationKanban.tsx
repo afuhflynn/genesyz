@@ -213,7 +213,7 @@ export function ApplicationKanban({
     const newStatus = over.id as string;
 
     if (COLUMNS.some((col) => col.id === newStatus)) {
-      const app = applications.find((a) => a.id === applicationId);
+      const app = applications.find((a: Application) => a.id === applicationId);
       if (app && app.status !== newStatus) {
         await updateMutation.mutateAsync({
           startupId,
@@ -250,7 +250,7 @@ export function ApplicationKanban({
   };
 
   const getApplicationsByStatus = (status: string) => {
-    return applications.filter((app) => app.status === status);
+    return applications.filter((app: Application) => app.status === status);
   };
 
   return (

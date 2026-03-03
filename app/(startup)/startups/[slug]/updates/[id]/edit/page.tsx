@@ -92,7 +92,12 @@ export default async function EditUpdatePage({ params }: EditUpdatePageProps) {
       startupId={startup.id}
       startupSlug={startup.slug}
       startupName={startup.name}
-      update={update}
+      update={{
+        ...update,
+        userLearnings: update.userLearnings || "",
+        topImprovements: update.topImprovements || "",
+        biggestObstacle: update.biggestObstacle || "",
+      }}
       previousGoals={previousUpdate?.goals || []}
     />
   );
