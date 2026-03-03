@@ -191,7 +191,7 @@ export function ApplicationKanban({
     deadline: "",
   });
 
-  const applications = applicationsData?.data || [];
+  const applications: Application[] = applicationsData?.data || [];
 
   const sensors = useSensors(
     useSensor(PointerSensor, {

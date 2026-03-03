@@ -19,6 +19,22 @@ import { privateAxios, publicAxios } from "@/config/axios.config";
 // Types
 // ===========================================
 
+export interface Application {
+  id: string;
+  startupId: string;
+  title: string;
+  description: string | null;
+  url: string | null;
+  organization: string | null;
+  type: string;
+  status: string;
+  deadline: Date | null;
+  appliedAt: Date | null;
+  notes: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface IdeaWithDetails extends Idea {
   inputs: IdeaInput[];
   scores: IdeaScore[];
@@ -105,7 +121,7 @@ async function apiRequest<T>(
   const axios = options.isPublic ? publicAxios : privateAxios;
 
   try {
-    let response;
+    let response: { data: T };
 
     switch (options.method) {
       case "GET":
@@ -262,7 +278,7 @@ export const api = {
           weeksToMilestone: number;
         }>(`/startups/${id}/streak`, { method: "GET" }),
       getApplications: (id: string, status?: string) =>
-        apiRequest<{ data: unknown[] }>(
+        apiRequest<{ data: Application[] }>(
           `/startups/${id}/applications${status ? `?status=${status}` : ""}`,
           { method: "GET" },
         ),

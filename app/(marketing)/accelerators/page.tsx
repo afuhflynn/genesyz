@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { AcceleratorsList } from "@/components/accelerators/accelerators-list";
 import { db } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Accelerators | IdeasVault",
   description: "Browse and join accelerator programs to grow your startup",

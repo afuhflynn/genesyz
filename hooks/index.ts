@@ -9,6 +9,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
+  type Application,
   api,
   type IdeaWithDetails,
   type PaginationParams,
@@ -775,22 +776,6 @@ export function useIdeaStartup(ideaId: string) {
   });
 }
 
-export interface Application {
-  id: string;
-  startupId: string;
-  title: string;
-  description: string | null;
-  url: string | null;
-  organization: string | null;
-  type: string;
-  status: string;
-  deadline: Date | null;
-  appliedAt: Date | null;
-  notes: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
 export function useApplications(startupId: string) {
   return useQuery({
     queryKey: [...queryKeys.startups.detail(startupId), "applications"],
@@ -881,5 +866,6 @@ export function useDeleteApplication() {
   });
 }
 
+export type { Application } from "@/lib/api-client";
 export { useInfiniteIdeas } from "./useInfiniteIdeas";
 export { useInfiniteStartups } from "./useInfiniteStartups";
