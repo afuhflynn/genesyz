@@ -47,7 +47,6 @@ export async function POST(req: NextRequest) {
       data: {
         email: updatedUser.email,
         name: updatedUser.name,
-        username: updatedUser.username || updatedUser.email.split("@")[0],
       },
     });
 
