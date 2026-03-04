@@ -1,7 +1,6 @@
 "use client";
 
 import { ArrowLeft, Loader2, Settings2, Trash2, Users } from "lucide-react";
-import { headers } from "next/headers";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -27,28 +26,15 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useDeleteStartup, useStartup, useTeamMembers } from "@/hooks";
-import { auth } from "@/lib/auth";
+import { useDeleteStartup, useStartup } from "@/hooks";
 import { getWeeksSinceCreation } from "@/lib/utils/date";
 
 interface StartupSettingsProps {
   slug: string;
-}
-
-export async function StartupSettings({ slug }: StartupSettingsProps) {
-  const session = await auth.api.getSession({ headers: await headers() });
-  const currentUserId = session?.user?.id || "";
-
-  return <StartupSettingsContent slug={slug} currentUserId={currentUserId} />;
-}
-
-function StartupSettingsContent({
-  slug,
-  currentUserId,
-}: {
-  slug: string;
   currentUserId: string;
-}) {
+}
+
+export function StartupSettings({ slug, currentUserId }: StartupSettingsProps) {
   const router = useRouter();
   const { data: startup, isLoading } = useStartup(slug);
   const deleteStartup = useDeleteStartup();
