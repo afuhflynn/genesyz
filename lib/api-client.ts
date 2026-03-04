@@ -18,6 +18,8 @@ import { privateAxios, publicAxios } from "@/config/axios.config";
 // ===========================================
 // Types
 // ===========================================
+// Task Types
+// ===========================================
 
 export type TaskStatus = "TODO" | "IN_PROGRESS" | "BLOCKED" | "DONE";
 

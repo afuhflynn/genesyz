@@ -2,15 +2,15 @@ import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { ApplicationsPageClient } from "./ApplicationsPageClient";
+import { TasksPageContent } from "./TasksPageContent";
 
-interface ApplicationsPageProps {
+interface TasksPageProps {
   params: Promise<{ slug: string }>;
 }
 
 export async function generateMetadata({
   params,
-}: ApplicationsPageProps): Promise<Metadata> {
+}: TasksPageProps): Promise<Metadata> {
   const { slug } = await params;
   return {
     title: `Tasks | ${slug}`,
@@ -18,9 +18,7 @@ export async function generateMetadata({
   };
 }
 
-export default async function ApplicationsPage({
-  params,
-}: ApplicationsPageProps) {
+export default async function TasksPage({ params }: TasksPageProps) {
   const { slug } = await params;
 
   return (
@@ -33,16 +31,14 @@ export default async function ApplicationsPage({
           </Link>
         </Button>
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Tasks
-          </h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Tasks</h1>
           <p className="text-muted-foreground">
             Plan, prioritize, and execute across your startup task lists
           </p>
         </div>
       </div>
 
-      <ApplicationsPageClient slug={slug} />
+      <TasksPageContent slug={slug} />
     </div>
   );
 }

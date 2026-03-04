@@ -947,6 +947,34 @@ export function useDeleteTask() {
   });
 }
 
+export function useUpdateTask() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      startupId,
+      data,
+    }: {
+      startupId: string;
+      data: {
+        taskId: string;
+        title?: string;
+        description?: string;
+        deadline?: string | null;
+      };
+    }) => api.mutations.startups.updateTask(startupId, data),
+    onSuccess: (_, { startupId }) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.startups.tasks(startupId),
+      });
+      toast.success("Task updated!");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to update task");
+    },
+  });
+}
+
 export function useGenerateOpportunities(startupId: string) {
   return useMutation({
     mutationFn: () => api.queries.startups.generateOpportunities(startupId),
@@ -1305,6 +1333,7 @@ export type {
   StartupMember,
   StartupMemberRole,
   TaskItem,
+  TaskList,
   TaskStatus,
 } from "@/lib/api-client";
 export { useInfiniteIdeas } from "./useInfiniteIdeas";

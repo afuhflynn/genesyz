@@ -4,8 +4,8 @@ import {
   closestCorners,
   DndContext,
   type DragEndEvent,
-  type DragStartEvent,
   DragOverlay,
+  type DragStartEvent,
   PointerSensor,
   useDroppable,
   useSensor,
@@ -25,12 +25,22 @@ import {
   Clock3,
   GripVertical,
   Plus,
-  Pencil,
   Trash2,
   XCircle,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { TaskDetailSheet } from "@/components/startups/TaskDetailSheet";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -43,6 +53,18 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  type TaskItem,
+  type TaskList,
+  type TaskStatus,
+  useCreateTask,
+  useCreateTaskList,
+  useDeleteTask,
+  useDeleteTaskList,
+  useMoveTask,
+  useRenameTaskList,
+  useTaskLists,
+} from "@/hooks";
 
 const STATUSES = [
   { id: "TODO", label: "To Do", icon: Circle },
@@ -51,40 +73,23 @@ const STATUSES = [
   { id: "DONE", label: "Done", icon: CheckCircle2 },
 ] as const;
 
-type TaskStatus = (typeof STATUSES)[number]["id"];
-
-interface TaskItem {
-  id: string;
-  listId: string;
-  title: string;
-  description: string | null;
-  deadline: string | null;
-  status: TaskStatus;
-  position: number;
-}
-
-interface TaskList {
-  id: string;
-  name: string;
-  position: number;
-  tasks: TaskItem[];
-}
-
-interface TaskBoardProps {
-  startupId: string;
-}
-
 function TaskCard({
   task,
-  onEdit,
+  onView,
   onDelete,
 }: {
   task: TaskItem;
-  onEdit: (task: TaskItem) => void;
+  onView: (task: TaskItem) => void;
   onDelete: (taskId: string) => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: task.id });
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: task.id });
 
   return (
     <Card
@@ -106,23 +111,19 @@ function TaskCard({
             >
               <GripVertical className="h-4 w-4 text-muted-foreground" />
             </button>
-            <div className="min-w-0">
+            <button
+              type="button"
+              className="min-w-0 cursor-pointer text-left"
+              onClick={() => onView(task)}
+            >
               <p className="font-medium text-sm truncate">{task.title}</p>
               {task.description && (
                 <p className="text-xs text-muted-foreground line-clamp-2">
                   {task.description}
                 </p>
               )}
-            </div>
+            </button>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6"
-            onClick={() => onEdit(task)}
-          >
-            <Pencil className="h-3 w-3" />
-          </Button>
           <Button
             variant="ghost"
             size="icon"
@@ -147,13 +148,13 @@ function Column({
   listId,
   status,
   tasks,
-  onEditTask,
+  onViewTask,
   onDeleteTask,
 }: {
   listId: string;
   status: TaskStatus;
   tasks: TaskItem[];
-  onEditTask: (task: TaskItem) => void;
+  onViewTask: (task: TaskItem) => void;
   onDeleteTask: (taskId: string) => void;
 }) {
   const droppableId = `${listId}:${status}`;
@@ -173,7 +174,7 @@ function Column({
             <TaskCard
               key={task.id}
               task={task}
-              onEdit={onEditTask}
+              onView={onViewTask}
               onDelete={onDeleteTask}
             />
           ))}
@@ -186,9 +187,17 @@ function Column({
   );
 }
 
-export function TaskBoard({ startupId }: TaskBoardProps) {
-  const [lists, setLists] = useState<TaskList[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+export function TaskBoard({ startupId }: { startupId: string }) {
+  const { data: taskListsData, isLoading } = useTaskLists(startupId);
+  const createTaskList = useCreateTaskList();
+  const renameTaskList = useRenameTaskList();
+  const deleteTaskList = useDeleteTaskList();
+  const createTask = useCreateTask();
+  const moveTask = useMoveTask();
+  const deleteTask = useDeleteTask();
+
+  const lists: TaskList[] = taskListsData?.data?.lists || [];
+
   const [activeTask, setActiveTask] = useState<TaskItem | null>(null);
 
   const [isListDialogOpen, setIsListDialogOpen] = useState(false);
@@ -199,6 +208,16 @@ export function TaskBoard({ startupId }: TaskBoardProps) {
   const [taskTitle, setTaskTitle] = useState("");
   const [taskDescription, setTaskDescription] = useState("");
   const [taskDeadline, setTaskDeadline] = useState("");
+
+  const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
+  const [renameListId, setRenameListId] = useState("");
+  const [renameListName, setRenameListName] = useState("");
+
+  const [deleteListId, setDeleteListId] = useState<string | null>(null);
+  const [deleteTaskId, setDeleteTaskId] = useState<string | null>(null);
+
+  const [taskDetailSheetOpen, setTaskDetailSheetOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<TaskItem | null>(null);
 
   const sensors = useSensors(useSensor(PointerSensor));
 
@@ -212,107 +231,69 @@ export function TaskBoard({ startupId }: TaskBoardProps) {
     return map;
   }, [lists]);
 
-  const fetchData = async () => {
-    setIsLoading(true);
-    try {
-      const res = await fetch(`/api/startups/${startupId}/applications`);
-      if (!res.ok) throw new Error("Failed to load task lists");
-      const json = await res.json();
-      setLists(json.data?.lists || []);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to load tasks");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, [startupId]);
-
   const handleCreateList = async () => {
     if (!newListName.trim()) return;
 
-    const res = await fetch(`/api/startups/${startupId}/applications`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "create_list", name: newListName }),
+    await createTaskList.mutateAsync({
+      startupId,
+      data: { name: newListName },
     });
-
-    if (!res.ok) {
-      toast.error("Failed to create list");
-      return;
-    }
 
     setNewListName("");
     setIsListDialogOpen(false);
-    await fetchData();
   };
 
-  const handleRenameList = async (listId: string, name: string) => {
-    const value = window.prompt("Rename list", name)?.trim();
-    if (!value || value === name) return;
+  const handleRenameList = async () => {
+    if (!renameListId || !renameListName.trim()) return;
 
-    const res = await fetch(`/api/startups/${startupId}/applications`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "rename_list", listId, name: value }),
+    await renameTaskList.mutateAsync({
+      startupId,
+      data: { listId: renameListId, name: renameListName.trim() },
     });
 
-    if (!res.ok) {
-      toast.error("Failed to rename list");
-      return;
-    }
-
-    await fetchData();
+    setIsRenameDialogOpen(false);
+    setRenameListId("");
+    setRenameListName("");
   };
 
-  const handleDeleteList = async (listId: string) => {
-    if (!window.confirm("Delete this list and all its tasks?")) return;
+  const openRenameDialog = (listId: string, currentName: string) => {
+    setRenameListId(listId);
+    setRenameListName(currentName);
+    setIsRenameDialogOpen(true);
+  };
 
-    const res = await fetch(`/api/startups/${startupId}/applications`, {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "delete_list", listId }),
+  const handleDeleteList = async () => {
+    if (!deleteListId) return;
+
+    await deleteTaskList.mutateAsync({
+      startupId,
+      listId: deleteListId,
     });
 
-    if (!res.ok) {
-      toast.error("Failed to delete list");
-      return;
-    }
-
-    await fetchData();
+    setDeleteListId(null);
   };
 
   const handleCreateTask = async () => {
     if (!taskListId || !taskTitle.trim()) return;
 
-    const payload = {
-      action: "create_task",
-      listId: taskListId,
-      title: taskTitle,
-      description: taskDescription || undefined,
-      deadline: taskDeadline ? new Date(taskDeadline).toISOString() : undefined,
-      status: "TODO",
-    };
-
-    const res = await fetch(`/api/startups/${startupId}/applications`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+    await createTask.mutateAsync({
+      startupId,
+      data: {
+        listId: taskListId,
+        title: taskTitle,
+        description: taskDescription || undefined,
+        deadline: taskDeadline
+          ? new Date(taskDeadline).toISOString()
+          : undefined,
+        status: "TODO",
+      },
     });
-
-    if (!res.ok) {
-      toast.error("Failed to create task");
-      return;
-    }
 
     setTaskTitle("");
     setTaskDescription("");
     setTaskDeadline("");
     setTaskListId("");
     setIsTaskDialogOpen(false);
-    await fetchData();
   };
 
   const openCreateTaskForList = (listId: string) => {
@@ -320,68 +301,20 @@ export function TaskBoard({ startupId }: TaskBoardProps) {
     setIsTaskDialogOpen(true);
   };
 
-  const handleDeleteTask = async (taskId: string) => {
-    const res = await fetch(`/api/startups/${startupId}/applications`, {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "delete_task", taskId }),
+  const handleDeleteTask = async () => {
+    if (!deleteTaskId) return;
+
+    await deleteTask.mutateAsync({
+      startupId,
+      taskId: deleteTaskId,
     });
 
-    if (!res.ok) {
-      toast.error("Failed to delete task");
-      return;
-    }
-
-    await fetchData();
+    setDeleteTaskId(null);
   };
 
-  const handleEditTask = async (task: TaskItem) => {
-    const title = window.prompt("Task title", task.title)?.trim();
-    if (!title) return;
-
-    const descriptionInput = window.prompt(
-      "Description (optional)",
-      task.description || "",
-    );
-    if (descriptionInput === null) return;
-
-    const currentDate = task.deadline
-      ? format(new Date(task.deadline), "yyyy-MM-dd")
-      : "";
-    const deadlineInput = window.prompt(
-      "Deadline YYYY-MM-DD (leave empty to clear)",
-      currentDate,
-    );
-    if (deadlineInput === null) return;
-
-    const normalizedDeadline = deadlineInput.trim();
-    const deadline = normalizedDeadline
-      ? new Date(`${normalizedDeadline}T00:00:00.000Z`)
-      : null;
-
-    if (deadline && Number.isNaN(deadline.getTime())) {
-      toast.error("Invalid deadline format. Use YYYY-MM-DD");
-      return;
-    }
-
-    const res = await fetch(`/api/startups/${startupId}/applications`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "update_task",
-        taskId: task.id,
-        title,
-        description: descriptionInput.trim() || null,
-        deadline: deadline ? deadline.toISOString() : null,
-      }),
-    });
-
-    if (!res.ok) {
-      toast.error("Failed to update task");
-      return;
-    }
-
-    await fetchData();
+  const openTaskDetail = (task: TaskItem) => {
+    setSelectedTask(task);
+    setTaskDetailSheetOpen(true);
   };
 
   const getTasksByStatus = (list: TaskList, status: TaskStatus) =>
@@ -422,44 +355,20 @@ export function TaskBoard({ startupId }: TaskBoardProps) {
       return;
     }
 
-    const previous = lists;
-    setLists((current) =>
-      current.map((list) => {
-        const nextTasks = list.tasks.map((item) => {
-          if (item.id === taskId) {
-            return { ...item, listId: targetListId, status: targetStatus };
-          }
-          return item;
-        });
-        return { ...list, tasks: nextTasks };
-      }),
-    );
-
-    try {
-      const res = await fetch(`/api/startups/${startupId}/applications`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "move_task",
-          taskId,
-          listId: targetListId,
-          status: targetStatus,
-        }),
-      });
-
-      if (!res.ok) {
-        throw new Error("Failed to move task");
-      }
-
-      await fetchData();
-    } catch {
-      setLists(previous);
-      toast.error("Failed to move task");
-    }
+    await moveTask.mutateAsync({
+      startupId,
+      data: {
+        taskId,
+        listId: targetListId,
+        status: targetStatus,
+      },
+    });
   };
 
   if (isLoading) {
-    return <div className="text-sm text-muted-foreground">Loading tasks...</div>;
+    return (
+      <div className="text-sm text-muted-foreground">Loading tasks...</div>
+    );
   }
 
   return (
@@ -553,6 +462,81 @@ export function TaskBoard({ startupId }: TaskBoardProps) {
         </div>
       </div>
 
+      <Dialog open={isRenameDialogOpen} onOpenChange={setIsRenameDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename Task List</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Label htmlFor="rename-list-name">List name</Label>
+            <Input
+              id="rename-list-name"
+              value={renameListName}
+              onChange={(e) => setRenameListName(e.target.value)}
+              placeholder="List name"
+            />
+            <Button onClick={handleRenameList} className="w-full">
+              Rename
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog
+        open={!!deleteListId}
+        onOpenChange={() => setDeleteListId(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Task List</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this list? All tasks in this list
+              will be deleted as well. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteList}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={!!deleteTaskId}
+        onOpenChange={() => setDeleteTaskId(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Task</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this task? This action cannot be
+              undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteTask}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <TaskDetailSheet
+        task={selectedTask}
+        open={taskDetailSheetOpen}
+        onOpenChange={setTaskDetailSheetOpen}
+        startupId={startupId}
+      />
+
       {lists.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-sm text-muted-foreground">
@@ -584,14 +568,14 @@ export function TaskBoard({ startupId }: TaskBoardProps) {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleRenameList(list.id, list.name)}
+                        onClick={() => openRenameDialog(list.id, list.name)}
                       >
                         Rename
                       </Button>
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => handleDeleteList(list.id)}
+                        onClick={() => setDeleteListId(list.id)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -615,8 +599,8 @@ export function TaskBoard({ startupId }: TaskBoardProps) {
                             listId={list.id}
                             status={status.id}
                             tasks={getTasksByStatus(list, status.id)}
-                            onEditTask={handleEditTask}
-                            onDeleteTask={handleDeleteTask}
+                            onViewTask={openTaskDetail}
+                            onDeleteTask={(taskId) => setDeleteTaskId(taskId)}
                           />
                         </div>
                       );
