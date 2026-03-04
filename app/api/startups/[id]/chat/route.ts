@@ -23,6 +23,20 @@ export async function POST(
     const { id: startupIdOrSlug } = await params;
     const { messages, conversationId } = await req.json();
 
+    // Map UI messages to CoreMessages if they are in the parts format
+    const coreMessages = Array.isArray(messages) ? messages.map((m: any) => {
+      if (m.parts && Array.isArray(m.parts)) {
+        return {
+          role: m.role,
+          content: m.parts.map((p: any) => {
+            if (p.type === 'text') return p.text;
+            return '';
+          }).join('\n')
+        };
+      }
+      return m;
+    }) : messages;
+
     const access = await checkStartupAccess(startupIdOrSlug, "view_startup");
 
     if (!access.hasAccess || !access.startupId) {
@@ -77,7 +91,7 @@ If the user asks for a pitch review or market analysis, use your tools to get th
       tools: {
         ...tools,
       },
-      messages,
+      messages: coreMessages,
       onFinish: async ({ text, toolCalls, toolResults, usage }) => {
         try {
           if (conversationId) {
