@@ -202,11 +202,86 @@ export const saveVerdict = tool({
   },
 });
 
+export const getStartupContext = tool({
+  description:
+    "Get the full context of a startup, including updates, tasks, goals, and metrics.",
+  inputSchema: z.object({
+    startupId: z.string().describe("The ID of the startup"),
+  }),
+  execute: async ({ startupId }) => {
+    const { db } = await import("@/lib/db");
+    const startup = await db.startup.findUnique({
+      where: { id: startupId },
+      include: {
+        idea: {
+          include: {
+            researchPackets: true,
+            scores: true,
+          },
+        },
+        weeklyUpdates: {
+          orderBy: { weekNumber: "desc" },
+          take: 4,
+          include: { goals: true },
+        },
+        goals: {
+          orderBy: { priority: "asc" },
+        },
+        metrics: true,
+        tasks: {
+          orderBy: { position: "asc" },
+          take: 20,
+        },
+        members: {
+          include: {
+            user: {
+              select: { name: true, email: true },
+            },
+          },
+        },
+        followers: true,
+      },
+    });
+
+    if (!startup) throw new Error("Startup not found");
+
+    return {
+      id: startup.id,
+      name: startup.name,
+      tagline: startup.tagline,
+      description: startup.description,
+      industry: startup.industry,
+      stage: startup.stage,
+      targetMarket: startup.targetMarket,
+      isLaunched: startup.isLaunched,
+      idea: {
+        title: startup.idea.title,
+        summary: startup.idea.summary,
+        research: startup.idea.researchPackets.map((p) => ({
+          type: p.agentType,
+          content: p.content,
+        })),
+        score: startup.idea.scores[0],
+      },
+      weeklyUpdates: startup.weeklyUpdates,
+      goals: startup.goals,
+      metrics: startup.metrics,
+      tasks: startup.tasks,
+      members: startup.members.map((m) => ({
+        name: m.user.name,
+        role: m.role,
+      })),
+      followersCount: startup.followers.length,
+    };
+  },
+});
+
 export const tools = {
   webSearch,
   getIndustryNews,
   getCompetitorUpdates,
   getIdeaContext,
+  getStartupContext,
   updateIdeaState,
   saveVerdict,
 };

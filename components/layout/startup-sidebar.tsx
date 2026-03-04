@@ -61,6 +61,13 @@ export function StartupSidebar({
       visible: permissions.canViewStartup,
     },
     {
+      label: "VC Coach",
+      icon: MessageSquareIcon,
+      href: `${basePath}/chat`,
+      active: pathname === `${basePath}/chat`,
+      visible: permissions.canViewStartup,
+    },
+    {
       label: "Weekly Updates",
       icon: Calendar,
       href: `${basePath}/updates`,

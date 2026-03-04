@@ -6,4 +6,5 @@ export { RoleDropdown } from "./RoleDropdown";
 export { StartupProfileForm } from "./StartupProfileForm";
 export { TeamTab } from "./TeamTab";
 export { FollowersTab } from "./FollowersTab";
+export { VCCoach } from "./VCCoach";
 export { WeeklyUpdateForm } from "./WeeklyUpdateForm";
