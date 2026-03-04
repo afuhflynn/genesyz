@@ -8,6 +8,7 @@ import {
   Flame,
   GraduationCap,
   LayoutDashboard,
+  MessageSquareIcon,
   Settings,
   TrendingUp,
   User,
