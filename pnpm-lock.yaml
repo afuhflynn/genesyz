@@ -245,9 +245,6 @@ importers:
       pg:
         specifier: ^8.16.3
         version: 8.19.0
-      prisma:
-        specifier: ^7.2.0
-        version: 7.4.1(@types/react@19.2.14)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)
       react:
         specifier: 19.2.3
         version: 19.2.3
@@ -324,6 +321,9 @@ importers:
       babel-plugin-react-compiler:
         specifier: 1.0.0
         version: 1.0.0
+      prisma:
+        specifier: ^7.2.0
+        version: 7.4.1(@types/react@19.2.14)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(typescript@5.9.3)
       sharp:
         specifier: ^0.34.5
         version: 0.34.5
