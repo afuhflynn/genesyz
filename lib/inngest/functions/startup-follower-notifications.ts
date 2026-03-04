@@ -136,6 +136,7 @@ export const followerWeeklyUpdateFn = inngest.createFunction(
               followers: true,
             },
           },
+          goals: true,
         },
       });
 
