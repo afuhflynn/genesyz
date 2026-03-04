@@ -64,12 +64,12 @@ export function Sidebar({ className }: SidebarProps) {
       href: "/startups",
       active: pathname === "/startups",
     },
-    {
-      label: "Accelerators",
-      icon: GraduationCap,
-      href: "/accelerators",
-      active: pathname === "/accelerators",
-    },
+    // {
+    //   label: "Accelerators",
+    //   icon: GraduationCap,
+    //   href: "/accelerators",
+    //   active: pathname === "/accelerators",
+    // },
     {
       label: "Billing",
       icon: CreditCard,
