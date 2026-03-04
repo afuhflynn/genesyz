@@ -28,9 +28,7 @@ import {
   Trash2,
   XCircle,
 } from "lucide-react";
-import { useMemo, useState } from "react";
-import { toast } from "sonner";
-import { TaskDetailSheet } from "@/components/startups/TaskDetailSheet";
+import { useEffect, useMemo, useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -64,7 +62,10 @@ import {
   useMoveTask,
   useRenameTaskList,
   useTaskLists,
+  useUpdateTask,
 } from "@/hooks";
+import { cn } from "@/lib/utils";
+import { Skeleton } from "../ui/skeleton";
 
 const STATUSES = [
   { id: "TODO", label: "To Do", icon: Circle },
@@ -74,13 +75,18 @@ const STATUSES = [
 ] as const;
 
 function TaskCard({
+  startupId,
   task,
   onView,
   onDelete,
+  isExpanded = false,
 }: {
+  startupId: string;
   task: TaskItem;
   onView: (task: TaskItem) => void;
   onDelete: (taskId: string) => void;
+  isDragging?: boolean;
+  isExpanded?: boolean;
 }) {
   const {
     attributes,
@@ -91,6 +97,51 @@ function TaskCard({
     isDragging,
   } = useSortable({ id: task.id });
 
+  const updateTask = useUpdateTask();
+
+  const [title, setTitle] = useState(task.title);
+  const [description, setDescription] = useState(task.description || "");
+  const [deadline, setDeadline] = useState(
+    task.deadline ? format(new Date(task.deadline), "yyyy-MM-dd") : "",
+  );
+
+  useEffect(() => {
+    if (!isExpanded) return;
+
+    setTitle(task.title);
+    setDescription(task.description || "");
+    setDeadline(
+      task.deadline ? format(new Date(task.deadline), "yyyy-MM-dd") : "",
+    );
+  }, [isExpanded, task.title, task.description, task.deadline]);
+
+  const handleSave = async () => {
+    if (!title.trim()) return;
+
+    const normalizedDeadline = deadline.trim();
+    const deadlineValue = normalizedDeadline
+      ? new Date(`${normalizedDeadline}T00:00:00.000Z`)
+      : null;
+
+    if (
+      normalizedDeadline &&
+      deadlineValue &&
+      Number.isNaN(deadlineValue.getTime())
+    ) {
+      return;
+    }
+
+    await updateTask.mutateAsync({
+      startupId,
+      data: {
+        taskId: task.id,
+        title: title.trim(),
+        description: description.trim() || undefined,
+        deadline: deadlineValue ? deadlineValue.toISOString() : null,
+      },
+    });
+  };
+
   return (
     <Card
       ref={setNodeRef}
@@ -99,9 +150,11 @@ function TaskCard({
         transition,
         opacity: isDragging ? 0.5 : 1,
       }}
-      className="touch-none"
+      className={cn("touch-none", isExpanded && "ring-1 ring-primary/30")}
     >
-      <CardContent className="p-3 space-y-2">
+      <CardContent
+        className={cn("p-3 space-y-2", isDragging && "bg-muted opacity-60")}
+      >
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-start gap-2 min-w-0">
             <button
@@ -124,19 +177,67 @@ function TaskCard({
               )}
             </button>
           </div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6"
-            onClick={() => onDelete(task.id)}
-          >
-            <Trash2 className="h-3 w-3" />
-          </Button>
+          {!isDragging && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              onClick={() => onDelete(task.id)}
+            >
+              <Trash2 className="h-3 w-3" />
+            </Button>
+          )}
         </div>
         {task.deadline && (
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
             <Calendar className="h-3 w-3" />
             {format(new Date(task.deadline), "MMM d, yyyy")}
+          </div>
+        )}
+
+        {isExpanded && (
+          <div className="space-y-3 border-t pt-3">
+            <div className="space-y-1">
+              <Label className="text-xs">Title</Label>
+              <Input
+                value={title}
+                onChange={(event) => setTitle(event.target.value)}
+                placeholder="Task title"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-xs">Description</Label>
+              <Textarea
+                value={description}
+                onChange={(event) => setDescription(event.target.value)}
+                placeholder="Add a description..."
+                className="min-h-[90px]"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-xs">Deadline</Label>
+              <Input
+                type="date"
+                value={deadline}
+                onChange={(event) => setDeadline(event.target.value)}
+              />
+            </div>
+
+            <p className="text-xs text-muted-foreground">
+              Created: {format(new Date(task.createdAt), "MMM d, yyyy")}
+            </p>
+
+            <div className="flex justify-end">
+              <Button
+                size="sm"
+                onClick={handleSave}
+                disabled={updateTask.isPending || !title.trim()}
+              >
+                {updateTask.isPending ? "Saving..." : "Save Changes"}
+              </Button>
+            </div>
           </div>
         )}
       </CardContent>
@@ -145,17 +246,21 @@ function TaskCard({
 }
 
 function Column({
+  startupId,
   listId,
   status,
   tasks,
   onViewTask,
   onDeleteTask,
+  expandedTaskId,
 }: {
+  startupId: string;
   listId: string;
   status: TaskStatus;
   tasks: TaskItem[];
   onViewTask: (task: TaskItem) => void;
   onDeleteTask: (taskId: string) => void;
+  expandedTaskId: string | null;
 }) {
   const droppableId = `${listId}:${status}`;
   const { setNodeRef, isOver } = useDroppable({ id: droppableId });
@@ -173,9 +278,11 @@ function Column({
           {tasks.map((task) => (
             <TaskCard
               key={task.id}
+              startupId={startupId}
               task={task}
               onView={onViewTask}
               onDelete={onDeleteTask}
+              isExpanded={expandedTaskId === task.id}
             />
           ))}
           {tasks.length === 0 && (
@@ -216,8 +323,7 @@ export function TaskBoard({ startupId }: { startupId: string }) {
   const [deleteListId, setDeleteListId] = useState<string | null>(null);
   const [deleteTaskId, setDeleteTaskId] = useState<string | null>(null);
 
-  const [taskDetailSheetOpen, setTaskDetailSheetOpen] = useState(false);
-  const [selectedTask, setSelectedTask] = useState<TaskItem | null>(null);
+  const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null);
 
   const sensors = useSensors(useSensor(PointerSensor));
 
@@ -312,9 +418,14 @@ export function TaskBoard({ startupId }: { startupId: string }) {
     setDeleteTaskId(null);
   };
 
+  useEffect(() => {
+    if (!expandedTaskId) return;
+    if (tasksById.has(expandedTaskId)) return;
+    setExpandedTaskId(null);
+  }, [expandedTaskId, tasksById]);
+
   const openTaskDetail = (task: TaskItem) => {
-    setSelectedTask(task);
-    setTaskDetailSheetOpen(true);
+    setExpandedTaskId((currentId) => (currentId === task.id ? null : task.id));
   };
 
   const getTasksByStatus = (list: TaskList, status: TaskStatus) =>
@@ -367,7 +478,14 @@ export function TaskBoard({ startupId }: { startupId: string }) {
 
   if (isLoading) {
     return (
-      <div className="text-sm text-muted-foreground">Loading tasks...</div>
+      <div className="space-y-4">
+        <Skeleton className="h-8 w-48" />
+        <div className="flex gap-4">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <Skeleton key={i} className="h-64 w-72" />
+          ))}
+        </div>
+      </div>
     );
   }
 
@@ -530,13 +648,6 @@ export function TaskBoard({ startupId }: { startupId: string }) {
         </AlertDialogContent>
       </AlertDialog>
 
-      <TaskDetailSheet
-        task={selectedTask}
-        open={taskDetailSheetOpen}
-        onOpenChange={setTaskDetailSheetOpen}
-        startupId={startupId}
-      />
-
       {lists.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-sm text-muted-foreground">
@@ -596,11 +707,13 @@ export function TaskBoard({ startupId }: { startupId: string }) {
                             </span>
                           </div>
                           <Column
+                            startupId={startupId}
                             listId={list.id}
                             status={status.id}
                             tasks={getTasksByStatus(list, status.id)}
                             onViewTask={openTaskDetail}
                             onDeleteTask={(taskId) => setDeleteTaskId(taskId)}
+                            expandedTaskId={expandedTaskId}
                           />
                         </div>
                       );
@@ -613,11 +726,13 @@ export function TaskBoard({ startupId }: { startupId: string }) {
 
           <DragOverlay>
             {activeTask ? (
-              <Card className="w-72">
-                <CardContent className="p-3 text-sm font-medium">
-                  {activeTask.title}
-                </CardContent>
-              </Card>
+              <TaskCard
+                startupId={startupId}
+                task={activeTask}
+                onView={openTaskDetail}
+                onDelete={(taskId) => setDeleteTaskId(taskId)}
+                isDragging
+              />
             ) : null}
           </DragOverlay>
         </DndContext>

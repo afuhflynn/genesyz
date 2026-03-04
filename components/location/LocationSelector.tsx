@@ -36,7 +36,7 @@ interface LocationSelectorProps {
   onChange: (location: LocationContext | null) => void;
   disabled?: boolean;
   id?: string;
-  canEdit: boolean;
+  canEdit?: boolean;
 }
 
 type PickerStep = "country" | "region" | "city";
@@ -94,7 +94,7 @@ export function LocationSelector({
   onChange,
   disabled = false,
   id,
-  canEdit,
+  canEdit = true,
 }: LocationSelectorProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
