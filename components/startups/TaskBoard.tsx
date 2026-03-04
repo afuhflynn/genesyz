@@ -25,6 +25,7 @@ import {
   Clock3,
   GripVertical,
   Plus,
+  Pencil,
   Trash2,
   XCircle,
 } from "lucide-react";
@@ -75,9 +76,11 @@ interface TaskBoardProps {
 
 function TaskCard({
   task,
+  onEdit,
   onDelete,
 }: {
   task: TaskItem;
+  onEdit: (task: TaskItem) => void;
   onDelete: (taskId: string) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
@@ -116,6 +119,14 @@ function TaskCard({
             variant="ghost"
             size="icon"
             className="h-6 w-6"
+            onClick={() => onEdit(task)}
+          >
+            <Pencil className="h-3 w-3" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
             onClick={() => onDelete(task.id)}
           >
             <Trash2 className="h-3 w-3" />
@@ -136,11 +147,13 @@ function Column({
   listId,
   status,
   tasks,
+  onEditTask,
   onDeleteTask,
 }: {
   listId: string;
   status: TaskStatus;
   tasks: TaskItem[];
+  onEditTask: (task: TaskItem) => void;
   onDeleteTask: (taskId: string) => void;
 }) {
   const droppableId = `${listId}:${status}`;
@@ -157,7 +170,12 @@ function Column({
       >
         <div className="space-y-2">
           {tasks.map((task) => (
-            <TaskCard key={task.id} task={task} onDelete={onDeleteTask} />
+            <TaskCard
+              key={task.id}
+              task={task}
+              onEdit={onEditTask}
+              onDelete={onDeleteTask}
+            />
           ))}
           {tasks.length === 0 && (
             <p className="text-xs text-muted-foreground">No tasks</p>
@@ -312,6 +330,55 @@ export function TaskBoard({ startupId }: TaskBoardProps) {
     await fetchData();
   };
 
+  const handleEditTask = async (task: TaskItem) => {
+    const title = window.prompt("Task title", task.title)?.trim();
+    if (!title) return;
+
+    const descriptionInput = window.prompt(
+      "Description (optional)",
+      task.description || "",
+    );
+    if (descriptionInput === null) return;
+
+    const currentDate = task.deadline
+      ? format(new Date(task.deadline), "yyyy-MM-dd")
+      : "";
+    const deadlineInput = window.prompt(
+      "Deadline YYYY-MM-DD (leave empty to clear)",
+      currentDate,
+    );
+    if (deadlineInput === null) return;
+
+    const normalizedDeadline = deadlineInput.trim();
+    const deadline = normalizedDeadline
+      ? new Date(`${normalizedDeadline}T00:00:00.000Z`)
+      : null;
+
+    if (deadline && Number.isNaN(deadline.getTime())) {
+      toast.error("Invalid deadline format. Use YYYY-MM-DD");
+      return;
+    }
+
+    const res = await fetch(`/api/startups/${startupId}/applications`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "update_task",
+        taskId: task.id,
+        title,
+        description: descriptionInput.trim() || null,
+        deadline: deadline ? deadline.toISOString() : null,
+      }),
+    });
+
+    if (!res.ok) {
+      toast.error("Failed to update task");
+      return;
+    }
+
+    await fetchData();
+  };
+
   const getTasksByStatus = (list: TaskList, status: TaskStatus) =>
     list.tasks.filter((task) => task.status === status);
 
@@ -329,8 +396,26 @@ export function TaskBoard({ startupId }: TaskBoardProps) {
     const task = tasksById.get(taskId);
     if (!task) return;
 
-    const [targetListId, targetStatus] = overId.split(":") as [string, TaskStatus];
+    let targetListId: string | undefined;
+    let targetStatus: TaskStatus | undefined;
+
+    if (overId.includes(":")) {
+      const [listId, status] = overId.split(":") as [string, TaskStatus];
+      targetListId = listId;
+      targetStatus = status;
+    } else {
+      const overTask = tasksById.get(overId);
+      if (overTask) {
+        targetListId = overTask.listId;
+        targetStatus = overTask.status;
+      }
+    }
+
     if (!targetListId || !targetStatus) return;
+
+    if (task.listId === targetListId && task.status === targetStatus) {
+      return;
+    }
 
     const previous = lists;
     setLists((current) =>
@@ -517,6 +602,7 @@ export function TaskBoard({ startupId }: TaskBoardProps) {
                             listId={list.id}
                             status={status.id}
                             tasks={getTasksByStatus(list, status.id)}
+                            onEditTask={handleEditTask}
                             onDeleteTask={handleDeleteTask}
                           />
                         </div>
