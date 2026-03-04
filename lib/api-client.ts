@@ -35,6 +35,23 @@ export interface Application {
   updatedAt: Date;
 }
 
+export interface StartupOpportunity {
+  id: string;
+  startupId: string;
+  title: string;
+  description: string;
+  url: string;
+  category: string;
+  eligibility: string | null;
+  benefits: string | null;
+  deadline: string | null;
+  status: string;
+  source: string;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Accelerator {
   id: string;
   name: string;
@@ -337,6 +354,27 @@ export const api = {
           `/startups/${id}/applications${status ? `?status=${status}` : ""}`,
           { method: "GET" },
         ),
+      getOpportunities: (
+        id: string,
+        params?: { status?: string; category?: string },
+      ) => {
+        const query = new URLSearchParams();
+
+        if (params?.status) {
+          query.set("status", params.status);
+        }
+
+        if (params?.category) {
+          query.set("category", params.category);
+        }
+
+        const queryString = query.toString();
+
+        return apiRequest<{ data: StartupOpportunity[] }>(
+          `/startups/${id}/opportunities${queryString ? `?${queryString}` : ""}`,
+          { method: "GET" },
+        );
+      },
       generateOpportunities: (id: string) =>
         apiRequest<{
           data: Array<{
@@ -591,6 +629,42 @@ export const api = {
       deleteApplication: (id: string, applicationId: string) =>
         apiRequest<{ success: boolean }>(
           `/startups/${id}/applications?applicationId=${applicationId}`,
+          { method: "DELETE" },
+        ),
+      createOpportunity: (
+        id: string,
+        data: {
+          title: string;
+          description: string;
+          url: string;
+          category: string;
+          eligibility?: string;
+          benefits?: string;
+          deadline: string;
+          status?: string;
+        },
+      ) =>
+        apiRequest<StartupOpportunity>(`/startups/${id}/opportunities`, {
+          method: "POST",
+          body: data,
+        }),
+      updateOpportunity: (
+        id: string,
+        data: {
+          opportunityId: string;
+          status?: string;
+          notes?: string;
+          title?: string;
+          description?: string;
+        },
+      ) =>
+        apiRequest<StartupOpportunity>(`/startups/${id}/opportunities`, {
+          method: "PATCH",
+          body: data,
+        }),
+      deleteOpportunity: (id: string, opportunityId: string) =>
+        apiRequest<{ success: boolean }>(
+          `/startups/${id}/opportunities?opportunityId=${opportunityId}`,
           { method: "DELETE" },
         ),
     },

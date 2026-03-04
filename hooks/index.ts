@@ -15,6 +15,7 @@ import {
   api,
   type IdeaWithDetails,
   type PaginationParams,
+  type StartupOpportunity,
 } from "@/lib/api-client";
 import { authClient, signIn, signUp } from "@/lib/auth-client";
 
@@ -38,6 +39,10 @@ export const queryKeys = {
     detail: (id: string) => [...queryKeys.startups.all, "detail", id] as const,
     updates: (id: string) =>
       [...queryKeys.startups.all, "updates", id] as const,
+    opportunities: (
+      id: string,
+      params?: { status?: string; category?: string },
+    ) => [...queryKeys.startups.all, "opportunities", id, params] as const,
   },
   dashboard: {
     all: ["dashboard"] as const,
@@ -873,6 +878,117 @@ export function useGenerateOpportunities(startupId: string) {
     mutationFn: () => api.queries.startups.generateOpportunities(startupId),
     onError: (error: Error) => {
       toast.error(error.message || "Failed to generate opportunities");
+    },
+  });
+}
+
+export function useOpportunities(
+  startupId: string,
+  params?: { status?: string; category?: string },
+) {
+  return useQuery({
+    queryKey: queryKeys.startups.opportunities(startupId, params),
+    queryFn: () => api.queries.startups.getOpportunities(startupId, params),
+    enabled: !!startupId,
+    staleTime: 2 * 60 * 1000,
+  });
+}
+
+export function useCreateOpportunity() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      startupId,
+      data,
+    }: {
+      startupId: string;
+      data: {
+        title: string;
+        description: string;
+        url: string;
+        category: string;
+        eligibility?: string;
+        benefits?: string;
+        deadline: string;
+        status?: string;
+      };
+    }) => api.mutations.startups.createOpportunity(startupId, data),
+    onSuccess: (_, { startupId }) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.startups.opportunities(startupId),
+      });
+      toast.success("Opportunity created");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to create opportunity");
+    },
+  });
+}
+
+export function useUpdateOpportunity() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      startupId,
+      data,
+    }: {
+      startupId: string;
+      data: {
+        opportunityId: string;
+        status?: string;
+        notes?: string;
+        title?: string;
+        description?: string;
+      };
+    }) => api.mutations.startups.updateOpportunity(startupId, data),
+    onSuccess: (updated, { startupId }) => {
+      queryClient.setQueryData(
+        queryKeys.startups.opportunities(startupId),
+        (previous: { data: StartupOpportunity[] } | undefined) => {
+          if (!previous) {
+            return previous;
+          }
+
+          return {
+            ...previous,
+            data: previous.data.map((item) =>
+              item.id === updated.id ? updated : item,
+            ),
+          };
+        },
+      );
+
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.startups.opportunities(startupId),
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to update opportunity");
+    },
+  });
+}
+
+export function useDeleteOpportunity() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      startupId,
+      opportunityId,
+    }: {
+      startupId: string;
+      opportunityId: string;
+    }) => api.mutations.startups.deleteOpportunity(startupId, opportunityId),
+    onSuccess: (_, { startupId }) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.startups.opportunities(startupId),
+      });
+      toast.success("Opportunity deleted");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to delete opportunity");
     },
   });
 }

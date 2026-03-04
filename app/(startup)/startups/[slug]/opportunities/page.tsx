@@ -15,6 +15,7 @@ import {
   Rocket,
   Search,
   Sparkles,
+  Trash2,
   Trophy,
   Users,
 } from "lucide-react";
@@ -42,6 +43,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
@@ -155,7 +157,9 @@ export default function OpportunitiesPage({
     GeneratedOpportunity[]
   >([]);
   const [isGenerateOpen, setIsGenerateOpen] = useState(false);
-  const [generationWarning, setGenerationWarning] = useState<string | null>(null);
+  const [generationWarning, setGenerationWarning] = useState<string | null>(
+    null,
+  );
   const [addingOpportunityTitle, setAddingOpportunityTitle] = useState<
     string | null
   >(null);
@@ -304,6 +308,41 @@ export default function OpportunitiesPage({
     );
   };
 
+  const handleDeleteOpportunity = async (opportunityId: string) => {
+    if (!slug) return;
+
+    const previous = opportunities;
+    setUpdatingOpportunityId(opportunityId);
+    setOpportunities((current) =>
+      current.filter((item) => item.id !== opportunityId),
+    );
+
+    try {
+      const response = await fetch(
+        `/api/startups/${slug}/opportunities?opportunityId=${encodeURIComponent(opportunityId)}`,
+        { method: "DELETE" },
+      );
+
+      if (!response.ok) {
+        let message = "Failed to delete opportunity";
+        try {
+          const body = await response.json();
+          message = body.error || message;
+        } catch {
+          // ignore
+        }
+        throw new Error(message);
+      }
+
+      toast.success("Opportunity deleted");
+    } catch (error) {
+      setOpportunities(previous);
+      toast.error(parseApiError("Failed to delete opportunity", error));
+    } finally {
+      setUpdatingOpportunityId(null);
+    }
+  };
+
   const filteredOpportunities =
     filterStatus === "all"
       ? opportunities
@@ -333,7 +372,9 @@ export default function OpportunitiesPage({
               Back
             </Link>
           </Button>
-          <h1 className="text-2xl font-semibold tracking-tight">Opportunities</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Opportunities
+          </h1>
         </div>
 
         <div className="flex items-center gap-2">
@@ -404,7 +445,9 @@ export default function OpportunitiesPage({
                 <Button variant="outline" onClick={() => setIsAddOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={() => setIsAddOpen(false)}>Add Opportunity</Button>
+                <Button onClick={() => setIsAddOpen(false)}>
+                  Add Opportunity
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -416,7 +459,8 @@ export default function OpportunitiesPage({
           <DialogHeader>
             <DialogTitle>AI Opportunity Recommendations</DialogTitle>
             <DialogDescription>
-              Review suggestions before adding them to your tracked opportunities.
+              Review suggestions before adding them to your tracked
+              opportunities.
             </DialogDescription>
           </DialogHeader>
 
@@ -444,7 +488,9 @@ export default function OpportunitiesPage({
                             <Icon className="h-4 w-4 text-primary" />
                           </div>
                           <div>
-                            <CardTitle className="text-base">{opportunity.title}</CardTitle>
+                            <CardTitle className="text-base">
+                              {opportunity.title}
+                            </CardTitle>
                             <CardDescription>
                               {CATEGORY_LABELS[opportunity.category] ||
                                 opportunity.category}
@@ -460,15 +506,23 @@ export default function OpportunitiesPage({
 
                       {opportunity.deadline && (
                         <div className="text-xs text-muted-foreground">
-                          Deadline: {format(new Date(opportunity.deadline), "MMM d, yyyy")}
+                          Deadline:{" "}
+                          {format(
+                            new Date(opportunity.deadline),
+                            "MMM d, yyyy",
+                          )}
                         </div>
                       )}
 
                       <div className="flex items-center gap-2">
                         <Button
                           size="sm"
-                          onClick={() => handleAddGeneratedOpportunity(opportunity)}
-                          disabled={addingOpportunityTitle === opportunity.title}
+                          onClick={() =>
+                            handleAddGeneratedOpportunity(opportunity)
+                          }
+                          disabled={
+                            addingOpportunityTitle === opportunity.title
+                          }
                         >
                           {addingOpportunityTitle === opportunity.title ? (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -480,7 +534,9 @@ export default function OpportunitiesPage({
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleDismissGeneratedOpportunity(opportunity)}
+                          onClick={() =>
+                            handleDismissGeneratedOpportunity(opportunity)
+                          }
                         >
                           Dismiss
                         </Button>
@@ -545,7 +601,9 @@ export default function OpportunitiesPage({
             <Card>
               <CardContent className="py-12 text-center">
                 <Search className="mx-auto h-12 w-12 text-muted-foreground opacity-50" />
-                <h3 className="mt-4 text-lg font-semibold">No opportunities found</h3>
+                <h3 className="mt-4 text-lg font-semibold">
+                  No opportunities found
+                </h3>
                 <p className="mt-2 text-sm text-muted-foreground">
                   Add opportunities to track or generate AI recommendations.
                 </p>
@@ -563,7 +621,8 @@ export default function OpportunitiesPage({
                 const canSave =
                   opportunity.status === "DISCOVERED" ||
                   opportunity.status === "BOOKMARKED";
-                const isStatusUpdating = updatingOpportunityId === opportunity.id;
+                const isStatusUpdating =
+                  updatingOpportunityId === opportunity.id;
 
                 return (
                   <Card key={opportunity.id} className="flex flex-col">
@@ -573,7 +632,9 @@ export default function OpportunitiesPage({
                           <Icon className="h-4 w-4 text-primary" />
                         </div>
                         <div>
-                          <CardTitle className="text-base">{opportunity.title}</CardTitle>
+                          <CardTitle className="text-base">
+                            {opportunity.title}
+                          </CardTitle>
                           <CardDescription className="text-xs">
                             {CATEGORY_LABELS[opportunity.category] ||
                               opportunity.category}
@@ -595,7 +656,11 @@ export default function OpportunitiesPage({
                       {opportunity.deadline && (
                         <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
                           <AlertCircle className="h-3 w-3" />
-                          Deadline: {format(new Date(opportunity.deadline), "MMM d, yyyy")}
+                          Deadline:{" "}
+                          {format(
+                            new Date(opportunity.deadline),
+                            "MMM d, yyyy",
+                          )}
                         </div>
                       )}
                     </CardContent>
@@ -638,14 +703,23 @@ export default function OpportunitiesPage({
                           </a>
                         </Button>
                       ) : (
-                        <Button variant="outline" size="sm" className="flex-1" disabled>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                          disabled
+                        >
                           No URL
                         </Button>
                       )}
 
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" aria-label="More actions">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label="More actions"
+                          >
                             <MoreHorizontal className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -654,7 +728,8 @@ export default function OpportunitiesPage({
                             <DropdownMenuItem
                               key={option.value}
                               disabled={
-                                option.value === opportunity.status || isStatusUpdating
+                                option.value === opportunity.status ||
+                                isStatusUpdating
                               }
                               onClick={() =>
                                 updateOpportunityStatus(
@@ -667,6 +742,17 @@ export default function OpportunitiesPage({
                               {option.label}
                             </DropdownMenuItem>
                           ))}
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            disabled={isStatusUpdating}
+                            className="text-destructive focus:text-destructive"
+                            onClick={() =>
+                              handleDeleteOpportunity(opportunity.id)
+                            }
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete Opportunity
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>

@@ -1,5 +1,5 @@
-import { headers } from "next/headers";
 import { OpportunityCategory, OpportunityStatus } from "@prisma/client";
+import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
@@ -41,8 +41,15 @@ export async function GET(
 
   const { id: startupIdOrSlug } = await params;
   const { searchParams } = new URL(request.url);
-  const category = searchParams.get("category");
-  const status = searchParams.get("status");
+  const categoryParam = searchParams.get("category");
+  const statusParam = searchParams.get("status");
+
+  const category = categoryParam
+    ? z.nativeEnum(OpportunityCategory).safeParse(categoryParam)
+    : null;
+  const status = statusParam
+    ? z.nativeEnum(OpportunityStatus).safeParse(statusParam)
+    : null;
 
   const startup = await db.startup.findFirst({
     where: {
@@ -58,8 +65,8 @@ export async function GET(
   const opportunities = await db.startupOpportunity.findMany({
     where: {
       startupId: startup.id,
-      ...(category && { category: category as any }),
-      ...(status && { status: status as any }),
+      ...(category?.success && { category: category.data }),
+      ...(status?.success && { status: status.data }),
     },
     orderBy: { createdAt: "desc" },
   });
