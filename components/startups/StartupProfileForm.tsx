@@ -130,6 +130,8 @@ export function StartupProfileForm({
     },
   });
 
+  const [slugManuallyEdited, setSlugManuallyEdited] = useState(isEditing);
+
   const name = form.watch("name");
 
   const handleSlugCheck = async (slug: string) => {
@@ -225,10 +227,12 @@ export function StartupProfileForm({
                         {...field}
                         onChange={(e) => {
                           field.onChange(e);
-                          if (!isEditing && !form.getValues("slug")) {
-                            const slug = generateSlug(e.target.value);
-                            form.setValue("slug", slug);
-                            handleSlugCheck(slug);
+                          if (!slugManuallyEdited) {
+                            const newSlug = generateSlug(e.target.value);
+                            form.setValue("slug", newSlug, {
+                              shouldValidate: true,
+                            });
+                            handleSlugCheck(newSlug);
                           }
                         }}
                       />
@@ -252,6 +256,7 @@ export function StartupProfileForm({
                           {...field}
                           onChange={(e) => {
                             field.onChange(e);
+                            setSlugManuallyEdited(true);
                             handleSlugCheck(e.target.value);
                           }}
                         />

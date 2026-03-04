@@ -1,6 +1,7 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport } from "ai";
 import { 
   BotIcon, 
   LightbulbIcon, 
@@ -33,12 +34,8 @@ import {
   PromptInputFooter, 
   PromptInputSubmit,
   PromptInputTools,
-  PromptInputSelect,
-  PromptInputSelectTrigger,
-  PromptInputSelectValue,
-  PromptInputSelectContent,
-  PromptInputSelectItem
 } from "../ai-elements/prompt-input";
+import { Reasoning, ReasoningContent, ReasoningTrigger } from "../ai-elements/reasoning";
 import { Tool, ToolContent, ToolHeader, ToolInput, ToolOutput } from "../ai-elements/tool";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -51,17 +48,18 @@ interface VCCoachProps {
 
 export function VCCoach({ startupId, startupName }: VCCoachProps) {
   const [selectedModel, setSelectedModel] = useState("gemini-2.5-flash");
+  const [input, setInput] = useState("");
 
-  const { messages, input, handleInputChange, handleSubmit, isLoading, setInput, append } = useChat({
-    api: `/api/startups/${startupId}/chat`,
-    initialMessages: [
-      {
-        id: "welcome",
-        role: "assistant",
-        content: `Hi! I'm your VC Coach. I've analyzed **${startupName}**'s latest data. How can I help you today? I can review your weekly updates, help you prep for pitches, or analyze your competitors.`
-      }
-    ]
+  const { messages, sendMessage, status } = useChat({
+    transport: new DefaultChatTransport({
+      api: `/api/startups/${startupId}/chat`,
+      body: {
+        model: selectedModel,
+      },
+    }),
   });
+
+  const isLoading = status === "streaming";
 
   const suggestedQuestions = [
     {
@@ -113,19 +111,26 @@ export function VCCoach({ startupId, startupName }: VCCoachProps) {
       {/* Chat Area */}
       <Conversation className="flex-1 overflow-y-auto">
         <ConversationContent>
-          {messages.length <= 1 && (
+          {messages.length === 0 && (
             <div className="space-y-8 py-8">
-              <ConversationEmptyState
-                title="Your Personal VC Strategic Advisor"
-                description="I have complete access to your startup's data, metrics, and research. Ask me anything about your strategy, growth, or fundraising."
-                icon={<BotIcon className="w-12 h-12 opacity-20" />}
-              />
+              <div className="flex flex-col items-center justify-center text-center px-4">
+                <div className="p-4 bg-primary/5 rounded-full mb-4">
+                  <BotIcon className="w-12 h-12 text-primary/40" />
+                </div>
+                <h3 className="text-xl font-bold">Your Personal VC Strategic Advisor</h3>
+                <p className="text-muted-foreground max-w-sm mt-2">
+                  I have complete access to your startup's data, metrics, and research. Ask me anything about your strategy, growth, or fundraising.
+                </p>
+              </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 px-8">
                 {suggestedQuestions.map((q) => (
                   <button
                     key={q.label}
-                    onClick={() => append({ role: 'user', content: q.prompt })}
+                    type="button"
+                    onClick={() => {
+                      sendMessage({ text: q.prompt });
+                    }}
                     className="flex items-start gap-3 p-4 text-left rounded-xl border bg-card hover:bg-accent hover:border-primary/50 transition-all group"
                   >
                     <div className="p-2 bg-muted rounded-lg group-hover:bg-primary/10 transition-colors">
@@ -141,10 +146,10 @@ export function VCCoach({ startupId, startupName }: VCCoachProps) {
             </div>
           )}
 
-          {messages.map((message) => (
-            <div key={message.id} className="space-y-4">
+          {messages.map((message, index) => (
+            <div key={index} className="space-y-4">
               <Message from={message.role}>
-                <div className="flex items-start gap-3">
+                <div className="flex items-start gap-3 w-full">
                   {message.role === "assistant" && (
                     <div className="mt-1 shrink-0 p-1.5 bg-primary/10 rounded-md">
                       <BotIcon className="w-4 h-4 text-primary" />
@@ -158,38 +163,68 @@ export function VCCoach({ startupId, startupName }: VCCoachProps) {
                   
                   <div className="flex flex-col gap-2 flex-1">
                     <MessageContent className={message.role === "user" ? "bg-primary text-primary-foreground" : ""}>
-                      <MessageResponse>
-                        {message.content}
-                      </MessageResponse>
-                    </MessageContent>
-
-                    {message.toolInvocations?.map((toolInvocation) => {
-                      const { toolCallId, state } = toolInvocation;
-                      
-                      return (
-                        <Tool key={toolCallId} state={state}>
-                          <ToolHeader 
-                            state={state} 
-                            type="call" 
-                            title={`Using Tool: ${toolInvocation.toolName.replace(/([A-Z])/g, ' $1').trim()}`} 
-                          />
-                          <ToolContent>
-                            <ToolInput input={toolInvocation.args} />
-                            {state === 'result' && (
-                              <ToolOutput 
-                                output={toolInvocation.result} 
-                                errorText={null}
+                      {message.parts.map((part, i) => {
+                        if (part.type === "text") {
+                          // Extract thinking process if it exists in the text
+                          const thinkingMatch = part.text.match(/<thinking>([\s\S]*?)<\/thinking>/);
+                          const textWithoutThinking = part.text.replace(/<thinking>[\s\S]*?<\/thinking>/, '').trim();
+                          
+                          return (
+                            <div key={i} className="space-y-2">
+                              {thinkingMatch && (
+                                <Reasoning defaultOpen={false}>
+                                  <ReasoningTrigger />
+                                  <ReasoningContent>
+                                    {thinkingMatch[1]}
+                                  </ReasoningContent>
+                                </Reasoning>
+                              )}
+                              {textWithoutThinking && (
+                                <MessageResponse>
+                                  {textWithoutThinking}
+                                </MessageResponse>
+                              )}
+                            </div>
+                          );
+                        }
+                        
+                        if (part.type === "tool-invocation") {
+                          const { toolName, toolCallId, state } = part.toolInvocation;
+                          return (
+                            <Tool key={toolCallId} state={state}>
+                              <ToolHeader 
+                                state={state} 
+                                type="call" 
+                                title={`Using Tool: ${toolName.replace(/([A-Z])/g, ' $1').trim()}`} 
                               />
-                            )}
-                          </ToolContent>
-                        </Tool>
-                      );
-                    })}
+                              <ToolContent>
+                                <ToolInput input={part.toolInvocation.args} />
+                                {state === 'result' && (
+                                  <ToolOutput 
+                                    output={part.toolInvocation.result} 
+                                    errorText={null}
+                                  />
+                                )}
+                              </ToolContent>
+                            </Tool>
+                          );
+                        }
+                        return null;
+                      })}
+                    </MessageContent>
                   </div>
                 </div>
               </Message>
             </div>
           ))}
+          {status === "streaming" && (
+            <div className="flex justify-start">
+              <div className="bg-muted text-muted-foreground px-4 py-2 rounded-lg flex items-center gap-2">
+                <RefreshCwIcon className="w-3 h-3 animate-spin" />
+                <span className="text-xs">Thinking...</span>
+              </div>
+            </div>
+          )}
           <ConversationScrollButton />
         </ConversationContent>
       </Conversation>
@@ -198,17 +233,16 @@ export function VCCoach({ startupId, startupName }: VCCoachProps) {
       <div className="p-6 border-t bg-muted/10">
         <PromptInput
           onSubmit={(msg) => {
-            handleSubmit(undefined, {
-              data: {
-                model: selectedModel,
-              }
-            });
+            if (msg.text.trim()) {
+              sendMessage({ text: msg.text });
+              setInput("");
+            }
           }}
         >
           <PromptInputBody>
             <PromptInputTextarea 
               value={input}
-              onChange={handleInputChange}
+              onChange={(e) => setInput(e.target.value)}
               placeholder="Ask your VC Coach anything..."
               className="min-h-[100px] bg-background shadow-sm"
             />

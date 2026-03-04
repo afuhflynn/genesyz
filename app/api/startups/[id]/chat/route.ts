@@ -1,5 +1,5 @@
 import { google } from "@ai-sdk/google";
-import { streamText, convertToCoreMessages } from "ai";
+import { streamText, convertToCoreMessages, createDataStreamResponse } from "ai";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { tools } from "@/lib/ai/tools";
@@ -53,6 +53,14 @@ YOUR COACHING PHILOSOPHY:
 4. ACTION-ORIENTED: Every session should end with clear, high-impact "Next Actions".
 5. HONEST BUT SUPPORTIVE: Provide "hard truths" about the business model, competition, or execution speed.
 
+THINKING PROCESS:
+Before providing your final strategic advice, you MUST perform a deep internal analysis. Wrap this analysis in <thinking> tags. 
+In your thinking process:
+- Evaluate the data retrieved from tools.
+- Identify hidden risks or counter-intuitive opportunities.
+- Plan how to deliver the "hard truth" effectively.
+- Formulate the top 3 next actions.
+
 KEY TOPICS YOU COVER:
 - Pitch Deck & Storytelling: Help refine the narrative for investors.
 - Growth Strategy: Suggest customer acquisition channels and retention tactics.
@@ -61,37 +69,31 @@ KEY TOPICS YOU COVER:
 - Hiring & Team: Advice on early-core-team building.
 - Competition: Use 'webSearch' and 'getCompetitorUpdates' to stay ahead.
 
-If the user asks for a pitch review or market analysis, use your tools to get the most up-to-date information.
+If the user asks for a pitch review or market analysis, use your tools to get the most up-to-date information.`;
 
-BRAIN-DRILLING QUESTIONS TO ASK THE FOUNDER:
-- What is the one metric that, if it went to zero, would mean the business has failed?
-- Why will this be a $1B+ company, and not just a "lifestyle business"?
-- What is your "unfair advantage" that others can't easily copy?
-- If you had to reach $1M ARR in 6 months with $0 in marketing, how would you do it?`;
+    return createDataStreamResponse({
+      execute: (dataStream) => {
+        const result = streamText({
+          model: google("gemini-2.5-flash"),
+          system: systemPrompt,
+          tools: {
+            ...tools,
+          },
+          messages: convertToCoreMessages(messages),
+          onFinish: async ({ text, toolCalls, toolResults, usage }) => {
+            try {
+              if (conversationId) {
+                // Update existing conversation logic here
+              }
+            } catch (e) {
+              console.error("Failed to save message to DB:", e);
+            }
+          },
+        });
 
-    // Persistence logic can be added here if needed to save messages to DB
-    // For now, we focus on the streaming experience
-
-    const result = streamText({
-      model: google("gemini-2.5-flash"),
-      system: systemPrompt,
-      tools: {
-        ...tools,
+        result.mergeIntoDataStream(dataStream);
       },
-      messages: convertToCoreMessages(messages),
-      onFinish: async ({ text, toolCalls, toolResults, usage }) => {
-        // Here we could save the conversation to the DB
-        try {
-          if (conversationId) {
-             // Update existing conversation or just log usage
-          }
-        } catch (e) {
-          console.error("Failed to save message to DB:", e);
-        }
-      }
     });
-
-    return result.toDataStreamResponse();
   } catch (error) {
     console.error("Startup VC Coach API error:", error);
     return NextResponse.json(
