@@ -65,8 +65,10 @@ export function StartupSidebar({ startup, className }: StartupSidebarProps) {
     {
       label: "Tasks",
       icon: FileText,
-      href: `${basePath}/applications`,
-      active: pathname === `${basePath}/applications`,
+      href: `${basePath}/tasks`,
+      active:
+        pathname.startsWith(`${basePath}/tasks`) ||
+        pathname.startsWith(`${basePath}/applications`),
     },
     {
       label: "Opportunities",

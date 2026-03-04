@@ -558,12 +558,12 @@ export function useStartups(params?: PaginationParams) {
   });
 }
 
-export function useStartup(id: string) {
+export function useStartup(idOrSlug: string) {
   return useQuery({
-    queryKey: queryKeys.startups.detail(id),
+    queryKey: queryKeys.startups.detail(idOrSlug),
     queryFn: () =>
-      api.queries.startups.getById(id) as Promise<StartupWithDetails>,
-    enabled: !!id,
+      api.queries.startups.getById(idOrSlug) as Promise<StartupWithDetails>,
+    enabled: !!idOrSlug,
     staleTime: 5 * 60 * 1000,
   });
 }
@@ -947,6 +947,34 @@ export function useDeleteTask() {
   });
 }
 
+export function useUpdateTask() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      startupId,
+      data,
+    }: {
+      startupId: string;
+      data: {
+        taskId: string;
+        title?: string;
+        description?: string;
+        deadline?: string | null;
+      };
+    }) => api.mutations.startups.updateTask(startupId, data),
+    onSuccess: (_, { startupId }) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.startups.tasks(startupId),
+      });
+      toast.success("Task updated!");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to update task");
+    },
+  });
+}
+
 export function useGenerateOpportunities(startupId: string) {
   return useMutation({
     mutationFn: () => api.queries.startups.generateOpportunities(startupId),
@@ -1063,6 +1091,101 @@ export function useDeleteOpportunity() {
     },
     onError: (error: Error) => {
       toast.error(error.message || "Failed to delete opportunity");
+    },
+  });
+}
+
+// ===========================================
+// Team Member Hooks
+// ===========================================
+
+export function useTeamMembers(startupId: string) {
+  return useQuery({
+    queryKey: [...queryKeys.startups.detail(startupId), "members"],
+    queryFn: () => api.queries.startups.getMembers(startupId),
+    enabled: !!startupId,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useSearchUsers(query: string, excludeStartup?: string) {
+  return useQuery({
+    queryKey: ["users", "search", query, excludeStartup],
+    queryFn: () => api.queries.startups.searchUsers(query, excludeStartup),
+    enabled: query.length >= 2,
+    staleTime: 60 * 1000,
+  });
+}
+
+export function useAddTeamMember() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      startupId,
+      userId,
+      role = "MEMBER",
+    }: {
+      startupId: string;
+      userId: string;
+      role?: "ADMIN" | "MEMBER" | "VIEWER";
+    }) => api.mutations.startups.addMember(startupId, { userId, role }),
+    onSuccess: (_, { startupId }) => {
+      queryClient.invalidateQueries({
+        queryKey: [...queryKeys.startups.detail(startupId), "members"],
+      });
+      toast.success("Team member added");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to add team member");
+    },
+  });
+}
+
+export function useUpdateTeamMember() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      startupId,
+      memberId,
+      role,
+    }: {
+      startupId: string;
+      memberId: string;
+      role: "ADMIN" | "MEMBER" | "VIEWER";
+    }) => api.mutations.startups.updateMember(startupId, memberId, { role }),
+    onSuccess: (_, { startupId }) => {
+      queryClient.invalidateQueries({
+        queryKey: [...queryKeys.startups.detail(startupId), "members"],
+      });
+      toast.success("Team member role updated");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to update team member role");
+    },
+  });
+}
+
+export function useRemoveTeamMember() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      startupId,
+      memberId,
+    }: {
+      startupId: string;
+      memberId: string;
+    }) => api.mutations.startups.removeMember(startupId, memberId),
+    onSuccess: (_, { startupId }) => {
+      queryClient.invalidateQueries({
+        queryKey: [...queryKeys.startups.detail(startupId), "members"],
+      });
+      toast.success("Team member removed");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to remove team member");
     },
   });
 }
@@ -1206,7 +1329,11 @@ export function useAcceleratorApplications(slug: string) {
 export type {
   Accelerator,
   AcceleratorApplication,
+  SearchedUser,
+  StartupMember,
+  StartupMemberRole,
   TaskItem,
+  TaskList,
   TaskStatus,
 } from "@/lib/api-client";
 export { useInfiniteIdeas } from "./useInfiniteIdeas";

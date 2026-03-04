@@ -1201,3 +1201,148 @@ View full details at ${APP_URL}/startups/${startupSlug}
     text: textSummary,
   });
 }
+
+// ===========================================
+// Team Invitation Email
+// ===========================================
+
+const ROLE_PERMISSIONS_EMAIL: Record<string, string[]> = {
+  ADMIN: [
+    "Add and remove team members",
+    "Change team member roles",
+    "Edit startup profile",
+    "Submit weekly updates",
+  ],
+  MEMBER: [
+    "Submit weekly updates",
+    "View startup dashboard",
+    "View team members",
+  ],
+  VIEWER: ["View startup dashboard", "View team members"],
+};
+
+export async function sendStartupMemberInvitedEmail(options: {
+  to: string;
+  userName: string;
+  inviterName: string;
+  startupName: string;
+  startupSlug: string;
+  role: string;
+}): Promise<boolean> {
+  const { to, userName, inviterName, startupName, startupSlug, role } = options;
+
+  const permissions = ROLE_PERMISSIONS_EMAIL[role] || [];
+
+  const contentHtml = `
+    <p style="font-size: 16px; color: #475569; margin: 0 0 24px 0;">
+      <strong>${inviterName}</strong> has invited you to join <strong>${startupName}</strong> on IdeasVault as a <strong>${role}</strong>.
+    </p>
+
+    ${
+      permissions.length > 0
+        ? `
+    <div style="background: #f8fafc; border-radius: 12px; padding: 24px; margin-bottom: 24px; border: 1px solid #e2e8f0;">
+      <h3 style="font-size: 18px; font-weight: 600; color: #0f172a; margin: 0 0 12px 0;">
+        Your permissions as ${role}:
+      </h3>
+      <ul style="margin: 0; padding-left: 20px; color: #475569;">
+        ${permissions.map((p) => `<li style="margin-bottom: 8px;">${p}</li>`).join("")}
+      </ul>
+    </div>
+    `
+        : ""
+    }
+
+    <div style="text-align: center;">
+      <a href="${APP_URL}/startups/${startupSlug}" style="display: inline-block; background: #F5A623; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(245, 166, 35, 0.2);">
+        View Startup
+      </a>
+    </div>
+  `;
+
+  const html = renderPremiumEmail({
+    title: `You're invited to ${startupName}!`,
+    contentHtml,
+    badge: "Team Invitation",
+  });
+
+  return sendEmail({
+    to,
+    subject: `You're invited to join ${startupName} on IdeasVault`,
+    html,
+    text: `${inviterName} has invited you to join ${startupName} on IdeasVault as a ${role}. View the startup at ${APP_URL}/startups/${startupSlug}`,
+  });
+}
+
+// ===========================================
+// Team Role Changed Email
+// ===========================================
+
+export async function sendStartupMemberRoleChangedEmail(options: {
+  to: string;
+  userName: string;
+  startupName: string;
+  startupSlug: string;
+  oldRole: string;
+  newRole: string;
+  changedByName: string;
+}): Promise<boolean> {
+  const {
+    to,
+    userName,
+    startupName,
+    startupSlug,
+    oldRole,
+    newRole,
+    changedByName,
+  } = options;
+
+  const newPermissions = ROLE_PERMISSIONS_EMAIL[newRole] || [];
+
+  const contentHtml = `
+    <p style="font-size: 16px; color: #475569; margin: 0 0 24px 0;">
+      Your role in <strong>${startupName}</strong> has been changed by <strong>${changedByName}</strong>.
+    </p>
+
+    <div style="background: #f8fafc; border-radius: 12px; padding: 24px; margin-bottom: 24px; border: 1px solid #e2e8f0;">
+      <p style="margin: 0 0 12px 0; color: #475569;">
+        <strong>Old role:</strong> ${oldRole}
+      </p>
+      <p style="margin: 0 0 16px 0; color: #0f172a;">
+        <strong>New role:</strong> ${newRole}
+      </p>
+      
+      ${
+        newPermissions.length > 0
+          ? `
+        <h3 style="font-size: 18px; font-weight: 600; color: #0f172a; margin: 0 0 12px 0;">
+          Your new permissions:
+        </h3>
+        <ul style="margin: 0; padding-left: 20px; color: #475569;">
+          ${newPermissions.map((p) => `<li style="margin-bottom: 8px;">${p}</li>`).join("")}
+        </ul>
+      `
+          : ""
+      }
+    </div>
+
+    <div style="text-align: center;">
+      <a href="${APP_URL}/startups/${startupSlug}" style="display: inline-block; background: #F5A623; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(245, 166, 35, 0.2);">
+        View Startup
+      </a>
+    </div>
+  `;
+
+  const html = renderPremiumEmail({
+    title: `Your role in ${startupName} changed`,
+    contentHtml,
+    badge: "Role Update",
+  });
+
+  return sendEmail({
+    to,
+    subject: `Your role in ${startupName} has been changed to ${newRole}`,
+    html,
+    text: `Your role in ${startupName} has been changed from ${oldRole} to ${newRole} by ${changedByName}. View the startup at ${APP_URL}/startups/${startupSlug}`,
+  });
+}

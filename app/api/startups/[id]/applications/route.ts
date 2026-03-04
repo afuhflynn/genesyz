@@ -4,6 +4,10 @@ import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import {
+  checkStartupAccess,
+  type StartupPermission,
+} from "@/lib/startup-permissions";
 
 const CreateListSchema = z.object({
   action: z.literal("create_list"),
@@ -70,12 +74,18 @@ const PatchSchema = z.union([
 ]);
 const DeleteSchema = z.union([DeleteListSchema, DeleteTaskSchema]);
 
-async function getStartupForUser(startupIdOrSlug: string, userId: string) {
-  return db.startup.findFirst({
-    where: {
-      OR: [{ id: startupIdOrSlug }, { slug: startupIdOrSlug }],
-      userId,
-    },
+async function getStartupForUser(
+  startupIdOrSlug: string,
+  permission: StartupPermission,
+) {
+  const access = await checkStartupAccess(startupIdOrSlug, permission);
+
+  if (!access.hasAccess || !access.startupId) {
+    return null;
+  }
+
+  return db.startup.findUnique({
+    where: { id: access.startupId },
     select: { id: true },
   });
 }
@@ -91,7 +101,7 @@ export async function GET(
   }
 
   const { id: startupIdOrSlug } = await params;
-  const startup = await getStartupForUser(startupIdOrSlug, session.user.id);
+  const startup = await getStartupForUser(startupIdOrSlug, "view_startup");
 
   if (!startup) {
     return NextResponse.json({ error: "Startup not found" }, { status: 404 });
@@ -129,7 +139,7 @@ export async function POST(
   }
 
   const { id: startupIdOrSlug } = await params;
-  const startup = await getStartupForUser(startupIdOrSlug, session.user.id);
+  const startup = await getStartupForUser(startupIdOrSlug, "manage_tasks");
 
   if (!startup) {
     return NextResponse.json({ error: "Startup not found" }, { status: 404 });
@@ -207,7 +217,7 @@ export async function PATCH(
   }
 
   const { id: startupIdOrSlug } = await params;
-  const startup = await getStartupForUser(startupIdOrSlug, session.user.id);
+  const startup = await getStartupForUser(startupIdOrSlug, "manage_tasks");
 
   if (!startup) {
     return NextResponse.json({ error: "Startup not found" }, { status: 404 });
@@ -228,7 +238,10 @@ export async function PATCH(
     });
 
     if (!updated.count) {
-      return NextResponse.json({ error: "Task list not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Task list not found" },
+        { status: 404 },
+      );
     }
 
     return NextResponse.json({ success: true });
@@ -251,7 +264,9 @@ export async function PATCH(
     const updated = await db.task.updateMany({
       where: { id: parsed.data.taskId, startupId: startup.id },
       data: {
-        ...(parsed.data.title !== undefined ? { title: parsed.data.title } : {}),
+        ...(parsed.data.title !== undefined
+          ? { title: parsed.data.title }
+          : {}),
         ...(parsed.data.description !== undefined
           ? { description: parsed.data.description || null }
           : {}),
@@ -278,7 +293,10 @@ export async function PATCH(
   });
 
   if (!targetList) {
-    return NextResponse.json({ error: "Target list not found" }, { status: 404 });
+    return NextResponse.json(
+      { error: "Target list not found" },
+      { status: 404 },
+    );
   }
 
   const task = await db.task.findFirst({
@@ -333,7 +351,7 @@ export async function DELETE(
   }
 
   const { id: startupIdOrSlug } = await params;
-  const startup = await getStartupForUser(startupIdOrSlug, session.user.id);
+  const startup = await getStartupForUser(startupIdOrSlug, "manage_tasks");
 
   if (!startup) {
     return NextResponse.json({ error: "Startup not found" }, { status: 404 });

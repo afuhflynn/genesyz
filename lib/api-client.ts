@@ -18,6 +18,8 @@ import { privateAxios, publicAxios } from "@/config/axios.config";
 // ===========================================
 // Types
 // ===========================================
+// Task Types
+// ===========================================
 
 export type TaskStatus = "TODO" | "IN_PROGRESS" | "BLOCKED" | "DONE";
 
@@ -184,6 +186,29 @@ export interface UserProfile extends User {
   _count: {
     ideas: number;
   };
+}
+
+export type StartupMemberRole = "OWNER" | "ADMIN" | "MEMBER" | "VIEWER";
+
+export interface StartupMember {
+  id: string;
+  userId: string;
+  role: StartupMemberRole;
+  createdAt: Date;
+  user: {
+    id: string;
+    name: string | null;
+    email: string;
+    image: string | null;
+  };
+  isOwner: boolean;
+}
+
+export interface SearchedUser {
+  id: string;
+  name: string | null;
+  email: string;
+  image: string | null;
 }
 
 // ===========================================
@@ -413,6 +438,17 @@ export const api = {
           hasStartup: boolean;
           startup: { id: string; slug: string; name: string } | null;
         }>(`/ideas/${ideaId}/startup`, { method: "GET" }),
+      getMembers: (id: string) =>
+        apiRequest<{ data: StartupMember[] }>(`/startups/${id}/members`, {
+          method: "GET",
+        }),
+      searchUsers: (query: string, excludeStartup?: string) =>
+        apiRequest<{ data: SearchedUser[] }>(
+          `/users/search?q=${encodeURIComponent(query)}${
+            excludeStartup ? `&excludeStartup=${excludeStartup}` : ""
+          }`,
+          { method: "GET" },
+        ),
     },
 
     // Accelerators
@@ -736,6 +772,31 @@ export const api = {
       deleteOpportunity: (id: string, opportunityId: string) =>
         apiRequest<{ success: boolean }>(
           `/startups/${id}/opportunities?opportunityId=${opportunityId}`,
+          { method: "DELETE" },
+        ),
+      addMember: (
+        id: string,
+        data: { userId: string; role?: StartupMemberRole },
+      ) =>
+        apiRequest<{ data: StartupMember }>(`/startups/${id}/members`, {
+          method: "POST",
+          body: data,
+        }),
+      updateMember: (
+        id: string,
+        memberId: string,
+        data: { role: StartupMemberRole },
+      ) =>
+        apiRequest<{ data: StartupMember }>(
+          `/startups/${id}/members/${memberId}`,
+          {
+            method: "PATCH",
+            body: data,
+          },
+        ),
+      removeMember: (id: string, memberId: string) =>
+        apiRequest<{ success: boolean }>(
+          `/startups/${id}/members/${memberId}`,
           { method: "DELETE" },
         ),
     },

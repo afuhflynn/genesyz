@@ -1,14 +1,14 @@
 "use client";
 
-import { Skeleton } from "@/components/ui/skeleton";
 import { TaskBoard } from "@/components/startups/TaskBoard";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useStartup } from "@/hooks";
 
-interface ApplicationsPageClientProps {
+interface TasksPageContentProps {
   slug: string;
 }
 
-export function ApplicationsPageClient({ slug }: ApplicationsPageClientProps) {
+export function TasksPageContent({ slug }: TasksPageContentProps) {
   const { data: startup, isLoading } = useStartup(slug);
 
   if (isLoading) {
