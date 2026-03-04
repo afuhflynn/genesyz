@@ -5,6 +5,7 @@ import { StartupSidebar } from "@/components/layout/startup-sidebar";
 import { StartupWorkspaceHeader } from "@/components/layout/startup-workspace-header";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { checkStartupAccess, hasPermission } from "@/lib/startup-permissions";
 
 interface StartupLayoutProps {
   children: React.ReactNode;
@@ -23,11 +24,15 @@ export default async function StartupLayout({
 
   const { slug } = await params;
 
-  const startup = await db.startup.findFirst({
+  const access = await checkStartupAccess(slug, "view_startup");
+
+  if (!access.hasAccess || !access.startupId) {
+    notFound();
+  }
+
+  const startup = await db.startup.findUnique({
     where: {
-      slug,
-      userId: session.user.id,
-      isActive: true,
+      id: access.startupId,
     },
     select: {
       id: true,
@@ -42,17 +47,33 @@ export default async function StartupLayout({
     notFound();
   }
 
+  const role = access.role;
+
+  if (!role) {
+    notFound();
+  }
+
+  const permissions = {
+    canViewStartup: hasPermission(role, "view_startup"),
+    canManageTasks: hasPermission(role, "manage_tasks"),
+    canViewSettings: hasPermission(role, "view_settings"),
+  };
+
   return (
     <div className="relative flex h-screen flex-col overflow-hidden">
       <StartupWorkspaceHeader startup={startup} />
       <div className="flex-1 h-full overflow-hidden items-start md:grid md:grid-cols-[220px_minmax(0,1fr)] lg:grid-cols-[240px_minmax(0,1fr)]">
         {/* Desktop Sidebar */}
         <div className="h-full hidden md:flex">
-          <StartupSidebar startup={startup} className="h-full" />
+          <StartupSidebar
+            startup={startup}
+            permissions={permissions}
+            className="h-full"
+          />
         </div>
 
         {/* Mobile Navigation */}
-        <MobileStartupNav startup={startup} />
+        <MobileStartupNav startup={startup} permissions={permissions} />
 
         {/* Main Content */}
         <main className="flex w-full h-full overflow-auto flex-col pt-6 px-6 items-center">

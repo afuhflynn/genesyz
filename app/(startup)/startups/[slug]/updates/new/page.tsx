@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { checkStartupAccess } from "@/lib/startup-permissions";
 import { getWeeksSinceCreation } from "@/lib/utils/date";
 import { NewWeeklyUpdate } from "./NewWeeklyUpdate";
 
@@ -29,12 +30,14 @@ export default async function NewUpdatePage({ params }: NewUpdatePageProps) {
 
   const { slug } = await params;
 
-  const startup = await db.startup.findFirst({
-    where: {
-      OR: [{ slug }, { id: slug }],
-      userId: session.user.id,
-      isActive: true,
-    },
+  const access = await checkStartupAccess(slug, "submit_weekly_update");
+
+  if (!access.hasAccess || !access.startupId) {
+    notFound();
+  }
+
+  const startup = await db.startup.findUnique({
+    where: { id: access.startupId },
     select: {
       id: true,
       name: true,

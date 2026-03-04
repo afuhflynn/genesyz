@@ -60,7 +60,7 @@ export function StartupSettings({ slug, currentUserId }: StartupSettingsProps) {
   }
 
   const isOwner = startup.userId === currentUserId;
-  const canManage = isOwner;
+  const canManage = true;
 
   const weekNumber = getWeeksSinceCreation(startup.createdAt);
   const submissionCount = startup._count?.weeklyUpdates ?? 0;

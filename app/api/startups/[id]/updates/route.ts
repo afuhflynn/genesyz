@@ -1,9 +1,9 @@
-import { differenceInWeeks, isAfter, startOfWeek } from "date-fns";
 import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { inngest } from "@/lib/inngest/client";
+import { checkStartupAccess } from "@/lib/startup-permissions";
 import {
   getWeekEndForDate,
   getWeekStartForDate,
@@ -23,8 +23,14 @@ export async function GET(
 
   const { id } = await params;
 
-  const startup = await db.startup.findFirst({
-    where: { OR: [{ id }, { slug: id }], userId: session.user.id },
+  const access = await checkStartupAccess(id, "view_startup");
+
+  if (!access.hasAccess || !access.startupId) {
+    return NextResponse.json({ error: "Access denied" }, { status: 403 });
+  }
+
+  const startup = await db.startup.findUnique({
+    where: { id: access.startupId },
   });
 
   if (!startup) {
@@ -32,8 +38,8 @@ export async function GET(
   }
 
   const { searchParams } = new URL(_request.url);
-  const page = parseInt(searchParams.get("page") || "1");
-  const limit = parseInt(searchParams.get("limit") || "10");
+  const page = parseInt(searchParams.get("page") || "1", 10);
+  const limit = parseInt(searchParams.get("limit") || "10", 10);
   const skip = (page - 1) * limit;
 
   const [updates, total] = await Promise.all([
@@ -79,8 +85,14 @@ export async function POST(
     );
   }
 
-  const startup = await db.startup.findFirst({
-    where: { OR: [{ id }, { slug: id }], userId: session.user.id },
+  const access = await checkStartupAccess(id, "submit_weekly_update");
+
+  if (!access.hasAccess || !access.startupId) {
+    return NextResponse.json({ error: "Access denied" }, { status: 403 });
+  }
+
+  const startup = await db.startup.findUnique({
+    where: { id: access.startupId },
   });
 
   if (!startup) {
@@ -303,11 +315,17 @@ export async function PATCH(
     );
   }
 
-  const startup = await db.startup.findFirst({
-    where: {
-      OR: [{ id: startupIdOrSlug }, { slug: startupIdOrSlug }],
-      userId: session.user.id,
-    },
+  const access = await checkStartupAccess(
+    startupIdOrSlug,
+    "submit_weekly_update",
+  );
+
+  if (!access.hasAccess || !access.startupId) {
+    return NextResponse.json({ error: "Access denied" }, { status: 403 });
+  }
+
+  const startup = await db.startup.findUnique({
+    where: { id: access.startupId },
   });
 
   if (!startup) {

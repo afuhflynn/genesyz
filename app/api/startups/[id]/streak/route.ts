@@ -2,10 +2,11 @@ import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { checkStartupAccess } from "@/lib/startup-permissions";
 import { getWeeksSinceCreation } from "@/lib/utils/date";
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -16,11 +17,14 @@ export async function GET(
 
   const { id: startupIdOrSlug } = await params;
 
-  const startup = await db.startup.findFirst({
-    where: {
-      OR: [{ id: startupIdOrSlug }, { slug: startupIdOrSlug }],
-      userId: session.user.id,
-    },
+  const access = await checkStartupAccess(startupIdOrSlug, "view_startup");
+
+  if (!access.hasAccess || !access.startupId) {
+    return NextResponse.json({ error: "Access denied" }, { status: 403 });
+  }
+
+  const startup = await db.startup.findUnique({
+    where: { id: access.startupId },
   });
 
   if (!startup) {
@@ -131,13 +135,19 @@ export async function POST(
 
   const { id: startupIdOrSlug } = await params;
   const body = await request.json();
-  const { weekNumber, weekStart } = body;
+  const { weekNumber } = body;
 
-  const startup = await db.startup.findFirst({
-    where: {
-      OR: [{ id: startupIdOrSlug }, { slug: startupIdOrSlug }],
-      userId: session.user.id,
-    },
+  const access = await checkStartupAccess(
+    startupIdOrSlug,
+    "submit_weekly_update",
+  );
+
+  if (!access.hasAccess || !access.startupId) {
+    return NextResponse.json({ error: "Access denied" }, { status: 403 });
+  }
+
+  const startup = await db.startup.findUnique({
+    where: { id: access.startupId },
   });
 
   if (!startup) {

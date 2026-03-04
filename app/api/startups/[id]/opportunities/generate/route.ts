@@ -3,6 +3,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { generateStartupOpportunities } from "@/lib/opportunities/generator";
+import { checkStartupAccess } from "@/lib/startup-permissions";
 
 export async function POST(
   _request: NextRequest,
@@ -17,11 +18,14 @@ export async function POST(
 
     const { id: startupIdOrSlug } = await params;
 
-    const startup = await db.startup.findFirst({
-      where: {
-        OR: [{ id: startupIdOrSlug }, { slug: startupIdOrSlug }],
-        userId: session.user.id,
-      },
+    const access = await checkStartupAccess(startupIdOrSlug, "manage_tasks");
+
+    if (!access.hasAccess || !access.startupId) {
+      return NextResponse.json({ error: "Access denied" }, { status: 403 });
+    }
+
+    const startup = await db.startup.findUnique({
+      where: { id: access.startupId },
       include: {
         idea: {
           select: {

@@ -9,6 +9,7 @@ import {
   isValidOpportunityUrl,
   normalizeOpportunityUrl,
 } from "@/lib/opportunities/discovery";
+import { checkStartupAccess } from "@/lib/startup-permissions";
 
 const CreateOpportunitySchema = z.object({
   title: z.string().trim().min(1),
@@ -51,11 +52,14 @@ export async function GET(
     ? z.nativeEnum(OpportunityStatus).safeParse(statusParam)
     : null;
 
-  const startup = await db.startup.findFirst({
-    where: {
-      OR: [{ id: startupIdOrSlug }, { slug: startupIdOrSlug }],
-      userId: session.user.id,
-    },
+  const access = await checkStartupAccess(startupIdOrSlug, "view_startup");
+
+  if (!access.hasAccess || !access.startupId) {
+    return NextResponse.json({ error: "Access denied" }, { status: 403 });
+  }
+
+  const startup = await db.startup.findUnique({
+    where: { id: access.startupId },
   });
 
   if (!startup) {
@@ -111,11 +115,14 @@ export async function POST(
     );
   }
 
-  const startup = await db.startup.findFirst({
-    where: {
-      OR: [{ id: startupIdOrSlug }, { slug: startupIdOrSlug }],
-      userId: session.user.id,
-    },
+  const access = await checkStartupAccess(startupIdOrSlug, "manage_tasks");
+
+  if (!access.hasAccess || !access.startupId) {
+    return NextResponse.json({ error: "Access denied" }, { status: 403 });
+  }
+
+  const startup = await db.startup.findUnique({
+    where: { id: access.startupId },
   });
 
   if (!startup) {
@@ -173,11 +180,14 @@ export async function PATCH(
 
   const { opportunityId, ...updateData } = parsedBody.data;
 
-  const startup = await db.startup.findFirst({
-    where: {
-      OR: [{ id: startupIdOrSlug }, { slug: startupIdOrSlug }],
-      userId: session.user.id,
-    },
+  const access = await checkStartupAccess(startupIdOrSlug, "manage_tasks");
+
+  if (!access.hasAccess || !access.startupId) {
+    return NextResponse.json({ error: "Access denied" }, { status: 403 });
+  }
+
+  const startup = await db.startup.findUnique({
+    where: { id: access.startupId },
   });
 
   if (!startup) {
@@ -229,20 +239,30 @@ export async function DELETE(
     );
   }
 
-  const startup = await db.startup.findFirst({
-    where: {
-      OR: [{ id: startupIdOrSlug }, { slug: startupIdOrSlug }],
-      userId: session.user.id,
-    },
+  const access = await checkStartupAccess(startupIdOrSlug, "manage_tasks");
+
+  if (!access.hasAccess || !access.startupId) {
+    return NextResponse.json({ error: "Access denied" }, { status: 403 });
+  }
+
+  const startup = await db.startup.findUnique({
+    where: { id: access.startupId },
   });
 
   if (!startup) {
     return NextResponse.json({ error: "Startup not found" }, { status: 404 });
   }
 
-  await db.startupOpportunity.delete({
-    where: { id: opportunityId },
+  const deleted = await db.startupOpportunity.deleteMany({
+    where: { id: opportunityId, startupId: startup.id },
   });
+
+  if (!deleted.count) {
+    return NextResponse.json(
+      { error: "Opportunity not found" },
+      { status: 404 },
+    );
+  }
 
   return NextResponse.json({ success: true });
 }

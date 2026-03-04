@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
+import { checkStartupAccess } from "@/lib/startup-permissions";
 import { StartupSettings } from "./StartupSettings";
 
 interface SettingsPageProps {
@@ -26,5 +27,12 @@ export default async function SettingsPage({ params }: SettingsPageProps) {
   }
 
   const { slug } = await params;
+
+  const access = await checkStartupAccess(slug, "view_settings");
+
+  if (!access.hasAccess) {
+    notFound();
+  }
+
   return <StartupSettings slug={slug} currentUserId={session.user.id} />;
 }
