@@ -42,7 +42,6 @@ export type InngestEvents = {
     data: {
       email: string;
       name: string;
-      username: string;
     };
   };
   "email.send.passwordReset": {
