@@ -2,11 +2,8 @@ import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import {
-  checkStartupAccess,
-  type StartupMemberRole,
-} from "@/lib/startup-permissions";
-
+import { checkStartupAccess } from "@/lib/startup-permissions";
+import { StartupMemberRole } from "@prisma/client";
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -33,6 +30,7 @@ export async function GET(
       id: true,
       name: true,
       userId: true,
+      createdAt: true,
     },
   });
 
@@ -108,6 +106,7 @@ export async function POST(
     select: {
       id: true,
       name: true,
+      userId: true,
     },
   });
 
