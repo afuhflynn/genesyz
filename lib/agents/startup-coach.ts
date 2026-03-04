@@ -79,6 +79,18 @@ interface HistoricalData {
     moraleScore: number;
     goals: Array<{ completed: boolean }>;
   }>;
+  taskSummary?: {
+    totalTasks: number;
+    byStatus: {
+      TODO: number;
+      IN_PROGRESS: number;
+      BLOCKED: number;
+      DONE: number;
+    };
+    overdueTasks: number;
+    upcomingTasks: number;
+    completionRate: number;
+  };
 }
 
 export async function analyzeWeeklyUpdate(
@@ -144,6 +156,18 @@ ${history.updates
 `
     : "## Historical Context\nNo previous updates yet."
 }
+
+## Task Execution Snapshot
+${history?.taskSummary
+  ? `- Total tasks: ${history.taskSummary.totalTasks}
+- To Do: ${history.taskSummary.byStatus.TODO}
+- In Progress: ${history.taskSummary.byStatus.IN_PROGRESS}
+- Blocked: ${history.taskSummary.byStatus.BLOCKED}
+- Done: ${history.taskSummary.byStatus.DONE}
+- Overdue tasks: ${history.taskSummary.overdueTasks}
+- Due in next 7 days: ${history.taskSummary.upcomingTasks}
+- Completion rate: ${Math.round(history.taskSummary.completionRate * 100)}%`
+  : "No task data available."}
 
 ## Your Task
 Provide a brutally honest analysis. 

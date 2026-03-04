@@ -59,6 +59,50 @@ export const analyzeWeeklyUpdateFn = inngest.createFunction(
       };
     });
 
+    const taskSummary = await step.run("fetch-task-summary", async () => {
+      const [allTasks, overdueTasks, upcomingTasks] = await Promise.all([
+        db.task.findMany({
+          where: { startupId },
+          select: { status: true },
+        }),
+        db.task.count({
+          where: {
+            startupId,
+            status: { not: "DONE" },
+            deadline: { lt: new Date() },
+          },
+        }),
+        db.task.count({
+          where: {
+            startupId,
+            status: { not: "DONE" },
+            deadline: {
+              gte: new Date(),
+              lte: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+            },
+          },
+        }),
+      ]);
+
+      const byStatus = {
+        TODO: allTasks.filter((t) => t.status === "TODO").length,
+        IN_PROGRESS: allTasks.filter((t) => t.status === "IN_PROGRESS").length,
+        BLOCKED: allTasks.filter((t) => t.status === "BLOCKED").length,
+        DONE: allTasks.filter((t) => t.status === "DONE").length,
+      };
+
+      const completionRate =
+        allTasks.length > 0 ? byStatus.DONE / allTasks.length : 0;
+
+      return {
+        totalTasks: allTasks.length,
+        byStatus,
+        overdueTasks,
+        upcomingTasks,
+        completionRate,
+      };
+    });
+
     const analysis = await step.run("run-analysis", async () => {
       return analyzeWeeklyUpdate(
         {
@@ -101,7 +145,10 @@ export const analyzeWeeklyUpdateFn = inngest.createFunction(
           targetMarket: update.startup.targetMarket,
           currentWeekNumber: update.startup.currentWeekNumber,
         },
-        history,
+        {
+          ...history,
+          taskSummary,
+        },
       );
     });
 

@@ -63,7 +63,7 @@ export function StartupSidebar({ startup, className }: StartupSidebarProps) {
       active: pathname === `${basePath}/streaks`,
     },
     {
-      label: "Applications",
+      label: "Tasks",
       icon: FileText,
       href: `${basePath}/applications`,
       active: pathname === `${basePath}/applications`,

@@ -19,20 +19,30 @@ import { privateAxios, publicAxios } from "@/config/axios.config";
 // Types
 // ===========================================
 
-export interface Application {
+export type TaskStatus = "TODO" | "IN_PROGRESS" | "BLOCKED" | "DONE";
+
+export interface TaskItem {
   id: string;
   startupId: string;
+  listId: string;
   title: string;
   description: string | null;
-  url: string | null;
-  organization: string | null;
-  type: string;
-  status: string;
-  deadline: Date | null;
-  appliedAt: Date | null;
-  notes: string | null;
-  createdAt: Date;
-  updatedAt: Date;
+  deadline: string | null;
+  status: TaskStatus;
+  position: number;
+  completedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TaskList {
+  id: string;
+  startupId: string;
+  name: string;
+  position: number;
+  createdAt: string;
+  updatedAt: string;
+  tasks: TaskItem[];
 }
 
 export interface StartupOpportunity {
@@ -200,7 +210,9 @@ async function apiRequest<T>(
         response = await axios.get<T>(endpoint);
         break;
       case "DELETE":
-        response = await axios.delete<T>(endpoint);
+        response = await axios.delete<T>(endpoint, {
+          data: options.body ?? undefined,
+        });
         break;
       case "POST":
         response = await axios.post<T>(endpoint, options.body ?? {});
@@ -349,8 +361,8 @@ export const api = {
           nextMilestone: number;
           weeksToMilestone: number;
         }>(`/startups/${id}/streak`, { method: "GET" }),
-      getApplications: (id: string, status?: string) =>
-        apiRequest<{ data: Application[] }>(
+      getTaskLists: (id: string, status?: TaskStatus) =>
+        apiRequest<{ data: { lists: TaskList[] } }>(
           `/startups/${id}/applications${status ? `?status=${status}` : ""}`,
           { method: "GET" },
         ),
@@ -593,44 +605,103 @@ export const api = {
           method: "POST",
           body: data,
         }),
-      getApplications: (id: string, status?: string) =>
-        apiRequest<{ data: any[] }>(
+      getTaskLists: (id: string, status?: TaskStatus) =>
+        apiRequest<{ data: { lists: TaskList[] } }>(
           `/startups/${id}/applications${status ? `?status=${status}` : ""}`,
           { method: "GET" },
         ),
-      createApplication: (
+      createTaskList: (
         id: string,
         data: {
-          title: string;
-          description?: string;
-          url?: string;
-          organization?: string;
-          type?: string;
-          deadline?: string;
+          name: string;
         },
       ) =>
         apiRequest<unknown>(`/startups/${id}/applications`, {
           method: "POST",
-          body: data,
+          body: {
+            action: "create_list",
+            ...data,
+          },
         }),
-      updateApplication: (
+      renameTaskList: (
         id: string,
         data: {
-          applicationId: string;
-          status?: string;
-          notes?: string;
-          appliedAt?: string;
+          listId: string;
+          name: string;
         },
       ) =>
         apiRequest<unknown>(`/startups/${id}/applications`, {
           method: "PATCH",
-          body: data,
+          body: {
+            action: "rename_list",
+            ...data,
+          },
         }),
-      deleteApplication: (id: string, applicationId: string) =>
-        apiRequest<{ success: boolean }>(
-          `/startups/${id}/applications?applicationId=${applicationId}`,
-          { method: "DELETE" },
-        ),
+      deleteTaskList: (id: string, listId: string) =>
+        apiRequest<{ success: boolean }>(`/startups/${id}/applications`, {
+          method: "DELETE",
+          body: {
+            action: "delete_list",
+            listId,
+          },
+        }),
+      createTask: (
+        id: string,
+        data: {
+          listId: string;
+          title: string;
+          description?: string;
+          deadline?: string;
+          status?: TaskStatus;
+        },
+      ) =>
+        apiRequest<{ data: TaskItem }>(`/startups/${id}/applications`, {
+          method: "POST",
+          body: {
+            action: "create_task",
+            ...data,
+          },
+        }),
+      updateTask: (
+        id: string,
+        data: {
+          taskId: string;
+          title?: string;
+          description?: string;
+          deadline?: string | null;
+        },
+      ) =>
+        apiRequest<{ success: boolean }>(`/startups/${id}/applications`, {
+          method: "PATCH",
+          body: {
+            action: "update_task",
+            ...data,
+          },
+        }),
+      moveTask: (
+        id: string,
+        data: {
+          taskId: string;
+          listId: string;
+          status: TaskStatus;
+          position?: number;
+        },
+      ) =>
+        apiRequest<{ success: boolean }>(`/startups/${id}/applications`, {
+          method: "PATCH",
+          body: {
+            action: "move_task",
+            ...data,
+          },
+        }),
+      deleteTask: (id: string, taskId: string) =>
+        apiRequest<{ success: boolean }>(`/startups/${id}/applications`, {
+          method: "DELETE",
+          body: {
+            action: "delete_task",
+            taskId,
+          },
+        }),
       createOpportunity: (
         id: string,
         data: {

@@ -13,8 +13,8 @@ export async function generateMetadata({
 }: ApplicationsPageProps): Promise<Metadata> {
   const { slug } = await params;
   return {
-    title: `Applications | ${slug}`,
-    description: "Track your grant and funding applications",
+    title: `Tasks | ${slug}`,
+    description: "Manage startup task lists and execution workflow",
   };
 }
 
@@ -34,10 +34,10 @@ export default async function ApplicationsPage({
         </Button>
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">
-            Applications
+            Tasks
           </h1>
           <p className="text-muted-foreground">
-            Track your grant and funding applications
+            Plan, prioritize, and execute across your startup task lists
           </p>
         </div>
       </div>

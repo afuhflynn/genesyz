@@ -11,11 +11,11 @@ import { toast } from "sonner";
 import {
   type Accelerator,
   type AcceleratorApplication,
-  type Application,
   api,
   type IdeaWithDetails,
   type PaginationParams,
   type StartupOpportunity,
+  type TaskStatus,
 } from "@/lib/api-client";
 import { authClient, signIn, signUp } from "@/lib/auth-client";
 
@@ -39,6 +39,8 @@ export const queryKeys = {
     detail: (id: string) => [...queryKeys.startups.all, "detail", id] as const,
     updates: (id: string) =>
       [...queryKeys.startups.all, "updates", id] as const,
+    tasks: (id: string, status?: TaskStatus) =>
+      [...queryKeys.startups.all, "tasks", id, status] as const,
     opportunities: (
       id: string,
       params?: { status?: string; category?: string },
@@ -783,16 +785,16 @@ export function useIdeaStartup(ideaId: string) {
   });
 }
 
-export function useApplications(startupId: string) {
+export function useTaskLists(startupId: string, status?: TaskStatus) {
   return useQuery({
-    queryKey: [...queryKeys.startups.detail(startupId), "applications"],
-    queryFn: () => api.queries.startups.getApplications(startupId),
+    queryKey: queryKeys.startups.tasks(startupId, status),
+    queryFn: () => api.queries.startups.getTaskLists(startupId, status),
     enabled: !!startupId,
     staleTime: 5 * 60 * 1000,
   });
 }
 
-export function useCreateApplication() {
+export function useCreateTaskList() {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -802,27 +804,100 @@ export function useCreateApplication() {
     }: {
       startupId: string;
       data: {
+        name: string;
+      };
+    }) => api.mutations.startups.createTaskList(startupId, data),
+    onSuccess: (_, { startupId }) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.startups.tasks(startupId),
+      });
+      toast.success("Task list created!");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to create task list");
+    },
+  });
+}
+
+export function useRenameTaskList() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      startupId,
+      data,
+    }: {
+      startupId: string;
+      data: {
+        listId: string;
+        name: string;
+      };
+    }) => api.mutations.startups.renameTaskList(startupId, data),
+    onSuccess: (_, { startupId }) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.startups.tasks(startupId),
+      });
+      toast.success("Task list renamed!");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to rename task list");
+    },
+  });
+}
+
+export function useDeleteTaskList() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      startupId,
+      listId,
+    }: {
+      startupId: string;
+      listId: string;
+    }) => api.mutations.startups.deleteTaskList(startupId, listId),
+    onSuccess: (_, { startupId }) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.startups.tasks(startupId),
+      });
+      toast.success("Task list deleted!");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to delete task list");
+    },
+  });
+}
+
+export function useCreateTask() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      startupId,
+      data,
+    }: {
+      startupId: string;
+      data: {
+        listId: string;
         title: string;
         description?: string;
-        url?: string;
-        organization?: string;
-        type?: string;
         deadline?: string;
+        status?: TaskStatus;
       };
-    }) => api.mutations.startups.createApplication(startupId, data),
+    }) => api.mutations.startups.createTask(startupId, data),
     onSuccess: (_, { startupId }) => {
       queryClient.invalidateQueries({
-        queryKey: [...queryKeys.startups.detail(startupId), "applications"],
+        queryKey: queryKeys.startups.tasks(startupId),
       });
-      toast.success("Application added!");
+      toast.success("Task created!");
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Failed to add application");
+      toast.error(error.message || "Failed to create task");
     },
   });
 }
 
-export function useUpdateApplication() {
+export function useMoveTask() {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -832,43 +907,42 @@ export function useUpdateApplication() {
     }: {
       startupId: string;
       data: {
-        applicationId: string;
-        status?: string;
-        notes?: string;
-        appliedAt?: string;
+        taskId: string;
+        listId: string;
+        status: TaskStatus;
+        position?: number;
       };
-    }) => api.mutations.startups.updateApplication(startupId, data),
+    }) => api.mutations.startups.moveTask(startupId, data),
     onSuccess: (_, { startupId }) => {
       queryClient.invalidateQueries({
-        queryKey: [...queryKeys.startups.detail(startupId), "applications"],
+        queryKey: queryKeys.startups.tasks(startupId),
       });
-      toast.success("Application updated!");
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Failed to update application");
+      toast.error(error.message || "Failed to move task");
     },
   });
 }
 
-export function useDeleteApplication() {
+export function useDeleteTask() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({
       startupId,
-      applicationId,
+      taskId,
     }: {
       startupId: string;
-      applicationId: string;
-    }) => api.mutations.startups.deleteApplication(startupId, applicationId),
+      taskId: string;
+    }) => api.mutations.startups.deleteTask(startupId, taskId),
     onSuccess: (_, { startupId }) => {
       queryClient.invalidateQueries({
-        queryKey: [...queryKeys.startups.detail(startupId), "applications"],
+        queryKey: queryKeys.startups.tasks(startupId),
       });
-      toast.success("Application removed!");
+      toast.success("Task deleted!");
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Failed to remove application");
+      toast.error(error.message || "Failed to delete task");
     },
   });
 }
@@ -1132,7 +1206,8 @@ export function useAcceleratorApplications(slug: string) {
 export type {
   Accelerator,
   AcceleratorApplication,
-  Application,
+  TaskItem,
+  TaskStatus,
 } from "@/lib/api-client";
 export { useInfiniteIdeas } from "./useInfiniteIdeas";
 export { useInfiniteStartups } from "./useInfiniteStartups";

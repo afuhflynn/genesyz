@@ -1,11 +1,7 @@
 "use client";
 
-import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
-import { useEffect, useState } from "react";
-import { ApplicationKanban } from "@/components/startups/ApplicationKanban";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { TaskBoard } from "@/components/startups/TaskBoard";
 import { useStartup } from "@/hooks";
 
 interface ApplicationsPageClientProps {
@@ -36,5 +32,5 @@ export function ApplicationsPageClient({ slug }: ApplicationsPageClientProps) {
     );
   }
 
-  return <ApplicationKanban startupId={startup.id} startupSlug={slug} />;
+  return <TaskBoard startupId={startup.id} />;
 }
