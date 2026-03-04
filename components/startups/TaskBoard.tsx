@@ -315,6 +315,11 @@ export function TaskBoard({ startupId }: TaskBoardProps) {
     await fetchData();
   };
 
+  const openCreateTaskForList = (listId: string) => {
+    setTaskListId(listId);
+    setIsTaskDialogOpen(true);
+  };
+
   const handleDeleteTask = async (taskId: string) => {
     const res = await fetch(`/api/startups/${startupId}/applications`, {
       method: "DELETE",
@@ -568,6 +573,14 @@ export function TaskBoard({ startupId }: TaskBoardProps) {
                   <div className="flex items-center justify-between gap-2">
                     <CardTitle className="text-base">{list.name}</CardTitle>
                     <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label="Add task to list"
+                        onClick={() => openCreateTaskForList(list.id)}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
                       <Button
                         variant="outline"
                         size="sm"
