@@ -2,8 +2,11 @@ import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { checkStartupAccess } from "@/lib/startup-permissions";
-import { StartupMemberRole } from "@prisma/client";
+import {
+  checkStartupAccess,
+  type StartupMemberRole,
+} from "@/lib/startup-permissions";
+
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -18,14 +21,12 @@ export async function GET(
 
   const access = await checkStartupAccess(id, "view_startup");
 
-  if (!access.hasAccess) {
+  if (!access.hasAccess || !access.startupId) {
     return NextResponse.json({ error: "Access denied" }, { status: 403 });
   }
 
-  const startup = await db.startup.findFirst({
-    where: {
-      OR: [{ slug: id }, { id }],
-    },
+  const startup = await db.startup.findUnique({
+    where: { id: access.startupId },
     select: {
       id: true,
       name: true,
@@ -63,11 +64,23 @@ export async function GET(
     },
   });
 
-  const allMembers = [
+  const allMembers: Array<{
+    id: string;
+    userId: string;
+    role: StartupMemberRole;
+    createdAt: Date;
+    user: {
+      id: string;
+      name: string | null;
+      email: string | null;
+      image: string | null;
+    } | null;
+    isOwner: boolean;
+  }> = [
     {
       id: `owner-${startup.userId}`,
       userId: startup.userId,
-      role: "OWNER" as StartupMemberRole,
+      role: "OWNER",
       createdAt: startup.createdAt,
       user: owner,
       isOwner: true,
@@ -95,14 +108,12 @@ export async function POST(
 
   const access = await checkStartupAccess(id, "manage_team");
 
-  if (!access.hasAccess) {
+  if (!access.hasAccess || !access.startupId) {
     return NextResponse.json({ error: "Access denied" }, { status: 403 });
   }
 
-  const startup = await db.startup.findFirst({
-    where: {
-      OR: [{ slug: id }, { id }],
-    },
+  const startup = await db.startup.findUnique({
+    where: { id: access.startupId },
     select: {
       id: true,
       name: true,

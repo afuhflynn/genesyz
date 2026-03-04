@@ -1,4 +1,5 @@
 import type { StartupMemberRole } from "@prisma/client";
+
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -7,6 +8,7 @@ export type StartupPermission =
   | "view_startup"
   | "edit_startup"
   | "submit_weekly_update"
+  | "manage_tasks"
   | "manage_team"
   | "delete_startup"
   | "view_settings";
@@ -16,6 +18,7 @@ const ROLE_PERMISSIONS: Record<StartupMemberRole, StartupPermission[]> = {
     "view_startup",
     "edit_startup",
     "submit_weekly_update",
+    "manage_tasks",
     "manage_team",
     "delete_startup",
     "view_settings",
@@ -24,12 +27,15 @@ const ROLE_PERMISSIONS: Record<StartupMemberRole, StartupPermission[]> = {
     "view_startup",
     "edit_startup",
     "submit_weekly_update",
+    "manage_tasks",
     "manage_team",
     "view_settings",
   ],
-  MEMBER: ["view_startup", "submit_weekly_update"],
+  MEMBER: ["view_startup", "submit_weekly_update", "manage_tasks"],
   VIEWER: ["view_startup"],
 };
+
+export type { StartupMemberRole };
 
 export function hasPermission(
   role: StartupMemberRole,

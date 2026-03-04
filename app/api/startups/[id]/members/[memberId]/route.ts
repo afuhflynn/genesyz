@@ -2,8 +2,10 @@ import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { checkStartupAccess } from "@/lib/startup-permissions";
-import { StartupMemberRole } from "@prisma/client";
+import {
+  checkStartupAccess,
+  type StartupMemberRole,
+} from "@/lib/startup-permissions";
 
 export async function PATCH(
   request: NextRequest,
@@ -19,14 +21,12 @@ export async function PATCH(
 
   const access = await checkStartupAccess(id, "manage_team");
 
-  if (!access.hasAccess) {
+  if (!access.hasAccess || !access.startupId) {
     return NextResponse.json({ error: "Access denied" }, { status: 403 });
   }
 
-  const startup = await db.startup.findFirst({
-    where: {
-      OR: [{ slug: id }, { id }],
-    },
+  const startup = await db.startup.findUnique({
+    where: { id: access.startupId },
     select: {
       id: true,
       name: true,
@@ -52,7 +52,7 @@ export async function PATCH(
     );
   }
 
-  const member = await db.startupMember.findUnique({
+  const member = await db.startupMember.findFirst({
     where: {
       id: memberId,
       startupId: startup.id,
@@ -128,14 +128,12 @@ export async function DELETE(
 
   const access = await checkStartupAccess(id, "manage_team");
 
-  if (!access.hasAccess) {
+  if (!access.hasAccess || !access.startupId) {
     return NextResponse.json({ error: "Access denied" }, { status: 403 });
   }
 
-  const startup = await db.startup.findFirst({
-    where: {
-      OR: [{ slug: id }, { id }],
-    },
+  const startup = await db.startup.findUnique({
+    where: { id: access.startupId },
     select: {
       id: true,
       name: true,
@@ -154,7 +152,7 @@ export async function DELETE(
     );
   }
 
-  const member = await db.startupMember.findUnique({
+  const member = await db.startupMember.findFirst({
     where: {
       id: memberId,
       startupId: startup.id,

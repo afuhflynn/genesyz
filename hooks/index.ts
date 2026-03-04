@@ -558,12 +558,12 @@ export function useStartups(params?: PaginationParams) {
   });
 }
 
-export function useStartup(id: string) {
+export function useStartup(idOrSlug: string) {
   return useQuery({
-    queryKey: queryKeys.startups.detail(id),
+    queryKey: queryKeys.startups.detail(idOrSlug),
     queryFn: () =>
-      api.queries.startups.getById(id) as Promise<StartupWithDetails>,
-    enabled: !!id,
+      api.queries.startups.getById(idOrSlug) as Promise<StartupWithDetails>,
+    enabled: !!idOrSlug,
     staleTime: 5 * 60 * 1000,
   });
 }
