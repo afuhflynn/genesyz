@@ -72,7 +72,7 @@ interface StartupProfileFormProps {
     location: string | null;
   };
   onSuccess?: () => void;
-  canEdit: boolean;
+  canEdit?: boolean;
 }
 
 function generateSlug(name: string): string {
@@ -98,7 +98,7 @@ export function StartupProfileForm({
   ideaSummary,
   existingStartup,
   onSuccess,
-  canEdit,
+  canEdit = true,
 }: StartupProfileFormProps) {
   const router = useRouter();
   const [slugChecking, setSlugChecking] = useState(false);
