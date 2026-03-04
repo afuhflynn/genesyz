@@ -533,10 +533,27 @@ model Startup {
   taskLists      TaskList[]
   tasks          Task[]
   members       StartupMember[]
+  followers     StartupFollower[]
 
   @@index([userId])
   @@index([slug])
   @@map("startups")
+}
+
+model StartupFollower {
+  id        String   @id @default(cuid())
+  startupId String
+  email     String
+  name      String?
+  createdAt DateTime @default(now())
+  createdBy String?
+
+  startup   Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
+
+  @@unique([startupId, email])
+  @@index([startupId])
+  @@index([email])
+  @@map("startup_followers")
 }
 
 model StartupMember {

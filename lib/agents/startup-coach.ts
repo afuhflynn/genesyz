@@ -158,8 +158,9 @@ ${history.updates
 }
 
 ## Task Execution Snapshot
-${history?.taskSummary
-  ? `- Total tasks: ${history.taskSummary.totalTasks}
+${
+  history?.taskSummary
+    ? `- Total tasks: ${history.taskSummary.totalTasks}
 - To Do: ${history.taskSummary.byStatus.TODO}
 - In Progress: ${history.taskSummary.byStatus.IN_PROGRESS}
 - Blocked: ${history.taskSummary.byStatus.BLOCKED}
@@ -167,7 +168,8 @@ ${history?.taskSummary
 - Overdue tasks: ${history.taskSummary.overdueTasks}
 - Due in next 7 days: ${history.taskSummary.upcomingTasks}
 - Completion rate: ${Math.round(history.taskSummary.completionRate * 100)}%`
-  : "No task data available."}
+    : "No task data available."
+}
 
 ## Your Task
 Provide a brutally honest analysis. 
@@ -225,4 +227,141 @@ export function generateVerdictMessage(
     default:
       return `Analysis complete for ${startupName}.`;
   }
+}
+
+// ===========================================
+// Follower-Specific AI Analysis
+// ===========================================
+
+const followerAnalysisSchema = z.object({
+  summary: z
+    .string()
+    .describe(
+      "A brief 2-3 sentence summary of the startup's progress this week",
+    ),
+  comparisonWithPrevious: z
+    .array(z.string())
+    .describe("3-4 key observations comparing this week to previous weeks"),
+  immediateActions: z
+    .array(z.string())
+    .describe(
+      "1-3 specific, actionable items the founder should do immediately based on this week's data",
+    ),
+});
+
+export type FollowerAnalysisOutput = z.infer<typeof followerAnalysisSchema>;
+
+interface FollowerWeeklyUpdateData {
+  weekNumber: number;
+  isLaunched: boolean;
+  usersTalkedTo: number;
+  userLearnings: string;
+  primaryMetricType: string;
+  primaryMetricValue: number;
+  primaryMetricDelta: number | null;
+  metricPeriod?: string | null;
+  metricFormat?: string | null;
+  customMetricName?: string | null;
+  moraleScore: number;
+  topImprovements?: string | null;
+  biggestObstacle?: string | null;
+  goals: Array<{ content: string; priority: number }>;
+}
+
+interface FollowerStartupContext {
+  name: string;
+  tagline: string | null;
+  description: string | null;
+  industry: string | null;
+  stage: string;
+}
+
+export async function generateFollowerAnalysis(
+  currentUpdate: FollowerWeeklyUpdateData,
+  startup: FollowerStartupContext,
+  previousUpdates?: FollowerWeeklyUpdateData[],
+): Promise<FollowerAnalysisOutput> {
+  const primaryModel = mistral("open-mixtral-8x7b");
+  const fallbackModel = google("gemini-2.5-flash");
+
+  const previousUpdatesText =
+    previousUpdates && previousUpdates.length > 0
+      ? `
+## Previous Weeks Context (for comparison)
+${previousUpdates
+  .slice(0, 3)
+  .reverse()
+  .map(
+    (p) => `
+- Week ${p.weekNumber}:
+  - Users talked to: ${p.usersTalkedTo}
+  - Primary metric: ${p.primaryMetricValue}${p.metricPeriod ? ` (${p.metricPeriod.toLowerCase()})` : ""}
+  - Morale: ${p.moraleScore}/10
+  - Key learnings: ${p.userLearnings?.substring(0, 150) || "N/A"}
+`,
+  )
+  .join("\n")}
+`
+      : "";
+
+  const prompt = `You are an AI assistant helping external followers understand a startup's weekly progress. Provide clear, insightful analysis that helps people who care about the startup understand what's happening.
+
+## Startup Context
+- Name: ${startup.name}
+- ${startup.tagline ? `Tagline: ${startup.tagline}` : ""}
+- ${startup.description ? `Description: ${startup.description}` : ""}
+- Industry: ${startup.industry || "Not specified"}
+- Stage: ${startup.stage}
+
+## This Week's Update (Week ${currentUpdate.weekNumber})
+- Launched: ${currentUpdate.isLaunched ? "Yes" : "No"}
+- Users talked to: ${currentUpdate.usersTalkedTo}
+- User learnings: ${currentUpdate.userLearnings}
+${
+  currentUpdate.isLaunched
+    ? `- Primary metric (${currentUpdate.customMetricName || currentUpdate.primaryMetricType}): ${currentUpdate.primaryMetricValue}${currentUpdate.metricPeriod ? ` (${currentUpdate.metricPeriod.toLowerCase()})` : ""}
+- Metric change from last week: ${currentUpdate.primaryMetricDelta !== null ? `${currentUpdate.primaryMetricDelta >= 0 ? "+" : ""}${currentUpdate.primaryMetricDelta}` : "N/A"}`
+    : ""
+}
+- Founder morale: ${currentUpdate.moraleScore}/10
+- What improved the metric: ${currentUpdate.topImprovements || "Not specified"}
+- Biggest obstacle: ${currentUpdate.biggestObstacle || "Not specified"}
+- Goals for next week: ${currentUpdate.goals.map((g, i) => `${i + 1}. ${g.content}`).join("\n  ")}
+
+${previousUpdatesText}
+
+## Your Task
+Generate an analysis that:
+1. **Summary**: Give a brief 2-3 sentence overview of how the startup did this week
+2. **Comparison**: Identify 3-4 key patterns when comparing to previous weeks (trends, improvements, regressions)
+3. **Immediate Actions**: Recommend 1-3 specific things the founder should do right now based on this week's data
+
+Be informative but not overly technical. Followers may not be deeply involved in the day-to-day, so explain context clearly.`;
+
+  let result: { object: FollowerAnalysisOutput };
+  let modelUsed: string;
+
+  try {
+    result = await generateObject({
+      model: primaryModel,
+      schema: followerAnalysisSchema,
+      prompt,
+    });
+    modelUsed = "open-mixtral-8x7b";
+  } catch (error) {
+    console.warn(
+      "[FOLLOWER_ANALYSIS] Mistral failed, falling back to Gemini:",
+      error,
+    );
+    result = await generateObject({
+      model: fallbackModel,
+      schema: followerAnalysisSchema,
+      prompt,
+    });
+    modelUsed = "gemini-2.5-flash";
+  }
+
+  console.log(`[FOLLOWER_ANALYSIS] Analysis complete using ${modelUsed}`);
+
+  return result.object;
 }

@@ -98,4 +98,33 @@ export type InngestEvents = {
       failedStartups: number;
     };
   };
+  "startup.follower.added": {
+    data: {
+      followerId: string;
+      startupId: string;
+      startupName: string;
+      startupSlug: string;
+      followerEmail: string;
+      followerName?: string;
+      addedByUserId: string;
+    };
+  };
+  "startup.member.added": {
+    data: {
+      startupId: string;
+      startupName: string;
+      startupSlug: string;
+      newMemberUserId: string;
+      newMemberEmail: string;
+      newMemberName: string;
+      newMemberRole: string;
+      addedByUserId: string;
+    };
+  };
+  "startup.weeklyUpdate.followerNotification": {
+    data: {
+      updateId: string;
+      startupId: string;
+    };
+  };
 };

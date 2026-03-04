@@ -15,6 +15,11 @@ import {
   sendStartupFeatureAnnouncement,
 } from "@/lib/inngest/functions/startup-feature-announcement";
 import {
+  followerAddedFn,
+  followerWeeklyUpdateFn,
+  teamMemberAddedFn,
+} from "@/lib/inngest/functions/startup-follower-notifications";
+import {
   weeklyUpdateReminderCronFriday,
   weeklyUpdateReminderCronSaturday,
   weeklyUpdateReminderFn,
@@ -45,5 +50,8 @@ export const { GET, POST, PUT } = serve({
     weeklyUpdateReminderCronFriday,
     weeklyUpdateReminderCronSaturday,
     opportunityDiscoveryCron,
+    followerAddedFn,
+    teamMemberAddedFn,
+    followerWeeklyUpdateFn,
   ],
 });

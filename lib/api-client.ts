@@ -204,6 +204,15 @@ export interface StartupMember {
   isOwner: boolean;
 }
 
+export interface StartupFollower {
+  id: string;
+  startupId: string;
+  email: string;
+  name: string | null;
+  createdAt: Date;
+  createdBy: string | null;
+}
+
 export interface SearchedUser {
   id: string;
   name: string | null;
@@ -449,6 +458,10 @@ export const api = {
           }`,
           { method: "GET" },
         ),
+      getFollowers: (id: string) =>
+        apiRequest<{ data: StartupFollower[] }>(`/startups/${id}/followers`, {
+          method: "GET",
+        }),
     },
 
     // Accelerators
@@ -797,6 +810,16 @@ export const api = {
       removeMember: (id: string, memberId: string) =>
         apiRequest<{ success: boolean }>(
           `/startups/${id}/members/${memberId}`,
+          { method: "DELETE" },
+        ),
+      addFollower: (id: string, data: { email: string; name?: string }) =>
+        apiRequest<{ data: StartupFollower }>(`/startups/${id}/followers`, {
+          method: "POST",
+          body: data,
+        }),
+      removeFollower: (id: string, followerId: string) =>
+        apiRequest<{ success: boolean }>(
+          `/startups/${id}/followers/${followerId}`,
           { method: "DELETE" },
         ),
     },

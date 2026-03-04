@@ -290,6 +290,14 @@ export async function POST(
     },
   });
 
+  await inngest.send({
+    name: "startup.weeklyUpdate.followerNotification",
+    data: {
+      updateId: update.id,
+      startupId: startup.id,
+    },
+  });
+
   return NextResponse.json({ ...update, needsAnalysis: true }, { status: 201 });
 }
 

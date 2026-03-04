@@ -1,9 +1,11 @@
 "use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { type StartupMemberRole, useTeamMembers } from "@/hooks";
 import { AddMemberButton } from "./AddMemberDialog";
+import { FollowersTab } from "./FollowersTab";
 import { RoleDropdown } from "./RoleDropdown";
 
 const ROLE_LABELS: Record<StartupMemberRole, string> = {
@@ -154,6 +156,10 @@ export function TeamTab({
           ))}
         </div>
       )}
+
+      <Separator className="my-8" />
+
+      <FollowersTab startupId={startupId} canManage={canManage} />
     </div>
   );
 }

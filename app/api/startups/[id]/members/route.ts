@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { inngest } from "@/lib/inngest/client";
 import {
   checkStartupAccess,
   type StartupMemberRole,
@@ -117,6 +118,7 @@ export async function POST(
     select: {
       id: true,
       name: true,
+      slug: true,
       userId: true,
     },
   });
@@ -198,6 +200,20 @@ export async function POST(
         memberName: targetUser.name,
         role,
       },
+    },
+  });
+
+  await inngest.send({
+    name: "startup.member.added",
+    data: {
+      startupId: startup.id,
+      startupName: startup.name,
+      startupSlug: startup.slug || startup.id,
+      newMemberUserId: userId,
+      newMemberEmail: targetUser.email,
+      newMemberName: targetUser.name || "Team Member",
+      newMemberRole: role,
+      addedByUserId: session.user.id,
     },
   });
 

@@ -1352,3 +1352,347 @@ export async function sendStartupMemberRoleChangedEmail(options: {
     text: `Your role in ${startupName} has been changed from ${oldRole} to ${newRole} by ${changedByName}. View the startup at ${APP_URL}/startups/${startupSlug}`,
   });
 }
+
+// ===========================================
+// New Follower Added Email
+// ===========================================
+
+export async function sendNewFollowerAddedEmail(options: {
+  to: string;
+  followerName?: string | null;
+  startupName: string;
+  startupSlug: string;
+}): Promise<boolean> {
+  const { to, followerName, startupName, startupSlug } = options;
+
+  const greetingName = followerName || "there";
+
+  const contentHtml = `
+    <p style="font-size: 16px; color: #475569; margin: 0 0 24px 0;">
+      Hi ${greetingName}, you've been added as a follower to <strong>${startupName}</strong> on IdeasVault.
+    </p>
+
+    <div style="background: #f8fafc; border-radius: 12px; padding: 24px; margin-bottom: 24px; border: 1px solid #e2e8f0;">
+      <h3 style="font-size: 18px; font-weight: 600; color: #0f172a; margin: 0 0 12px 0;">
+        What this means
+      </h3>
+      <ul style="margin: 0; padding-left: 20px; color: #475569;">
+        <li style="margin-bottom: 8px;">You'll receive weekly progress updates about ${startupName}</li>
+        <li style="margin-bottom: 8px;">Stay informed about their journey without needing to ask</li>
+        <li style="margin-bottom: 8px;">Get insights into their metrics, goals, and milestones</li>
+      </ul>
+    </div>
+
+    <div style="text-align: center;">
+      <a href="${APP_URL}/startups/${startupSlug}" style="display: inline-block; background: #F5A623; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(245, 166, 35, 0.2);">
+        View Startup
+      </a>
+    </div>
+  `;
+
+  const html = renderPremiumEmail({
+    title: `You're now following ${startupName}`,
+    contentHtml,
+    badge: "New Follower",
+  });
+
+  return sendEmail({
+    to,
+    subject: `You're now following ${startupName} on IdeasVault`,
+    html,
+    text: `Hi ${greetingName}, you've been added as a follower to ${startupName}. You'll receive weekly progress updates. View the startup at ${APP_URL}/startups/${startupSlug}`,
+  });
+}
+
+// ===========================================
+// Team Member Added Notification Email
+// ===========================================
+
+export async function sendTeamMemberAddedNotificationEmail(options: {
+  to: string;
+  userName: string;
+  startupName: string;
+  startupSlug: string;
+  newMemberName: string;
+  newMemberRole: string;
+}): Promise<boolean> {
+  const {
+    to,
+    userName,
+    startupName,
+    startupSlug,
+    newMemberName,
+    newMemberRole,
+  } = options;
+
+  const contentHtml = `
+    <p style="font-size: 16px; color: #475569; margin: 0 0 24px 0;">
+      Hi ${userName}, a new team member has been added to <strong>${startupName}</strong>.
+    </p>
+
+    <div style="background: #f8fafc; border-radius: 12px; padding: 24px; margin-bottom: 24px; border: 1px solid #e2e8f0;">
+      <h3 style="font-size: 18px; font-weight: 600; color: #0f172a; margin: 0 0 12px 0;">
+        New Team Member
+      </h3>
+      <p style="margin: 0 0 8px 0; color: #475569;">
+        <strong>Name:</strong> ${newMemberName}
+      </p>
+      <p style="margin: 0; color: #475569;">
+        <strong>Role:</strong> ${newMemberRole}
+      </p>
+    </div>
+
+    <div style="text-align: center;">
+      <a href="${APP_URL}/startups/${startupSlug}" style="display: inline-block; background: #F5A623; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(245, 166, 35, 0.2);">
+        View Startup
+      </a>
+    </div>
+  `;
+
+  const html = renderPremiumEmail({
+    title: `New team member in ${startupName}`,
+    contentHtml,
+    badge: "Team Update",
+  });
+
+  return sendEmail({
+    to,
+    subject: `New team member added to ${startupName}`,
+    html,
+    text: `Hi ${userName}, ${newMemberName} has been added to ${startupName} as a ${newMemberRole}. View the startup at ${APP_URL}/startups/${startupSlug}`,
+  });
+}
+
+// ===========================================
+// Follower Weekly Update Email (AI-Powered)
+// ===========================================
+
+interface FollowerWeeklyReportData {
+  weekNumber: number;
+  isLaunched: boolean;
+  primaryMetricType: string;
+  primaryMetricValue: number;
+  primaryMetricDelta: number | null;
+  metricPeriod?: string | null;
+  metricFormat?: "CURRENCY" | "PERCENTAGE" | "NUMBER" | null;
+  customMetricName?: string | null;
+  usersTalkedTo: number;
+  moraleScore: number;
+  userLearnings: string;
+  topImprovements?: string | null;
+  biggestObstacle?: string | null;
+  goals: Array<{ content: string; priority: number }>;
+}
+
+interface FollowerAIAnalysis {
+  summary: string;
+  comparisonWithPrevious: string[];
+  immediateActions: string[];
+}
+
+export async function sendFollowerWeeklyUpdateEmail(options: {
+  to: string;
+  followerName?: string | null;
+  startupName: string;
+  startupSlug: string;
+  currentReport: FollowerWeeklyReportData;
+  previousReports?: FollowerWeeklyReportData[];
+  aiAnalysis?: FollowerAIAnalysis;
+}): Promise<boolean> {
+  const {
+    to,
+    followerName,
+    startupName,
+    startupSlug,
+    currentReport,
+    previousReports,
+    aiAnalysis,
+  } = options;
+
+  const greetingName = followerName || "";
+
+  const primaryFormat = currentReport.metricFormat || "NUMBER";
+  const primaryValueDisplay = formatMetricValue(
+    currentReport.primaryMetricValue,
+    primaryFormat,
+  );
+
+  const metricDelta = currentReport.primaryMetricDelta;
+  const metricDeltaDisplay =
+    metricDelta !== null
+      ? `${metricDelta >= 0 ? "+" : ""}${primaryFormat === "PERCENTAGE" ? `${metricDelta.toFixed(1)}%` : formatMetricValue(Math.abs(metricDelta), primaryFormat)}`
+      : "No change";
+
+  const previousMetricsHtml =
+    previousReports && previousReports.length > 0
+      ? `
+    <h3 style="font-size: 14px; font-weight: 800; color: #0f172a; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 0.05em;">Progress Over Time</h3>
+    <div style="display: grid; grid-template-columns: repeat(${Math.min(previousReports.length + 1, 4)}, 1fr); gap: 8px; margin-bottom: 24px;">
+      ${[...previousReports]
+        .reverse()
+        .concat(currentReport)
+        .map(
+          (report, idx) => `
+        <div style="background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid ${idx === previousReports.length ? "#F5A623" : "#e2e8f0"};">
+          <div style="font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 700;">Week ${report.weekNumber}</div>
+          <div style="font-size: 16px; font-weight: 800; color: #0f172a;">${formatMetricValue(report.primaryMetricValue, report.metricFormat || "NUMBER")}</div>
+        </div>
+      `,
+        )
+        .join("")}
+    </div>
+  `
+      : "";
+
+  const aiAnalysisHtml = aiAnalysis
+    ? `
+    <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 12px; padding: 24px; margin-bottom: 24px; color: #ffffff;">
+      <h3 style="font-size: 14px; font-weight: 800; color: #fbbf24; margin: 0 0 16px 0; text-transform: uppercase; letter-spacing: 0.05em;">
+        AI Analysis
+      </h3>
+      <p style="font-size: 14px; color: #e2e8f0; margin: 0 0 16px 0; line-height: 1.6;">
+        ${aiAnalysis.summary}
+      </p>
+      
+      ${
+        aiAnalysis.comparisonWithPrevious.length > 0
+          ? `
+        <h4 style="font-size: 12px; font-weight: 700; color: #94a3b8; margin: 0 0 8px 0; text-transform: uppercase;">
+          Comparison with Previous Weeks
+        </h4>
+        <ul style="margin: 0 0 16px 0; padding-left: 20px; color: #e2e8f0; font-size: 13px; line-height: 1.6;">
+          ${aiAnalysis.comparisonWithPrevious.map((item) => `<li style="margin-bottom: 6px;">${item}</li>`).join("")}
+        </ul>
+      `
+          : ""
+      }
+      
+      ${
+        aiAnalysis.immediateActions.length > 0
+          ? `
+        <div style="background: rgba(245, 166, 35, 0.15); border-radius: 8px; padding: 16px; margin-top: 16px;">
+          <h4 style="font-size: 12px; font-weight: 700; color: #F5A623; margin: 0 0 8px 0; text-transform: uppercase;">
+            Do This Now
+          </h4>
+          <ul style="margin: 0; padding-left: 20px; color: #ffffff; font-size: 13px; line-height: 1.6;">
+            ${aiAnalysis.immediateActions
+              .slice(0, 3)
+              .map(
+                (action) =>
+                  `<li style="margin-bottom: 6px;"><strong>${action}</strong></li>`,
+              )
+              .join("")}
+          </ul>
+        </div>
+      `
+          : ""
+      }
+    </div>
+  `
+    : "";
+
+  const learningsHtml = currentReport.userLearnings
+    ? `
+    <div style="background: #f8fafc; border-radius: 12px; padding: 20px; margin-bottom: 24px; border: 1px solid #e2e8f0;">
+      <h3 style="font-size: 14px; font-weight: 800; color: #0f172a; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 0.05em;">
+        Key Learnings This Week
+      </h3>
+      <p style="margin: 0; font-size: 14px; color: #475569; line-height: 1.6;">
+        ${currentReport.userLearnings}
+      </p>
+    </div>
+  `
+    : "";
+
+  const goalsHtml =
+    currentReport.goals && currentReport.goals.length > 0
+      ? `
+    <div style="margin-bottom: 24px;">
+      <h3 style="font-size: 14px; font-weight: 800; color: #0f172a; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 0.05em;">
+        Goals for Next Week
+      </h3>
+      <ul style="margin: 0; padding-left: 20px; color: #475569; font-size: 14px;">
+        ${currentReport.goals
+          .map(
+            (goal, idx) => `
+          <li style="margin-bottom: 8px;">
+            <strong>${idx + 1}.</strong> ${goal.content}
+          </li>
+        `,
+          )
+          .join("")}
+      </ul>
+    </div>
+  `
+      : "";
+
+  const contentHtml = `
+    ${
+      greetingName
+        ? `<p style="font-size: 16px; color: #475569; margin: 0 0 24px 0;">
+        Hi${greetingName ? ` ${greetingName}` : ""}, here's the weekly progress update for <strong>${startupName}</strong>.
+      </p>`
+        : `<p style="font-size: 16px; color: #475569; margin: 0 0 24px 0;">
+        Here's the weekly progress update for <strong>${startupName}</strong>.
+      </p>`
+    }
+
+    ${aiAnalysisHtml}
+    ${learningsHtml}
+
+    <h3 style="font-size: 14px; font-weight: 800; color: #0f172a; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 0.05em;">This Week's Numbers</h3>
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px;">
+      ${
+        currentReport.isLaunched
+          ? `<div style="background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0;">
+        <div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 700;">${formatMetricLabel(currentReport.primaryMetricType, currentReport.customMetricName)}</div>
+        <div style="font-size: 24px; font-weight: 800; color: #0f172a;">${primaryValueDisplay}</div>
+        <div style="font-size: 12px; color: ${metricDelta && metricDelta >= 0 ? "#16a34a" : "#dc2626"}; font-weight: 600;">${metricDeltaDisplay}</div>
+      </div>`
+          : ""
+      }
+      <div style="background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0;">
+        <div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 700;">Users Talked To</div>
+        <div style="font-size: 24px; font-weight: 800; color: #0f172a;">${currentReport.usersTalkedTo}</div>
+      </div>
+      <div style="background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0;">
+        <div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 700;">Morale</div>
+        <div style="font-size: 24px; font-weight: 800; color: #0f172a;">${currentReport.moraleScore}/10</div>
+      </div>
+    </div>
+
+    ${previousMetricsHtml}
+    ${goalsHtml}
+
+    <div style="text-align: center;">
+      <a href="${APP_URL}/startups/${startupSlug}" style="display: inline-block; background: #F5A623; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(245, 166, 35, 0.2);">
+        View Full Dashboard
+      </a>
+    </div>
+  `;
+
+  const html = renderPremiumEmail({
+    title: startupName,
+    contentHtml,
+    badge: `Week ${currentReport.weekNumber} Update`,
+  });
+
+  const textSummary = `
+Hi${greetingName ? ` ${greetingName}` : ""}, here's the weekly progress update for ${startupName}.
+
+Week ${currentReport.weekNumber} Summary:
+- Primary Metric: ${primaryValueDisplay} (${metricDeltaDisplay})
+- Users Talked To: ${currentReport.usersTalkedTo}
+- Morale: ${currentReport.moraleScore}/10
+${currentReport.userLearnings ? `- Key Learnings: ${currentReport.userLearnings.substring(0, 200)}...` : ""}
+
+View full details at ${APP_URL}/startups/${startupSlug}
+  `.trim();
+
+  return sendEmail({
+    to,
+    subject: `${startupName} Weekly Update - Week ${currentReport.weekNumber}`,
+    html,
+    text: textSummary,
+  });
+}

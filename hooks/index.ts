@@ -45,6 +45,8 @@ export const queryKeys = {
       id: string,
       params?: { status?: string; category?: string },
     ) => [...queryKeys.startups.all, "opportunities", id, params] as const,
+    followers: (id: string) =>
+      [...queryKeys.startups.all, "followers", id] as const,
   },
   dashboard: {
     all: ["dashboard"] as const,
@@ -1186,6 +1188,65 @@ export function useRemoveTeamMember() {
     },
     onError: (error: Error) => {
       toast.error(error.message || "Failed to remove team member");
+    },
+  });
+}
+
+// ===========================================
+// Follower Hooks
+// ===========================================
+
+export function useFollowers(startupId: string) {
+  return useQuery({
+    queryKey: queryKeys.startups.followers(startupId),
+    queryFn: () => api.queries.startups.getFollowers(startupId),
+    enabled: !!startupId,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useAddFollower() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      startupId,
+      data,
+    }: {
+      startupId: string;
+      data: { email: string; name?: string };
+    }) => api.mutations.startups.addFollower(startupId, data),
+    onSuccess: (_, { startupId }) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.startups.followers(startupId),
+      });
+      toast.success("Follower added successfully");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to add follower");
+    },
+  });
+}
+
+export function useRemoveFollower() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      startupId,
+      followerId,
+    }: {
+      startupId: string;
+      followerId: string;
+    }) => api.mutations.startups.removeFollower(startupId, followerId),
+    onSuccess: (_, { startupId }) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.startups.followers(startupId),
+      });
+      toast.success("Follower removed");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to remove follower");
     },
   });
 }
