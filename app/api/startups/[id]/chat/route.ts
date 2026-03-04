@@ -1,5 +1,5 @@
 import { google } from "@ai-sdk/google";
-import { streamText, convertToCoreMessages, createDataStreamResponse } from "ai";
+import { streamText } from "ai";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { tools } from "@/lib/ai/tools";
@@ -71,29 +71,25 @@ KEY TOPICS YOU COVER:
 
 If the user asks for a pitch review or market analysis, use your tools to get the most up-to-date information.`;
 
-    return createDataStreamResponse({
-      execute: (dataStream) => {
-        const result = streamText({
-          model: google("gemini-2.5-flash"),
-          system: systemPrompt,
-          tools: {
-            ...tools,
-          },
-          messages: convertToCoreMessages(messages),
-          onFinish: async ({ text, toolCalls, toolResults, usage }) => {
-            try {
-              if (conversationId) {
-                // Update existing conversation logic here
-              }
-            } catch (e) {
-              console.error("Failed to save message to DB:", e);
-            }
-          },
-        });
-
-        result.mergeIntoDataStream(dataStream);
+    const result = streamText({
+      model: google("gemini-2.5-flash"),
+      system: systemPrompt,
+      tools: {
+        ...tools,
+      },
+      messages,
+      onFinish: async ({ text, toolCalls, toolResults, usage }) => {
+        try {
+          if (conversationId) {
+            // Update existing conversation logic here
+          }
+        } catch (e) {
+          console.error("Failed to save message to DB:", e);
+        }
       },
     });
+
+    return result.toTextStreamResponse();
   } catch (error) {
     console.error("Startup VC Coach API error:", error);
     return NextResponse.json(

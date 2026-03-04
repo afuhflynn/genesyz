@@ -188,21 +188,24 @@ export function VCCoach({ startupId, startupName }: VCCoachProps) {
                           );
                         }
                         
-                        if (part.type === "tool-invocation") {
-                          const { toolName, toolCallId, state } = part.toolInvocation;
+                        if (part.type.startsWith("tool-")) {
+                          // In AI SDK v3/v4 UI parts, the part itself is the ToolUIPart
+                          const toolPart = part as any; 
+                          const { toolCallId, state, type } = toolPart;
+                          
                           return (
-                            <Tool key={toolCallId} state={state}>
+                            <Tool key={toolCallId}>
                               <ToolHeader 
                                 state={state} 
-                                type="call" 
-                                title={`Using Tool: ${toolName.replace(/([A-Z])/g, ' $1').trim()}`} 
+                                type={type} 
+                                title={`Using Tool: ${toolPart.toolName || "Strategic Tool"}`} 
                               />
                               <ToolContent>
-                                <ToolInput input={part.toolInvocation.args} />
-                                {state === 'result' && (
+                                <ToolInput input={toolPart.input} />
+                                {(state === 'output-available' || state === 'output-error') && (
                                   <ToolOutput 
-                                    output={part.toolInvocation.result} 
-                                    errorText={null}
+                                    output={toolPart.output} 
+                                    errorText={toolPart.errorText || undefined}
                                   />
                                 )}
                               </ToolContent>
