@@ -1,8 +1,8 @@
 import { db } from "@/lib/db";
-import { sendEmail } from "@/lib/email/client";
 import {
   sendPasswordResetEmail,
   sendVerificationEmail,
+  sendWelcomeEmail,
 } from "@/lib/email/send";
 import { PLANS } from "@/lib/polar/client";
 import { inngest } from "../client";
@@ -30,7 +30,7 @@ export const sendWelcomeEmailFunction = inngest.createFunction(
   { id: "send-welcome-email", name: "Send Welcome Email" },
   { event: "email.send.welcome" },
   async ({ event, step }) => {
-    const { email, name, username } = event.data;
+    const { email, name } = event.data;
 
     await step.run("create-entitlement", async () => {
       const user = await db.user.findUnique({
@@ -54,15 +54,9 @@ export const sendWelcomeEmailFunction = inngest.createFunction(
     });
 
     await step.run("send-email", async () => {
-      await sendEmail({
+      await sendWelcomeEmail({
         to: email,
-        subject: "Welcome to IdeasVault!",
-        html: `
-          <h1>Welcome, ${name}!</h1>
-          <p>We're excited to have you on board. Your username is <strong>${username}</strong>.</p>
-          <p>Start capturing your brilliant ideas today!</p>
-        `,
-        text: `Welcome to IdeasVault, ${name}! Your username is ${username}.`,
+        userName: name,
       });
     });
 

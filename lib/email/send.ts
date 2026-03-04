@@ -79,24 +79,30 @@ export async function sendWelcomeEmail(options: {
     </h2>
 
     <p style="font-size: 16px; color: #475569; margin-bottom: 24px;">
-      Thank you for joining IdeasVault. We're excited to help you capture, research, and validate your startup ideas.
+      You just joined the AI co-founder workspace built for serious founders. Turn raw ideas into validated opportunities with clear market signals, execution guidance, and investor-ready insights.
     </p>
 
     <div style="background: #f8fafc; border-radius: 12px; padding: 24px; margin-bottom: 24px; border: 1px solid #e2e8f0;">
       <h3 style="font-size: 18px; font-weight: 600; color: #0f172a; margin: 0 0 12px 0;">
-        Here's what you can do:
+        Launch faster with IdeasVault:
       </h3>
       <ul style="margin: 0; padding-left: 20px; color: #475569;">
-        <li style="margin-bottom: 8px;">Capture ideas via text, voice, or images</li>
-        <li style="margin-bottom: 8px;">Get AI-powered market research</li>
-        <li style="margin-bottom: 8px;">Receive actionable insights and scores</li>
-        <li style="margin-bottom: 8px;">Export research as professional PDFs</li>
+        <li style="margin-bottom: 8px;">Validate ideas with a multi-agent AI research pipeline</li>
+        <li style="margin-bottom: 8px;">Track weekly startup progress, goals, and momentum in one dashboard</li>
+        <li style="margin-bottom: 8px;">Discover grants, fellowships, competitions, and accelerator opportunities</li>
+        <li style="margin-bottom: 8px;">Export polished research reports to share with teammates and stakeholders</li>
       </ul>
+    </div>
+
+    <div style="background: #0f172a; border-radius: 12px; padding: 18px; margin-bottom: 24px;">
+      <p style="font-size: 14px; margin: 0; color: #e2e8f0;">
+        <strong style="color: #ffffff;">Pro tip:</strong> founders who validate their first idea in the first 24 hours build sharper products and waste less time. Start now and compound your edge.
+      </p>
     </div>
 
     <div style="text-align: center;">
       <a href="${APP_URL}/dashboard" style="display: inline-block; background: #F5A623; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(245, 166, 35, 0.2);">
-        Go to Dashboard
+        Validate Your First Idea
       </a>
     </div>
   `;
@@ -109,9 +115,9 @@ export async function sendWelcomeEmail(options: {
 
   return sendEmail({
     to,
-    subject: "Welcome to IdeasVault!",
+    subject: "Welcome to IdeasVault — let’s validate your first startup idea",
     html,
-    text: `Welcome to IdeasVault, ${userName}! Visit ${APP_URL}/dashboard to get started.`,
+    text: `Welcome to IdeasVault, ${userName}! You're now in the AI co-founder workspace for validating and executing startup ideas. Validate your first idea now: ${APP_URL}/dashboard`,
   });
 }
 
