@@ -99,6 +99,7 @@ export function AddMemberDialog({
               <CommandItem
                 key={user.id}
                 onSelect={() => handleAddUser(user)}
+                value={`${user.name} ${user.email}`}
                 className="cursor-pointer"
               >
                 <Avatar className="h-8 w-8 mr-2">
