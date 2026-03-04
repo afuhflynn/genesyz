@@ -121,33 +121,24 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
         </TabsList>
 
         <TabsContent value="profile">
-          {canEditProfile ? (
-            <StartupProfileForm
-              ideaId={startup.idea.id}
-              ideaTitle={startup.idea.title || undefined}
-              ideaSummary={startup.idea.summary || undefined}
-              existingStartup={{
-                id: startup.id,
-                name: startup.name,
-                slug: startup.slug,
-                tagline: startup.tagline,
-                description: startup.description,
-                industry: startup.industry,
-                stage: startup.stage,
-                targetMarket: startup.targetMarket,
-                website: startup.website,
-                location: startup.location,
-              }}
-            />
-          ) : (
-            <div className="rounded-lg border p-8 text-center">
-              <h3 className="text-lg font-semibold">View Only</h3>
-              <p className="text-muted-foreground">
-                You don&apos;t have permission to edit this startup profile.
-                Contact the owner to make changes.
-              </p>
-            </div>
-          )}
+          <StartupProfileForm
+            ideaId={startup.idea.id}
+            ideaTitle={startup.idea.title || undefined}
+            ideaSummary={startup.idea.summary || undefined}
+            existingStartup={{
+              id: startup.id,
+              name: startup.name,
+              slug: startup.slug,
+              tagline: startup.tagline,
+              description: startup.description,
+              industry: startup.industry,
+              stage: startup.stage,
+              targetMarket: startup.targetMarket,
+              website: startup.website,
+              location: startup.location,
+            }}
+            canEdit={canEditProfile}
+          />
         </TabsContent>
 
         <TabsContent value="team">

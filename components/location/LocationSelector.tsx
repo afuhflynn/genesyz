@@ -36,6 +36,7 @@ interface LocationSelectorProps {
   onChange: (location: LocationContext | null) => void;
   disabled?: boolean;
   id?: string;
+  canEdit: boolean;
 }
 
 type PickerStep = "country" | "region" | "city";
@@ -93,6 +94,7 @@ export function LocationSelector({
   onChange,
   disabled = false,
   id,
+  canEdit,
 }: LocationSelectorProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -278,7 +280,7 @@ export function LocationSelector({
           role="combobox"
           aria-expanded={open}
           className="w-full justify-between"
-          disabled={disabled}
+          disabled={disabled || !canEdit}
         >
           <span className="flex items-center gap-2 truncate">
             {value?.isGlobal ? (
