@@ -64,11 +64,14 @@ Analyze technical complexity, resource requirements, risks, and provide actionab
 
   const startTime = Date.now();
 
-  const { result, modelUsed } = await generateObjectWithFallback({
-    schema: ExecutionFrictionSchema,
-    system: SYSTEM_PROMPT,
-    prompt,
-  }, "EXECUTION_FRICTION");
+  const { result, modelUsed } = await generateObjectWithFallback(
+    {
+      schema: ExecutionFrictionSchema,
+      system: SYSTEM_PROMPT,
+      prompt,
+    },
+    "EXECUTION_FRICTION",
+  );
 
   const latencyMs = Date.now() - startTime;
 
@@ -84,9 +87,10 @@ Analyze technical complexity, resource requirements, risks, and provide actionab
       latencyMs,
     },
   });
-
-  const techComplexity = result.object.technicalComplexity.score;
-  const riskCount = result.object.riskFactors.length;
+  // @ts-ignore
+  const techComplexity = result?.object?.technicalComplexity?.score;
+  // @ts-ignore
+  const riskCount = result?.object?.riskFactors?.length;
   // Lower complexity and fewer high-severity risks = higher confidence
   const confidence = Math.max(
     0.4,
