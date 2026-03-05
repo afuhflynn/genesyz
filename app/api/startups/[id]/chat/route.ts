@@ -1,6 +1,5 @@
-import { google } from "@ai-sdk/google";
 import { openai } from "@ai-sdk/openai";
-import { streamText } from "ai";
+import { stepCountIs, streamText } from "ai";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { tools } from "@/lib/ai/tools";
@@ -22,7 +21,8 @@ export async function POST(
     }
 
     const { id: startupIdOrSlug } = await params;
-    const { messages, conversationId: requestedConversationId } = await req.json();
+    const { messages, conversationId: requestedConversationId } =
+      await req.json();
 
     // Map UI messages to CoreMessages if they are in the parts format
     const coreMessages = Array.isArray(messages)
@@ -58,7 +58,9 @@ export async function POST(
         const newConversation = await db.startupConversation.create({
           data: {
             startupId: access.startupId,
-            title: lastMessage.content.substring(0, 50) + (lastMessage.content.length > 50 ? "..." : ""),
+            title:
+              lastMessage.content.substring(0, 50) +
+              (lastMessage.content.length > 50 ? "..." : ""),
           },
         });
         conversationId = newConversation.id;
@@ -84,6 +86,8 @@ export async function POST(
         description: true,
         industry: true,
         stage: true,
+        slug: true,
+        ideaId: true,
       },
     });
 
@@ -98,6 +102,9 @@ STARTUP CONTEXT:
 - Stage: ${startup.stage}
 - Industry: ${startup.industry || "Not specified"}
 - Description: ${startup.description || "Not specified"}
+- Id: ${startup.id}
+- Slug: ${startup.slug}
+- Startup Idea ID: ${startup.ideaId}
 
 YOUR COACHING PHILOSOPHY:
 1. BE STRATEGIC: Don't just answer questions; think 3 steps ahead. What is the most critical hurdle this startup faces right now?
@@ -121,20 +128,31 @@ KEY TOPICS YOU COVER:
 - Fundraising: When to raise, how much, and from whom.
 - Hiring & Team: Advice on early-core-team building.
 - Competition: Use 'webSearch' and 'getCompetitorUpdates' to stay ahead.
+- And anything based on the conversation context!
+
+NOTE:
+- If the user asks for a pitch review or market analysis, use your tools to get the most up-to-date information.
+- If the user asks for a fundraising plan, use your tools to get the most up-to-date information.
+- If the user asks for a hiring plan, use your tools to get the most up-to-date information.
+- If the user asks for a competition plan, use your tools to get the most up-to-date information.
+- If the user asks for anything related to dates, use the websearch tool to get the most up-to-date information.
+- Don't use too many emojis, but feel free to use 1-2 relevant ones to make your advice more engaging and memorable (This is to make your response more human and professional)
 
 If the user asks for a pitch review or market analysis, use your tools to get the most up-to-date information.`;
 
     const result = streamText({
-      model: google("gemini-2.5-flash"),
+      model: openai("gpt-5.2-chat-latest"),
       system: systemPrompt,
       tools: {
         ...tools,
       },
-      maxSteps: 5,
+      stopWhen: stepCountIs(20),
       messages: coreMessages,
       onFinish: async ({ text, toolCalls, toolResults, usage }) => {
         try {
-          console.log(`[CHAT_FINISH] Conversation: ${conversationId}, Text length: ${text.length}`);
+          console.log(
+            `[CHAT_FINISH] Conversation: ${conversationId}, Text length: ${text.length}`,
+          );
           if (conversationId) {
             // Save assistant message and tool results
             const assistantMessage = await db.startupMessage.create({
@@ -142,8 +160,14 @@ If the user asks for a pitch review or market analysis, use your tools to get th
                 conversationId,
                 role: "assistant",
                 content: text || "",
-                toolCalls: (toolCalls && toolCalls.length > 0) ? toolCalls as any : undefined,
-                toolResults: (toolResults && toolResults.length > 0) ? toolResults as any : undefined,
+                toolCalls:
+                  toolCalls && toolCalls.length > 0
+                    ? (toolCalls as any)
+                    : undefined,
+                toolResults:
+                  toolResults && toolResults.length > 0
+                    ? (toolResults as any)
+                    : undefined,
                 tokensUsed: usage.totalTokens,
               },
             });
@@ -166,9 +190,9 @@ If the user asks for a pitch review or market analysis, use your tools to get th
       },
     });
 
-    return result.toTextStreamResponse({
+    return result.toUIMessageStreamResponse({
       headers: {
-        "X-Conversation-Id": conversationId || "",
+        "x-conversation-id": conversationId || "",
       },
     });
   } catch (error) {

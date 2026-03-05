@@ -77,7 +77,7 @@ export default async function StartupLayout({
 
         {/* Main Content */}
         <main className="flex w-full h-full overflow-auto flex-col pt-6 px-6 items-center">
-          <div className="max-w-7xl h-full w-full">{children}</div>
+          <div className=" h-full w-full">{children}</div>
         </main>
       </div>
     </div>
