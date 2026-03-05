@@ -88,6 +88,7 @@ export const weeklyStrategicReportFunction = inngest.createFunction(
                 orderBy: { date: "desc" },
                 take: 12, // Keep 12 weeks of memory
               },
+              startup: true,
             },
           },
         },
@@ -194,7 +195,7 @@ export const weeklyStrategicReportFunction = inngest.createFunction(
                   startupId: idea.startup.id,
                   type: "WEEKLY_DIGEST",
                   title: `Weekly Strategic Digest: ${idea.startup.name}`,
-                  summary: verdict.executiveSummary,
+                  summary: idea.summary || "",
                   content: {
                     verdict: verdict.verdict,
                     onePriority: verdict.onePriority,
