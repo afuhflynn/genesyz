@@ -185,6 +185,26 @@ export const weeklyStrategicReportFunction = inngest.createFunction(
             advisory,
           });
 
+          // 4. Create Research Feed Items for each startup in the digest
+          for (const verdict of advisory.verdicts) {
+            const idea = user.ideas.find((i: any) => i.id === verdict.ideaId);
+            if (idea && idea.startup) {
+              await db.researchFeedItem.create({
+                data: {
+                  startupId: idea.startup.id,
+                  type: "WEEKLY_DIGEST",
+                  title: `Weekly Strategic Digest: ${idea.startup.name}`,
+                  summary: verdict.executiveSummary,
+                  content: {
+                    verdict: verdict.verdict,
+                    onePriority: verdict.onePriority,
+                    topRisk: verdict.topRisk,
+                  },
+                },
+              });
+            }
+          }
+
           emailResults.push({ userId: user.id, success: true });
         } catch (error) {
           emailResults.push({

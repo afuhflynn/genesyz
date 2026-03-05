@@ -74,6 +74,21 @@ export const weeklyUpdateReminderFn = inngest.createFunction(
       });
     });
 
+    await step.run("create-feed-item", async () => {
+      await db.researchFeedItem.create({
+        data: {
+          startupId: data.startup!.id,
+          type: "WEEKLY_REMINDER",
+          title: `Reminder: Week ${weekNumber} Update`,
+          summary: `Time to submit your weekly update for ${startupName}.`,
+          content: {
+            weekNumber,
+            reminderDay,
+          },
+        },
+      });
+    });
+
     return {
       sent: true,
       startupId,

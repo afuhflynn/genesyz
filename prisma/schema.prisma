@@ -167,6 +167,9 @@ model Idea {
   // Startup Profile
   startup Startup?
 
+  // Research Feed
+  researchFeedItems ResearchFeedItem[]
+
   @@index([userId])
   @@index([status])
   @@index([targetLocation])
@@ -535,6 +538,7 @@ model Startup {
   members       StartupMember[]
   followers     StartupFollower[]
   conversations StartupConversation[]
+  researchFeedItems ResearchFeedItem[]
 
   @@index([userId])
   @@index([slug])
@@ -1032,4 +1036,35 @@ model AcceleratorApplication {
   @@index([acceleratorId])
   @@index([startupId])
   @@map("accelerator_applications")
+}
+
+// ===========================================
+// Research Feed
+// ===========================================
+
+enum ResearchFeedType {
+  IDEA_RESEARCH
+  WEEKLY_REPORT
+  WEEKLY_DIGEST
+  WEEKLY_REMINDER
+}
+
+model ResearchFeedItem {
+  id        String           @id @default(cuid())
+  startupId String
+  ideaId    String?
+  type      ResearchFeedType
+  title     String
+  summary   String?          @db.Text
+  content   Json?            // For type-specific data
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  startup Startup @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  idea    Idea?   @relation(fields: [ideaId], references: [id], onDelete: SetNull)
+
+  @@index([startupId])
+  @@index([type])
+  @@index([createdAt])
+  @@map("research_feed_items")
 }
