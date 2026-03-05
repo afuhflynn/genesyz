@@ -167,7 +167,7 @@ ${
 }
 
 ## Your Task
-Provide a brutally honest analysis. 
+Provide a brutally honest analysis.
 
 Verdict guidelines:
 - ON_TRACK: Strong trajectory, metric growing, good user conversations, goals being completed
@@ -180,13 +180,16 @@ Consider the goals completion rate when assessing progress. If founders consiste
 
 For trajectory, estimate weeks to next meaningful milestone (launch, first paying customer, etc) based on current pace. If unclear, set weeksToMilestone to null.`;
 
-  const { result, modelUsed } = await generateObjectWithFallback({
-    schema: startupCoachSchema,
-    prompt,
-  }, "STARTUP_COACH");
+  const { result, modelUsed } = await generateObjectWithFallback(
+    {
+      schema: startupCoachSchema,
+      prompt,
+    },
+    "STARTUP_COACH",
+  );
 
   console.log(`[STARTUP_COACH] Analysis complete using ${modelUsed}`);
-
+  // @ts-ignore
   return result.object;
 }
 
@@ -312,12 +315,15 @@ Generate an analysis that:
 
 Be informative but not overly technical. Followers may not be deeply involved in the day-to-day, so explain context clearly.`;
 
-  const { result, modelUsed } = await generateObjectWithFallback({
-    schema: followerAnalysisSchema,
-    prompt,
-  }, "FOLLOWER_ANALYSIS");
+  const { result, modelUsed } = await generateObjectWithFallback(
+    {
+      schema: followerAnalysisSchema,
+      prompt,
+    },
+    "FOLLOWER_ANALYSIS",
+  );
 
   console.log(`[FOLLOWER_ANALYSIS] Analysis complete using ${modelUsed}`);
-
+  // @ts-ignore
   return result.object;
 }

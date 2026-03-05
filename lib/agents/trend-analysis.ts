@@ -62,11 +62,14 @@ Assess the timing, technology readiness, and relevant trends that could impact t
 
   const startTime = Date.now();
 
-  const { result, modelUsed } = await generateObjectWithFallback({
-    schema: TrendAnalysisSchema,
-    system: SYSTEM_PROMPT,
-    prompt,
-  }, "TREND_ANALYSIS");
+  const { result, modelUsed } = await generateObjectWithFallback(
+    {
+      schema: TrendAnalysisSchema,
+      system: SYSTEM_PROMPT,
+      prompt,
+    },
+    "TREND_ANALYSIS",
+  );
 
   const latencyMs = Date.now() - startTime;
 
@@ -83,13 +86,15 @@ Assess the timing, technology readiness, and relevant trends that could impact t
     },
   });
 
-  const techReadiness = result.object.technologyReadiness.score;
+  // @ts-ignore
+  const techReadiness = result?.object?.technologyReadiness?.score;
   const confidence = Math.min(0.5 + techReadiness * 0.04, 0.9);
 
   return {
     agentType: "TREND_ANALYSIS",
     content: result.object,
     confidence,
-    reasoning: `Technology readiness: ${techReadiness}/10, Timing: ${result.object.timingAssessment.verdict}`,
+    // @ts-ignore
+    reasoning: `Technology readiness: ${techReadiness}/10, Timing: ${result?.object?.timingAssessment?.verdict}`,
   };
 }

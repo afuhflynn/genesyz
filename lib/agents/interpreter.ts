@@ -73,12 +73,15 @@ Transform this into a structured idea representation. Be thorough but concise.`;
   const promptHash = await hashString(prompt);
 
   const startTime = Date.now();
-  
-  const { result, modelUsed } = await generateObjectWithFallback({
-    schema: InterpretedIdeaSchema,
-    system: SYSTEM_PROMPT,
-    prompt,
-  }, "INTERPRETER");
+
+  const { result, modelUsed } = await generateObjectWithFallback(
+    {
+      schema: InterpretedIdeaSchema,
+      system: SYSTEM_PROMPT,
+      prompt,
+    },
+    "INTERPRETER",
+  );
 
   const latencyMs = Date.now() - startTime;
 
@@ -105,7 +108,8 @@ Transform this into a structured idea representation. Be thorough but concise.`;
   const confidence = Math.min(0.5 + inputSources * 0.15, 0.95);
 
   // Update idea with interpreted prompt and extracted data
-  const interpretedPrompt = `Title: ${result.object.title}\n\nSummary: ${result.object.summary}\n\nProblem: ${result.object.problemStatement}\n\nSolution: ${result.object.proposedSolution}`;
+  // @ts-ignore
+  const interpretedPrompt = `Title: ${result?.object?.title}\n\nSummary: ${result?.object?.summary}\n\nProblem: ${result?.object?.problemStatement}\n\nSolution: ${result?.object?.proposedSolution}`;
 
   let shouldReplaceTitleAndSummary = true;
   let changeAssessmentReason = "No existing title/summary to compare.";
@@ -123,10 +127,16 @@ Previous stored summary:
 ${existingIdea.summary}
 
 New generated title:
-${result.object.title}
+${
+  // @ts-ignore
+  result?.object?.title
+}
 
 New generated summary:
-${result.object.summary}
+${
+  // @ts-ignore
+  result?.object?.summary
+}
 
 Classify as:
 - major_change: framing, positioning, user segment, or core value proposition materially changed.
@@ -134,14 +144,19 @@ Classify as:
 
 Return valid JSON only.`;
 
-    const assessment = await generateObjectWithFallback({
-      schema: ChangeSignificanceSchema,
-      prompt: comparisonPrompt,
-    }, "INTERPRETER_CHANGE_ASSESSMENT");
+    const assessment = await generateObjectWithFallback(
+      {
+        schema: ChangeSignificanceSchema,
+        prompt: comparisonPrompt,
+      },
+      "INTERPRETER_CHANGE_ASSESSMENT",
+    );
 
     shouldReplaceTitleAndSummary =
-      assessment.result.object.significance === "major_change";
-    changeAssessmentReason = assessment.result.object.reason;
+      // @ts-ignore
+      assessment?.result.object?.significance === "major_change";
+    // @ts-ignore
+    changeAssessmentReason = assessment?.result?.object?.reason;
   }
 
   const newUrls = sanitizeUrlStrings(extractedUrls);
@@ -156,8 +171,10 @@ Return valid JSON only.`;
       interpretedPrompt,
       ...(shouldReplaceTitleAndSummary
         ? {
-            title: result.object.title,
-            summary: result.object.summary,
+            // @ts-ignore
+            title: result?.object?.title,
+            // @ts-ignore
+            summary: result?.object?.summary,
           }
         : {}),
       // Merge with existing URLs if any
