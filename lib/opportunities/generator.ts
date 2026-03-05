@@ -113,6 +113,10 @@ Rules:
 
   const modelOutput = result.object;
 
+  if (!modelOutput) {
+    throw new Error("NO_VALID_OPPORTUNITIES_GENERATED");
+  }
+
   const normalized = modelOutput
     .map(normalizeGeneratedOpportunity)
     .filter((item): item is GeneratedOpportunity => item !== null)
