@@ -49,7 +49,7 @@ Updated all documentation files (`.md`) and TypeScript/React files (`.ts`, `.tsx
 ```typescript
 // Each agent file now follows this pattern:
 
-const primaryModel = mistral("open-mixtral-8x7b");
+const primaryModel = openai("open-mixtral-8x7b");
 const fallbackModel = google("gemini-2.5-flash");
 
 let result;
