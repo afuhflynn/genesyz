@@ -47,6 +47,10 @@ export const queryKeys = {
     ) => [...queryKeys.startups.all, "opportunities", id, params] as const,
     followers: (id: string) =>
       [...queryKeys.startups.all, "followers", id] as const,
+    conversations: (id: string) =>
+      [...queryKeys.startups.all, "conversations", id] as const,
+    conversation: (id: string, convId: string) =>
+      [...queryKeys.startups.conversations(id), convId] as const,
   },
   dashboard: {
     all: ["dashboard"] as const,
@@ -1247,6 +1251,57 @@ export function useRemoveFollower() {
     },
     onError: (error: Error) => {
       toast.error(error.message || "Failed to remove follower");
+    },
+  });
+}
+
+// ===========================================
+// Conversation Hooks
+// ===========================================
+
+export function useStartupConversations(startupId: string) {
+  return useQuery({
+    queryKey: queryKeys.startups.conversations(startupId),
+    queryFn: () => api.queries.startups.getConversations(startupId),
+    enabled: !!startupId,
+    staleTime: 1 * 60 * 1000,
+  });
+}
+
+export function useStartupConversation(startupId: string, conversationId: string) {
+  return useQuery({
+    queryKey: queryKeys.startups.conversation(startupId, conversationId),
+    queryFn: () => api.queries.startups.getConversation(startupId, conversationId),
+    enabled: !!startupId && !!conversationId && conversationId !== "new",
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useCreateStartupConversation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ startupId, title }: { startupId: string; title?: string }) =>
+      api.mutations.startups.createConversation(startupId, { title }),
+    onSuccess: (_, { startupId }) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.startups.conversations(startupId),
+      });
+    },
+  });
+}
+
+export function useDeleteStartupConversation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ startupId, conversationId }: { startupId: string; conversationId: string }) =>
+      api.mutations.startups.deleteConversation(startupId, conversationId),
+    onSuccess: (_, { startupId }) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.startups.conversations(startupId),
+      });
+      toast.success("Conversation deleted");
     },
   });
 }

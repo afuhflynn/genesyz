@@ -34,20 +34,8 @@ export default async function VCCoachPage({ params }: VCCoachPageProps) {
   }
 
   return (
-    <div className="flex flex-col h-full space-y-4">
-      <div className="flex flex-col space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">VC Coach</h1>
-        <p className="text-muted-foreground">
-          Strategic AI advisor for {startup.name}.
-        </p>
-      </div>
-      
-      <div className="flex-1 h-full min-h-[600px]">
-        <VCCoach 
-          startupId={startup.id} 
-          startupName={startup.name} 
-        />
-      </div>
+    <div className="flex flex-col h-full">
+      <VCCoach startupId={startup.id} startupName={startup.name} />
     </div>
   );
 }

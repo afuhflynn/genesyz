@@ -1,4 +1,5 @@
 import { google } from "@ai-sdk/google";
+import { openai } from "@ai-sdk/openai";
 import { streamText } from "ai";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
@@ -21,21 +22,25 @@ export async function POST(
     }
 
     const { id: startupIdOrSlug } = await params;
-    const { messages, conversationId } = await req.json();
+    const { messages, conversationId: requestedConversationId } = await req.json();
 
     // Map UI messages to CoreMessages if they are in the parts format
-    const coreMessages = Array.isArray(messages) ? messages.map((m: any) => {
-      if (m.parts && Array.isArray(m.parts)) {
-        return {
-          role: m.role,
-          content: m.parts.map((p: any) => {
-            if (p.type === 'text') return p.text;
-            return '';
-          }).join('\n')
-        };
-      }
-      return m;
-    }) : messages;
+    const coreMessages = Array.isArray(messages)
+      ? messages.map((m: any) => {
+          if (m.parts && Array.isArray(m.parts)) {
+            return {
+              role: m.role,
+              content: m.parts
+                .map((p: any) => {
+                  if (p.type === "text") return p.text;
+                  return "";
+                })
+                .join("\n"),
+            };
+          }
+          return m;
+        })
+      : messages;
 
     const access = await checkStartupAccess(startupIdOrSlug, "view_startup");
 
@@ -43,9 +48,43 @@ export async function POST(
       return NextResponse.json({ error: "Access denied" }, { status: 403 });
     }
 
+    let conversationId = requestedConversationId;
+
+    // Handle persistence: Save the latest user message
+    const lastMessage = coreMessages[coreMessages.length - 1];
+    if (lastMessage && lastMessage.role === "user") {
+      // If no conversationId provided, create a new one
+      if (!conversationId) {
+        const newConversation = await db.startupConversation.create({
+          data: {
+            startupId: access.startupId,
+            title: lastMessage.content.substring(0, 50) + (lastMessage.content.length > 50 ? "..." : ""),
+          },
+        });
+        conversationId = newConversation.id;
+        console.log(`[CHAT_NEW_CONV] Created: ${conversationId}`);
+      }
+
+      // Save user message
+      await db.startupMessage.create({
+        data: {
+          conversationId,
+          role: "user",
+          content: lastMessage.content,
+        },
+      });
+      console.log(`[CHAT_USER_MSG] Saved to: ${conversationId}`);
+    }
+
     const startup = await db.startup.findUnique({
       where: { id: access.startupId },
-      select: { id: true, name: true, description: true, industry: true, stage: true },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        industry: true,
+        stage: true,
+      },
     });
 
     if (!startup) {
@@ -68,7 +107,7 @@ YOUR COACHING PHILOSOPHY:
 5. HONEST BUT SUPPORTIVE: Provide "hard truths" about the business model, competition, or execution speed.
 
 THINKING PROCESS:
-Before providing your final strategic advice, you MUST perform a deep internal analysis. Wrap this analysis in <thinking> tags. 
+Before providing your final strategic advice, you MUST perform a deep internal analysis. Wrap this analysis in <thinking> tags.
 In your thinking process:
 - Evaluate the data retrieved from tools.
 - Identify hidden risks or counter-intuitive opportunities.
@@ -91,11 +130,35 @@ If the user asks for a pitch review or market analysis, use your tools to get th
       tools: {
         ...tools,
       },
+      maxSteps: 5,
       messages: coreMessages,
       onFinish: async ({ text, toolCalls, toolResults, usage }) => {
         try {
+          console.log(`[CHAT_FINISH] Conversation: ${conversationId}, Text length: ${text.length}`);
           if (conversationId) {
-            // Update existing conversation logic here
+            // Save assistant message and tool results
+            const assistantMessage = await db.startupMessage.create({
+              data: {
+                conversationId,
+                role: "assistant",
+                content: text || "",
+                toolCalls: (toolCalls && toolCalls.length > 0) ? toolCalls as any : undefined,
+                toolResults: (toolResults && toolResults.length > 0) ? toolResults as any : undefined,
+                tokensUsed: usage.totalTokens,
+              },
+            });
+            console.log(`[CHAT_SAVED] Message ID: ${assistantMessage.id}`);
+
+            // Update conversation stats
+            await db.startupConversation.update({
+              where: { id: conversationId },
+              data: {
+                updatedAt: new Date(),
+                messageCount: {
+                  increment: 2, // User + Assistant
+                },
+              },
+            });
           }
         } catch (e) {
           console.error("Failed to save message to DB:", e);
@@ -103,7 +166,11 @@ If the user asks for a pitch review or market analysis, use your tools to get th
       },
     });
 
-    return result.toTextStreamResponse();
+    return result.toTextStreamResponse({
+      headers: {
+        "X-Conversation-Id": conversationId || "",
+      },
+    });
   } catch (error) {
     console.error("Startup VC Coach API error:", error);
     return NextResponse.json(

@@ -146,6 +146,28 @@ export interface CreateIdeaInput {
   imageFile?: File;
 }
 
+export interface StartupConversation {
+  id: string;
+  startupId: string;
+  title: string | null;
+  isActive: boolean;
+  messageCount: number;
+  createdAt: Date;
+  updatedAt: Date;
+  messages?: StartupMessage[];
+}
+
+export interface StartupMessage {
+  id: string;
+  conversationId: string;
+  role: string;
+  content: string;
+  toolCalls: any;
+  toolResults: any;
+  tokensUsed: number | null;
+  createdAt: Date;
+}
+
 export interface PaginationParams {
   page?: number;
   limit?: number;
@@ -462,6 +484,15 @@ export const api = {
         apiRequest<{ data: StartupFollower[] }>(`/startups/${id}/followers`, {
           method: "GET",
         }),
+      getConversations: (id: string) =>
+        apiRequest<{ data: StartupConversation[] }>(`/startups/${id}/conversations`, {
+          method: "GET",
+        }),
+      getConversation: (startupId: string, conversationId: string) =>
+        apiRequest<{ data: StartupConversation }>(
+          `/startups/${startupId}/conversations/${conversationId}`,
+          { method: "GET" },
+        ),
     },
 
     // Accelerators
@@ -820,6 +851,16 @@ export const api = {
       removeFollower: (id: string, followerId: string) =>
         apiRequest<{ success: boolean }>(
           `/startups/${id}/followers/${followerId}`,
+          { method: "DELETE" },
+        ),
+      createConversation: (id: string, data: { title?: string }) =>
+        apiRequest<{ data: StartupConversation }>(`/startups/${id}/conversations`, {
+          method: "POST",
+          body: data,
+        }),
+      deleteConversation: (id: string, conversationId: string) =>
+        apiRequest<{ success: boolean }>(
+          `/startups/${id}/conversations/${conversationId}`,
           { method: "DELETE" },
         ),
     },
