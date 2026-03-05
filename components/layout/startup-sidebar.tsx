@@ -74,6 +74,7 @@ export function StartupSidebar({
       icon: Brain,
       href: `/startups/${startup.slug}/research-feed`,
       active: pathname === `/startups/${startup.slug}/research-feed`,
+      visible: permissions.canViewStartup,
     },
     {
       label: "Weekly Updates",
