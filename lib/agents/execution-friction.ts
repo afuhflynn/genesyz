@@ -1,6 +1,4 @@
-import { google } from "@ai-sdk/google";
-import { mistral } from "@ai-sdk/mistral";
-import { generateObject } from "ai";
+import { generateObjectWithFallback } from "@/lib/ai/fallback";
 import { db } from "@/lib/db";
 import {
   buildLocationResearchContext,
@@ -13,9 +11,6 @@ import {
   ExecutionFrictionSchema,
   type InterpretedIdea,
 } from "./types";
-
-const primaryModel = mistral("open-mixtral-8x7b");
-const fallbackModel = google("gemini-2.5-flash");
 
 const SYSTEM_PROMPT = `You are a seasoned startup operator and technical advisor. Your role is to assess the practical challenges of executing on a startup idea.
 
@@ -69,32 +64,11 @@ Analyze technical complexity, resource requirements, risks, and provide actionab
 
   const startTime = Date.now();
 
-  let result: Awaited<
-    ReturnType<typeof generateObject<typeof ExecutionFrictionSchema>>
-  >;
-  let modelUsed: string;
-
-  try {
-    result = await generateObject({
-      model: primaryModel,
-      schema: ExecutionFrictionSchema,
-      system: SYSTEM_PROMPT,
-      prompt,
-    });
-    modelUsed = "open-mixtral-8x7b";
-  } catch (error) {
-    console.warn(
-      "[EXECUTION_FRICTION] Mistral primary model failed, falling back to Gemini:",
-      error,
-    );
-    result = await generateObject({
-      model: fallbackModel,
-      schema: ExecutionFrictionSchema,
-      system: SYSTEM_PROMPT,
-      prompt,
-    });
-    modelUsed = "gemini-2.5-flash";
-  }
+  const { result, modelUsed } = await generateObjectWithFallback({
+    schema: ExecutionFrictionSchema,
+    system: SYSTEM_PROMPT,
+    prompt,
+  }, "EXECUTION_FRICTION");
 
   const latencyMs = Date.now() - startTime;
 

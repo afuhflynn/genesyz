@@ -1,6 +1,4 @@
-import { google } from "@ai-sdk/google";
-import { mistral } from "@ai-sdk/mistral";
-import { generateObject } from "ai";
+import { generateObjectWithFallback } from "@/lib/ai/fallback";
 import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -14,9 +12,6 @@ const ChangeSignificanceSchema = z.object({
   significance: z.enum(["major_change", "minor_change"]),
   reason: z.string(),
 });
-
-const primaryModel = mistral("open-mixtral-8x7b");
-const fallbackModel = google("gemini-2.5-flash");
 
 // GET /api/ideas/[id]/prompt - Get prompt history
 export async function GET(
@@ -183,88 +178,40 @@ Return valid JSON only.`;
 
       let shouldRunFullResearch = true;
 
-      try {
-        const assessment = await generateObject({
-          model: primaryModel,
-          schema: ChangeSignificanceSchema,
-          prompt: comparisonPrompt,
+      const { result: assessment } = await generateObjectWithFallback({
+        schema: ChangeSignificanceSchema,
+        prompt: comparisonPrompt,
+      }, "PROMPT_CHANGE_ASSESSMENT");
+
+      shouldRunFullResearch =
+        assessment.object.significance === "major_change";
+
+      // If minor change, skip full research to save resources
+      if (!shouldRunFullResearch) {
+        // Just update prompt and add a note
+        await db.auditLog.create({
+          data: {
+            userId: session.user.id,
+            action: "idea.prompt_edited_research_skipped",
+            resource: "idea",
+            resourceId: ideaId,
+            metadata: {
+              versionId: newVersion.id,
+              reason: assessment.object.reason,
+            },
+          },
         });
 
-        shouldRunFullResearch =
-          assessment.object.significance === "major_change";
-
-        // If minor change, skip full research to save resources
-        if (!shouldRunFullResearch) {
-          // Just update prompt and add a note
-          await db.auditLog.create({
-            data: {
-              userId: session.user.id,
-              action: "idea.prompt_edited_research_skipped",
-              resource: "idea",
-              resourceId: ideaId,
-              metadata: {
-                versionId: newVersion.id,
-                reason: assessment.object.reason,
-              },
-            },
-          });
-
-          return NextResponse.json({
-            success: true,
-            idea: updatedIdea,
-            version: newVersion,
-            researchTriggered: false,
-            skipped: true,
-            skipReason: assessment.object.reason,
-            message:
-              "Prompt change was minor; full research skipped to save resources",
-          });
-        }
-      } catch (primaryError) {
-        console.warn(
-          "Primary model failed for change assessment:",
-          primaryError,
-        );
-        try {
-          const assessment = await generateObject({
-            model: fallbackModel,
-            schema: ChangeSignificanceSchema,
-            prompt: comparisonPrompt,
-          });
-
-          shouldRunFullResearch =
-            assessment.object.significance === "major_change";
-
-          if (!shouldRunFullResearch) {
-            await db.auditLog.create({
-              data: {
-                userId: session.user.id,
-                action: "idea.prompt_edited_research_skipped",
-                resource: "idea",
-                resourceId: ideaId,
-                metadata: {
-                  versionId: newVersion.id,
-                  reason: assessment.object.reason,
-                },
-              },
-            });
-
-            return NextResponse.json({
-              success: true,
-              idea: updatedIdea,
-              version: newVersion,
-              researchTriggered: false,
-              skipped: true,
-              skipReason: assessment.object.reason,
-              message:
-                "Prompt change was minor; full research skipped to save resources",
-            });
-          }
-        } catch (fallbackError) {
-          console.warn("Fallback model also failed:", fallbackError);
-          // If both fail, proceed with full research as fallback
-          shouldRunFullResearch = true;
-        }
+        return NextResponse.json({
+          success: true,
+          idea: updatedIdea,
+          version: newVersion,
+          researchTriggered: false,
+          skipped: true,
+          skipReason: assessment.object.reason,
+          message:
+            "Prompt change was minor; full research skipped to save resources",
+        });
       }
 
       // Delete old research data and update idea status

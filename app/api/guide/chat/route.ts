@@ -1,8 +1,7 @@
-import { google } from "@ai-sdk/google";
-import { mistral } from "@ai-sdk/mistral";
 import { streamText } from "ai";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
+import { models } from "@/lib/ai/models";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 
@@ -67,10 +66,8 @@ Your role:
 
 Be helpful, clear, and concise. Use the research data to inform your responses.`;
 
-    const aiModel = mistral("open-mixtral-8x7b");
-
     const result = streamText({
-      model: aiModel,
+      model: models.primary,
       system: systemPrompt,
       messages,
     });

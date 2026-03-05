@@ -1,8 +1,7 @@
-import { google } from "@ai-sdk/google";
-import { mistral } from "@ai-sdk/mistral";
 import { streamText } from "ai";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
+import { models } from "@/lib/ai/models";
 import { tools } from "@/lib/ai/tools";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -19,7 +18,7 @@ export async function POST(req: Request) {
 
     const {
       messages,
-      model = "mistral",
+      model = "primary",
       ideaId,
       vcMode = false,
     } = await req.json();
@@ -87,10 +86,15 @@ Use the 'getIdeaContext' tool to fetch more details if needed.`;
       }
     }
 
-    const aiModel =
-      model === "mistral"
-        ? mistral("open-mixtral-8x7b")
-        : google("gemini-2.5-flash");
+    // Use primary model by default, or specific model if requested
+    let aiModel;
+    if (model === "mistral" || model === "secondary") {
+      aiModel = models.secondary;
+    } else if (model === "google" || model === "tertiary") {
+      aiModel = models.tertiary;
+    } else {
+      aiModel = models.primary;
+    }
 
     const result = streamText({
       model: aiModel,

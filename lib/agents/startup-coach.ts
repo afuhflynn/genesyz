@@ -1,6 +1,4 @@
-import { google } from "@ai-sdk/google";
-import { mistral } from "@ai-sdk/mistral";
-import { generateObject } from "ai";
+import { generateObjectWithFallback } from "@/lib/ai/fallback";
 import { z } from "zod";
 
 const startupCoachSchema = z.object({
@@ -98,9 +96,6 @@ export async function analyzeWeeklyUpdate(
   startup: StartupContext,
   history?: HistoricalData,
 ): Promise<StartupCoachOutput> {
-  const primaryModel = mistral("open-mixtral-8x7b");
-  const fallbackModel = google("gemini-2.5-flash");
-
   const additionalMetricsText = update.additionalMetrics?.length
     ? `\n- Additional metrics:\n${update.additionalMetrics
         .map((m) => {
@@ -185,28 +180,10 @@ Consider the goals completion rate when assessing progress. If founders consiste
 
 For trajectory, estimate weeks to next meaningful milestone (launch, first paying customer, etc) based on current pace. If unclear, set weeksToMilestone to null.`;
 
-  let result: { object: StartupCoachOutput };
-  let modelUsed: string;
-
-  try {
-    result = await generateObject({
-      model: primaryModel,
-      schema: startupCoachSchema,
-      prompt,
-    });
-    modelUsed = "open-mixtral-8x7b";
-  } catch (error) {
-    console.warn(
-      "[STARTUP_COACH] Mistral failed, falling back to Gemini:",
-      error,
-    );
-    result = await generateObject({
-      model: fallbackModel,
-      schema: startupCoachSchema,
-      prompt,
-    });
-    modelUsed = "gemini-2.5-flash";
-  }
+  const { result, modelUsed } = await generateObjectWithFallback({
+    schema: startupCoachSchema,
+    prompt,
+  }, "STARTUP_COACH");
 
   console.log(`[STARTUP_COACH] Analysis complete using ${modelUsed}`);
 
@@ -281,9 +258,6 @@ export async function generateFollowerAnalysis(
   startup: FollowerStartupContext,
   previousUpdates?: FollowerWeeklyUpdateData[],
 ): Promise<FollowerAnalysisOutput> {
-  const primaryModel = mistral("open-mixtral-8x7b");
-  const fallbackModel = google("gemini-2.5-flash");
-
   const previousUpdatesText =
     previousUpdates && previousUpdates.length > 0
       ? `
@@ -338,28 +312,10 @@ Generate an analysis that:
 
 Be informative but not overly technical. Followers may not be deeply involved in the day-to-day, so explain context clearly.`;
 
-  let result: { object: FollowerAnalysisOutput };
-  let modelUsed: string;
-
-  try {
-    result = await generateObject({
-      model: primaryModel,
-      schema: followerAnalysisSchema,
-      prompt,
-    });
-    modelUsed = "open-mixtral-8x7b";
-  } catch (error) {
-    console.warn(
-      "[FOLLOWER_ANALYSIS] Mistral failed, falling back to Gemini:",
-      error,
-    );
-    result = await generateObject({
-      model: fallbackModel,
-      schema: followerAnalysisSchema,
-      prompt,
-    });
-    modelUsed = "gemini-2.5-flash";
-  }
+  const { result, modelUsed } = await generateObjectWithFallback({
+    schema: followerAnalysisSchema,
+    prompt,
+  }, "FOLLOWER_ANALYSIS");
 
   console.log(`[FOLLOWER_ANALYSIS] Analysis complete using ${modelUsed}`);
 

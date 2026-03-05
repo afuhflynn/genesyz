@@ -1,8 +1,6 @@
-import { google } from "@ai-sdk/google";
-import { mistral } from "@ai-sdk/mistral";
-import { generateObject } from "ai";
-import { z } from "zod";
+import { generateObjectWithFallback } from "@/lib/ai/fallback";
 import { searchWithTavily } from "@/lib/ai/tools";
+import { z } from "zod";
 import {
   type GeneratedOpportunity,
   isTrackableOpportunity,
@@ -108,37 +106,12 @@ Rules:
 - Keep descriptions concise and practical for founders.
 - Return only valid JSON array.`;
 
-  let modelOutput: Array<z.infer<typeof OpportunitySchema>>;
+  const { result } = await generateObjectWithFallback({
+    schema: OpportunitiesResponseSchema,
+    prompt,
+  }, "OPPORTUNITY_GENERATOR");
 
-  try {
-    const result = await generateObject({
-      model: mistral("open-mixtral-8x7b"),
-      schema: OpportunitiesResponseSchema,
-      prompt,
-    });
-
-    modelOutput = result.object;
-  } catch (primaryError) {
-    try {
-      const fallbackResult = await generateObject({
-        model: google("gemini-2.5-flash"),
-        schema: OpportunitiesResponseSchema,
-        prompt,
-      });
-
-      modelOutput = fallbackResult.object;
-    } catch (fallbackError) {
-      const primaryMessage =
-        primaryError instanceof Error ? primaryError.message : "Unknown error";
-      const fallbackMessage =
-        fallbackError instanceof Error
-          ? fallbackError.message
-          : "Unknown error";
-      throw new Error(
-        `MODEL_GENERATION_FAILED: primary=${primaryMessage}; fallback=${fallbackMessage}`,
-      );
-    }
-  }
+  const modelOutput = result.object;
 
   const normalized = modelOutput
     .map(normalizeGeneratedOpportunity)

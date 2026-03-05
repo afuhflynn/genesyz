@@ -2,11 +2,8 @@
 
 import {
   Archive,
-  BotIcon,
-  Brain,
   Building2,
   CreditCard,
-  GraduationCap,
   LayoutDashboard,
   Lightbulb,
   LogOut,
@@ -15,7 +12,6 @@ import {
   Settings,
   Shield,
 } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
@@ -46,12 +42,7 @@ export function Sidebar({ className }: SidebarProps) {
       href: "/ideas",
       active: pathname === "/ideas",
     },
-    {
-      label: "Research Feed",
-      icon: Brain,
-      href: "/ideas/research-feed",
-      active: pathname === "/ideas/research-feed",
-    },
+
     {
       label: "New Idea",
       icon: PlusCircle,

@@ -2,6 +2,7 @@
 
 import {
   ArrowLeft,
+  Brain,
   Briefcase,
   Calendar,
   FileText,
@@ -67,6 +68,12 @@ export function StartupSidebar({
       href: `${basePath}/chat`,
       active: pathname === `${basePath}/chat`,
       visible: permissions.canViewStartup,
+    },
+    {
+      label: "Research Feed",
+      icon: Brain,
+      href: `/startups/${startup.slug}/research-feed`,
+      active: pathname === `/startups/${startup.slug}/research-feed`,
     },
     {
       label: "Weekly Updates",

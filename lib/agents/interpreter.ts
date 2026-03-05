@@ -1,19 +1,15 @@
-import { google } from "@ai-sdk/google";
-import { mistral } from "@ai-sdk/mistral";
-import { generateObject } from "ai";
-import { z } from "zod";
+import { getModels } from "@/lib/ai/models";
+import { generateObjectWithFallback } from "@/lib/ai/fallback";
 import { db } from "@/lib/db";
 import { detectLocationFromText } from "@/lib/location";
 import { extractUrlsFromSources, sanitizeUrlStrings } from "@/lib/scraping";
 import { hashString } from "@/lib/utils";
+import { z } from "zod";
 import {
   type AgentInput,
   type AgentOutput,
   InterpretedIdeaSchema,
 } from "./types";
-
-const primaryModel = mistral("open-mixtral-8x7b");
-const fallbackModel = google("gemini-2.5-flash");
 
 const SYSTEM_PROMPT = `You are an expert startup analyst and idea interpreter. Your role is to take raw, unstructured founder ideas and transform them into clear, structured representations.
 
@@ -77,32 +73,12 @@ Transform this into a structured idea representation. Be thorough but concise.`;
   const promptHash = await hashString(prompt);
 
   const startTime = Date.now();
-  let result: Awaited<
-    ReturnType<typeof generateObject<typeof InterpretedIdeaSchema>>
-  >;
-  let modelUsed: string;
-
-  try {
-    result = await generateObject({
-      model: primaryModel,
-      schema: InterpretedIdeaSchema,
-      system: SYSTEM_PROMPT,
-      prompt,
-    });
-    modelUsed = "open-mixtral-8x7b";
-  } catch (error) {
-    console.warn(
-      `[INTERPRETER] Mistral primary model failed, falling back to Gemini:`,
-      error,
-    );
-    result = await generateObject({
-      model: fallbackModel,
-      schema: InterpretedIdeaSchema,
-      system: SYSTEM_PROMPT,
-      prompt,
-    });
-    modelUsed = "gemini-2.5-flash";
-  }
+  
+  const { result, modelUsed } = await generateObjectWithFallback({
+    schema: InterpretedIdeaSchema,
+    system: SYSTEM_PROMPT,
+    prompt,
+  }, "INTERPRETER");
 
   const latencyMs = Date.now() - startTime;
 
@@ -158,32 +134,14 @@ Classify as:
 
 Return valid JSON only.`;
 
-    try {
-      const assessment = await generateObject({
-        model: primaryModel,
-        schema: ChangeSignificanceSchema,
-        prompt: comparisonPrompt,
-      });
+    const assessment = await generateObjectWithFallback({
+      schema: ChangeSignificanceSchema,
+      prompt: comparisonPrompt,
+    }, "INTERPRETER_CHANGE_ASSESSMENT");
 
-      shouldReplaceTitleAndSummary =
-        assessment.object.significance === "major_change";
-      changeAssessmentReason = assessment.object.reason;
-    } catch (primaryAssessmentError) {
-      console.warn(
-        `[INTERPRETER] Change assessment with primary model failed, falling back:`,
-        primaryAssessmentError,
-      );
-
-      const assessment = await generateObject({
-        model: fallbackModel,
-        schema: ChangeSignificanceSchema,
-        prompt: comparisonPrompt,
-      });
-
-      shouldReplaceTitleAndSummary =
-        assessment.object.significance === "major_change";
-      changeAssessmentReason = assessment.object.reason;
-    }
+    shouldReplaceTitleAndSummary =
+      assessment.result.object.significance === "major_change";
+    changeAssessmentReason = assessment.result.object.reason;
   }
 
   const newUrls = sanitizeUrlStrings(extractedUrls);
@@ -191,14 +149,6 @@ Return valid JSON only.`;
     ...(existingIdea?.extractedUrls || []),
     ...newUrls,
   ]);
-
-  console.debug("[interpreter] extractedUrls merge", {
-    ideaId,
-    incomingCount: newUrls.length,
-    existingCount: existingIdea?.extractedUrls.length || 0,
-    mergedCount: mergedUrls.length,
-    sampleType: typeof mergedUrls[0],
-  });
 
   await db.idea.update({
     where: { id: ideaId },

@@ -1,6 +1,4 @@
-import { google } from "@ai-sdk/google";
-import { mistral } from "@ai-sdk/mistral";
-import { generateObject } from "ai";
+import { generateObjectWithFallback } from "@/lib/ai/fallback";
 import { db } from "@/lib/db";
 import {
   buildLocationResearchContext,
@@ -13,9 +11,6 @@ import {
   type InterpretedIdea,
   TrendAnalysisSchema,
 } from "./types";
-
-const primaryModel = mistral("open-mixtral-8x7b");
-const fallbackModel = google("gemini-2.5-flash");
 
 const SYSTEM_PROMPT = `You are a technology and market trends analyst specializing in identifying timing windows for startup opportunities. Your role is to assess whether now is the right time for a given idea.
 
@@ -67,32 +62,11 @@ Assess the timing, technology readiness, and relevant trends that could impact t
 
   const startTime = Date.now();
 
-  let result: Awaited<
-    ReturnType<typeof generateObject<typeof TrendAnalysisSchema>>
-  >;
-  let modelUsed: string;
-
-  try {
-    result = await generateObject({
-      model: primaryModel,
-      schema: TrendAnalysisSchema,
-      system: SYSTEM_PROMPT,
-      prompt,
-    });
-    modelUsed = "open-mixtral-8x7b";
-  } catch (error) {
-    console.warn(
-      "[TREND_ANALYSIS] Mistral primary model failed, falling back to Gemini:",
-      error,
-    );
-    result = await generateObject({
-      model: fallbackModel,
-      schema: TrendAnalysisSchema,
-      system: SYSTEM_PROMPT,
-      prompt,
-    });
-    modelUsed = "gemini-2.5-flash";
-  }
+  const { result, modelUsed } = await generateObjectWithFallback({
+    schema: TrendAnalysisSchema,
+    system: SYSTEM_PROMPT,
+    prompt,
+  }, "TREND_ANALYSIS");
 
   const latencyMs = Date.now() - startTime;
 

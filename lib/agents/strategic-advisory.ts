@@ -1,9 +1,9 @@
-import { google } from "@ai-sdk/google";
-import { generateObject, generateText, stepCountIs } from "ai";
+import {
+  generateObjectWithFallback,
+  generateTextWithFallback,
+} from "@/lib/ai/fallback";
 import { tools } from "@/lib/ai/tools";
 import { type PortfolioInput, StrategicAdvisorySchema } from "./types";
-
-const model = google("gemini-2.5-flash");
 
 const ADVISORY_SYSTEM_PROMPT = `You are Ideas Vault — an elite AI Chief of Staff. Your purpose is to act as a high-stakes advisor for early-stage founders, helping them cut through noise and make critical execution decisions.
 
@@ -42,8 +42,7 @@ export async function runStrategicAdvisoryAgent(
     // Step 1: Gather Market Pulse and Industry News
     const categories = Array.from(new Set(ideas.map((i) => i.category)));
 
-    const { text: marketData, toolResults } = await generateText({
-      model,
+    const { result: textResult } = await generateTextWithFallback({
       system: ADVISORY_SYSTEM_PROMPT,
       prompt: `Analyze the following idea portfolio and provide strategic advisory as a Chief of Staff.
 
@@ -57,11 +56,13 @@ Identify any deltas between the current state and previous snapshots.
 Synthesize how market shifts or internal changes affect the founder's portfolio.`,
       tools,
       maxSteps: 5,
-    } as any);
+    }, "STRATEGIC_ADVISORY_RESEARCH");
+
+    const marketData = textResult.text;
+    const toolResults = textResult.toolResults;
 
     // Step 2: Generate Structured Advisory Report with Weekly Strategic Format
-    const result = await generateObject({
-      model,
+    const { result: objResult } = await generateObjectWithFallback({
       schema: StrategicAdvisorySchema,
       system: ADVISORY_SYSTEM_PROMPT,
       prompt: `Based on the portfolio analysis, historical deltas, and real-time market data, generate a professional Weekly Strategic Report with the following structure:
@@ -93,9 +94,9 @@ Synthesize how market shifts or internal changes affect the founder's portfolio.
     - vcCorner with investorAngle
     - riskCliffs with failureReasons
     - All actions must have success_criteria and kill_criteria`,
-    });
+    }, "STRATEGIC_ADVISORY_SYNTHESIS");
 
-    return result.object;
+    return objResult.object;
   } catch (error) {
     throw new Error(
       `Strategic Advisory Agent Error: ${(error as Error).message}`,
