@@ -1,13 +1,7 @@
 "use client";
 
 import { formatDistanceToNow } from "date-fns";
-import {
-  Brain,
-  FileText,
-  LineChart,
-  Bell,
-  TrendingUp,
-} from "lucide-react";
+import { Brain, FileText, LineChart, Bell, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -115,7 +109,7 @@ export default function StartupResearchFeedPage() {
   };
 
   return (
-    <div className="container max-w-4xl mx-auto py-8 space-y-6">
+    <div className="container w-full! mx-auto py-8 space-y-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight flex items-center gap-2">
           <Brain className="h-6 w-6" />
