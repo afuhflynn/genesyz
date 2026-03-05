@@ -101,7 +101,7 @@ export const weeklyStrategicReportFunction = inngest.createFunction(
           // 1. Run Strategic Advisory Agent for top-tier report
           const advisory = (await runStrategicAdvisoryAgent({
             userId: user.id,
-            ideas: user.ideas.map((idea: any) => {
+            ideas: user.ideas.map((idea) => {
               const interpreterPacket = idea.researchPackets[0];
               const content = interpreterPacket?.content as any;
               return {
@@ -198,7 +198,7 @@ export const weeklyStrategicReportFunction = inngest.createFunction(
                   startupId: idea.startup.id,
                   type: "WEEKLY_DIGEST",
                   title: `Weekly Strategic Digest: ${idea.startup.name}`,
-                  summary: verdict.executiveSummary,
+                  summary: (verdict as any)?.executiveSummary,
                   idempotencyKey,
                   content: {
                     verdict: verdict.verdict,
@@ -207,7 +207,7 @@ export const weeklyStrategicReportFunction = inngest.createFunction(
                   },
                 },
                 update: {
-                  summary: verdict.executiveSummary,
+                  summary: (verdict as any)?.executiveSummary,
                   content: {
                     verdict: verdict.verdict,
                     onePriority: verdict.onePriority,
