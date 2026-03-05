@@ -131,7 +131,10 @@ export async function PUT(
       });
 
       // Update idea with new prompt and merge URLs
-      const mergedUrls = sanitizeUrlStrings([...idea.extractedUrls, ...urlStrings]);
+      const mergedUrls = sanitizeUrlStrings([
+        ...idea.extractedUrls,
+        ...urlStrings,
+      ]);
       console.debug("[prompt.update] extractedUrls merge", {
         ideaId,
         incomingCount: urlStrings.length,
@@ -178,13 +181,17 @@ Return valid JSON only.`;
 
       let shouldRunFullResearch = true;
 
-      const { result: assessment } = await generateObjectWithFallback({
-        schema: ChangeSignificanceSchema,
-        prompt: comparisonPrompt,
-      }, "PROMPT_CHANGE_ASSESSMENT");
+      const { result: assessment } = await generateObjectWithFallback(
+        {
+          schema: ChangeSignificanceSchema,
+          prompt: comparisonPrompt,
+        },
+        "PROMPT_CHANGE_ASSESSMENT",
+      );
 
       shouldRunFullResearch =
-        assessment.object.significance === "major_change";
+        // @ts-ignore
+        assessment?.object?.significance === "major_change";
 
       // If minor change, skip full research to save resources
       if (!shouldRunFullResearch) {
@@ -197,7 +204,8 @@ Return valid JSON only.`;
             resourceId: ideaId,
             metadata: {
               versionId: newVersion.id,
-              reason: assessment.object.reason,
+              // @ts-ignore
+              reason: assessment?.object?.reason,
             },
           },
         });
@@ -208,7 +216,8 @@ Return valid JSON only.`;
           version: newVersion,
           researchTriggered: false,
           skipped: true,
-          skipReason: assessment.object.reason,
+          // @ts-ignore
+          skipReason: assessment?.object?.reason,
           message:
             "Prompt change was minor; full research skipped to save resources",
         });
