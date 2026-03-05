@@ -117,7 +117,10 @@ export function StartupProfileForm({
     resolver: zodResolver(startupFormSchema),
     defaultValues: {
       name: existingStartup?.name || ideaTitle || "",
-      slug: existingStartup?.slug || "",
+      slug:
+        existingStartup?.slug ||
+        ideaTitle?.toLowerCase().replaceAll(" ", "-") ||
+        "",
       tagline: existingStartup?.tagline || "",
       description: existingStartup?.description || ideaSummary || "",
       industry: existingStartup?.industry || "",
