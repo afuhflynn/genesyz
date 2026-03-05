@@ -4,7 +4,7 @@ import { openai } from "@ai-sdk/openai";
 
 /**
  * Centralized AI Model Fallback Strategy
- * 
+ *
  * Hierarchy:
  * 1. Primary: OpenAI GPT-4o (Most capable for heavy reasoning/synthesis)
  * 2. Secondary: Mistral Mixtral 8x7b (Cost-effective and reliable backup)
@@ -14,7 +14,7 @@ import { openai } from "@ai-sdk/openai";
 export const models = {
   primary: openai("gpt-4o"),
   secondary: mistral("open-mixtral-8x7b"),
-  tertiary: google("gemini-2.0-flash"),
+  tertiary: google("gemini-2.5-flash"),
 } as const;
 
 /**

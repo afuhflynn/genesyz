@@ -34,7 +34,7 @@ export interface PipelineResult {
  * **AI Model Architecture**:
  * - Primary Model: OpenAI `gpt-4o` (Most capable for heavy reasoning/synthesis)
  * - Secondary Model: Mistral `open-mixtral-8x7b` (Cost-effective and reliable backup)
- * - Tertiary Model: Google `gemini-2.0-flash` (Resilient final fallback)
+ * - Tertiary Model: Google `gemini-2.5-flash` (Resilient final fallback)
  * - Each agent logs which model was used via `researchLog.model` field
  *
  * **Agent Pipeline**:

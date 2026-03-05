@@ -47,7 +47,7 @@ export async function generateObjectWithFallback<T>(
       });
       return {
         result: result as GenerateObjectResult<T>,
-        modelUsed: "gemini-2.0-flash",
+        modelUsed: "gemini-2.5-flash",
       };
     }
   }
@@ -87,7 +87,7 @@ export async function generateTextWithFallback(
         ...options,
         model: tertiaryModel,
       });
-      return { result, modelUsed: "gemini-2.0-flash" };
+      return { result, modelUsed: "gemini-2.5-flash" };
     }
   }
 }
