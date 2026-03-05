@@ -1050,15 +1050,16 @@ enum ResearchFeedType {
 }
 
 model ResearchFeedItem {
-  id        String           @id @default(cuid())
-  startupId String
-  ideaId    String?
-  type      ResearchFeedType
-  title     String
-  summary   String?          @db.Text
-  content   Json?            // For type-specific data
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
+  id             String           @id @default(cuid())
+  startupId      String
+  ideaId         String?
+  type           ResearchFeedType
+  title          String
+  summary        String?          @db.Text
+  content        Json?            // For type-specific data
+  idempotencyKey String?          @unique // To prevent duplicate entries during retries
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
 
   startup Startup @relation(fields: [startupId], references: [id], onDelete: Cascade)
   idea    Idea?   @relation(fields: [ideaId], references: [id], onDelete: SetNull)

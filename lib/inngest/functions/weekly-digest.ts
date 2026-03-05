@@ -187,15 +187,27 @@ export const weeklyStrategicReportFunction = inngest.createFunction(
           });
 
           // 4. Create Research Feed Items for each startup in the digest
+          const today = new Date().toISOString().split("T")[0]; // Use date as part of key
           for (const verdict of advisory.verdicts) {
             const idea = user.ideas.find((i: any) => i.id === verdict.ideaId);
             if (idea && idea.startup) {
-              await db.researchFeedItem.create({
-                data: {
+              const idempotencyKey = `weekly-digest-${idea.startup.id}-${today}`;
+              await db.researchFeedItem.upsert({
+                where: { idempotencyKey },
+                create: {
                   startupId: idea.startup.id,
                   type: "WEEKLY_DIGEST",
                   title: `Weekly Strategic Digest: ${idea.startup.name}`,
-                  summary: idea.summary || "",
+                  summary: verdict.executiveSummary,
+                  idempotencyKey,
+                  content: {
+                    verdict: verdict.verdict,
+                    onePriority: verdict.onePriority,
+                    topRisk: verdict.topRisk,
+                  },
+                },
+                update: {
+                  summary: verdict.executiveSummary,
                   content: {
                     verdict: verdict.verdict,
                     onePriority: verdict.onePriority,

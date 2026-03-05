@@ -458,12 +458,22 @@ export const researchPipelineFunction = inngest.createFunction(
         });
 
         if (startup) {
-          await db.researchFeedItem.create({
-            data: {
+          const idempotencyKey = `idea-research-${ideaId}-${startup.id}`;
+          await db.researchFeedItem.upsert({
+            where: { idempotencyKey },
+            create: {
               startupId: startup.id,
               ideaId,
               type: "IDEA_RESEARCH",
               title: `Initial Research: ${startup.name}`,
+              summary: result.synthesis.scores.overall.explanation,
+              idempotencyKey,
+              content: {
+                overallScore: result.synthesis.scores.overall.score,
+                verdict: result.synthesis.verdict,
+              },
+            },
+            update: {
               summary: result.synthesis.scores.overall.explanation,
               content: {
                 overallScore: result.synthesis.scores.overall.score,

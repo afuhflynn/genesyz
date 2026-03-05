@@ -75,11 +75,21 @@ export const weeklyUpdateReminderFn = inngest.createFunction(
     });
 
     await step.run("create-feed-item", async () => {
-      await db.researchFeedItem.create({
-        data: {
+      const idempotencyKey = `weekly-reminder-${data.startup!.id}-${weekNumber}-${reminderDay}`;
+      await db.researchFeedItem.upsert({
+        where: { idempotencyKey },
+        create: {
           startupId: data.startup!.id,
           type: "WEEKLY_REMINDER",
           title: `Reminder: Week ${weekNumber} Update`,
+          summary: `Time to submit your weekly update for ${startupName}.`,
+          idempotencyKey,
+          content: {
+            weekNumber,
+            reminderDay,
+          },
+        },
+        update: {
           summary: `Time to submit your weekly update for ${startupName}.`,
           content: {
             weekNumber,

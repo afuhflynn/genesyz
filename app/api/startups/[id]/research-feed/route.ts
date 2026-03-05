@@ -16,11 +16,29 @@ export async function GET(
 
   const { id: startupIdOrSlug } = await params;
   const { searchParams } = new URL(request.url);
-  const page = parseInt(searchParams.get("page") || "1");
-  const limit = parseInt(searchParams.get("limit") || "20");
+
+  // Pagination validation
+  const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
+  const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "20")));
+
+  // Filter validation
   const type = searchParams.get("type");
   const dateFrom = searchParams.get("dateFrom");
   const dateTo = searchParams.get("dateTo");
+
+  // Validate type against enum if provided
+  const validTypes = ["IDEA_RESEARCH", "WEEKLY_REPORT", "WEEKLY_DIGEST", "WEEKLY_REMINDER"];
+  if (type && type !== "all" && !validTypes.includes(type)) {
+    return NextResponse.json({ error: "Invalid feed type" }, { status: 400 });
+  }
+
+  // Validate dates if provided
+  if (dateFrom && isNaN(Date.parse(dateFrom))) {
+    return NextResponse.json({ error: "Invalid dateFrom format" }, { status: 400 });
+  }
+  if (dateTo && isNaN(Date.parse(dateTo))) {
+    return NextResponse.json({ error: "Invalid dateTo format" }, { status: 400 });
+  }
 
   const access = await checkStartupAccess(startupIdOrSlug, "view_startup");
 

@@ -3,12 +3,9 @@
 import { formatDistanceToNow } from "date-fns";
 import {
   Brain,
-  Calendar,
-  ExternalLink,
   FileText,
   LineChart,
   Bell,
-  Loader2,
   TrendingUp,
 } from "lucide-react";
 import Link from "next/link";
@@ -67,7 +64,9 @@ export default function StartupResearchFeedPage() {
         ...(filters.dateTo && { dateTo: filters.dateTo }),
       });
 
-      const res = await fetch(`/api/startups/${slug}/research-feed?${searchParams}`);
+      const res = await fetch(
+        `/api/startups/${slug}/research-feed?${searchParams}`,
+      );
       if (res.ok) {
         const data = await res.json();
         setItems(data.data);
@@ -147,9 +146,13 @@ export default function StartupResearchFeedPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Items</SelectItem>
-                  <SelectItem value="IDEA_RESEARCH">Initial Research</SelectItem>
+                  <SelectItem value="IDEA_RESEARCH">
+                    Initial Research
+                  </SelectItem>
                   <SelectItem value="WEEKLY_REPORT">Weekly Reports</SelectItem>
-                  <SelectItem value="WEEKLY_DIGEST">Strategic Digests</SelectItem>
+                  <SelectItem value="WEEKLY_DIGEST">
+                    Strategic Digests
+                  </SelectItem>
                   <SelectItem value="WEEKLY_REMINDER">Reminders</SelectItem>
                 </SelectContent>
               </Select>
@@ -221,7 +224,7 @@ export default function StartupResearchFeedPage() {
                         })}
                       </span>
                     </div>
-                    
+
                     {item.summary && (
                       <p className="text-xs text-muted-foreground line-clamp-2 mt-1 italic">
                         "{item.summary}"
@@ -242,15 +245,15 @@ export default function StartupResearchFeedPage() {
                           </Link>
                         </Button>
                       )}
-                      
+
                       {item.type === "WEEKLY_REPORT" && (
-                         <Button
+                        <Button
                           asChild
                           variant="outline"
                           size="sm"
                           className="h-7 text-[10px]"
                         >
-                          <Link href={`/startups/${slug}/dashboard`}>
+                          <Link href={`/startups/${slug}/metrics`}>
                             <LineChart className="mr-1 h-3 w-3" />
                             View Metrics
                           </Link>
@@ -258,7 +261,7 @@ export default function StartupResearchFeedPage() {
                       )}
 
                       {item.type === "WEEKLY_DIGEST" && (
-                         <Button
+                        <Button
                           asChild
                           variant="outline"
                           size="sm"
