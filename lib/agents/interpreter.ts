@@ -8,6 +8,7 @@ import { z } from "zod";
 import {
   type AgentInput,
   type AgentOutput,
+  InterpretedIdea,
   InterpretedIdeaSchema,
 } from "./types";
 
@@ -24,6 +25,8 @@ const ChangeSignificanceSchema = z.object({
   significance: z.enum(["major_change", "minor_change"]),
   reason: z.string(),
 });
+
+type ChangeAssessment = z.infer<typeof ChangeSignificanceSchema>;
 
 export async function runInterpreterAgent(
   input: AgentInput,
@@ -74,14 +77,15 @@ Transform this into a structured idea representation. Be thorough but concise.`;
 
   const startTime = Date.now();
 
-  const { result, modelUsed } = await generateObjectWithFallback(
-    {
-      schema: InterpretedIdeaSchema,
-      system: SYSTEM_PROMPT,
-      prompt,
-    },
-    "INTERPRETER",
-  );
+  const { result, modelUsed } =
+    await generateObjectWithFallback<InterpretedIdea>(
+      {
+        schema: InterpretedIdeaSchema,
+        system: SYSTEM_PROMPT,
+        prompt,
+      },
+      "INTERPRETER",
+    );
 
   const latencyMs = Date.now() - startTime;
 
@@ -108,8 +112,7 @@ Transform this into a structured idea representation. Be thorough but concise.`;
   const confidence = Math.min(0.5 + inputSources * 0.15, 0.95);
 
   // Update idea with interpreted prompt and extracted data
-  // @ts-ignore
-  const interpretedPrompt = `Title: ${result?.object?.title}\n\nSummary: ${result?.object?.summary}\n\nProblem: ${result?.object?.problemStatement}\n\nSolution: ${result?.object?.proposedSolution}`;
+  const interpretedPrompt = `Title: ${result.object.title}\n\nSummary: ${result.object.summary}\n\nProblem: ${result.object.problemStatement}\n\nSolution: ${result.object.proposedSolution}`;
 
   let shouldReplaceTitleAndSummary = true;
   let changeAssessmentReason = "No existing title/summary to compare.";
@@ -127,16 +130,10 @@ Previous stored summary:
 ${existingIdea.summary}
 
 New generated title:
-${
-  // @ts-ignore
-  result?.object?.title
-}
+${result.object.title}
 
 New generated summary:
-${
-  // @ts-ignore
-  result?.object?.summary
-}
+${result.object.summary}
 
 Classify as:
 - major_change: framing, positioning, user segment, or core value proposition materially changed.
@@ -144,7 +141,7 @@ Classify as:
 
 Return valid JSON only.`;
 
-    const assessment = await generateObjectWithFallback(
+    const assessment = await generateObjectWithFallback<ChangeAssessment>(
       {
         schema: ChangeSignificanceSchema,
         prompt: comparisonPrompt,
@@ -153,10 +150,8 @@ Return valid JSON only.`;
     );
 
     shouldReplaceTitleAndSummary =
-      // @ts-ignore
-      assessment?.result.object?.significance === "major_change";
-    // @ts-ignore
-    changeAssessmentReason = assessment?.result?.object?.reason;
+      assessment.result.object.significance === "major_change";
+    changeAssessmentReason = assessment.result.object.reason;
   }
 
   const newUrls = sanitizeUrlStrings(extractedUrls);
@@ -171,10 +166,8 @@ Return valid JSON only.`;
       interpretedPrompt,
       ...(shouldReplaceTitleAndSummary
         ? {
-            // @ts-ignore
-            title: result?.object?.title,
-            // @ts-ignore
-            summary: result?.object?.summary,
+            title: result.object.title,
+            summary: result.object.summary,
           }
         : {}),
       // Merge with existing URLs if any

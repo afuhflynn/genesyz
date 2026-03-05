@@ -83,7 +83,7 @@ Search for real competitors, market gaps, and technical challenges. Consider loc
   const toolResults = textResult.toolResults;
 
   // Step 2: Synthesize into structured object
-  const { result: objResult, modelUsed: synthesisModelUsed } = await generateObjectWithFallback({
+  const { result: objResult, modelUsed: synthesisModelUsed } = await generateObjectWithFallback<DeepResearch>({
     schema: DeepResearchSchema,
     system: SYNTHESIS_SYSTEM_PROMPT,
     prompt: `Based on the following research data, generate a structured deep research report:

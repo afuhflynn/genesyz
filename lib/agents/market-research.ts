@@ -103,7 +103,7 @@ Keep total under 2000 words. Output valid JSON only.`;
   const promptHash = await hashString(prompt);
   const startTime = Date.now();
 
-  const { result, modelUsed } = await generateObjectWithFallback({
+  const { result, modelUsed } = await generateObjectWithFallback<MarketResearch>({
     schema: MarketResearchSchema,
     system: SYSTEM_PROMPT,
     prompt,

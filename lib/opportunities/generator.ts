@@ -20,6 +20,8 @@ const OpportunitySchema = z.object({
 
 const OpportunitiesResponseSchema = z.array(OpportunitySchema).min(1).max(12);
 
+type OpportunitiesResponse = z.infer<typeof OpportunitiesResponseSchema>;
+
 export interface StartupOpportunityProfile {
   startupName: string;
   industry?: string | null;
@@ -106,14 +108,14 @@ Rules:
 - Keep descriptions concise and practical for founders.
 - Return only valid JSON array.`;
 
-  const { result } = await generateObjectWithFallback({
+  const { result } = await generateObjectWithFallback<OpportunitiesResponse>({
     schema: OpportunitiesResponseSchema,
     prompt,
   }, "OPPORTUNITY_GENERATOR");
 
   const modelOutput = result.object;
 
-  if (!modelOutput) {
+  if (!modelOutput || !Array.isArray(modelOutput)) {
     throw new Error("NO_VALID_OPPORTUNITIES_GENERATED");
   }
 
