@@ -450,7 +450,42 @@ export const researchPipelineFunction = inngest.createFunction(
       });
     }
 
-    // Step 7: Send completion event for other listeners
+    // Step 7: Create Research Feed Item if Startup exists
+    if (result.success && result.synthesis) {
+      await step.run("create-research-feed-item", async () => {
+        const startup = await db.startup.findUnique({
+          where: { ideaId },
+        });
+
+        if (startup) {
+          const idempotencyKey = `idea-research-${ideaId}-${startup.id}`;
+          await db.researchFeedItem.upsert({
+            where: { idempotencyKey },
+            create: {
+              startupId: startup.id,
+              ideaId,
+              type: "IDEA_RESEARCH",
+              title: `Initial Research: ${startup.name}`,
+              summary: result.synthesis.scores.overall.explanation,
+              idempotencyKey,
+              content: {
+                overallScore: result.synthesis.scores.overall.score,
+                verdict: result.synthesis.verdict,
+              },
+            },
+            update: {
+              summary: result.synthesis.scores.overall.explanation,
+              content: {
+                overallScore: result.synthesis.scores.overall.score,
+                verdict: result.synthesis.verdict,
+              },
+            },
+          });
+        }
+      });
+    }
+
+    // Step 8: Send completion event for other listeners
     if (result.success) {
       await step.sendEvent("send-completion-event", {
         name: "idea.research.completed",

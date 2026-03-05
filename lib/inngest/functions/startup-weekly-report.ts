@@ -99,6 +99,37 @@ export const weeklyStartupReportFn = inngest.createFunction(
       });
     });
 
+    await step.run("create-feed-item", async () => {
+      const idempotencyKey = `weekly-report-${startup.id}-${latestUpdate.weekNumber}`;
+      await db.researchFeedItem.upsert({
+        where: { idempotencyKey },
+        create: {
+          startupId: startup.id,
+          type: "WEEKLY_REPORT",
+          title: `Weekly Report: Week ${latestUpdate.weekNumber}`,
+          summary: latestUpdate.aiVerdict || `Report for ${startup.name}`,
+          idempotencyKey,
+          content: {
+            weekNumber: latestUpdate.weekNumber,
+            moraleScore: latestUpdate.moraleScore,
+            goalsCompletionRate: latestUpdate.goalsCompletionRate,
+            primaryMetricValue: latestUpdate.primaryMetricValue,
+            primaryMetricDelta: latestUpdate.primaryMetricDelta,
+          },
+        },
+        update: {
+          summary: latestUpdate.aiVerdict || `Report for ${startup.name}`,
+          content: {
+            weekNumber: latestUpdate.weekNumber,
+            moraleScore: latestUpdate.moraleScore,
+            goalsCompletionRate: latestUpdate.goalsCompletionRate,
+            primaryMetricValue: latestUpdate.primaryMetricValue,
+            primaryMetricDelta: latestUpdate.primaryMetricDelta,
+          },
+        },
+      });
+    });
+
     return { sent: true, startupId, weekNumber: latestUpdate.weekNumber };
   },
 );
