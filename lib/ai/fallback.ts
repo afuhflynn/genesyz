@@ -1,24 +1,25 @@
 import {
   generateObject,
   generateText,
-  type GenerateObjectOptions,
-  type GenerateTextOptions,
 } from "ai";
 import { getModels } from "./models";
 
 const { primaryModel, secondaryModel, tertiaryModel } = getModels();
+
+type GenerateObjectOptions = Parameters<typeof generateObject>[0];
+type GenerateTextOptions = Parameters<typeof generateText>[0];
 
 /**
  * Generates an object using a triple-model fallback strategy.
  * OpenAI -> Mistral -> Google
  */
 export async function generateObjectWithFallback<T>(
-  options: Omit<GenerateObjectOptions<any, T>, "model">,
+  options: Omit<GenerateObjectOptions, "model">,
   agentName: string,
 ) {
   try {
     const result = await generateObject({
-      ...options,
+      ...(options as any),
       model: primaryModel,
     });
     return { result, modelUsed: "gpt-4o" };
@@ -29,7 +30,7 @@ export async function generateObjectWithFallback<T>(
     );
     try {
       const result = await generateObject({
-        ...options,
+        ...(options as any),
         model: secondaryModel,
       });
       return { result, modelUsed: "open-mixtral-8x7b" };
@@ -39,7 +40,7 @@ export async function generateObjectWithFallback<T>(
         secondaryError,
       );
       const result = await generateObject({
-        ...options,
+        ...(options as any),
         model: tertiaryModel,
       });
       return { result, modelUsed: "gemini-2.0-flash" };
@@ -52,12 +53,12 @@ export async function generateObjectWithFallback<T>(
  * OpenAI -> Mistral -> Google
  */
 export async function generateTextWithFallback(
-  options: Omit<GenerateTextOptions<any, any>, "model">,
+  options: Omit<GenerateTextOptions, "model">,
   agentName: string,
 ) {
   try {
     const result = await generateText({
-      ...options,
+      ...(options as any),
       model: primaryModel,
     });
     return { result, modelUsed: "gpt-4o" };
@@ -68,7 +69,7 @@ export async function generateTextWithFallback(
     );
     try {
       const result = await generateText({
-        ...options,
+        ...(options as any),
         model: secondaryModel,
       });
       return { result, modelUsed: "open-mixtral-8x7b" };
@@ -78,7 +79,7 @@ export async function generateTextWithFallback(
         secondaryError,
       );
       const result = await generateText({
-        ...options,
+        ...(options as any),
         model: tertiaryModel,
       });
       return { result, modelUsed: "gemini-2.0-flash" };
