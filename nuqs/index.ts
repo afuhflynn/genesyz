@@ -14,6 +14,7 @@ export const searchParamsSchema = {
   token: parseAsString,
   checkout_id: parseAsString,
   tab: parseAsString.withDefault("overview"),
+  conversationId: parseAsString,
   email: parseAsString,
 };
 
@@ -26,6 +27,7 @@ type ParamsTypes = Values<{
   token: SingleParserBuilder<string>;
   checkout_id: SingleParserBuilder<string>;
   tab: SingleParserBuilder<string>;
+  conversationId: SingleParserBuilder<string>;
   email: SingleParserBuilder<string>;
 }>;
 

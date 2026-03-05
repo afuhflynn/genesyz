@@ -257,30 +257,6 @@ export function StartupDashboard({ slug }: { slug: string }) {
         </Card>
       )}
 
-      {/* VC Coach Quick Access */}
-      <Link href={`/startups/${startup.slug}/chat`} className="group">
-        <Card className="border-primary/20 bg-primary/5 transition-all hover:border-primary/50 hover:shadow-md">
-          <CardContent className="flex items-center gap-4 py-4 px-6">
-            <div className="rounded-xl bg-primary/10 p-3 group-hover:scale-110 transition-transform">
-              <Bot className="h-6 w-6 text-primary" />
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-lg">Chat with VC Coach</h3>
-                <Badge variant="secondary" className="bg-primary/10 text-primary border-none text-[10px]">AI Strategic Advisor</Badge>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Get investor-level feedback on your strategy, pitch, and metrics.
-              </p>
-            </div>
-            <div className="flex items-center gap-2 text-primary font-medium text-sm">
-              <span>Start Coaching</span>
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-            </div>
-          </CardContent>
-        </Card>
-      </Link>
-
       {/* Navigation Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Link href={`/startups/${startup.slug}/updates`} className="group">

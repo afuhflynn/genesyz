@@ -1264,14 +1264,18 @@ export function useStartupConversations(startupId: string) {
     queryKey: queryKeys.startups.conversations(startupId),
     queryFn: () => api.queries.startups.getConversations(startupId),
     enabled: !!startupId,
-    staleTime: 1 * 60 * 1000,
+    staleTime: 30 * 1000, // 30 seconds
   });
 }
 
-export function useStartupConversation(startupId: string, conversationId: string) {
+export function useStartupConversation(
+  startupId: string,
+  conversationId: string,
+) {
   return useQuery({
     queryKey: queryKeys.startups.conversation(startupId, conversationId),
-    queryFn: () => api.queries.startups.getConversation(startupId, conversationId),
+    queryFn: () =>
+      api.queries.startups.getConversation(startupId, conversationId),
     enabled: !!startupId && !!conversationId && conversationId !== "new",
     staleTime: 5 * 60 * 1000,
   });
@@ -1295,8 +1299,13 @@ export function useDeleteStartupConversation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ startupId, conversationId }: { startupId: string; conversationId: string }) =>
-      api.mutations.startups.deleteConversation(startupId, conversationId),
+    mutationFn: ({
+      startupId,
+      conversationId,
+    }: {
+      startupId: string;
+      conversationId: string;
+    }) => api.mutations.startups.deleteConversation(startupId, conversationId),
     onSuccess: (_, { startupId }) => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.startups.conversations(startupId),

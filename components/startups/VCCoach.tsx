@@ -1,9 +1,11 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
+import { DefaultChatTransport, UIDataTypes, UIMessage, UITools } from "ai";
 import {
   BotIcon,
+  CheckIcon,
+  CopyIcon,
   MessageSquareIcon,
   PlusIcon,
   RefreshCwIcon,
@@ -18,11 +20,12 @@ import { useEffect, useState } from "react";
 import {
   Conversation,
   ConversationContent,
-  ConversationEmptyState,
   ConversationScrollButton,
 } from "../ai-elements/conversation";
 import {
   Message,
+  MessageAction,
+  MessageActions,
   MessageContent,
   MessageResponse,
 } from "../ai-elements/message";
@@ -55,6 +58,9 @@ import {
   useDeleteStartupConversation,
 } from "@/hooks";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import { useQueryStates } from "nuqs";
+import { searchParamsSchema } from "@/nuqs";
 
 interface VCCoachProps {
   startupId: string;
@@ -62,52 +68,92 @@ interface VCCoachProps {
 }
 
 export function VCCoach({ startupId, startupName }: VCCoachProps) {
-  const [selectedConversationId, setSelectedConversationId] = useState<
-    string | null
-  >(null);
-  const [selectedModel, setSelectedModel] = useState("gemini-2.5-flash");
+  // const [selectedConversationId, setSelectedConversationId] = useState<
+  //   string | null
+  // >(null);
+  const [params, setParams] = useQueryStates(searchParamsSchema);
   const [input, setInput] = useState("");
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const { data: conversations, refetch: refetchList } =
     useStartupConversations(startupId);
   const { data: conversationData, isLoading: isLoadingConversation } =
-    useStartupConversation(startupId, selectedConversationId || "");
+    useStartupConversation(startupId, params.conversationId || "");
   const deleteConversation = useDeleteStartupConversation();
 
   const { messages, sendMessage, status, setMessages } = useChat({
+    id: params.conversationId || undefined,
     transport: new DefaultChatTransport({
       api: `/api/startups/${startupId}/chat`,
       body: {
-        model: selectedModel,
-        conversationId: selectedConversationId,
+        conversationId: params.conversationId,
+      },
+      fetch: async (url, init) => {
+        const response = await fetch(url, init);
+        const convId = response.headers.get("x-conversation-id");
+        if (convId && !params.conversationId) {
+          setParams({ conversationId: convId });
+          refetchList();
+        }
+        return response;
       },
     }),
-    onResponse: (response) => {
-      const convId = response.headers.get("X-Conversation-Id");
-      if (convId && !selectedConversationId) {
-        setSelectedConversationId(convId);
-        refetchList();
-      }
-    },
   });
+
+  const handleCopy = (text: string, id: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    toast.success("Copied to clipboard");
+    setTimeout(() => setCopiedId(null), 2000);
+  };
 
   // Load conversation history when switching sessions
   useEffect(() => {
     if (conversationData?.data?.messages) {
-      const mappedMessages = conversationData.data.messages.map((m: any) => ({
-        id: m.id,
-        role: m.role as any,
-        parts: [{ type: "text", text: m.content }],
-        createdAt: new Date(m.createdAt),
-      }));
-      setMessages(mappedMessages);
-    } else if (!selectedConversationId) {
+      const mappedMessages = conversationData.data.messages.map((m: any) => {
+        const parts: any[] = [{ type: "text", text: m.content }];
+
+        // If message has tool calls/results, we should ideally map them back
+        // For now, simple text mapping is used, but we can extend for full tool support
+        if (m.toolCalls && Array.isArray(m.toolCalls)) {
+          m.toolCalls.forEach((tc: any) => {
+            parts.push({
+              type: "tool-call",
+              toolCallId: tc.toolCallId || tc.id,
+              toolName: tc.toolName || tc.function?.name,
+              args: tc.args || JSON.parse(tc.function?.arguments || "{}"),
+              state: "output-available",
+            });
+          });
+        }
+
+        if (m.toolResults && Array.isArray(m.toolResults)) {
+          m.toolResults.forEach((tr: any) => {
+            parts.push({
+              type: "tool-result",
+              toolCallId: tr.toolCallId,
+              toolName: tr.toolName,
+              result: tr.result,
+              state: "output-available",
+            });
+          });
+        }
+
+        return {
+          id: m.id,
+          role: m.role as any,
+          parts,
+          createdAt: new Date(m.createdAt),
+        };
+      });
+      setMessages(mappedMessages as UIMessage<unknown, UIDataTypes, UITools>[]);
+    } else if (!params.conversationId) {
       setMessages([]);
     }
-  }, [conversationData, selectedConversationId, setMessages]);
+  }, [conversationData, params.conversationId, setMessages]);
 
   const handleNewChat = () => {
-    setSelectedConversationId(null);
+    setParams({ conversationId: null });
     setMessages([]);
   };
 
@@ -115,7 +161,7 @@ export function VCCoach({ startupId, startupName }: VCCoachProps) {
     e.stopPropagation();
     if (confirm("Delete this conversation?")) {
       await deleteConversation.mutateAsync({ startupId, conversationId: id });
-      if (selectedConversationId === id) {
+      if (params.conversationId === id) {
         handleNewChat();
       }
     }
@@ -151,9 +197,9 @@ export function VCCoach({ startupId, startupName }: VCCoachProps) {
   ];
 
   return (
-    <div className="flex h-[calc(100vh-180px)] max-w-6xl mx-auto w-full border rounded-xl bg-background shadow-sm overflow-hidden">
+    <div className="flex h-full mx-auto w-full border rounded-xl bg-background shadow-sm overflow-hidden">
       {/* Sidebar - Sessions List */}
-      <div className="w-64 border-r bg-muted/10 flex flex-col">
+      <div className="w-64 border-r bg-muted/10 flex flex-col overflow-hidden">
         <div className="p-4 border-b">
           <Button
             className="w-full justify-start gap-2"
@@ -164,28 +210,28 @@ export function VCCoach({ startupId, startupName }: VCCoachProps) {
             New Session
           </Button>
         </div>
-        <ScrollArea className="flex-1">
-          <div className="p-2 space-y-1">
+        <ScrollArea className="w-full! overflow-x-hidden">
+          <div className="p-2 space-y-1 w-full">
             {conversations?.data?.map((conv) => (
               <div
                 key={conv.id}
-                onClick={() => setSelectedConversationId(conv.id)}
+                onClick={() => setParams({ conversationId: conv.id })}
                 className={cn(
-                  "group flex items-center justify-between p-2 rounded-lg cursor-pointer text-sm transition-colors",
-                  selectedConversationId === conv.id
+                  "group flex items-center justify-between p-2 rounded-lg cursor-pointer text-sm transition-colors relative max-w-full",
+                  params.conversationId === conv.id
                     ? "bg-primary/10 text-primary font-medium"
                     : "hover:bg-muted",
                 )}
               >
-                <div className="flex items-center gap-2 overflow-hidden">
+                <div className="flex items-center gap-2 overflow-hidden line-clamp-1">
                   <MessageSquareIcon className="w-4 h-4 shrink-0 opacity-60" />
-                  <span className="truncate">
+                  <span className="line-clamp-1">
                     {conv.title || "Untitled Session"}
                   </span>
                 </div>
                 <button
                   onClick={(e) => handleDelete(e, conv.id)}
-                  className="opacity-0 group-hover:opacity-100 p-1 hover:text-destructive transition-all"
+                  className="opacity-0 group-hover:opacity-100 p-1 hover:text-destructive transition-alls rounded-full absolute right-1 self-center"
                 >
                   <Trash2Icon className="w-3 h-3" />
                 </button>
@@ -222,7 +268,7 @@ export function VCCoach({ startupId, startupName }: VCCoachProps) {
         </div>
 
         {/* Messages */}
-        <Conversation className="flex-1 overflow-y-auto">
+        <Conversation className="flex-1">
           <ConversationContent>
             {messages.length === 0 && !isLoadingConversation && (
               <div className="space-y-8 py-8">
@@ -308,46 +354,44 @@ export function VCCoach({ startupId, startupName }: VCCoachProps) {
                                 </Reasoning>
                               )}
                               {textWithoutThinking && (
-                                <MessageContent
-                                  className={
-                                    message.role === "user"
-                                      ? "bg-primary text-primary-foreground"
-                                      : ""
-                                  }
-                                >
-                                  <MessageResponse>
-                                    {textWithoutThinking}
-                                  </MessageResponse>
-                                </MessageContent>
+                                <>
+                                  <MessageContent
+                                    className={
+                                      message.role === "user"
+                                        ? "bg-primary text-primary-foreground"
+                                        : ""
+                                    }
+                                  >
+                                    <MessageResponse>
+                                      {textWithoutThinking}
+                                    </MessageResponse>
+                                  </MessageContent>
+
+                                  {message.role === "assistant" && (
+                                    <MessageActions className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <MessageAction
+                                        tooltip="Copy response"
+                                        onClick={() =>
+                                          handleCopy(
+                                            textWithoutThinking,
+                                            message.id,
+                                          )
+                                        }
+                                      >
+                                        {copiedId === message.id ? (
+                                          <CheckIcon className="w-3.5 h-3.5 text-green-500" />
+                                        ) : (
+                                          <CopyIcon className="w-3.5 h-3.5" />
+                                        )}
+                                      </MessageAction>
+                                    </MessageActions>
+                                  )}
+                                </>
                               )}
                             </div>
                           );
                         }
 
-                        if (part.type.startsWith("tool-")) {
-                          const toolPart = part as any;
-                          const { toolCallId, state, type } = toolPart;
-
-                          return (
-                            <Tool key={toolCallId}>
-                              <ToolHeader
-                                state={state}
-                                type={type}
-                                title={`Using Tool: ${toolPart.toolName || "Strategic Tool"}`}
-                              />
-                              <ToolContent>
-                                <ToolInput input={toolPart.input} />
-                                {(state === "output-available" ||
-                                  state === "output-error") && (
-                                  <ToolOutput
-                                    output={toolPart.output}
-                                    errorText={toolPart.errorText || undefined}
-                                  />
-                                )}
-                              </ToolContent>
-                            </Tool>
-                          );
-                        }
                         return null;
                       })}
                     </div>
@@ -384,16 +428,16 @@ export function VCCoach({ startupId, startupName }: VCCoachProps) {
                 placeholder="Ask your VC Coach anything..."
                 className="min-h-[100px] bg-background shadow-sm"
               />
-              <PromptInputFooter>
-                <PromptInputTools>
-                  <div className="flex items-center gap-2 px-2 text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
-                    <SparklesIcon className="w-3 h-3 text-amber-500" />
-                    Ideas Vault Strategic Agent Enabled
-                  </div>
-                </PromptInputTools>
-                <PromptInputSubmit status={isLoading ? "streaming" : "ready"} />
-              </PromptInputFooter>
             </PromptInputBody>
+            <PromptInputFooter>
+              <PromptInputTools>
+                <div className="flex items-center gap-2 px-2 text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
+                  <SparklesIcon className="w-3 h-3 text-amber-500" />
+                  Ideas Vault Strategic Agent Enabled
+                </div>
+              </PromptInputTools>
+              <PromptInputSubmit status={isLoading ? "streaming" : "ready"} />
+            </PromptInputFooter>
           </PromptInput>
         </div>
       </div>

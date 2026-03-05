@@ -15,7 +15,7 @@ export default function DashboardLayout({
         </div>
 
         <main className="flex w-full h-full overflow-auto flex-col pt-8 px-6 items-center">
-          <div className="max-w-7xl h-full w-full">{children}</div>
+          <div className=" h-full w-full">{children}</div>
         </main>
       </div>
     </div>

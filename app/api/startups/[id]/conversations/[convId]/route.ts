@@ -41,13 +41,19 @@ export async function GET(
     });
 
     if (!conversation) {
-      return NextResponse.json({ error: "Conversation not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Conversation not found" },
+        { status: 404 },
+      );
     }
 
     return NextResponse.json({ data: conversation });
   } catch (error) {
     console.error("[STARTUP_CONVERSATION_DETAIL_GET]", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }
 
@@ -66,7 +72,7 @@ export async function DELETE(
     }
 
     const { id: startupIdOrSlug, convId } = await params;
-    const access = await checkStartupAccess(startupIdOrSlug, "manage_startup");
+    const access = await checkStartupAccess(startupIdOrSlug, "manage_team");
 
     if (!access.hasAccess || !access.startupId) {
       return NextResponse.json({ error: "Access denied" }, { status: 403 });
@@ -85,6 +91,9 @@ export async function DELETE(
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("[STARTUP_CONVERSATION_DELETE]", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }
