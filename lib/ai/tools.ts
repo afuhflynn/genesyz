@@ -204,28 +204,39 @@ export const saveVerdict = tool({
 });
 
 export const addStartupTask = tool({
-  description: "Add a task to a startup.",
+  description: "Add a task to a task list",
   inputSchema: z.object({
-    startupId: z.string().describe("The ID of the startup"),
-    task: z.any().describe("The task to add"),
+    startupId: z.string(),
+    listId: z.string(),
+    title: z.string(),
+    description: z.string().optional(),
+    priority: z.enum(["LOW", "MEDIUM", "HIGH", "CRITICAL"]).default("MEDIUM"),
+    deadline: z.string().optional(),
   }),
-  execute: async ({ startupId, task }: { startupId: string; task: Task }) => {
+
+  execute: async ({
+    startupId,
+    listId,
+    title,
+    description,
+    priority,
+    deadline,
+  }) => {
     const { db } = await import("@/lib/db");
-    const startup = await db.startup.findUnique({
-      where: { id: startupId },
-      include: {
-        tasks: true,
+
+    const task = await db.task.create({
+      data: {
+        title,
+        description,
+        priority,
+        deadline: deadline ? new Date(deadline) : null,
+
+        startup: { connect: { id: startupId } },
+        list: { connect: { id: listId } },
       },
     });
 
-    if (!startup) throw new Error("Startup not found");
-
-    // Create new task
-    await db.task.create({
-      data: task,
-    });
-
-    return { success: true };
+    return task;
   },
 });
 
@@ -270,45 +281,22 @@ export const replaceAllStartupTasks = tool({
 });
 
 export const createStartupTaskList = tool({
-  description: "Create a new task list for a startup.",
+  description: "Create a new task list",
   inputSchema: z.object({
-    startupId: z.string().describe("The ID of the startup"),
-    title: z.string().describe("The title of the task list"),
+    startupId: z.string(),
+    title: z.string(),
   }),
-  execute: async ({
-    startupId,
-    title,
-  }: {
-    startupId: string;
-    title: string;
-  }) => {
+  execute: async ({ startupId, title }) => {
     const { db } = await import("@/lib/db");
-    const startup = await db.startup.findUnique({
-      where: { id: startupId },
-      select: {
-        id: true,
-        name: true,
-        description: true,
-        industry: true,
-        stage: true,
-        slug: true,
-        ideaId: true,
-      },
-    });
 
-    if (!startup) {
-      throw new Error("Startup not found");
-    }
-
-    // Create new task list
-    await db.taskList.create({
+    const list = await db.taskList.create({
       data: {
         startupId,
         name: title,
       },
     });
 
-    return { success: true };
+    return list; // return ID!
   },
 });
 
