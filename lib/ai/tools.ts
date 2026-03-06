@@ -1,4 +1,9 @@
-import { Task } from "@prisma/client";
+import {
+  OpportunityCategory,
+  PrimaryMetricType,
+  StartupStage,
+  Task,
+} from "@prisma/client";
 import { tavily } from "@tavily/core";
 import { tool } from "ai";
 import { z } from "zod";
@@ -396,6 +401,145 @@ export const getStartupContext = tool({
   },
 });
 
+export const updateStartupTaskList = tool({
+  description: "Update an existing task list's name or position.",
+  inputSchema: z.object({
+    listId: z.string().describe("The ID of the task list to update"),
+    title: z.string().optional().describe("The new name for the task list"),
+    position: z
+      .number()
+      .optional()
+      .describe("The new position index for the task list (for reordering)"),
+  }),
+  execute: async ({ listId, title, position }) => {
+    const { db } = await import("@/lib/db");
+
+    const updatedList = await db.taskList.update({
+      where: { id: listId },
+      data: {
+        ...(title && { name: title }),
+        ...(position !== undefined && { position }),
+      },
+    });
+
+    return updatedList;
+  },
+});
+
+export const updateStartupMetrics = tool({
+  description: "Update or set primary and secondary metrics for a startup.",
+  inputSchema: z.object({
+    startupId: z.string(),
+    primaryMetricType: z.nativeEnum(PrimaryMetricType).optional(),
+    primaryMetricValue: z.number().optional(),
+    primaryMetricTarget: z.number().optional(),
+    stage: z.nativeEnum(StartupStage).optional(),
+  }),
+  execute: async ({ startupId, ...data }) => {
+    const { db } = await import("@/lib/db");
+    return await db.startup.update({
+      where: { id: startupId },
+      data,
+    });
+  },
+});
+
+export const addWeeklyUpdate = tool({
+  description:
+    "Submit a weekly progress report, including morale, blockers, and user learnings.",
+  inputSchema: z.object({
+    startupId: z.string(),
+    weekNumber: z.number(),
+    usersTalkedTo: z.number(),
+    userLearnings: z.string(),
+    moraleScore: z.number().min(1).max(10),
+    primaryMetricValue: z.number(),
+    biggestObstacle: z.string().optional(),
+  }),
+  execute: async ({ startupId, ...updateData }) => {
+    const { db } = await import("@/lib/db");
+    // Calculate week dates automatically
+    const weekStart = new Date();
+    const weekEnd = new Date();
+    weekEnd.setDate(weekEnd.getDate() + 7);
+
+    return await db.weeklyUpdate.create({
+      data: {
+        ...updateData,
+        weekStart,
+        weekEnd,
+        startup: { connect: { id: startupId } },
+      },
+    });
+  },
+});
+
+// --- OPPORTUNITY & ACCELERATOR TOOLS ---
+
+export const trackOpportunity = tool({
+  description:
+    "Log a funding, grant, or accelerator opportunity for the startup.",
+  inputSchema: z.object({
+    startupId: z.string(),
+    title: z.string(),
+    url: z.string().url(),
+    category: z.nativeEnum(OpportunityCategory),
+    deadline: z.string().optional(),
+    description: z.string().optional(), // Zod allows undefined here...
+  }),
+  execute: async ({ startupId, deadline, description, ...details }) => {
+    const { db } = await import("@/lib/db");
+    return await db.startupOpportunity.create({
+      data: {
+        ...details,
+        description: description ?? "", // ...so we fall back to "" for Prisma
+        deadline: deadline ? new Date(deadline) : null,
+        startup: { connect: { id: startupId } },
+      },
+    });
+  },
+});
+
+export const getAcceleratorContext = tool({
+  description: "Get details on an accelerator and its active cohorts.",
+  inputSchema: z.object({
+    slug: z.string().describe("The unique slug of the accelerator"),
+  }),
+  execute: async ({ slug }) => {
+    const { db } = await import("@/lib/db");
+    return await db.accelerator.findUnique({
+      where: { slug },
+      include: {
+        cohorts: { where: { isActive: true } },
+        events: { take: 5, orderBy: { scheduledAt: "asc" } },
+      },
+    });
+  },
+});
+
+// --- FEED & INSIGHTS ---
+
+export const createResearchFeedItem = tool({
+  description:
+    "Inject a critical insight, reminder, or report into the founder's research feed.",
+  inputSchema: z.object({
+    startupId: z.string(),
+    title: z.string(),
+    summary: z.string(),
+    type: z.enum([
+      "IDEA_RESEARCH",
+      "WEEKLY_REPORT",
+      "WEEKLY_DIGEST",
+      "WEEKLY_REMINDER",
+    ]),
+    content: z.any().optional(),
+  }),
+  execute: async (data) => {
+    const { db } = await import("@/lib/db");
+    return await db.researchFeedItem.create({ data });
+  },
+});
+
 export const tools = {
   webSearch,
   getIndustryNews,
@@ -408,4 +552,9 @@ export const tools = {
   replaceAllStartupTasks,
   createStartupTaskList,
   getStartupTaskLists,
+  updateStartupTaskList,
+  addWeeklyUpdate,
+  trackOpportunity,
+  getAcceleratorContext,
+  createResearchFeedItem,
 };
