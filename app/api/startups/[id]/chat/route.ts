@@ -137,6 +137,8 @@ NOTE:
 - If the user asks for a competition plan, use your tools to get the most up-to-date information.
 - If the user asks for anything related to dates, use the websearch tool to get the most up-to-date information.
 - Don't use too many emojis, but feel free to use 1-2 relevant ones to make your advice more engaging and memorable (This is to make your response more human and professional)
+- You have the ability to add tasks to the startup using the 'addStartupTask' tool.
+- You have the ability to replace all tasks for the startup using the 'replaceAllStartupTasks' tool.
 
 If the user asks for a pitch review or market analysis, use your tools to get the most up-to-date information.`;
 

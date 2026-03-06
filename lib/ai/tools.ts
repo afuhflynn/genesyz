@@ -1,3 +1,4 @@
+import { Task } from "@prisma/client";
 import { tavily } from "@tavily/core";
 import { tool } from "ai";
 import { z } from "zod";
@@ -202,6 +203,72 @@ export const saveVerdict = tool({
   },
 });
 
+export const addStartupTask = tool({
+  description: "Add a task to a startup.",
+  inputSchema: z.object({
+    startupId: z.string().describe("The ID of the startup"),
+    task: z.any().describe("The task to add"),
+  }),
+  execute: async ({ startupId, task }: { startupId: string; task: Task }) => {
+    const { db } = await import("@/lib/db");
+    const startup = await db.startup.findUnique({
+      where: { id: startupId },
+      include: {
+        tasks: true,
+      },
+    });
+
+    if (!startup) throw new Error("Startup not found");
+
+    // Create new task
+    await db.task.create({
+      data: task,
+    });
+
+    return { success: true };
+  },
+});
+
+export const replaceAllStartupTasks = tool({
+  description: "Replace all tasks for a startup.",
+  inputSchema: z.object({
+    startupId: z.string().describe("The ID of the startup"),
+    tasks: z.array(z.any()).describe("The tasks to replace with"),
+  }),
+  execute: async ({
+    startupId,
+    tasks,
+  }: {
+    startupId: string;
+    tasks: Task[];
+  }) => {
+    const { db } = await import("@/lib/db");
+    const startup = await db.startup.findUnique({
+      where: { id: startupId },
+      include: {
+        tasks: true,
+      },
+    });
+
+    if (!startup) throw new Error("Startup not found");
+
+    // Delete existing tasks
+    await db.task.deleteMany({
+      where: {
+        startupId,
+      },
+    });
+
+    // Create new tasks
+    await db.task.createMany({
+      data: tasks,
+      skipDuplicates: true,
+    });
+
+    return { success: true };
+  },
+});
+
 export const getStartupContext = tool({
   description:
     "Get the full context of a startup, including updates, tasks, goals, and metrics.",
@@ -284,4 +351,6 @@ export const tools = {
   getStartupContext,
   updateIdeaState,
   saveVerdict,
+  addStartupTask,
+  replaceAllStartupTasks,
 };
