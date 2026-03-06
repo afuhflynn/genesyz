@@ -213,13 +213,7 @@ export const addStartupTask = tool({
     deadline: z.string().optional(),
   }),
 
-  execute: async ({
-    startupId,
-    listId,
-    title,
-    description,
-    deadline,
-  }) => {
+  execute: async ({ startupId, listId, title, description, deadline }) => {
     const { db } = await import("@/lib/db");
 
     const task = await db.task.create({
@@ -391,7 +385,6 @@ export const getStartupContext = tool({
         score: startup.idea.scores[0],
       },
       weeklyUpdates: startup.weeklyUpdates,
-      goals: startup.goals,
       metrics: startup.metrics,
       tasks: startup.tasks,
       members: startup.members.map((m) => ({
