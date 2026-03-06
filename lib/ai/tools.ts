@@ -210,7 +210,6 @@ export const addStartupTask = tool({
     listId: z.string(),
     title: z.string(),
     description: z.string().optional(),
-    priority: z.enum(["LOW", "MEDIUM", "HIGH", "CRITICAL"]).default("MEDIUM"),
     deadline: z.string().optional(),
   }),
 
@@ -219,7 +218,6 @@ export const addStartupTask = tool({
     listId,
     title,
     description,
-    priority,
     deadline,
   }) => {
     const { db } = await import("@/lib/db");
@@ -228,7 +226,6 @@ export const addStartupTask = tool({
       data: {
         title,
         description,
-        priority,
         deadline: deadline ? new Date(deadline) : null,
 
         startup: { connect: { id: startupId } },
@@ -356,9 +353,6 @@ export const getStartupContext = tool({
           orderBy: { weekNumber: "desc" },
           take: 4,
           include: { goals: true },
-        },
-        goals: {
-          orderBy: { priority: "asc" },
         },
         metrics: true,
         tasks: {
