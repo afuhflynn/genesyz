@@ -21,7 +21,7 @@ export async function generateObjectWithFallback<T>(
       ...options,
       model: primaryModel,
     });
-    return { result: result as GenerateObjectResult<T>, modelUsed: "gpt-4o" };
+    return { result: result as GenerateObjectResult<T>, modelUsed: "gpt-5.2" };
   } catch (primaryError) {
     console.warn(
       `[${agentName}] OpenAI primary model failed, falling back to Mistral:`,
