@@ -269,6 +269,84 @@ export const replaceAllStartupTasks = tool({
   },
 });
 
+export const createStartupTaskList = tool({
+  description: "Create a new task list for a startup.",
+  inputSchema: z.object({
+    startupId: z.string().describe("The ID of the startup"),
+    title: z.string().describe("The title of the task list"),
+  }),
+  execute: async ({
+    startupId,
+    title,
+  }: {
+    startupId: string;
+    title: string;
+  }) => {
+    const { db } = await import("@/lib/db");
+    const startup = await db.startup.findUnique({
+      where: { id: startupId },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        industry: true,
+        stage: true,
+        slug: true,
+        ideaId: true,
+      },
+    });
+
+    if (!startup) {
+      throw new Error("Startup not found");
+    }
+
+    // Create new task list
+    await db.taskList.create({
+      data: {
+        startupId,
+        name: title,
+      },
+    });
+
+    return { success: true };
+  },
+});
+
+export const getStartupTaskLists = tool({
+  description: "Get the task lists for a startup.",
+  inputSchema: z.object({
+    startupId: z.string().describe("The ID of the startup"),
+  }),
+  execute: async ({ startupId }) => {
+    const { db } = await import("@/lib/db");
+    const startup = await db.startup.findUnique({
+      where: { id: startupId },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        industry: true,
+        stage: true,
+        slug: true,
+        ideaId: true,
+      },
+    });
+
+    if (!startup) {
+      throw new Error("Startup not found");
+    }
+
+    // Get task lists
+    const taskLists = await db.taskList.findMany({
+      where: {
+        startupId,
+      },
+    });
+
+    return taskLists;
+  },
+});
+
 export const getStartupContext = tool({
   description:
     "Get the full context of a startup, including updates, tasks, goals, and metrics.",
@@ -353,4 +431,6 @@ export const tools = {
   saveVerdict,
   addStartupTask,
   replaceAllStartupTasks,
+  createStartupTaskList,
+  getStartupTaskLists,
 };
