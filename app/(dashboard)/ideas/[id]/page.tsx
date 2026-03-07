@@ -613,13 +613,17 @@ export default function IdeaDetailPage() {
                             <span className="text-green-600 font-medium">
                               Strengths:
                             </span>{" "}
-                            {comp.strengths?.join(", ")}
+                            {Array.isArray(comp.strengths)
+                              ? comp.strengths.join(", ")
+                              : comp.strengths || "N/A"}
                           </div>
                           <div>
                             <span className="text-red-600 font-medium">
                               Weaknesses:
                             </span>{" "}
-                            {comp.weaknesses?.join(", ")}
+                            {Array.isArray(comp.weaknesses)
+                              ? comp.weaknesses.join(", ")
+                              : comp.weaknesses || "N/A"}
                           </div>
                         </div>
                       </div>
