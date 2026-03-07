@@ -385,6 +385,11 @@ export async function sendWeeklyStrategicReportEmail(options: {
     return "No specific risks identified";
   };
 
+  // Get high priority count
+  const highPriorityCount = actionPlan.filter(
+    (a: any) => a.priority === "High",
+  ).length;
+
   // Format data for Markdown template
   const formatVerdicts = () => {
     if (!topIdeas.length) return "No verdicts available";
@@ -561,13 +566,7 @@ ${formatRiskCliffs()}
 
     <h3 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0 0 12px 0;">Why This Might Fail</h3>
     <ul style="margin: 0 0 24px 0; padding: 0 0 0 20px;">
-      ${riskCliffs
-        .map(
-          (risk) => `
-        <li style="margin-bottom: 8px; font-size: 14px; color: #334155;"><strong>${risk.ideaTitle}:</strong> ${risk.failureReason}</li>
-      `,
-        )
-        .join("")}
+      ${formatHtmlRisks()}
     </ul>
 
     <div style="text-align: center; margin-top: 24px;">
@@ -587,10 +586,11 @@ ${formatRiskCliffs()}
   });
 
   // Generate Slack/Telegram summary
-  const slackSummary = `🎯 Weekly Focus: ${primaryFocus.ideaTitle} (${primaryFocus.allocation}%) — Key actions: ${actionPlan
+  const actionTitles = actionPlan
     .slice(0, 2)
-    .map((a) => a.title)
-    .join(", ")}. VC angle: ${vcCorner.investorAngle}`;
+    .map((a: any) => a.title || "Action")
+    .join(", ");
+  const slackSummary = `🎯 Weekly Focus: ${primaryFocus.ideaTitle} (${primaryFocus.allocation}%) — Key actions: ${actionTitles}. VC angle: ${vcSentiment || vcCorner.investorAngle || "N/A"}`;
 
   // Generate JSON output
   const jsonOutput = {

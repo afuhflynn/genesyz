@@ -251,19 +251,39 @@ export async function runResearchPipeline(
       },
     });
 
-    // Save scores
-    const synthesis = outputs.SYNTHESIS.content as Synthesis;
+    // Save scores - handle both old (nested) and new (flat) schema formats
+    const synthesis = outputs.SYNTHESIS.content as any;
     await db.ideaScore.create({
       data: {
         ideaId,
-        clarityScore: synthesis.scores.clarity.score,
-        clarityExplanation: synthesis.scores.clarity.explanation,
-        marketScore: synthesis.scores.marketReadiness.score,
-        marketExplanation: synthesis.scores.marketReadiness.explanation,
-        executionScore: synthesis.scores.executionFeasibility.score,
-        executionExplanation: synthesis.scores.executionFeasibility.explanation,
-        overallScore: synthesis.scores.overall.score,
-        overallExplanation: synthesis.scores.overall.explanation,
+        clarityScore:
+          synthesis.clarityScore ?? synthesis.scores?.clarity?.score ?? 0,
+        clarityExplanation:
+          synthesis.clarityExplanation ??
+          synthesis.scores?.clarity?.explanation ??
+          "",
+        marketScore:
+          synthesis.marketScore ??
+          synthesis.scores?.marketReadiness?.score ??
+          0,
+        marketExplanation:
+          synthesis.marketExplanation ??
+          synthesis.scores?.marketReadiness?.explanation ??
+          "",
+        executionScore:
+          synthesis.executionScore ??
+          synthesis.scores?.executionFeasibility?.score ??
+          0,
+        executionExplanation:
+          synthesis.executionExplanation ??
+          synthesis.scores?.executionFeasibility?.explanation ??
+          "",
+        overallScore:
+          synthesis.overallScore ?? synthesis.scores?.overall?.score ?? 0,
+        overallExplanation:
+          synthesis.overallExplanation ??
+          synthesis.scores?.overall?.explanation ??
+          "",
       },
     });
 

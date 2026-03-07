@@ -416,6 +416,11 @@ export const researchPipelineFunction = inngest.createFunction(
 
     // Step 5: Create audit log
     await step.run("create-audit-log", async () => {
+      const synthesisAny = result.synthesis as any;
+      const overallScore =
+        synthesisAny?.overallScore ?? synthesisAny?.scores?.overall?.score ?? 0;
+      const verdict = synthesisAny?.verdict;
+
       await db.auditLog.create({
         data: {
           userId,
@@ -424,8 +429,8 @@ export const researchPipelineFunction = inngest.createFunction(
           resourceId: ideaId,
           metadata: {
             success: result.success,
-            overallScore: result.synthesis?.scores?.overall?.score,
-            verdict: result.synthesis?.verdict,
+            overallScore,
+            verdict,
           },
         },
       });
@@ -438,13 +443,17 @@ export const researchPipelineFunction = inngest.createFunction(
         const idea = await db.idea.findUnique({ where: { id: ideaId } });
 
         if (user?.email && idea) {
+          const synthesisAny = result.synthesis as any;
           await sendResearchCompleteEmail({
             to: user.email,
             userName: user.name || "Founder",
             ideaTitle: idea.title || "Untitled Idea",
             ideaId: idea.id,
-            overallScore: result.synthesis.scores.overall.score,
-            verdict: result.synthesis.verdict,
+            overallScore:
+              synthesisAny.overallScore ??
+              synthesisAny.scores?.overall?.score ??
+              0,
+            verdict: synthesisAny.verdict,
           });
         }
       });
@@ -458,6 +467,17 @@ export const researchPipelineFunction = inngest.createFunction(
         });
 
         if (startup) {
+          const synthesisAny = result.synthesis as any;
+          const overallScore =
+            synthesisAny.overallScore ??
+            synthesisAny.scores?.overall?.score ??
+            0;
+          const overallExplanation =
+            synthesisAny.overallExplanation ??
+            synthesisAny.scores?.overall?.explanation ??
+            "";
+          const verdict = synthesisAny.verdict;
+
           const idempotencyKey = `idea-research-${ideaId}-${startup.id}`;
           await db.researchFeedItem.upsert({
             where: { idempotencyKey },
@@ -466,18 +486,18 @@ export const researchPipelineFunction = inngest.createFunction(
               ideaId,
               type: "IDEA_RESEARCH",
               title: `Initial Research: ${startup.name}`,
-              summary: result.synthesis.scores.overall.explanation,
+              summary: overallExplanation,
               idempotencyKey,
               content: {
-                overallScore: result.synthesis.scores.overall.score,
-                verdict: result.synthesis.verdict,
+                overallScore,
+                verdict,
               },
             },
             update: {
-              summary: result.synthesis.scores.overall.explanation,
+              summary: overallExplanation,
               content: {
-                overallScore: result.synthesis.scores.overall.score,
-                verdict: result.synthesis.verdict,
+                overallScore,
+                verdict,
               },
             },
           });
@@ -487,24 +507,30 @@ export const researchPipelineFunction = inngest.createFunction(
 
     // Step 8: Send completion event for other listeners
     if (result.success) {
+      const synthesisAny = result.synthesis as any;
+      const overallScore =
+        synthesisAny.overallScore ?? synthesisAny.scores?.overall?.score ?? 0;
       await step.sendEvent("send-completion-event", {
         name: "idea.research.completed",
         data: {
           ideaId,
           userId,
-          overallScore: result.synthesis.scores.overall.score,
+          overallScore,
         },
       });
     }
 
     // Publish final completion event for realtime
+    const synthesisAny = result.synthesis as any;
+    const overallScore =
+      synthesisAny?.overallScore ?? synthesisAny?.scores?.overall?.score ?? 0;
     publish({
       channel: `idea:${ideaId}`,
       topic: "research.finished",
       data: {
         success: result.success,
         ideaId,
-        overallScore: result.synthesis?.scores?.overall?.score,
+        overallScore,
         message: "Deep Research and Analysis finished.",
         id: uuid4(),
       },
@@ -513,7 +539,7 @@ export const researchPipelineFunction = inngest.createFunction(
     return {
       success: result.success,
       ideaId,
-      overallScore: result.synthesis?.scores?.overall?.score,
+      overallScore,
     };
   },
 );
