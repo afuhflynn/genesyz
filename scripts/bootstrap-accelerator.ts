@@ -40,24 +40,30 @@ async function main() {
 }
 
 async function createAccelerator() {
-  // Find the first admin user (USER.role === 'ADMIN')
-  const adminUser = await db.user.findFirst({
-    where: { role: "ADMIN" },
-    select: { id: true, email: true, name: true },
-  });
-
-  // Or use a specific email if provided
+  // Get email from args if provided
   const emailArg = args.find((a) => a.startsWith("--email="));
-  const email = emailArg?.split("=")[1] || "flynn@safuh.com";
+  const providedEmail = emailArg?.split("=")[1];
 
-  const user = await db.user.findUnique({
-    where: { email },
-    select: { id: true, email: true, name: true },
-  });
+  // Find the user to be owner
+  let user;
+  if (providedEmail) {
+    user = await db.user.findUnique({
+      where: { email: providedEmail },
+      select: { id: true, email: true, name: true },
+    });
+  }
+
+  // Fallback: Find the first admin user (USER.role === 'ADMIN')
+  if (!user) {
+    user = await db.user.findFirst({
+      where: { role: "ADMIN" },
+      select: { id: true, email: true, name: true },
+    });
+  }
 
   if (!user) {
     console.error(
-      `User with email ${email} not found. Please create the user first.`,
+      "No owner found. Please provide an email with --email=EMAIL or ensure an ADMIN user exists in the database.",
     );
     process.exit(1);
   }

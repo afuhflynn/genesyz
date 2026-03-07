@@ -7,7 +7,7 @@ export default async function AcceleratorAdminPage() {
   const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session?.user) {
-    redirect("/login");
+    redirect("/sign-in");
   }
 
   // Find the IdeasVault Accelerator
@@ -17,7 +17,7 @@ export default async function AcceleratorAdminPage() {
   });
 
   if (!accelerator) {
-    redirect("/admin/accelerators");
+    redirect("/my-accelerators");
   }
 
   // Check if user is a member
@@ -31,7 +31,7 @@ export default async function AcceleratorAdminPage() {
   });
 
   if (!membership) {
-    redirect("/admin/accelerators");
+    redirect("/my-accelerators");
   }
 
   // Redirect to the accelerator admin page

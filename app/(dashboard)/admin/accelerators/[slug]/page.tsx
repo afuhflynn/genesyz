@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { checkAcceleratorAccess } from "@/lib/accelerator-permissions-server";
 import { db } from "@/lib/db";
 import {
@@ -91,11 +91,13 @@ export default async function AcceleratorDashboardPage({
   );
 
   if (!hasAccess) {
-    return notFound();
+    redirect("/my-accelerators");
   }
 
   const data = await getAcceleratorData(slug);
-  if (!data) return notFound();
+  if (!data) {
+    redirect("/my-accelerators");
+  }
 
   const { accelerator, totalStartups, activeFlags } = data;
 
