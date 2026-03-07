@@ -1,15 +1,15 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { checkAcceleratorAccess } from "@/lib/accelerator-permissions";
+import { checkAcceleratorAccess } from "@/lib/accelerator-permissions-server";
 
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ slug: string; mentorId: string }> },
 ) {
   const { slug, mentorId } = await params;
-  const { hasAccess } = await checkAcceleratorAccess(slug, "manage_team");
+  const { hasAccess, acceleratorId } = await checkAcceleratorAccess(slug, "manage_team");
 
-  if (!hasAccess) {
+  if (!hasAccess || !acceleratorId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -18,6 +18,21 @@ export async function POST(
 
   if (!startupId) {
     return NextResponse.json({ error: "Startup ID is required" }, { status: 400 });
+  }
+
+  // Verify mentor and startup belong to accelerator
+  const [mentor, startupInAccelerator] = await Promise.all([
+    db.mentor.findFirst({ where: { id: mentorId, acceleratorId } }),
+    db.startup.findFirst({
+      where: {
+        id: startupId,
+        cohortStartups: { some: { cohort: { acceleratorId } } },
+      },
+    }),
+  ]);
+
+  if (!mentor || !startupInAccelerator) {
+    return NextResponse.json({ error: "Mentor or Startup not found in this accelerator" }, { status: 404 });
   }
 
   // Check if match exists
@@ -50,9 +65,9 @@ export async function DELETE(
   { params }: { params: Promise<{ slug: string; mentorId: string }> },
 ) {
   const { slug, mentorId } = await params;
-  const { hasAccess } = await checkAcceleratorAccess(slug, "manage_team");
+  const { hasAccess, acceleratorId } = await checkAcceleratorAccess(slug, "manage_team");
 
-  if (!hasAccess) {
+  if (!hasAccess || !acceleratorId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -61,6 +76,21 @@ export async function DELETE(
 
   if (!startupId) {
     return NextResponse.json({ error: "Startup ID is required" }, { status: 400 });
+  }
+
+  // Verify mentor and startup belong to accelerator
+  const [mentor, startupInAccelerator] = await Promise.all([
+    db.mentor.findFirst({ where: { id: mentorId, acceleratorId } }),
+    db.startup.findFirst({
+      where: {
+        id: startupId,
+        cohortStartups: { some: { cohort: { acceleratorId } } },
+      },
+    }),
+  ]);
+
+  if (!mentor || !startupInAccelerator) {
+    return NextResponse.json({ error: "Mentor or Startup not found in this accelerator" }, { status: 404 });
   }
 
   await db.mentorMatch.delete({

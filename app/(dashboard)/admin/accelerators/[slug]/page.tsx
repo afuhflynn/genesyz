@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { checkAcceleratorAccess } from "@/lib/accelerator-permissions";
+import { checkAcceleratorAccess } from "@/lib/accelerator-permissions-server";
 import { db } from "@/lib/db";
 import {
   Card,

@@ -1,9 +1,5 @@
 import type { AcceleratorRole } from "@prisma/client";
 
-import { headers } from "next/headers";
-import { auth } from "@/lib/auth";
-import { db } from "@/lib/db";
-
 export type AcceleratorPermission =
   | "manage_accelerator" // Edit settings, delete
   | "manage_team"        // Invite, remove, change roles
@@ -16,7 +12,7 @@ export type AcceleratorPermission =
   | "submit_reports"     // Hub weekly reports
   | "flag_startups";     // Flag underperforming startups
 
-const ROLE_PERMISSIONS: Record<AcceleratorRole, AcceleratorPermission[]> = {
+export const ROLE_PERMISSIONS: Record<AcceleratorRole, AcceleratorPermission[]> = {
   OWNER: [
     "manage_accelerator",
     "manage_team",
@@ -43,6 +39,7 @@ const ROLE_PERMISSIONS: Record<AcceleratorRole, AcceleratorPermission[]> = {
     "manage_events",
     "view_startups",
     "manage_startups", // For basic onboarding tasks
+    "view_metrics",    // Added to allow dashboard access
   ],
   MENTOR: [
     "view_startups",
@@ -60,87 +57,6 @@ export function hasAcceleratorPermission(
   permission: AcceleratorPermission,
 ): boolean {
   return ROLE_PERMISSIONS[role]?.includes(permission) ?? false;
-}
-
-export async function getUserAcceleratorRole(
-  userId: string,
-  acceleratorId: string,
-): Promise<AcceleratorRole | null> {
-  const accelerator = await db.accelerator.findFirst({
-    where: { id: acceleratorId, ownerId: userId },
-    select: { ownerId: true },
-  });
-
-  if (accelerator) {
-    return "OWNER";
-  }
-
-  const membership = await db.acceleratorMember.findUnique({
-    where: {
-      acceleratorId_userId: {
-        acceleratorId,
-        userId,
-      },
-    },
-    select: { role: true },
-  });
-
-  return membership?.role ?? null;
-}
-
-export async function checkAcceleratorAccess(
-  acceleratorSlugOrId: string,
-  requiredPermission?: AcceleratorPermission,
-): Promise<{
-  hasAccess: boolean;
-  role: AcceleratorRole | null;
-  acceleratorId: string | null;
-  userId: string | null;
-}> {
-  const session = await auth.api.getSession({ headers: await headers() });
-
-  if (!session?.user) {
-    return { hasAccess: false, role: null, acceleratorId: null, userId: null };
-  }
-
-  const accelerator = await db.accelerator.findFirst({
-    where: {
-      OR: [{ slug: acceleratorSlugOrId }, { id: acceleratorSlugOrId }],
-      isActive: true,
-    },
-    select: { id: true, ownerId: true },
-  });
-
-  if (!accelerator) {
-    return { hasAccess: false, role: null, acceleratorId: null, userId: null };
-  }
-
-  const role = await getUserAcceleratorRole(session.user.id, accelerator.id);
-
-  if (!role) {
-    return {
-      hasAccess: false,
-      role: null,
-      acceleratorId: accelerator.id,
-      userId: session.user.id,
-    };
-  }
-
-  if (requiredPermission && !hasAcceleratorPermission(role, requiredPermission)) {
-    return {
-      hasAccess: false,
-      role,
-      acceleratorId: accelerator.id,
-      userId: session.user.id,
-    };
-  }
-
-  return {
-    hasAccess: true,
-    role,
-    acceleratorId: accelerator.id,
-    userId: session.user.id,
-  };
 }
 
 export const ACCELERATOR_ROLE_LABELS: Record<AcceleratorRole, string> = {

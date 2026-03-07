@@ -1,16 +1,25 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { checkAcceleratorAccess } from "@/lib/accelerator-permissions";
+import { checkAcceleratorAccess } from "@/lib/accelerator-permissions-server";
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ slug: string; cohortId: string }> },
 ) {
   const { slug, cohortId } = await params;
-  const { hasAccess } = await checkAcceleratorAccess(slug, "view_startups");
+  const { hasAccess, acceleratorId } = await checkAcceleratorAccess(slug, "view_startups");
 
-  if (!hasAccess) {
+  if (!hasAccess || !acceleratorId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Verify cohort belongs to accelerator
+  const cohort = await db.cohort.findFirst({
+    where: { id: cohortId, acceleratorId },
+  });
+
+  if (!cohort) {
+    return NextResponse.json({ error: "Cohort not found in this accelerator" }, { status: 404 });
   }
 
   const startups = await db.cohortStartup.findMany({
@@ -37,15 +46,24 @@ export async function POST(
   { params }: { params: Promise<{ slug: string; cohortId: string }> },
 ) {
   const { slug, cohortId } = await params;
-  const { hasAccess } = await checkAcceleratorAccess(slug, "manage_startups");
+  const { hasAccess, acceleratorId } = await checkAcceleratorAccess(slug, "manage_startups");
 
-  if (!hasAccess) {
+  if (!hasAccess || !acceleratorId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Verify cohort belongs to accelerator
+  const cohort = await db.cohort.findFirst({
+    where: { id: cohortId, acceleratorId },
+  });
+
+  if (!cohort) {
+    return NextResponse.json({ error: "Cohort not found in this accelerator" }, { status: 404 });
   }
 
   const body = await request.json();
   const { startupId } = body;
-
+...
   if (!startupId) {
     return NextResponse.json({ error: "Startup ID is required" }, { status: 400 });
   }

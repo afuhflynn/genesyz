@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { checkAcceleratorAccess } from "@/lib/accelerator-permissions";
+import { checkAcceleratorAccess } from "@/lib/accelerator-permissions-server";
 
 export async function GET(
   request: Request,
@@ -57,19 +57,25 @@ export async function PATCH(
   { params }: { params: Promise<{ slug: string }> },
 ) {
   const { slug } = await params;
-  const { hasAccess } = await checkAcceleratorAccess(slug, "manage_kpis");
+  const { hasAccess, acceleratorId } = await checkAcceleratorAccess(slug, "manage_kpis");
 
-  if (!hasAccess) {
+  if (!hasAccess || !acceleratorId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const body = await request.json();
   const { id, currentValue } = body;
 
+  const parsedValue = parseFloat(currentValue);
+  if (isNaN(parsedValue)) {
+    return NextResponse.json({ error: "Invalid numeric value" }, { status: 400 });
+  }
+
   const kpi = await db.acceleratorKPI.update({
-    where: { id },
-    data: { currentValue: parseFloat(currentValue) },
+    where: { id, acceleratorId },
+    data: { currentValue: parsedValue },
   });
 
   return NextResponse.json({ data: kpi });
 }
+

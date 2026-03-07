@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { checkAcceleratorAccess } from "@/lib/accelerator-permissions";
+import { checkAcceleratorAccess } from "@/lib/accelerator-permissions-server";
+import crypto from "crypto";
 
 export async function GET(
   request: Request,
@@ -102,7 +103,7 @@ export async function POST(
       acceleratorId,
       email,
       role,
-      token: Math.random().toString(36).substring(2, 15), // Basic token for now
+      token: crypto.randomBytes(32).toString("hex"),
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
       invitedById: userId,
     },

@@ -123,10 +123,19 @@ export function MentorManagement({ slug, currentRole }: { slug: string, currentR
       
       // Flatten startups from all cohorts
       if (cohortsData.data) {
-        // Need to fetch individual cohort startups to be thorough, but for now we'll assume we can get them
-        // In a real app, we'd have a dedicated /api/accelerators/[slug]/startups endpoint
         const allStartups: Startup[] = [];
-        // This is a simplification for the demo/scaffold
+        cohortsData.data.forEach((cohort: any) => {
+          if (cohort.startups) {
+            cohort.startups.forEach((cs: any) => {
+              if (!allStartups.find(s => s.id === cs.startup.id)) {
+                allStartups.push({
+                  id: cs.startup.id,
+                  name: cs.startup.name
+                });
+              }
+            });
+          }
+        });
         setCohortStartups(allStartups);
       }
     } catch (error) {
@@ -387,8 +396,13 @@ export function MentorManagement({ slug, currentRole }: { slug: string, currentR
                         <SelectValue placeholder="Select a startup..." />
                      </SelectTrigger>
                      <SelectContent>
-                        {/* We would typically populate this from active cohort startups */}
-                        <SelectItem value="none" disabled>Startups from your cohorts will appear here</SelectItem>
+                        {cohortStartups.length > 0 ? (
+                           cohortStartups.map((s) => (
+                              <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                           ))
+                        ) : (
+                           <SelectItem value="none" disabled>No startups found in your cohorts</SelectItem>
+                        )}
                      </SelectContent>
                   </Select>
                </div>

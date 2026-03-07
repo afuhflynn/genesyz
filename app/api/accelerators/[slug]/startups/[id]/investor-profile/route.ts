@@ -1,21 +1,30 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { checkAcceleratorAccess } from "@/lib/accelerator-permissions";
-
+import { checkAcceleratorAccess } from "@/lib/accelerator-permissions-server";
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ slug: string; id: string }> },
 ) {
   const { slug, id: startupId } = await params;
-  const { hasAccess } = await checkAcceleratorAccess(slug, "view_startups");
+  const { hasAccess, acceleratorId } = await checkAcceleratorAccess(slug, "view_startups");
 
-  if (!hasAccess) {
+  if (!hasAccess || !acceleratorId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const startup = await db.startup.findUnique({
-    where: { id: startupId },
+    where: { 
+      id: startupId,
+      cohortStartups: {
+        some: {
+          cohort: {
+            acceleratorId: acceleratorId,
+          },
+        },
+      },
+    },
     include: {
+...
       user: { select: { name: true, email: true, image: true } },
       weeklyUpdates: {
         orderBy: { weekNumber: "desc" },
