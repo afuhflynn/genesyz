@@ -79,3 +79,36 @@ The official record of the accelerator's progress.
 3. **Onboard:** Search for and add startups to the cohort.
 4. **Invite:** Go to the **Team** tab to invite your Program Managers and Operations Leads.
 5. **Analyze:** Run the **AI Hub Coach** once your startups have submitted their first weekly updates.
+
+---
+
+## 6. Route & API Reference
+
+### 🖼️ Frontend Pages (UI)
+The entire hub management experience is consolidated into a single, high-performance dynamic route:
+- **Main Dashboard:** `/admin/accelerators/[slug]`
+  - *Note: This page uses a tabbed interface to manage Overview, Cohorts, Curriculum, Mentors, Team, and Settings without full page reloads.*
+
+### 🔌 Backend API Endpoints
+All routes are protected by the Accelerator RBAC system and scoped to the specific program.
+
+#### **Cohort & Startup Management**
+- `GET/POST /api/accelerators/[slug]/cohorts`: List all cohorts or create a new batch.
+- `GET/POST /api/accelerators/[slug]/cohorts/[cohortId]/startups`: Manage startups within a specific cohort.
+- `GET /api/startups/search`: Global search for startups to onboard (Admin/Manager only).
+
+#### **Curriculum & Logistics**
+- `GET/POST /api/accelerators/[slug]/events`: Manage workshops, mentor sessions, and office hours.
+- `GET/POST /api/accelerators/[slug]/mentors`: Manage the mentor database.
+- `POST/DELETE /api/accelerators/[slug]/mentors/[mentorId]/matches`: Pair mentors with startups.
+
+#### **Performance & AI**
+- `POST /api/accelerators/[slug]/coach`: Trigger the AI Hub Coach strategic analysis.
+- `GET /api/accelerators/[slug]/startups/[id]/investor-profile`: Fetch synthesized demo-day data.
+- `GET/POST/PATCH /api/accelerators/[slug]/kpis`: Define and track program-level targets.
+- `GET/POST /api/accelerators/[slug]/reports`: Submit and retrieve weekly hub progress logs.
+
+#### **Team & Access**
+- `GET/POST /api/accelerators/[slug]/team`: Manage admin staff and send secure role-based invitations.
+- `PATCH/DELETE /api/accelerators/[slug]`: Update program settings or deactivate the accelerator.
+
