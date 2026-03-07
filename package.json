@@ -8,7 +8,7 @@
     "lint": "biome check",
     "ngrok:dev": "ngrok http 3000",
     "dev:clear": " rm -rf .next && pnpm dev",
-    "build": "pnpm prisma generate && npx tsx scripts/bootstrap-accelerator.ts create-accelerator --email=flynn@safuh.com && next build",
+    "build": "pnpm prisma generate && npx tsx scripts/bootstrap-accelerator.ts create-accelerator --email=flyinnsafuh@gmail.com && next build",
     "format": "biome format --write",
     "db:auth-template": "npx @better-auth/cli generate",
     "db:push:reset": "pnpm db:push --force-reset",
