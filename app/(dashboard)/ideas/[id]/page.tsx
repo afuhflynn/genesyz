@@ -306,21 +306,40 @@ export default function IdeaDetailPage() {
                           Key Recommendations
                         </h4>
                         <ul className="space-y-2">
-                          {synthesis.recommendations.map(
-                            (rec: any, i: number) => (
-                              <li
-                                key={i}
-                                className="flex items-start gap-2 text-sm"
-                              >
-                                <Badge
-                                  variant="outline"
-                                  className={getPriorityColor(rec.priority)}
+                          {Array.isArray(synthesis.recommendations) &&
+                            synthesis.recommendations.map(
+                              (rec: any, i: number) => (
+                                <li
+                                  key={i}
+                                  className="flex items-start gap-2 text-sm"
                                 >
-                                  {rec.priority}
-                                </Badge>
-                                <span>{rec.action}</span>
-                              </li>
-                            ),
+                                  {typeof rec === "object" && rec.priority ? (
+                                    <>
+                                      <Badge
+                                        variant="outline"
+                                        className={getPriorityColor(
+                                          rec.priority,
+                                        )}
+                                      >
+                                        {rec.priority}
+                                      </Badge>
+                                      <span>{rec.action}</span>
+                                    </>
+                                  ) : (
+                                    <span>
+                                      {typeof rec === "string"
+                                        ? rec
+                                        : JSON.stringify(rec)}
+                                    </span>
+                                  )}
+                                </li>
+                              ),
+                            )}
+                          {(!synthesis.recommendations ||
+                            synthesis.recommendations.length === 0) && (
+                            <li className="text-sm text-muted-foreground">
+                              No recommendations available
+                            </li>
                           )}
                         </ul>
                       </div>
