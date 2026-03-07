@@ -4,20 +4,86 @@ Welcome to the **IdeasVault Accelerator Hub**. This internal platform is designe
 
 ---
 
-## 1. Role-Based Access Control (RBAC)
+## 1. Overview
+
+The IdeasVault Accelerator Program is an internal program for managing and supporting startups on the IdeasVault platform. It provides:
+
+- Centralized cohort/batch management
+- Growth & performance monitoring with aggregated metrics
+- Event & curriculum planning
+- Mentor matching
+- AI-powered coaching and insights
+- Investor one-pager generation for demo days
+
+---
+
+## 2. Role-Based Access Control (RBAC)
+
 To prevent operational "hazards" and protect sensitive startup data, the Hub uses a granular permission system.
 
 | Role | Responsibility | Key Permissions |
 | :--- | :--- | :--- |
-| **OWNER (Superior Admin)** | Program Strategy & Team | Manage Team, Change Roles, Delete Program, Branding |
+| **OWNER** | Program Strategy & Team | Manage Team, Change Roles, Delete Program, Branding |
 | **PROGRAM_MANAGER** | Cohort Success & Growth | Bulk Onboard, Set KPIs, Hub Reports, AI Hub Coach, Flagging |
 | **OPERATIONS_LEAD** | Logistics & Curriculum | Event Scheduling, Attendance Tracking, Basic Onboarding |
 | **MENTOR** | Specialized Guidance | View Paired Startups, Session Schedule, Feedback |
 | **OBSERVER** | Reporting & Oversight | View-only Metrics, Growth Charts, Startup Summaries |
 
+### Role Hierarchy
+
+- **OWNER (Rank 1)** - Can manage all roles
+- **PROGRAM_MANAGER (Rank 2)** - Can manage OPERATIONS_LEAD, MENTOR, OBSERVER
+- **OPERATIONS_LEAD (Rank 3)** - Can manage MENTOR, OBSERVER
+- **MENTOR (Rank 4)** - Cannot manage others
+- **OBSERVER (Rank 5)** - Cannot manage others
+
 ---
 
-## 2. Core Management Features
+## 3. Setup & Installation
+
+### Prerequisites
+
+1. **Database**: Ensure PostgreSQL is running
+   ```bash
+   pnpm db:up          # Start database (if using Docker)
+   pnpm db:push       # Push schema changes
+   ```
+
+2. **Environment Variables**: Ensure `.env` contains:
+   ```
+   DATABASE_URL=postgresql://...
+   ```
+
+### Bootstrap the Accelerator
+
+Run the bootstrap script to create the IdeasVault Accelerator Program:
+
+```bash
+# Create the accelerator with a specific owner
+pnpm bootstrap:accelerator create-accelerator --email=flynn@safuh.com
+
+# Or use default email from script
+pnpm bootstrap:accelerator create-accelerator
+```
+
+### Add Users to Accelerator
+
+```bash
+# Add a user with specific role
+pnpm bootstrap:accelerator add-user --email=user@example.com --role=PROGRAM_MANAGER
+
+# Available roles: OWNER, PROGRAM_MANAGER, OPERATIONS_LEAD, MENTOR, OBSERVER
+```
+
+### List Current Members
+
+```bash
+pnpm bootstrap:accelerator list-members
+```
+
+---
+
+## 4. Core Management Features
 
 ### 📦 Centralized Batch Management (Cohorts)
 Managers can define specific "Batches" (e.g., *Winter 2026*).
@@ -43,7 +109,7 @@ Maintain a searchable database of experts.
 
 ---
 
-## 3. AI & Investor Features
+## 5. AI & Investor Features
 
 ### 🤖 AI Hub Coach
 A specialized agent built for high-level oversight.
@@ -59,7 +125,7 @@ Automatically generates a professional, print-ready "One-Pager" for any startup.
 
 ---
 
-## 4. Reporting & KPIs
+## 6. Reporting & KPIs
 
 ### 🎯 Program KPIs
 Managers can set high-level goals for the entire accelerator (e.g., *"Total Cohort Revenue: $1M"*).
@@ -73,23 +139,153 @@ The official record of the accelerator's progress.
 
 ---
 
-## 5. Getting Started
-1. **Access:** Click the **Accelerator Hub** link in the main sidebar.
-2. **Setup:** Create your first **Cohort**.
-3. **Onboard:** Search for and add startups to the cohort.
-4. **Invite:** Go to the **Team** tab to invite your Program Managers and Operations Leads.
-5. **Analyze:** Run the **AI Hub Coach** once your startups have submitted their first weekly updates.
+## 7. Getting Started
+
+### For Admins (OWNER/PROGRAM_MANAGER)
+
+1. **Access the Accelerator Hub:**
+   - Navigate to `/accelerator/admin` (redirects to `/admin/accelerators/ideasvault-accelerator`)
+   - Or directly: `/admin/accelerators/ideasvault-accelerator`
+
+2. **Create a Cohort:**
+   - Go to the **Cohorts** tab
+   - Click "Create Cohort"
+   - Set name (e.g., "Spring 2026"), dates, and description
+
+3. **Add Startups to Cohort:**
+   - Click on a cohort
+   - Use "Add Startup" to search and onboard startups
+   - Select from existing IdeasVault startups
+
+4. **Manage Team:**
+   - Go to the **Team** tab
+   - Add team members with appropriate roles
+   - Use: `pnpm bootstrap:accelerator add-user --email=EMAIL --role=ROLE`
+
+5. **Set KPIs:**
+   - Go to the **KPI Reporting** tab
+   - Create program-level KPIs
+   - Track progress visually
+
+6. **Schedule Events:**
+   - Go to the **Curriculum** tab
+   - Create workshops, mentor sessions, etc.
+   - Track RSVPs
+
+7. **Use AI Coach:**
+   - Go to the **Hub Coach** tab
+   - Run analysis on cohort data
+   - Review AI insights and recommendations
+
+### For Mentors
+
+1. Access the accelerator via `/admin/accelerators/ideasvault-accelerator`
+2. View assigned startups in the dashboard
+3. Provide feedback and schedule sessions
+
+### For Observers
+
+1. Access the accelerator to view metrics
+2. Review startup progress and growth charts
+3. No editing capabilities
 
 ---
 
-## 6. Route & API Reference
+## 8. Database Schema
+
+### Core Models
+
+```prisma
+model Accelerator {
+  id            String   @id @default(cuid())
+  name          String
+  slug          String   @unique
+  description   String?
+  programType   String   @default("accelerator")
+  logoUrl       String?
+  website       String?
+  contactEmail  String?
+  durationWeeks Int?
+  benefits      String?
+  requirements  String?
+  maxStartups  Int?
+  fundingAmount String?
+  isPublic     Boolean  @default(true)
+  isActive     Boolean  @default(true)
+  ownerId       String
+  createdAt     DateTime @default(now())
+  
+  cohorts       Cohort[]
+  events        AcceleratorEvent[]
+  applications  AcceleratorApplication[]
+  members       AcceleratorMember[]
+  invitations   AcceleratorInvitation[]
+  kpis          AcceleratorKPI[]
+  reports       AcceleratorWeeklyReport[]
+  mentors       Mentor[]
+}
+
+enum AcceleratorRole {
+  OWNER           // Superior Admin: Full access, manage admins
+  PROGRAM_MANAGER // Manage cohorts, startups, flags
+  OPERATIONS_LEAD // Manage events, curriculum, logistics
+  MENTOR          // View assigned startups, feedback
+  OBSERVER        // Read-only
+}
+
+model AcceleratorMember {
+  id            String          @id @default(cuid())
+  acceleratorId String
+  userId        String
+  role          AcceleratorRole @default(PROGRAM_MANAGER)
+  joinedAt      DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  accelerator   Accelerator     @relation(fields: [acceleratorId], references: [id], onDelete: Cascade)
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([acceleratorId, userId])
+}
+
+model Cohort {
+  id              String   @id @default(cuid())
+  acceleratorId   String
+  name            String   // "Winter 2026"
+  description     String?
+  startDate       DateTime
+  endDate         DateTime
+  isActive        Boolean  @default(true)
+  
+  accelerator     Accelerator @relation(fields: [acceleratorId], references: [id], onDelete: Cascade)
+  startups        CohortStartup[]
+  events          AcceleratorEvent[]
+}
+
+model CohortStartup {
+  cohortId      String
+  startupId     String
+  joinedAt      DateTime @default(now())
+  
+  cohort        Cohort   @relation(fields: [cohortId], references: [id], onDelete: Cascade)
+  startup       Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
+
+  @@id([cohortId, startupId])
+}
+```
+
+---
+
+## 9. Route & API Reference
 
 ### 🖼️ Frontend Pages (UI)
+
 The entire hub management experience is consolidated into a single, high-performance dynamic route:
+
 - **Main Dashboard:** `/admin/accelerators/[slug]`
   - *Note: This page uses a tabbed interface to manage Overview, Cohorts, Curriculum, Mentors, Team, and Settings without full page reloads.*
 
 ### 🔌 Backend API Endpoints
+
 All routes are protected by the Accelerator RBAC system and scoped to the specific program.
 
 #### **Cohort & Startup Management**
@@ -112,3 +308,75 @@ All routes are protected by the Accelerator RBAC system and scoped to the specif
 - `GET/POST /api/accelerators/[slug]/team`: Manage admin staff and send secure role-based invitations.
 - `PATCH/DELETE /api/accelerators/[slug]`: Update program settings or deactivate the accelerator.
 
+---
+
+## 10. Commands Reference
+
+### Database Setup
+
+```bash
+# Push schema changes to database
+pnpm db:push
+
+# Or with reset (warning: deletes data)
+pnpm db:push:reset
+```
+
+### Accelerator Bootstrap
+
+```bash
+# Create the IdeasVault Accelerator Program
+pnpm bootstrap:accelerator create-accelerator --email=OWNER_EMAIL
+
+# Add a user to the accelerator
+pnpm bootstrap:accelerator add-user --email=EMAIL --role=ROLE
+
+# List all accelerator members
+pnpm bootstrap:accelerator list-members
+```
+
+### Development
+
+```bash
+# Start development server
+pnpm dev
+
+# Start database (Docker)
+pnpm db:up
+
+# Stop database
+pnpm db:down
+
+# Open Prisma Studio
+pnpm db:studio
+```
+
+---
+
+## 11. Troubleshooting
+
+### User Cannot Access Accelerator
+
+1. Check if user exists in the system
+2. Run: `pnpm bootstrap:accelerator list-members`
+3. If not added: `pnpm bootstrap:accelerator add-user --email=EMAIL --role=ROLE`
+
+### Accelerator Not Found
+
+1. Ensure bootstrap was run: `pnpm bootstrap:accelerator create-accelerator`
+2. Check database: `pnpm db:studio` → verify `accelerators` table has entry
+
+### Permission Errors
+
+- Ensure user has appropriate role in `accelerator_members` table
+- OWNER can manage all; PROGRAM_MANAGER can manage below rank
+
+---
+
+## 12. Future Enhancements
+
+Planned features:
+- Multi-accelerator support (vertical-specific accelerators)
+- Advanced analytics dashboard
+- Integration with external CRM tools
+- Automated investor matching
