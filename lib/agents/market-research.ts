@@ -62,12 +62,12 @@ export async function runMarketResearchAgent(
 
   const prompt = `Conduct market research for the following startup idea:
 
-**Title:** ${interpretedIdea.title}
-**Summary:** ${interpretedIdea.summary}
-**Problem:** ${interpretedIdea.problemStatement}
-**Solution:** ${interpretedIdea.proposedSolution}
-**Target Audience:** ${interpretedIdea.targetAudience.join(", ")}
-**Category:** ${interpretedIdea.category}${locationPromptSection}
+**Title:** ${interpretedIdea?.title || "Untitled"}
+**Summary:** ${interpretedIdea?.summary || "No summary"}
+**Problem:** ${interpretedIdea?.problemStatement || "Not specified"}
+**Solution:** ${interpretedIdea?.proposedSolution || "Not specified"}
+**Target Audience:** ${interpretedIdea?.targetAudience?.join(", ") || "Not specified"}
+**Category:** ${interpretedIdea?.category || "Not specified"}${locationPromptSection}
 
 Provide market research with the following STRUCTURE (Output valid JSON only):
 
@@ -103,11 +103,15 @@ Keep total under 2000 words. Output valid JSON only.`;
   const promptHash = await hashString(prompt);
   const startTime = Date.now();
 
-  const { result, modelUsed } = await generateObjectWithFallback<MarketResearch>({
-    schema: MarketResearchSchema,
-    system: SYSTEM_PROMPT,
-    prompt,
-  }, "MARKET_RESEARCH");
+  const { result, modelUsed } =
+    await generateObjectWithFallback<MarketResearch>(
+      {
+        schema: MarketResearchSchema,
+        system: SYSTEM_PROMPT,
+        prompt,
+      },
+      "MARKET_RESEARCH",
+    );
 
   const marketResearch = result.object as MarketResearch;
   const latencyMs = Date.now() - startTime;

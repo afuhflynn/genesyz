@@ -51,10 +51,10 @@ export async function runTrendAnalysisAgent(
 
   const prompt = `Analyze market and technology trends for the following startup idea:
 
-**Title:** ${interpretedIdea.title}
-**Summary:** ${interpretedIdea.summary}
-**Category:** ${interpretedIdea.category}
-**Target Audience:** ${interpretedIdea.targetAudience.join(", ")}${locationPromptSection}
+**Title:** ${interpretedIdea?.title || "Untitled"}
+**Summary:** ${interpretedIdea?.summary || "No summary"}
+**Category:** ${interpretedIdea?.category || "Not specified"}
+**Target Audience:** ${interpretedIdea?.targetAudience?.join(", ") || "Not specified"}${locationPromptSection}
 
 Assess the timing, technology readiness, and relevant trends that could impact this idea's success. Consider both global and location-specific trends.`;
 
@@ -86,7 +86,7 @@ Assess the timing, technology readiness, and relevant trends that could impact t
     },
   });
 
-  // @ts-ignore
+  // @ts-expect-error
   const techReadiness = result?.object?.technologyReadiness?.score;
   const confidence = Math.min(0.5 + techReadiness * 0.04, 0.9);
 
@@ -94,7 +94,7 @@ Assess the timing, technology readiness, and relevant trends that could impact t
     agentType: "TREND_ANALYSIS",
     content: result.object,
     confidence,
-    // @ts-ignore
+    // @ts-expect-error
     reasoning: `Technology readiness: ${techReadiness}/10, Timing: ${result?.object?.timingAssessment?.verdict}`,
   };
 }

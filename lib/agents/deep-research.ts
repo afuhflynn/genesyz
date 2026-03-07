@@ -1,3 +1,4 @@
+import { stepCountIs } from "ai";
 import {
   generateObjectWithFallback,
   generateTextWithFallback,
@@ -9,7 +10,6 @@ import {
   formatLocationForPrompt,
 } from "@/lib/location";
 import { hashString } from "@/lib/utils";
-import { stepCountIs } from "ai";
 import {
   type AgentInput,
   type DeepResearch,
@@ -65,34 +65,41 @@ export async function runDeepResearchAgent(
   const startTime = Date.now();
 
   // Step 1: Gather Information using tools
-  const { result: textResult, modelUsed } = await generateTextWithFallback({
-    system: RESEARCH_SYSTEM_PROMPT,
-    prompt: `Perform deep research for this startup idea:
-Title: ${interpretedIdea.title}
-Summary: ${interpretedIdea.summary}
-Problem: ${interpretedIdea.problemStatement}
-Solution: ${interpretedIdea.proposedSolution}
-Category: ${interpretedIdea.category}${locationPromptSection}
+  const { result: textResult, modelUsed } = await generateTextWithFallback(
+    {
+      system: RESEARCH_SYSTEM_PROMPT,
+      prompt: `Perform deep research for this startup idea:
+Title: ${interpretedIdea?.title || "Untitled"}
+Summary: ${interpretedIdea?.summary || "No summary"}
+Problem: ${interpretedIdea?.problemStatement || "Not specified"}
+Solution: ${interpretedIdea?.proposedSolution || "Not specified"}
+Category: ${interpretedIdea?.category || "Not specified"}${locationPromptSection}
 
 Search for real competitors, market gaps, and technical challenges. Consider location-specific factors.`,
-    tools,
-    stopWhen: stepCountIs(5), // Allow up to 5 steps of research
-  }, "DEEP_RESEARCH");
+      tools,
+      stopWhen: stepCountIs(5), // Allow up to 5 steps of research
+    },
+    "DEEP_RESEARCH",
+  );
 
   const researchData = textResult.text;
   const toolResults = textResult.toolResults;
 
   // Step 2: Synthesize into structured object
-  const { result: objResult, modelUsed: synthesisModelUsed } = await generateObjectWithFallback<DeepResearch>({
-    schema: DeepResearchSchema,
-    system: SYNTHESIS_SYSTEM_PROMPT,
-    prompt: `Based on the following research data, generate a structured deep research report:
+  const { result: objResult, modelUsed: synthesisModelUsed } =
+    await generateObjectWithFallback<DeepResearch>(
+      {
+        schema: DeepResearchSchema,
+        system: SYNTHESIS_SYSTEM_PROMPT,
+        prompt: `Based on the following research data, generate a structured deep research report:
 
 ${researchData}
 
 Tool Results:
 ${JSON.stringify(toolResults, null, 2)}`,
-  }, "DEEP_RESEARCH_SYNTHESIS");
+      },
+      "DEEP_RESEARCH_SYNTHESIS",
+    );
 
   const latencyMs = Date.now() - startTime;
   const deepResearchContent: DeepResearch = DeepResearchSchema.parse(

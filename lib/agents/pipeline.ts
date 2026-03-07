@@ -295,8 +295,8 @@ export async function runResearchPipeline(
     await db.idea.update({
       where: { id: ideaId },
       data: {
-        title: interpretedIdea.title,
-        summary: interpretedIdea.summary,
+        title: interpretedIdea?.title || "Untitled",
+        summary: interpretedIdea?.summary || "",
         status: "RESEARCHED",
         researchedAt: new Date(),
       },

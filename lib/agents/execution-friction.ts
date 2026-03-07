@@ -51,12 +51,12 @@ export async function runExecutionFrictionAgent(
 
   const prompt = `Assess the execution challenges for the following startup idea:
 
-**Title:** ${interpretedIdea.title}
-**Summary:** ${interpretedIdea.summary}
-**Problem:** ${interpretedIdea.problemStatement}
-**Solution:** ${interpretedIdea.proposedSolution}
-**Key Features:** ${interpretedIdea.keyFeatures.join(", ")}
-**Category:** ${interpretedIdea.category}${locationPromptSection}
+**Title:** ${interpretedIdea?.title || "Untitled"}
+**Summary:** ${interpretedIdea?.summary || "No summary"}
+**Problem:** ${interpretedIdea?.problemStatement || "Not specified"}
+**Solution:** ${interpretedIdea?.proposedSolution || "Not specified"}
+**Key Features:** ${interpretedIdea?.keyFeatures?.join(", ") || "Not specified"}
+**Category:** ${interpretedIdea?.category || "Not specified"}${locationPromptSection}
 
 Analyze technical complexity, resource requirements, risks, and provide actionable recommendations. Consider location-specific factors like talent availability, infrastructure, and local regulations.`;
 
@@ -87,9 +87,9 @@ Analyze technical complexity, resource requirements, risks, and provide actionab
       latencyMs,
     },
   });
-  // @ts-ignore
+  // @ts-expect-error
   const techComplexity = result?.object?.technicalComplexity?.score;
-  // @ts-ignore
+  // @ts-expect-error
   const riskCount = result?.object?.riskFactors?.length;
   // Lower complexity and fewer high-severity risks = higher confidence
   const confidence = Math.max(

@@ -66,39 +66,42 @@ export async function runSynthesisAgent(
   const prompt = `Synthesize the following research into a final assessment:
 
 ## Idea Overview
-**Title:** ${interpretedIdea.title}
-**Summary:** ${interpretedIdea.summary}
-**Problem:** ${interpretedIdea.problemStatement}
-**Solution:** ${interpretedIdea.proposedSolution}
-**Unique Value:** ${interpretedIdea.uniqueValue}
+**Title:** ${interpretedIdea?.title || "Untitled"}
+**Summary:** ${interpretedIdea?.summary || "No summary"}
+**Problem:** ${interpretedIdea?.problemStatement || "Not specified"}
+**Solution:** ${interpretedIdea?.proposedSolution || "Not specified"}
+**Unique Value:** ${interpretedIdea?.uniqueValue || "Not specified"}
 
 ## Market Research
-**Market Size (TAM):** ${marketResearch.marketSize.global.tam.value}${marketResearch.marketSize.regional ? ` (Regional: ${marketResearch.marketSize.regional.tam.value})` : ""}
-**Growth Rate:** ${marketResearch.marketSize.global.growthRate.value}
-**Competitors:** ${marketResearch.competitors.map((c) => c.name).join(", ")}
-**Key Barriers:** ${marketResearch.barriers.join(", ")}
+**Market Size (TAM):** ${marketResearch?.marketSize?.global?.tam?.value || "N/A"}${marketResearch?.marketSize?.regional ? ` (Regional: ${marketResearch.marketSize.regional.tam?.value || "N/A"})` : ""}
+**Growth Rate:** ${marketResearch?.marketSize?.global?.growthRate?.value || "N/A"}
+**Competitors:** ${marketResearch?.competitors?.map((c: any) => c.name).join(", ") || "None listed"}
+**Key Barriers:** ${marketResearch?.barriers?.join(", ") || "None listed"}
 
 ## Timing Analysis
-**Verdict:** ${trendAnalysis.timingAssessment.verdict}
-**Reasoning:** ${trendAnalysis.timingAssessment.reasoning}
-**Tech Readiness:** ${trendAnalysis.technologyReadiness.score}/10
+**Verdict:** ${trendAnalysis?.timingAssessment?.verdict || "N/A"}
+**Reasoning:** ${trendAnalysis?.timingAssessment?.reasoning || "Not specified"}
+**Tech Readiness:** ${trendAnalysis?.technologyReadiness?.score || "N/A"}/10
 
 ## Execution Assessment
-**Technical Complexity:** ${executionFriction.technicalComplexity.score}/10
-**Time to MVP:** ${executionFriction.resourceRequirements.timeToMvp}
-**Team Size Needed:** ${executionFriction.resourceRequirements.teamSize}
-**Key Risks:** ${executionFriction.riskFactors.map((r) => r.risk).join(", ")}${locationPromptSection}
+**Technical Complexity:** ${executionFriction?.technicalComplexity?.score || "N/A"}/10
+**Time to MVP:** ${executionFriction?.resourceRequirements?.timeToMvp || "Not specified"}
+**Team Size Needed:** ${executionFriction?.resourceRequirements?.teamSize || "Not specified"}
+**Key Risks:** ${executionFriction?.riskFactors?.map((r: any) => r.risk).join(", ") || "None listed"}${locationPromptSection}
 
 Provide a comprehensive synthesis with scores, recommendations, and a clear verdict.`;
 
   const promptHash = await hashString(prompt);
   const startTime = Date.now();
 
-  const { result, modelUsed } = await generateObjectWithFallback({
-    schema: SynthesisSchema,
-    system: SYSTEM_PROMPT,
-    prompt,
-  }, "SYNTHESIS");
+  const { result, modelUsed } = await generateObjectWithFallback(
+    {
+      schema: SynthesisSchema,
+      system: SYSTEM_PROMPT,
+      prompt,
+    },
+    "SYNTHESIS",
+  );
 
   const latencyMs = Date.now() - startTime;
 
