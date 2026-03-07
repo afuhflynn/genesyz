@@ -16,7 +16,12 @@ export async function GET(request: Request) {
 
   // Basic authorization: user must be an ADMIN or own/be a member of an accelerator to search globally
   // for the purpose of onboarding startups.
-  const isGlobalAdmin = session.user.role === "ADMIN";
+  const user = await db.user.findUnique({
+    where: { id: session.user.id },
+    select: { role: true },
+  });
+
+  const isGlobalAdmin = user?.role === "ADMIN";
   const acceleratorMember = await db.acceleratorMember.findFirst({
     where: { userId: session.user.id }
   });
