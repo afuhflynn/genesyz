@@ -46,6 +46,7 @@ model User {
   startups     Startup[]
   accelerators Accelerator[]
   startupMembers StartupMember[]
+  acceleratorMembers AcceleratorMember[]
 
   @@map("users")
 }
@@ -539,6 +540,8 @@ model Startup {
   followers     StartupFollower[]
   conversations StartupConversation[]
   researchFeedItems ResearchFeedItem[]
+  flags         StartupFlag[]
+  mentorMatches MentorMatch[]
 
   @@index([userId])
   @@index([slug])
@@ -945,7 +948,7 @@ model Accelerator {
   isPublic     Boolean  @default(true)
   isActive     Boolean  @default(true)
   
-  // Owner
+  // Owner (Superior Admin)
   ownerId       String
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -954,11 +957,138 @@ model Accelerator {
   cohorts       Cohort[]
   events        AcceleratorEvent[]
   applications  AcceleratorApplication[]
+  members       AcceleratorMember[]
+  invitations   AcceleratorInvitation[]
+  kpis          AcceleratorKPI[]
+  reports       AcceleratorWeeklyReport[]
+  mentors       Mentor[]
   
   @@index([slug])
   @@index([ownerId])
   @@index([isPublic])
   @@map("accelerators")
+}
+
+enum AcceleratorRole {
+  OWNER           // Superior Admin: Full access, manage admins
+  PROGRAM_MANAGER // Manage cohorts, startups, flags
+  OPERATIONS_LEAD // Manage events, curriculum, logistics
+  MENTOR          // View assigned startups, feedback
+  OBSERVER        // Read-only
+}
+
+model AcceleratorMember {
+  id            String          @id @default(cuid())
+  acceleratorId String
+  userId        String
+  role          AcceleratorRole @default(PROGRAM_MANAGER)
+  joinedAt      DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  accelerator   Accelerator     @relation(fields: [acceleratorId], references: [id], onDelete: Cascade)
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([acceleratorId, userId])
+  @@index([userId])
+  @@map("accelerator_members")
+}
+
+model AcceleratorInvitation {
+  id            String          @id @default(cuid())
+  acceleratorId String
+  email         String
+  role          AcceleratorRole @default(PROGRAM_MANAGER)
+  token         String          @unique
+  expiresAt     DateTime
+  acceptedAt    DateTime?
+  invitedById   String
+  createdAt     DateTime        @default(now())
+
+  accelerator   Accelerator     @relation(fields: [acceleratorId], references: [id], onDelete: Cascade)
+
+  @@index([acceleratorId])
+  @@index([email])
+  @@map("accelerator_invitations")
+}
+
+model AcceleratorKPI {
+  id            String   @id @default(cuid())
+  acceleratorId String
+  name          String
+  targetValue   Float
+  currentValue  Float    @default(0)
+  unit          String?  // $, %, count
+  deadline      DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  accelerator   Accelerator @relation(fields: [acceleratorId], references: [id], onDelete: Cascade)
+
+  @@index([acceleratorId])
+  @@map("accelerator_kpis")
+}
+
+model AcceleratorWeeklyReport {
+  id            String   @id @default(cuid())
+  acceleratorId String
+  weekNumber    Int
+  content       String   @db.Text
+  metrics       Json?    // Snapshot of aggregate KPIs
+  aiSummary     String?  @db.Text
+  createdAt     DateTime @default(now())
+
+  accelerator   Accelerator @relation(fields: [acceleratorId], references: [id], onDelete: Cascade)
+
+  @@index([acceleratorId])
+  @@map("accelerator_weekly_reports")
+}
+
+model StartupFlag {
+  id            String   @id @default(cuid())
+  startupId     String
+  reason        String   @db.Text
+  severity      String   @default("warning") // warning, critical
+  status        String   @default("active")  // active, resolved
+  resolvedAt    DateTime?
+  resolvedById  String?
+  createdAt     DateTime @default(now())
+
+  startup       Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
+
+  @@index([startupId])
+  @@map("startup_flags")
+}
+
+model Mentor {
+  id            String   @id @default(cuid())
+  acceleratorId String
+  userId        String?
+  name          String
+  email         String
+  expertise     String[] // ["legal", "marketing", "technical"]
+  bio           String?  @db.Text
+  linkedIn      String?
+  createdAt     DateTime @default(now())
+
+  accelerator   Accelerator   @relation(fields: [acceleratorId], references: [id], onDelete: Cascade)
+  matches       MentorMatch[]
+
+  @@index([acceleratorId])
+  @@map("mentors")
+}
+
+model MentorMatch {
+  id            String   @id @default(cuid())
+  mentorId      String
+  startupId     String
+  focus         String?
+  createdAt     DateTime @default(now())
+
+  mentor        Mentor   @relation(fields: [mentorId], references: [id], onDelete: Cascade)
+  startup       Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
+
+  @@unique([mentorId, startupId])
+  @@map("mentor_matches")
 }
 
 model Cohort {
@@ -1006,11 +1136,25 @@ model AcceleratorEvent {
   
   cohort        Cohort?   @relation(fields: [cohortId], references: [id], onDelete: Cascade)
   accelerator   Accelerator @relation(fields: [acceleratorId], references: [id], onDelete: Cascade)
+  attendance    EventAttendance[]
   
   @@index([acceleratorId])
   @@index([cohortId])
   @@index([scheduledAt])
   @@map("accelerator_events")
+}
+
+model EventAttendance {
+  eventId       String
+  userId        String
+  status        String   @default("rsvp") // rsvp, attended, absent
+  feedback      String?  @db.Text
+  createdAt     DateTime @default(now())
+
+  event         AcceleratorEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@id([eventId, userId])
+  @@map("event_attendance")
 }
 
 model AcceleratorApplication {

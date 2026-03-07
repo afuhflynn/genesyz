@@ -2,17 +2,23 @@ import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { checkAcceleratorAccess } from "@/lib/accelerator-permissions";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> },
 ) {
   const { slug } = await params;
+  const session = await auth.api.getSession({ headers: await headers() });
 
   const accelerator = await db.accelerator.findUnique({
     where: { slug },
     include: {
       owner: { select: { id: true, name: true, image: true, email: true } },
+      members: {
+        where: session?.user ? { userId: session.user.id } : { userId: "none" },
+        select: { role: true },
+      },
       cohorts: {
         where: { isActive: true },
         include: {
@@ -38,32 +44,20 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> },
 ) {
-  const session = await auth.api.getSession({ headers: await headers() });
-
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   const { slug } = await params;
-  const body = await request.json();
+  const { hasAccess, acceleratorId } = await checkAcceleratorAccess(
+    slug,
+    "manage_accelerator",
+  );
 
-  const accelerator = await db.accelerator.findUnique({
-    where: { slug },
-  });
-
-  if (!accelerator) {
-    return NextResponse.json(
-      { error: "Accelerator not found" },
-      { status: 404 },
-    );
-  }
-
-  if (accelerator.ownerId !== session.user.id) {
+  if (!hasAccess || !acceleratorId) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  const body = await request.json();
+
   const updated = await db.accelerator.update({
-    where: { id: accelerator.id },
+    where: { id: acceleratorId },
     data: {
       ...(body.name && { name: body.name }),
       ...(body.description !== undefined && { description: body.description }),
@@ -94,33 +88,21 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> },
 ) {
-  const session = await auth.api.getSession({ headers: await headers() });
-
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   const { slug } = await params;
+  const { hasAccess, acceleratorId } = await checkAcceleratorAccess(
+    slug,
+    "manage_accelerator",
+  );
 
-  const accelerator = await db.accelerator.findUnique({
-    where: { slug },
-  });
-
-  if (!accelerator) {
-    return NextResponse.json(
-      { error: "Accelerator not found" },
-      { status: 404 },
-    );
-  }
-
-  if (accelerator.ownerId !== session.user.id) {
+  if (!hasAccess || !acceleratorId) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   await db.accelerator.update({
-    where: { id: accelerator.id },
+    where: { id: acceleratorId },
     data: { isActive: false },
   });
 
   return NextResponse.json({ success: true });
 }
+
