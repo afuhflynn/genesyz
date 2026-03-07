@@ -238,16 +238,40 @@ export async function sendWeeklyStrategicReportEmail(options: {
 }): Promise<boolean> {
   const { to, userName, advisory } = options;
 
-  const primaryFocus = advisory.primaryFocus || {
+  // Handle both old schema (nested objects) and new schema (flat/simple)
+  const advisoryAny = advisory as any;
+
+  const primaryFocus = advisoryAny.primaryFocus || {
     ideaTitle: "Your Top Idea",
     allocation: 60,
   };
-  const marketPulse = advisory.marketPulse?.slice(0, 3) || [];
-  const vcCorner = advisory.vcCorner || {};
-  const riskCliffs = advisory.riskCliffs || [];
-  const actionPlan = advisory.weeklyActionPlan || [];
-  const totalIdeas = advisory.verdicts?.length || 0;
-  const topIdeas = advisory.verdicts?.slice(0, 3) || [];
+
+  // marketPulse: old = objects, new = strings
+  const marketPulseRaw = advisoryAny.marketPulse || [];
+  const marketPulse = Array.isArray(marketPulseRaw)
+    ? marketPulseRaw
+        .slice(0, 3)
+        .map((item: any) =>
+          typeof item === "string" ? item : item?.newsItem || "",
+        )
+        .filter(Boolean)
+    : [];
+
+  const vcCorner = advisoryAny.vcCorner || {};
+  const riskCliffs = advisoryAny.riskCliffs || [];
+  const actionPlan = advisoryAny.weeklyActionPlan || [];
+
+  // verdicts: old = objects, new = strings
+  const verdictsRaw = advisoryAny.verdicts || [];
+  const totalIdeas = Array.isArray(verdictsRaw) ? verdictsRaw.length : 0;
+  const topIdeas = Array.isArray(verdictsRaw) ? verdictsRaw.slice(0, 3) : [];
+
+  // New schema fields (may not exist in old format)
+  const vcSentiment = advisoryAny.vcSentiment || vcCorner.sentiment || "";
+  const topRisks = advisoryAny.topRisks || [];
+  const failureReasons = advisoryAny.failureReasons || [];
+  const weeklyFocus = advisoryAny.weeklyFocus || "";
+  const investmentPotential = advisoryAny.investmentPotential || "medium";
 
   // Get current date for the brief
   const now = new Date();
@@ -266,9 +290,137 @@ export async function sendWeeklyStrategicReportEmail(options: {
   // Generate preheader variants
   const preheaderVariants = [
     `Portfolio: ${totalIdeas} ideas • Primary focus: ${primaryFocus.ideaTitle} (${primaryFocus.allocation}%)`,
-    `VC Corner: ${vcCorner.sentiment ? "Market analysis ready" : "Strategic insights inside"}`,
-    `Action required: ${actionPlan.filter((a) => a.priority === "High").length} high-priority tasks`,
+    `VC Corner: ${vcSentiment || "Strategic insights inside"}`,
+    `Action required: ${actionPlan.filter((a: any) => a.priority === "High").length} high-priority tasks`,
   ];
+
+  // Format data for HTML template - handle both old and new formats
+  const formatHtmlMarketPulse = () => {
+    if (!marketPulse.length)
+      return '<li style="margin-bottom: 8px; font-size: 14px; color: #334155;">No market updates</li>';
+    return marketPulse
+      .map(
+        (item: string) =>
+          `<li style="margin-bottom: 8px; font-size: 14px; color: #334155;">${item}</li>`,
+      )
+      .join("");
+  };
+
+  const formatHtmlVerdicts = () => {
+    if (!topIdeas.length)
+      return '<p style="font-size: 13px; color: #475569;">No verdicts available</p>';
+    return topIdeas
+      .map((verdict: any) => {
+        const title =
+          typeof verdict === "string" ? verdict : verdict.ideaTitle || "Idea";
+        const priority =
+          typeof verdict === "string" ? "" : verdict.onePriority || "";
+        const status =
+          typeof verdict === "string"
+            ? "validation"
+            : verdict.status || "validation";
+        const allocation =
+          typeof verdict === "string"
+            ? "20%"
+            : (verdict.timeAllocation || 20) + "%";
+        return `
+      <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0;">
+        <h4 style="font-size: 14px; font-weight: 800; color: #0f172a; margin: 0 0 8px 0;">${title}</h4>
+        ${priority ? `<p style="font-size: 13px; color: #475569; margin: 0 0 4px 0;"><strong>Priority:</strong> ${priority}</p>` : ""}
+        <p style="font-size: 13px; color: #475569; margin: 0 0 4px 0;"><strong>Status:</strong> ${status}</p>
+        <p style="font-size: 13px; color: #475569; margin: 0;"><strong>Allocation:</strong> ${allocation}</p>
+      </div>`;
+      })
+      .join("");
+  };
+
+  const formatHtmlActionPlan = () => {
+    if (!actionPlan.length) {
+      return `<tr><td colspan="4" style="padding: 12px; color: #475569;">${weeklyFocus || "Focus on your primary goal this week"}</td></tr>`;
+    }
+    return actionPlan
+      .map((action: any) => {
+        const priority = action.priority || "Medium";
+        const priorityColor =
+          priority === "High"
+            ? "#dc2626"
+            : priority === "Medium"
+              ? "#f59e0b"
+              : "#10b981";
+        return `
+          <tr style="border-bottom: 1px solid #f1f5f9;">
+            <td style="padding: 12px; color: #334155;">
+              <strong>${action.title || "Action"}</strong>
+              <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
+                <strong>Success:</strong> ${action.success_criteria || "Complete the task"}<br>
+                <strong>Kill:</strong> ${action.kill_criteria || "N/A"}
+              </div>
+            </td>
+            <td style="padding: 12px; color: #334155;">${action.owner || "You"}</td>
+            <td style="padding: 12px; color: #334155;">${action.due_date || "This week"}</td>
+            <td style="padding: 12px; color: ${priorityColor};">
+              <span style="display: inline-block; padding: 2px 8px; background: ${priorityColor}20; border-radius: 9999px; font-size: 10px; font-weight: 800; text-transform: uppercase;">${priority}</span>
+            </td>
+          </tr>`;
+      })
+      .join("");
+  };
+
+  const formatHtmlRisks = () => {
+    if (riskCliffs.length) {
+      return riskCliffs
+        .map((risk: any) => {
+          const title = typeof risk === "string" ? "" : risk.ideaTitle || "";
+          const reason =
+            typeof risk === "string"
+              ? risk
+              : risk.failureReason || "Monitor closely";
+          return title ? `<strong>${title}:</strong> ${reason}` : reason;
+        })
+        .join("<br>");
+    }
+    if (topRisks.length) {
+      return topRisks.map((r: string) => r).join("<br>");
+    }
+    return "No specific risks identified";
+  };
+
+  // Format data for Markdown template
+  const formatVerdicts = () => {
+    if (!topIdeas.length) return "No verdicts available";
+    return topIdeas
+      .map((verdict: any) => {
+        if (typeof verdict === "string") return `- ${verdict}`;
+        return `#### ${verdict.ideaTitle || "Idea"}\n- ${verdict.onePriority || "Continue monitoring"}\n- Status: ${verdict.status || "validation"}\n- Allocation: ${verdict.timeAllocation || 20}%`;
+      })
+      .join("\n");
+  };
+
+  const formatActionPlan = () => {
+    if (actionPlan.length) {
+      return actionPlan
+        .map((action: any) => {
+          return `- **${action.title || "Action"}** (${action.priority || "Medium"})\n  - Owner: ${action.owner || "You"}\n  - Due: ${action.due_date || "This week"}\n  - Time: ${action.estimated_time_allocation || "As needed"}\n  - Success: ${action.success_criteria || "Complete the task"}\n  - Kill: ${action.kill_criteria || "N/A"}`;
+        })
+        .join("\n");
+    }
+    return weeklyFocus || "Focus on your primary goal this week";
+  };
+
+  const formatRiskCliffs = () => {
+    if (riskCliffs.length) {
+      return riskCliffs
+        .map((risk: any) => {
+          if (typeof risk === "string") return `- ${risk}`;
+          return `- **${risk.ideaTitle || "Idea"}:** ${risk.failureReason || "Monitor closely"}`;
+        })
+        .join("\n");
+    }
+    if (topRisks.length) {
+      return topRisks.map((r: string) => `- ${r}`).join("\n");
+    }
+    return "No specific risks identified";
+  };
 
   // Generate Markdown version
   const markdownContent = `
@@ -277,42 +429,22 @@ export async function sendWeeklyStrategicReportEmail(options: {
 ## ${primaryFocus.ideaTitle} — ${primaryFocus.allocation}% time allocation
 
 ### Executive Summary
-${advisory.executiveSummary}
+${advisoryAny.executiveSummary || "No summary available"}
 
 ### Market Pulse
-${marketPulse.map((item) => `- ${item.newsItem}`).join("\n")}
+${marketPulse.length ? marketPulse.map((item: string) => `- ${item}`).join("\n") : "No market updates"}
 
 ### Strategic Roadmap
-${advisory.verdicts
-  .map((verdict) => {
-    return `#### ${verdict.ideaTitle}
-- ${verdict.onePriority}
-- Status: ${verdict.status || "validation"}
-- Allocation: ${verdict.timeAllocation || 20}%
-`;
-  })
-  .join("")}
+${formatVerdicts()}
 
 ### Weekly Action Plan
-${actionPlan
-  .map((action) => {
-    return `- **${action.title}** (${action.priority})
-  - Owner: ${action.owner}
-  - Due: ${action.due_date}
-  - Time: ${action.estimated_time_allocation}
-  - Success: ${action.success_criteria}
-  - Kill: ${action.kill_criteria}
-`;
-  })
-  .join("")}
+${formatActionPlan()}
 
 ### VC Corner
-${vcCorner.sentiment}
-
-**Investor Angle:** ${vcCorner.investorAngle}
+${vcSentiment || "No VC updates available"}
 
 ### Why This Might Fail
-${riskCliffs.map((risk) => `- **${risk.ideaTitle}:** ${risk.failureReason}`).join("\n")}
+${formatRiskCliffs()}
 
 [Approve Focus]() | [Assign Owners]()
 `;
@@ -335,7 +467,7 @@ ${riskCliffs.map((risk) => `- **${risk.ideaTitle}:** ${risk.failureReason}`).joi
           <p style="font-size: 11px; color: #94a3b8; margin: 4px 0 0 0; text-transform: uppercase; font-weight: 700;">Focus Allocation</p>
         </div>
         <div>
-          <p style="font-size: 28px; font-weight: 800; color: #fbbf24; margin: 0;">${actionPlan.filter((a) => a.priority === "High").length}</p>
+          <p style="font-size: 28px; font-weight: 800; color: #fbbf24; margin: 0;">${actionPlan.filter((a: any) => a.priority === "High").length}</p>
           <p style="font-size: 11px; color: #94a3b8; margin: 4px 0 0 0; text-transform: uppercase; font-weight: 700;">High Priority</p>
         </div>
       </div>
@@ -354,33 +486,16 @@ ${riskCliffs.map((risk) => `- **${risk.ideaTitle}:** ${risk.failureReason}`).joi
 
     <h3 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0 0 12px 0;">Executive Summary</h3>
     <p style="font-size: 14px; color: #475569; margin: 0 0 24px 0; line-height: 1.6;">
-      ${advisory.executiveSummary}
+      ${advisoryAny.executiveSummary || "No summary available"}
     </p>
 
     <h3 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0 0 12px 0;">Market Pulse</h3>
     <ul style="margin: 0 0 24px 0; padding: 0 0 0 20px;">
-      ${marketPulse
-        .map(
-          (item) => `
-        <li style="margin-bottom: 8px; font-size: 14px; color: #334155;">${item.newsItem}</li>
-      `,
-        )
-        .join("")}
+      ${formatHtmlMarketPulse()}
     </ul>
 
     <h3 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0 0 12px 0;">Strategic Roadmap</h3>
-    ${advisory.verdicts
-      .map((verdict) => {
-        return `
-      <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0;">
-        <h4 style="font-size: 14px; font-weight: 800; color: #0f172a; margin: 0 0 8px 0;">${verdict.ideaTitle}</h4>
-        <p style="font-size: 13px; color: #475569; margin: 0 0 4px 0;"><strong>Priority:</strong> ${verdict.onePriority}</p>
-        <p style="font-size: 13px; color: #475569; margin: 0 0 4px 0;"><strong>Status:</strong> ${verdict.status || "validation"}</p>
-        <p style="font-size: 13px; color: #475569; margin: 0;"><strong>Allocation:</strong> ${verdict.timeAllocation || 20}%</p>
-      </div>
-    `;
-      })
-      .join("")}
+    ${formatHtmlVerdicts()}
 
     <h3 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0 0 12px 0;">Weekly Action Plan</h3>
     <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 13px;">
@@ -393,32 +508,7 @@ ${riskCliffs.map((risk) => `- **${risk.ideaTitle}:** ${risk.failureReason}`).joi
         </tr>
       </thead>
       <tbody>
-        ${actionPlan
-          .map((action) => {
-            const priorityColor =
-              action.priority === "High"
-                ? "#dc2626"
-                : action.priority === "Medium"
-                  ? "#f59e0b"
-                  : "#10b981";
-            return `
-          <tr style="border-bottom: 1px solid #f1f5f9;">
-            <td style="padding: 12px; color: #334155;">
-              <strong>${action.title}</strong>
-              <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
-                <strong>Success:</strong> ${action.success_criteria}<br>
-                <strong>Kill:</strong> ${action.kill_criteria}
-              </div>
-            </td>
-            <td style="padding: 12px; color: #334155;">${action.owner}</td>
-            <td style="padding: 12px; color: #334155;">${action.due_date}</td>
-            <td style="padding: 12px; color: ${priorityColor};">
-              <span style="display: inline-block; padding: 2px 8px; background: ${priorityColor}20; border-radius: 9999px; font-size: 10px; font-weight: 800; text-transform: uppercase;">${action.priority}</span>
-            </td>
-          </tr>
-        `;
-          })
-          .join("")}
+        ${formatHtmlActionPlan()}
       </tbody>
     </table>
 
@@ -435,21 +525,30 @@ ${riskCliffs.map((risk) => `- **${risk.ideaTitle}:** ${risk.failureReason}`).joi
           Market Sentiment
         </h4>
         <p style="font-size: 14px; color: #f8fafc; margin: 0; line-height: 1.6; font-weight: 600;">
-          ${vcCorner.sentiment}
-        </p>
-      </div>
-
-      <!-- The Hard Truth -->
-      <div style="margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #334155;">
-        <h4 style="font-size: 11px; font-weight: 700; color: #94a3b8; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.05em;">
-          The Hard Truth
-        </h4>
-        <p style="font-size: 14px; color: #cbd5e1; margin: 0; line-height: 1.6; font-style: italic;">
-          "${vcCorner.brutalHonesty}"
+          ${vcSentiment || vcCorner.sentiment || "No VC updates available"}
         </p>
       </div>
 
       <!-- Investment Potential -->
+      <div style="margin-bottom: 20px;">
+        <h4 style="font-size: 11px; font-weight: 700; color: #94a3b8; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.05em;">
+          Investment Potential
+        </h4>
+        <p style="font-size: 14px; color: #f8fafc; margin: 0; line-height: 1.6; font-weight: 600; text-transform: capitalize;">
+          ${investmentPotential}
+        </p>
+      </div>
+
+      <!-- Why This Might Fail -->
+      <div style="margin-bottom: 0;">
+        <h4 style="font-size: 11px; font-weight: 700; color: #94a3b8; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.05em;">
+          Why This Might Fail
+        </h4>
+        <p style="font-size: 14px; color: #cbd5e1; margin: 0; line-height: 1.6;">
+          ${formatHtmlRisks()}
+        </p>
+      </div>
+    </div>
       <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
         <span style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">
           Investment Potential
