@@ -24,7 +24,6 @@ export async function GET(
       },
     },
     include: {
-...
       user: { select: { name: true, email: true, image: true } },
       weeklyUpdates: {
         orderBy: { weekNumber: "desc" },

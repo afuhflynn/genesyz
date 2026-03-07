@@ -29,7 +29,7 @@ export async function GET(request: Request) {
   }
 
   const startups = await db.startup.findMany({
-...
+    where: {
       isActive: true,
       OR: [
         { name: { contains: query, mode: "insensitive" } },

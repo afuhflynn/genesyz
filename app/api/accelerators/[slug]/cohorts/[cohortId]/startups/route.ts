@@ -63,7 +63,7 @@ export async function POST(
 
   const body = await request.json();
   const { startupId } = body;
-...
+
   if (!startupId) {
     return NextResponse.json({ error: "Startup ID is required" }, { status: 400 });
   }

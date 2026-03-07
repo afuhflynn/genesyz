@@ -261,9 +261,9 @@ export function KpiReporting({ slug, currentRole }: { slug: string, currentRole:
                   </div>
                 </div>
                 <div className="space-y-1">
-                   <Progress value={(kpi.currentValue / kpi.targetValue) * 100} />
+                   <Progress value={kpi.targetValue > 0 ? (kpi.currentValue / kpi.targetValue) * 100 : 0} />
                    <p className="text-[10px] text-right text-muted-foreground">
-                      {Math.round((kpi.currentValue / kpi.targetValue) * 100)}% achieved
+                      {kpi.targetValue > 0 ? Math.round((kpi.currentValue / kpi.targetValue) * 100) : 0}% achieved
                    </p>
                 </div>
               </CardContent>
