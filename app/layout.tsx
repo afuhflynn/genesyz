@@ -9,6 +9,7 @@ import { ThemeProvider } from "@/components/provders/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { QueryProvider } from "@/providers/query-provider";
 import { Suspense } from "react";
+import { Analytics } from "@vercel/analytics/next";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -71,6 +72,7 @@ export default function RootLayout({
                 disableTransitionOnChange
               >
                 {children}
+                <Analytics />
               </ThemeProvider>
               <Toaster />
             </QueryProvider>
