@@ -81,6 +81,7 @@
     "@types/pdfkit": "^0.17.4",
     "@types/pg": "^8.16.0",
     "@uploadthing/react": "^7.3.3",
+    "@vercel/analytics": "^2.0.1",
     "@xyflow/react": "^12.10.0",
     "ai": "^6.0.50",
     "ai-sdk-ollama": "^3.0.1",
