@@ -405,19 +405,18 @@ export function MetricsDashboard({ slug }: MetricsDashboardProps) {
 
       {/* Additional Metrics */}
       {(() => {
-        const updatesWithAdditional = latestUpdates.filter(
-          (u) => u.additionalMetrics && u.additionalMetrics.length > 0,
-        );
-
-        if (updatesWithAdditional.length === 0) return null;
-
+        // Collect all unique additional metric types across ALL updates (not just latest 8)
+        // so we can compute deltas from previous weeks
+        const allUpdates = updates;
         const metricTypeSet = new Set<string>();
-        for (const u of updatesWithAdditional) {
+        for (const u of allUpdates) {
           for (const m of u.additionalMetrics || []) {
             metricTypeSet.add(m.type);
           }
         }
         const metricTypes = Array.from(metricTypeSet);
+
+        if (metricTypes.length === 0) return null;
 
         return metricTypes.map((metricType) => {
           const metricLabel = metricType.replace(/_/g, " ").toLowerCase();
@@ -425,20 +424,45 @@ export function MetricsDashboard({ slug }: MetricsDashboardProps) {
             | "CURRENCY"
             | "PERCENTAGE"
             | "NUMBER";
+          const gradientId = `colorAdditional_${metricType}`;
 
-          const chartData = [...updatesWithAdditional]
+          // Build chart data from latestUpdates, computing delta from previous week
+          const chartData = [...latestUpdates]
+            .filter((u) =>
+              u.additionalMetrics?.some((m) => m.type === metricType),
+            )
             .reverse()
-            .map((update) => {
+            .map((update, _idx, arr) => {
               const metric = update.additionalMetrics?.find(
                 (m) => m.type === metricType,
               );
+              if (!metric) return null;
+
+              // Find previous update that also has this metric
+              const prevUpdate = arr
+                .slice(0, _idx)
+                .reverse()
+                .find((u) =>
+                  u.additionalMetrics?.some((m) => m.type === metricType),
+                );
+              const prevMetric = prevUpdate?.additionalMetrics?.find(
+                (m) => m.type === metricType,
+              );
+
+              let delta: number | null = null;
+              if (prevMetric && prevMetric.value !== 0) {
+                delta =
+                  ((metric.value - prevMetric.value) / prevMetric.value) * 100;
+              }
+
               return {
                 week: `W${update.weekNumber}`,
-                value: metric?.value ?? null,
+                value: metric.value,
+                delta,
                 fullDate: format(new Date(update.weekStart), "MMM d"),
               };
             })
-            .filter((d) => d.value !== null);
+            .filter((d): d is NonNullable<typeof d> => d !== null);
 
           if (chartData.length === 0) return null;
 
@@ -447,15 +471,36 @@ export function MetricsDashboard({ slug }: MetricsDashboardProps) {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <BarChart3 className="h-5 w-5" />
-                  {metricLabel}
+                  {metricLabel} History
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
+                  {/* AreaChart with gradient — same style as Primary Metric */}
                   {chartData.length > 1 && (
-                    <div className="h-48 w-full">
+                    <div className="h-64 w-full">
                       <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={chartData}>
+                        <AreaChart data={chartData}>
+                          <defs>
+                            <linearGradient
+                              id={gradientId}
+                              x1="0"
+                              y1="0"
+                              x2="0"
+                              y2="1"
+                            >
+                              <stop
+                                offset="5%"
+                                stopColor="#8b5cf6"
+                                stopOpacity={0.3}
+                              />
+                              <stop
+                                offset="95%"
+                                stopColor="#8b5cf6"
+                                stopOpacity={0}
+                              />
+                            </linearGradient>
+                          </defs>
                           <CartesianGrid
                             strokeDasharray="3 3"
                             className="stroke-muted"
@@ -483,31 +528,68 @@ export function MetricsDashboard({ slug }: MetricsDashboardProps) {
                                     <p className="text-lg font-bold text-primary">
                                       {formatMetricValue(data.value, metricFmt)}
                                     </p>
+                                    {data.delta !== null &&
+                                      data.delta !== undefined && (
+                                        <p
+                                          className={`text-xs ${
+                                            data.delta >= 0
+                                              ? "text-green-600"
+                                              : "text-red-600"
+                                          }`}
+                                        >
+                                          {data.delta >= 0 ? "+" : ""}
+                                          {data.delta.toFixed(1)}%
+                                        </p>
+                                      )}
                                   </div>
                                 );
                               }
                               return null;
                             }}
                           />
-                          <Line
+                          <Area
                             type="monotone"
                             dataKey="value"
                             stroke="#8b5cf6"
                             strokeWidth={2}
-                            dot={{ fill: "#8b5cf6", strokeWidth: 2 }}
-                            activeDot={{ r: 6 }}
+                            fillOpacity={1}
+                            fill={`url(#${gradientId})`}
                           />
-                        </LineChart>
+                        </AreaChart>
                       </ResponsiveContainer>
                     </div>
                   )}
 
+                  {/* List with delta — same style as Primary Metric */}
                   <div className="space-y-2">
-                    {[...updatesWithAdditional].reverse().map((update) => {
+                    {latestUpdates.map((update) => {
                       const metric = update.additionalMetrics?.find(
                         (m) => m.type === metricType,
                       );
                       if (!metric) return null;
+
+                      // Find previous update with this metric for delta
+                      const prevUpdate = allUpdates
+                        .filter(
+                          (u) =>
+                            u.weekNumber < update.weekNumber &&
+                            u.additionalMetrics?.some(
+                              (m) => m.type === metricType,
+                            ),
+                        )
+                        .sort((a, b) => b.weekNumber - a.weekNumber)[0];
+                      const prevMetric = prevUpdate?.additionalMetrics?.find(
+                        (m) => m.type === metricType,
+                      );
+
+                      let delta: number | null = null;
+                      if (prevMetric && prevMetric.value !== 0) {
+                        delta =
+                          ((metric.value - prevMetric.value) /
+                            prevMetric.value) *
+                          100;
+                      }
+
                       return (
                         <div
                           key={`${update.id}-${metricType}`}
@@ -518,16 +600,24 @@ export function MetricsDashboard({ slug }: MetricsDashboardProps) {
                               Week {update.weekNumber}
                             </p>
                             <p className="text-sm text-muted-foreground">
-                              {format(
-                                new Date(update.weekStart),
-                                "MMM d, yyyy",
-                              )}
+                              {format(new Date(update.weekStart), "MMM d")} -{" "}
+                              {format(new Date(update.weekEnd), "MMM d, yyyy")}
                             </p>
                           </div>
                           <div className="text-right">
                             <p className="text-xl font-bold">
                               {formatMetricValue(metric.value, metricFmt)}
                             </p>
+                            {delta !== null && (
+                              <p
+                                className={`text-sm ${
+                                  delta >= 0 ? "text-green-600" : "text-red-600"
+                                }`}
+                              >
+                                {delta >= 0 ? "+" : ""}
+                                {delta.toFixed(1)}%
+                              </p>
+                            )}
                           </div>
                         </div>
                       );
