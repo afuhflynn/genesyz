@@ -523,7 +523,12 @@ export interface StartupWithDetails {
     aiAnalysis: any;
     aiVerdict: string | null;
     aiRecommendations: any;
-    goals: Array<{ content: string; completed: boolean; priority: number }>;
+    goals: Array<{
+      id: string;
+      content: string;
+      completed: boolean;
+      priority: number;
+    }>;
   }>;
   goals: Array<{
     id: string;
@@ -814,6 +819,61 @@ export function useUpdateWeeklyUpdate() {
     },
     onError: (error: Error) => {
       toast.error(error.message || "Failed to save weekly update");
+    },
+  });
+}
+
+export function useToggleGoalCompletion(startupId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (goalId: string) => api.mutations.startups.toggleGoal(goalId),
+    onMutate: async (goalId) => {
+      await queryClient.cancelQueries({
+        queryKey: queryKeys.startups.updates(startupId),
+      });
+
+      const previousUpdates = queryClient.getQueryData(
+        queryKeys.startups.updates(startupId),
+      );
+
+      // Optimistically toggle the goal in cache
+      queryClient.setQueryData(
+        queryKeys.startups.updates(startupId),
+        (old: { data: WeeklyUpdateWithGoals[] } | undefined) => {
+          if (!old) return old;
+          return {
+            ...old,
+            data: old.data.map((update) => ({
+              ...update,
+              goals: update.goals.map((goal) =>
+                goal.id === goalId
+                  ? { ...goal, completed: !goal.completed }
+                  : goal,
+              ),
+            })),
+          };
+        },
+      );
+
+      return { previousUpdates };
+    },
+    onError: (_error, _goalId, context) => {
+      if (context?.previousUpdates) {
+        queryClient.setQueryData(
+          queryKeys.startups.updates(startupId),
+          context.previousUpdates,
+        );
+      }
+      toast.error("Failed to update goal");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.startups.updates(startupId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.startups.detail(startupId),
+      });
     },
   });
 }

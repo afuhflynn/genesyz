@@ -881,6 +881,10 @@ export const api = {
           `/startups/${id}/conversations/${conversationId}`,
           { method: "DELETE" },
         ),
+      toggleGoal: (goalId: string) =>
+        apiRequest<{ id: string; completed: boolean }>(`/goals/${goalId}`, {
+          method: "PATCH",
+        }),
     },
 
     // Accelerators

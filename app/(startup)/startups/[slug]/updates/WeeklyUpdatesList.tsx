@@ -38,7 +38,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useStartup, useWeeklyUpdates } from "@/hooks";
+import { useStartup, useToggleGoalCompletion, useWeeklyUpdates } from "@/hooks";
 import { formatMetricValue, getMetricFormat } from "@/lib/constants/metrics";
 
 const VERDICT_CONFIG: Record<
@@ -71,6 +71,7 @@ export function WeeklyUpdatesList({ slug }: WeeklyUpdatesListProps) {
   const { data: updatesData, isLoading: updatesLoading } = useWeeklyUpdates(
     startup?.id || "",
   );
+  const toggleGoal = useToggleGoalCompletion(startup?.id || "");
 
   const isLoading = startupLoading || updatesLoading;
 
@@ -734,25 +735,30 @@ export function WeeklyUpdatesList({ slug }: WeeklyUpdatesListProps) {
                         <h4 className="mb-2 font-medium">Goals</h4>
                         <div className="space-y-2">
                           {update.goals.map((goal, idx) => (
-                            <div
-                              key={`goal-${update.id}-${idx}`}
-                              className="flex items-start gap-2"
+                            <button
+                              key={`goal-${update.id}-${goal.id || idx}`}
+                              type="button"
+                              onClick={() =>
+                                goal.id && toggleGoal.mutate(goal.id)
+                              }
+                              disabled={toggleGoal.isPending}
+                              className="flex w-full items-start gap-2 rounded-lg border p-2 text-left transition-colors hover:bg-muted/50 disabled:opacity-50"
                             >
                               {goal.completed ? (
-                                <CheckCircle2 className="mt-0.5 h-4 w-4 text-green-600" />
+                                <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-600" />
                               ) : (
-                                <Circle className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                                <Circle className="mt-0.5 h-4 w-4 flex-shrink-0 text-muted-foreground" />
                               )}
                               <span
-                                className={
+                                className={`text-sm ${
                                   goal.completed
                                     ? "line-through text-muted-foreground"
                                     : ""
-                                }
+                                }`}
                               >
                                 {goal.content}
                               </span>
-                            </div>
+                            </button>
                           ))}
                         </div>
                       </div>
