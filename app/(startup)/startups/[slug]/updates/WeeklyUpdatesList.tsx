@@ -3,6 +3,7 @@
 import { format, formatDistanceToNow } from "date-fns";
 import {
   ArrowLeft,
+  BarChart3,
   Calendar,
   CheckCircle2,
   Circle,
@@ -17,6 +18,17 @@ import {
 import Link from "next/link";
 import { useMemo } from "react";
 import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import {
   Accordion,
   AccordionContent,
   AccordionItem,
@@ -24,9 +36,10 @@ import {
 } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useStartup, useWeeklyUpdates } from "@/hooks";
+import { formatMetricValue, getMetricFormat } from "@/lib/constants/metrics";
 
 const VERDICT_CONFIG: Record<
   string,
@@ -88,6 +101,33 @@ export function WeeklyUpdatesList({ slug }: WeeklyUpdatesListProps) {
   }
 
   const updates = updatesData?.data || [];
+  const latestUpdates = updates.slice(0, 8);
+
+  // Chart data: primary metric
+  const metricChartData = [...latestUpdates].reverse().map((update) => ({
+    week: `W${update.weekNumber}`,
+    value: update.primaryMetricValue,
+    delta: update.primaryMetricDelta,
+    fullDate: format(new Date(update.weekStart), "MMM d"),
+  }));
+
+  // Chart data: user conversations
+  const conversationsChartData = [...latestUpdates].reverse().map((update) => ({
+    week: `W${update.weekNumber}`,
+    value: update.usersTalkedTo,
+    fullDate: format(new Date(update.weekStart), "MMM d"),
+  }));
+
+  // Collect unique additional metric types
+  const additionalMetricTypes = Array.from(
+    new Set(
+      updates.flatMap((u) => (u.additionalMetrics || []).map((m) => m.type)),
+    ),
+  );
+
+  const primaryMetricLabel = startup.primaryMetricType
+    .replace(/_/g, " ")
+    .toLowerCase();
 
   return (
     <div className="space-y-6">
@@ -114,6 +154,453 @@ export function WeeklyUpdatesList({ slug }: WeeklyUpdatesListProps) {
           </Link>
         </Button>
       </div>
+
+      {/* Metrics Overview */}
+      {updates.length > 0 && (
+        <div className="space-y-6">
+          <div className="border-t pt-6">
+            <h2 className="text-lg font-semibold tracking-tight flex items-center gap-2">
+              <BarChart3 className="h-5 w-5" />
+              Metrics Overview
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Progress across all weekly updates
+            </p>
+          </div>
+
+          {/* Primary Metric Chart */}
+          {metricChartData.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>{primaryMetricLabel} History</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {metricChartData.length > 1 && (
+                    <div className="h-64 w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={metricChartData}>
+                          <defs>
+                            <linearGradient
+                              id="updatesColorPrimary"
+                              x1="0"
+                              y1="0"
+                              x2="0"
+                              y2="1"
+                            >
+                              <stop
+                                offset="5%"
+                                stopColor="#3b82f6"
+                                stopOpacity={0.3}
+                              />
+                              <stop
+                                offset="95%"
+                                stopColor="#3b82f6"
+                                stopOpacity={0}
+                              />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            className="stroke-muted"
+                          />
+                          <XAxis
+                            dataKey="week"
+                            className="text-xs"
+                            tickLine={false}
+                            axisLine={false}
+                          />
+                          <YAxis
+                            className="text-xs"
+                            tickLine={false}
+                            axisLine={false}
+                          />
+                          <Tooltip
+                            content={({ active, payload }) => {
+                              if (active && payload && payload.length) {
+                                const data = payload[0].payload;
+                                return (
+                                  <div className="rounded-lg border bg-background p-2 shadow-md">
+                                    <p className="text-sm font-medium">
+                                      {data.fullDate}
+                                    </p>
+                                    <p className="text-lg font-bold text-primary">
+                                      {data.value}
+                                    </p>
+                                    {data.delta !== null &&
+                                      data.delta !== undefined && (
+                                        <p
+                                          className={`text-xs ${
+                                            data.delta >= 0
+                                              ? "text-green-600"
+                                              : "text-red-600"
+                                          }`}
+                                        >
+                                          {data.delta >= 0 ? "+" : ""}
+                                          {data.delta.toFixed(1)}%
+                                        </p>
+                                      )}
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }}
+                          />
+                          <Area
+                            type="monotone"
+                            dataKey="value"
+                            stroke="#3b82f6"
+                            strokeWidth={2}
+                            fillOpacity={1}
+                            fill="url(#updatesColorPrimary)"
+                          />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+                  <div className="space-y-2">
+                    {latestUpdates.map((update) => (
+                      <div
+                        key={update.id}
+                        className="flex items-center justify-between rounded-lg border p-3"
+                      >
+                        <div>
+                          <p className="font-medium">
+                            Week {update.weekNumber}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {format(new Date(update.weekStart), "MMM d")} -{" "}
+                            {format(new Date(update.weekEnd), "MMM d, yyyy")}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xl font-bold">
+                            {update.primaryMetricValue}
+                          </p>
+                          {update.primaryMetricDelta !== null && (
+                            <p
+                              className={`text-sm ${
+                                update.primaryMetricDelta >= 0
+                                  ? "text-green-600"
+                                  : "text-red-600"
+                              }`}
+                            >
+                              {update.primaryMetricDelta >= 0 ? "+" : ""}
+                              {update.primaryMetricDelta.toFixed(1)}%
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* User Conversations Chart */}
+          {conversationsChartData.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>User Conversations</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {conversationsChartData.length > 1 && (
+                    <div className="h-48 w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={conversationsChartData}>
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            className="stroke-muted"
+                          />
+                          <XAxis
+                            dataKey="week"
+                            className="text-xs"
+                            tickLine={false}
+                            axisLine={false}
+                          />
+                          <YAxis
+                            className="text-xs"
+                            tickLine={false}
+                            axisLine={false}
+                          />
+                          <Tooltip
+                            content={({ active, payload }) => {
+                              if (active && payload && payload.length) {
+                                const data = payload[0].payload;
+                                return (
+                                  <div className="rounded-lg border bg-background p-2 shadow-md">
+                                    <p className="text-sm font-medium">
+                                      {data.fullDate}
+                                    </p>
+                                    <p className="text-lg font-bold text-primary">
+                                      {data.value} conversations
+                                    </p>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="value"
+                            stroke="#10b981"
+                            strokeWidth={2}
+                            dot={{ fill: "#10b981", strokeWidth: 2 }}
+                            activeDot={{ r: 6 }}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+                  <div className="space-y-2">
+                    {latestUpdates.map((update) => (
+                      <div
+                        key={`users-${update.id}`}
+                        className="flex items-center justify-between rounded-lg border p-3"
+                      >
+                        <div>
+                          <p className="font-medium">
+                            Week {update.weekNumber}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {format(new Date(update.weekStart), "MMM d, yyyy")}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xl font-bold">
+                            {update.usersTalkedTo}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            conversations
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Additional Metrics Charts */}
+          {additionalMetricTypes.map((metricType) => {
+            const metricLabel = metricType.replace(/_/g, " ").toLowerCase();
+            const metricFmt = getMetricFormat(metricType) as
+              | "CURRENCY"
+              | "PERCENTAGE"
+              | "NUMBER";
+            const gradientId = `updatesColorAdditional_${metricType}`;
+
+            const chartData = [...latestUpdates]
+              .filter((u) =>
+                u.additionalMetrics?.some((m) => m.type === metricType),
+              )
+              .reverse()
+              .map((update, _idx, arr) => {
+                const metric = update.additionalMetrics?.find(
+                  (m) => m.type === metricType,
+                );
+                if (!metric) return null;
+
+                const prevUpdate = arr
+                  .slice(0, _idx)
+                  .reverse()
+                  .find((u) =>
+                    u.additionalMetrics?.some((m) => m.type === metricType),
+                  );
+                const prevMetric = prevUpdate?.additionalMetrics?.find(
+                  (m) => m.type === metricType,
+                );
+
+                let delta: number | null = null;
+                if (prevMetric && prevMetric.value !== 0) {
+                  delta =
+                    ((metric.value - prevMetric.value) / prevMetric.value) *
+                    100;
+                }
+
+                return {
+                  week: `W${update.weekNumber}`,
+                  value: metric.value,
+                  delta,
+                  fullDate: format(new Date(update.weekStart), "MMM d"),
+                };
+              })
+              .filter((d): d is NonNullable<typeof d> => d !== null);
+
+            if (chartData.length === 0) return null;
+
+            return (
+              <Card key={metricType}>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5" />
+                    {metricLabel} History
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    {chartData.length > 1 && (
+                      <div className="h-64 w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <AreaChart data={chartData}>
+                            <defs>
+                              <linearGradient
+                                id={gradientId}
+                                x1="0"
+                                y1="0"
+                                x2="0"
+                                y2="1"
+                              >
+                                <stop
+                                  offset="5%"
+                                  stopColor="#8b5cf6"
+                                  stopOpacity={0.3}
+                                />
+                                <stop
+                                  offset="95%"
+                                  stopColor="#8b5cf6"
+                                  stopOpacity={0}
+                                />
+                              </linearGradient>
+                            </defs>
+                            <CartesianGrid
+                              strokeDasharray="3 3"
+                              className="stroke-muted"
+                            />
+                            <XAxis
+                              dataKey="week"
+                              className="text-xs"
+                              tickLine={false}
+                              axisLine={false}
+                            />
+                            <YAxis
+                              className="text-xs"
+                              tickLine={false}
+                              axisLine={false}
+                            />
+                            <Tooltip
+                              content={({ active, payload }) => {
+                                if (active && payload && payload.length) {
+                                  const data = payload[0].payload;
+                                  return (
+                                    <div className="rounded-lg border bg-background p-2 shadow-md">
+                                      <p className="text-sm font-medium">
+                                        {data.fullDate}
+                                      </p>
+                                      <p className="text-lg font-bold text-primary">
+                                        {formatMetricValue(
+                                          data.value,
+                                          metricFmt,
+                                        )}
+                                      </p>
+                                      {data.delta !== null &&
+                                        data.delta !== undefined && (
+                                          <p
+                                            className={`text-xs ${
+                                              data.delta >= 0
+                                                ? "text-green-600"
+                                                : "text-red-600"
+                                            }`}
+                                          >
+                                            {data.delta >= 0 ? "+" : ""}
+                                            {data.delta.toFixed(1)}%
+                                          </p>
+                                        )}
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              }}
+                            />
+                            <Area
+                              type="monotone"
+                              dataKey="value"
+                              stroke="#8b5cf6"
+                              strokeWidth={2}
+                              fillOpacity={1}
+                              fill={`url(#${gradientId})`}
+                            />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      </div>
+                    )}
+                    <div className="space-y-2">
+                      {latestUpdates.map((update) => {
+                        const metric = update.additionalMetrics?.find(
+                          (m) => m.type === metricType,
+                        );
+                        if (!metric) return null;
+
+                        const prevUpdate = updates
+                          .filter(
+                            (u) =>
+                              u.weekNumber < update.weekNumber &&
+                              u.additionalMetrics?.some(
+                                (m) => m.type === metricType,
+                              ),
+                          )
+                          .sort((a, b) => b.weekNumber - a.weekNumber)[0];
+                        const prevMetric = prevUpdate?.additionalMetrics?.find(
+                          (m) => m.type === metricType,
+                        );
+
+                        let delta: number | null = null;
+                        if (prevMetric && prevMetric.value !== 0) {
+                          delta =
+                            ((metric.value - prevMetric.value) /
+                              prevMetric.value) *
+                            100;
+                        }
+
+                        return (
+                          <div
+                            key={`${update.id}-${metricType}`}
+                            className="flex items-center justify-between rounded-lg border p-3"
+                          >
+                            <div>
+                              <p className="font-medium">
+                                Week {update.weekNumber}
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                {format(new Date(update.weekStart), "MMM d")} -{" "}
+                                {format(
+                                  new Date(update.weekEnd),
+                                  "MMM d, yyyy",
+                                )}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-xl font-bold">
+                                {formatMetricValue(metric.value, metricFmt)}
+                              </p>
+                              {delta !== null && (
+                                <p
+                                  className={`text-sm ${
+                                    delta >= 0
+                                      ? "text-green-600"
+                                      : "text-red-600"
+                                  }`}
+                                >
+                                  {delta >= 0 ? "+" : ""}
+                                  {delta.toFixed(1)}%
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
 
       {/* Updates List */}
       {updates.length === 0 ? (
