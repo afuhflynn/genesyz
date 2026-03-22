@@ -132,7 +132,7 @@ interface WeeklyUpdateFormProps {
   currentWeekNumber: number;
   isLaunched: boolean;
   currentPrimaryMetric: string;
-  previousGoals?: string[];
+  previousGoals?: Array<{ content: string; completed: boolean }>;
   onSuccess?: () => void;
   existingUpdate?: ExistingUpdateData;
 }

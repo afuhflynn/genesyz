@@ -7,7 +7,6 @@ import {
   Calendar,
   CheckCircle2,
   Circle,
-  Loader2,
   Pencil,
   Plus,
   Target,
@@ -16,7 +15,6 @@ import {
   Zap,
 } from "lucide-react";
 import Link from "next/link";
-import { useMemo } from "react";
 import {
   Area,
   AreaChart,
@@ -177,88 +175,86 @@ export function WeeklyUpdatesList({ slug }: WeeklyUpdatesListProps) {
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
-                  {metricChartData.length > 1 && (
-                    <div className="h-64 w-full">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={metricChartData}>
-                          <defs>
-                            <linearGradient
-                              id="updatesColorPrimary"
-                              x1="0"
-                              y1="0"
-                              x2="0"
-                              y2="1"
-                            >
-                              <stop
-                                offset="5%"
-                                stopColor="#3b82f6"
-                                stopOpacity={0.3}
-                              />
-                              <stop
-                                offset="95%"
-                                stopColor="#3b82f6"
-                                stopOpacity={0}
-                              />
-                            </linearGradient>
-                          </defs>
-                          <CartesianGrid
-                            strokeDasharray="3 3"
-                            className="stroke-muted"
-                          />
-                          <XAxis
-                            dataKey="week"
-                            className="text-xs"
-                            tickLine={false}
-                            axisLine={false}
-                          />
-                          <YAxis
-                            className="text-xs"
-                            tickLine={false}
-                            axisLine={false}
-                          />
-                          <Tooltip
-                            content={({ active, payload }) => {
-                              if (active && payload && payload.length) {
-                                const data = payload[0].payload;
-                                return (
-                                  <div className="rounded-lg border bg-background p-2 shadow-md">
-                                    <p className="text-sm font-medium">
-                                      {data.fullDate}
-                                    </p>
-                                    <p className="text-lg font-bold text-primary">
-                                      {data.value}
-                                    </p>
-                                    {data.delta !== null &&
-                                      data.delta !== undefined && (
-                                        <p
-                                          className={`text-xs ${
-                                            data.delta >= 0
-                                              ? "text-green-600"
-                                              : "text-red-600"
-                                          }`}
-                                        >
-                                          {data.delta >= 0 ? "+" : ""}
-                                          {data.delta.toFixed(1)}%
-                                        </p>
-                                      )}
-                                  </div>
-                                );
-                              }
-                              return null;
-                            }}
-                          />
-                          <Area
-                            type="monotone"
-                            dataKey="value"
-                            stroke="#3b82f6"
-                            strokeWidth={2}
-                            fillOpacity={1}
-                            fill="url(#updatesColorPrimary)"
-                          />
-                        </AreaChart>
-                      </ResponsiveContainer>
-                    </div>
-                  )}
+                  <div className="h-64 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={metricChartData}>
+                        <defs>
+                          <linearGradient
+                            id="updatesColorPrimary"
+                            x1="0"
+                            y1="0"
+                            x2="0"
+                            y2="1"
+                          >
+                            <stop
+                              offset="5%"
+                              stopColor="#3b82f6"
+                              stopOpacity={0.3}
+                            />
+                            <stop
+                              offset="95%"
+                              stopColor="#3b82f6"
+                              stopOpacity={0}
+                            />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          className="stroke-muted"
+                        />
+                        <XAxis
+                          dataKey="week"
+                          className="text-xs"
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <YAxis
+                          className="text-xs"
+                          tickLine={false}
+                          axisLine={false}
+                        />
+                        <Tooltip
+                          content={({ active, payload }) => {
+                            if (active && payload && payload.length) {
+                              const data = payload[0].payload;
+                              return (
+                                <div className="rounded-lg border bg-background p-2 shadow-md">
+                                  <p className="text-sm font-medium">
+                                    {data.fullDate}
+                                  </p>
+                                  <p className="text-lg font-bold text-primary">
+                                    {data.value}
+                                  </p>
+                                  {data.delta !== null &&
+                                    data.delta !== undefined && (
+                                      <p
+                                        className={`text-xs ${
+                                          data.delta >= 0
+                                            ? "text-green-600"
+                                            : "text-red-600"
+                                        }`}
+                                      >
+                                        {data.delta >= 0 ? "+" : ""}
+                                        {data.delta.toFixed(1)}%
+                                      </p>
+                                    )}
+                                </div>
+                              );
+                            }
+                            return null;
+                          }}
+                        />
+                        <Area
+                          type="monotone"
+                          dataKey="value"
+                          stroke="#3b82f6"
+                          strokeWidth={2}
+                          fillOpacity={1}
+                          fill="url(#updatesColorPrimary)"
+                        />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
                   <div className="space-y-2">
                     {latestUpdates.map((update) => (
                       <div
@@ -622,7 +618,7 @@ export function WeeklyUpdatesList({ slug }: WeeklyUpdatesListProps) {
         </Card>
       ) : (
         <Accordion type="single" collapsible className="space-y-4">
-          {updates.map((update) => {
+          {updates.map((update, updateIndex) => {
             const verdict = update.aiVerdict
               ? VERDICT_CONFIG[update.aiVerdict]
               : null;
@@ -630,6 +626,7 @@ export function WeeklyUpdatesList({ slug }: WeeklyUpdatesListProps) {
             const completedGoals =
               update.goals?.filter((g) => g.completed).length || 0;
             const totalGoals = update.goals?.length || 0;
+            const isLatest = updateIndex === 0;
 
             // Check if update is still editable
             const now = new Date();
@@ -734,32 +731,54 @@ export function WeeklyUpdatesList({ slug }: WeeklyUpdatesListProps) {
                       <div>
                         <h4 className="mb-2 font-medium">Goals</h4>
                         <div className="space-y-2">
-                          {update.goals.map((goal, idx) => (
-                            <button
-                              key={`goal-${update.id}-${goal.id || idx}`}
-                              type="button"
-                              onClick={() =>
-                                goal.id && toggleGoal.mutate(goal.id)
-                              }
-                              disabled={toggleGoal.isPending}
-                              className="flex w-full items-start gap-2 rounded-lg border p-2 text-left transition-colors hover:bg-muted/50 disabled:opacity-50"
-                            >
-                              {goal.completed ? (
-                                <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-600" />
-                              ) : (
-                                <Circle className="mt-0.5 h-4 w-4 flex-shrink-0 text-muted-foreground" />
-                              )}
-                              <span
-                                className={`text-sm ${
-                                  goal.completed
-                                    ? "line-through text-muted-foreground"
-                                    : ""
-                                }`}
+                          {update.goals.map((goal, idx) =>
+                            isLatest ? (
+                              <button
+                                key={`goal-${update.id}-${goal.id || idx}`}
+                                type="button"
+                                onClick={() =>
+                                  goal.id && toggleGoal.mutate(goal.id)
+                                }
+                                disabled={toggleGoal.isPending}
+                                className="flex w-full items-start gap-2 rounded-lg border p-2 text-left transition-colors hover:bg-muted/50 disabled:opacity-50"
                               >
-                                {goal.content}
-                              </span>
-                            </button>
-                          ))}
+                                {goal.completed ? (
+                                  <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-600" />
+                                ) : (
+                                  <Circle className="mt-0.5 h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                                )}
+                                <span
+                                  className={`text-sm ${
+                                    goal.completed
+                                      ? "line-through text-muted-foreground"
+                                      : ""
+                                  }`}
+                                >
+                                  {goal.content}
+                                </span>
+                              </button>
+                            ) : (
+                              <div
+                                key={`goal-${update.id}-${goal.id || idx}`}
+                                className="flex w-full items-start gap-2 rounded-lg border p-2"
+                              >
+                                {goal.completed ? (
+                                  <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-600" />
+                                ) : (
+                                  <Circle className="mt-0.5 h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                                )}
+                                <span
+                                  className={`text-sm ${
+                                    goal.completed
+                                      ? "line-through text-muted-foreground"
+                                      : ""
+                                  }`}
+                                >
+                                  {goal.content}
+                                </span>
+                              </div>
+                            ),
+                          )}
                         </div>
                       </div>
                     )}

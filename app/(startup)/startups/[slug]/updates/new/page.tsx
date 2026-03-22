@@ -78,13 +78,17 @@ export default async function NewUpdatePage({ params }: NewUpdatePageProps) {
     orderBy: { weekNumber: "desc" },
     select: {
       goals: {
-        select: { content: true },
+        select: { content: true, completed: true },
         orderBy: { priority: "asc" },
       },
     },
   });
 
-  const previousGoals = previousUpdate?.goals.map((g) => g.content) || [];
+  const previousGoals =
+    previousUpdate?.goals.map((g) => ({
+      content: g.content,
+      completed: g.completed,
+    })) || [];
 
   return (
     <NewWeeklyUpdate

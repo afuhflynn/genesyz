@@ -14,7 +14,7 @@ interface NewWeeklyUpdateProps {
   submissionCount: number;
   isLaunched: boolean;
   currentPrimaryMetric: string;
-  previousGoals: string[];
+  previousGoals: Array<{ content: string; completed: boolean }>;
 }
 
 export function NewWeeklyUpdate({

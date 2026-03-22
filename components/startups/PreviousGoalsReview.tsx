@@ -12,7 +12,7 @@ import {
 import type { PreviousGoalReviewInput } from "@/lib/validators/startup";
 
 interface PreviousGoalsReviewProps {
-  previousGoals: string[];
+  previousGoals: Array<{ content: string; completed: boolean }>;
   value: PreviousGoalReviewInput[];
   onChange: (review: PreviousGoalReviewInput[]) => void;
   onCompletionRateChange: (rate: number) => void;
@@ -28,8 +28,8 @@ export function PreviousGoalsReview({
     if (previousGoals.length > 0 && value.length === 0) {
       const initialReview: PreviousGoalReviewInput[] = previousGoals.map(
         (goal) => ({
-          goalText: goal,
-          completed: false,
+          goalText: goal.content,
+          completed: goal.completed,
         }),
       );
       onChange(initialReview);

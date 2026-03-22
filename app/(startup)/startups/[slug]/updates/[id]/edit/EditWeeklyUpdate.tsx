@@ -14,7 +14,7 @@ interface EditWeeklyUpdateProps {
   submissionCount: number;
   isLaunched: boolean;
   currentPrimaryMetric: string;
-  previousGoals: string[];
+  previousGoals: Array<{ content: string; completed: boolean }>;
   existingUpdate: {
     id: string;
     weekNumber: number;
