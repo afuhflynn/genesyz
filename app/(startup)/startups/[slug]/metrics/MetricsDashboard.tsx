@@ -181,7 +181,7 @@ export function MetricsDashboard({ slug }: MetricsDashboardProps) {
           {latestUpdates.length > 0 ? (
             <div className="space-y-6">
               {/* Chart */}
-              {metricChartData.length > 1 && (
+              {metricChartData.length > 0 && (
                 <div className="h-64 w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={metricChartData}>
@@ -320,7 +320,7 @@ export function MetricsDashboard({ slug }: MetricsDashboardProps) {
           {latestUpdates.length > 0 ? (
             <div className="space-y-6">
               {/* Chart */}
-              {conversationsChartData.length > 1 && (
+              {conversationsChartData.length > 0 && (
                 <div className="h-48 w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={conversationsChartData}>
@@ -477,7 +477,7 @@ export function MetricsDashboard({ slug }: MetricsDashboardProps) {
               <CardContent>
                 <div className="space-y-6">
                   {/* AreaChart with gradient — same style as Primary Metric */}
-                  {chartData.length > 1 && (
+                  {chartData.length > 0 && (
                     <div className="h-64 w-full">
                       <ResponsiveContainer width="100%" height="100%">
                         <AreaChart data={chartData}>
