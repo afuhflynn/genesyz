@@ -485,9 +485,12 @@ export const api = {
           method: "GET",
         }),
       getConversations: (id: string) =>
-        apiRequest<{ data: StartupConversation[] }>(`/startups/${id}/conversations`, {
-          method: "GET",
-        }),
+        apiRequest<{ data: StartupConversation[] }>(
+          `/startups/${id}/conversations`,
+          {
+            method: "GET",
+          },
+        ),
       getConversation: (startupId: string, conversationId: string) =>
         apiRequest<{ data: StartupConversation }>(
           `/startups/${startupId}/conversations/${conversationId}`,
@@ -662,7 +665,19 @@ export const api = {
           primaryMetricType?: string;
           primaryMetricValue?: number;
           metricPeriod?: string | null;
+          metricFormat?: string | null;
           customMetricName?: string | null;
+          additionalMetrics?: Array<{
+            type: string;
+            value: number;
+            period?: string | null;
+            customMetricName?: string | null;
+          }> | null;
+          previousGoalsReview?: Array<{
+            goalText: string;
+            completed: boolean;
+          }> | null;
+          goalsCompletionRate?: number | null;
           moraleScore?: number;
           topImprovements?: string;
           biggestObstacle?: string;
@@ -854,10 +869,13 @@ export const api = {
           { method: "DELETE" },
         ),
       createConversation: (id: string, data: { title?: string }) =>
-        apiRequest<{ data: StartupConversation }>(`/startups/${id}/conversations`, {
-          method: "POST",
-          body: data,
-        }),
+        apiRequest<{ data: StartupConversation }>(
+          `/startups/${id}/conversations`,
+          {
+            method: "POST",
+            body: data,
+          },
+        ),
       deleteConversation: (id: string, conversationId: string) =>
         apiRequest<{ success: boolean }>(
           `/startups/${id}/conversations/${conversationId}`,

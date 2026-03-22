@@ -33,11 +33,10 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { useCreateWeeklyUpdate } from "@/hooks";
+import { useCreateWeeklyUpdate, useUpdateWeeklyUpdate } from "@/hooks";
 import {
   getDefaultPeriod,
   getMetricFormat,
-  LAUNCHED_ONLY_METRICS,
   METRIC_CATEGORIES,
   METRIC_PERIODS,
 } from "@/lib/constants/metrics";
@@ -94,6 +93,40 @@ const MORALE_LABELS: Record<number, string> = {
   10: "Extremely excited and optimistic",
 };
 
+interface ExistingUpdateData {
+  id: string;
+  weekNumber: number;
+  isLaunched: boolean;
+  weeksToLaunch: number | null;
+  usersTalkedTo: number;
+  userLearnings: string | null;
+  primaryMetricType: string;
+  primaryMetricValue: number;
+  metricPeriod: string | null;
+  metricFormat: string | null;
+  customMetricName: string | null;
+  additionalMetrics: Array<{
+    type: string;
+    value: number;
+    period?: string | null;
+    customMetricName?: string | null;
+  }> | null;
+  previousGoalsReview: Array<{
+    goalText: string;
+    completed: boolean;
+  }> | null;
+  goalsCompletionRate: number | null;
+  moraleScore: number;
+  topImprovements: string | null;
+  biggestObstacle: string | null;
+  goals: Array<{
+    id: string;
+    content: string;
+    priority: number;
+    completed: boolean;
+  }>;
+}
+
 interface WeeklyUpdateFormProps {
   startupId: string;
   currentWeekNumber: number;
@@ -101,6 +134,7 @@ interface WeeklyUpdateFormProps {
   currentPrimaryMetric: string;
   previousGoals?: string[];
   onSuccess?: () => void;
+  existingUpdate?: ExistingUpdateData;
 }
 
 export function WeeklyUpdateForm({
@@ -110,39 +144,70 @@ export function WeeklyUpdateForm({
   currentPrimaryMetric,
   previousGoals = [],
   onSuccess,
+  existingUpdate,
 }: WeeklyUpdateFormProps) {
+  const isEditMode = !!existingUpdate;
   const [submitted, setSubmitted] = useState(false);
   const [additionalMetrics, setAdditionalMetrics] = useState<
     AdditionalMetricInput[]
-  >([]);
+  >(
+    existingUpdate?.additionalMetrics
+      ? existingUpdate.additionalMetrics.map((m) => ({
+          type: m.type as AdditionalMetricInput["type"],
+          value: m.value,
+          period: (m.period as AdditionalMetricInput["period"]) ?? undefined,
+          customMetricName: m.customMetricName ?? undefined,
+        }))
+      : [],
+  );
   const [previousGoalsReview, setPreviousGoalsReview] = useState<
     PreviousGoalReviewInput[]
-  >([]);
-  const [goalsCompletionRate, setGoalsCompletionRate] = useState<number>(0);
-  const mutation = useCreateWeeklyUpdate();
+  >(
+    existingUpdate?.previousGoalsReview
+      ? existingUpdate.previousGoalsReview
+      : [],
+  );
+  const [goalsCompletionRate, setGoalsCompletionRate] = useState<number>(
+    existingUpdate?.goalsCompletionRate ?? 0,
+  );
+  const createMutation = useCreateWeeklyUpdate();
+  const updateMutation = useUpdateWeeklyUpdate();
+
+  const defaultMetricType = (
+    isEditMode
+      ? (existingUpdate.primaryMetricType as WeeklyUpdateFormValues["primaryMetricType"])
+      : initialIsLaunched
+        ? (currentPrimaryMetric as WeeklyUpdateFormValues["primaryMetricType"]) ||
+          "MRR"
+        : "USER_CONVERSATIONS"
+  ) as WeeklyUpdateFormValues["primaryMetricType"];
 
   const form = useForm<WeeklyUpdateFormValues>({
     resolver: zodResolver(weeklyUpdateSchema),
     defaultValues: {
-      isLaunched: initialIsLaunched,
-      weeksToLaunch: null,
-      usersTalkedTo: 0,
-      userLearnings: "",
-      primaryMetricType: initialIsLaunched
-        ? (currentPrimaryMetric as WeeklyUpdateFormValues["primaryMetricType"]) ||
-          "MRR"
-        : "USER_CONVERSATIONS",
-      primaryMetricValue: 0,
-      metricPeriod: getDefaultPeriod(
-        initialIsLaunched
-          ? currentPrimaryMetric || "MRR"
-          : "USER_CONVERSATIONS",
-      ) as WeeklyUpdateFormValues["metricPeriod"],
-      customMetricName: null,
-      moraleScore: 5,
-      topImprovements: "",
-      biggestObstacle: "",
-      goals: [{ content: "", priority: 1 }],
+      isLaunched: isEditMode ? existingUpdate.isLaunched : initialIsLaunched,
+      weeksToLaunch: isEditMode ? existingUpdate.weeksToLaunch : null,
+      usersTalkedTo: isEditMode ? existingUpdate.usersTalkedTo : 0,
+      userLearnings: isEditMode ? (existingUpdate.userLearnings ?? "") : "",
+      primaryMetricType: defaultMetricType,
+      primaryMetricValue: isEditMode ? existingUpdate.primaryMetricValue : 0,
+      metricPeriod: isEditMode
+        ? (existingUpdate.metricPeriod as WeeklyUpdateFormValues["metricPeriod"])
+        : (getDefaultPeriod(
+            initialIsLaunched
+              ? currentPrimaryMetric || "MRR"
+              : "USER_CONVERSATIONS",
+          ) as WeeklyUpdateFormValues["metricPeriod"]),
+      customMetricName: isEditMode ? existingUpdate.customMetricName : null,
+      moraleScore: isEditMode ? existingUpdate.moraleScore : 5,
+      topImprovements: isEditMode ? (existingUpdate.topImprovements ?? "") : "",
+      biggestObstacle: isEditMode ? (existingUpdate.biggestObstacle ?? "") : "",
+      goals: isEditMode
+        ? existingUpdate.goals.map((g) => ({
+            content: g.content,
+            priority: g.priority,
+          }))
+        : [{ content: "", priority: 1 }],
     },
   });
 
@@ -174,29 +239,51 @@ export function WeeklyUpdateForm({
   const onSubmit = (data: WeeklyUpdateFormValues) => {
     const metricFormat = getMetricFormat(data.primaryMetricType);
 
-    mutation.mutate(
-      {
-        startupId,
-        data: {
-          ...data,
-          weeksToLaunch: data.isLaunched ? null : data.weeksToLaunch,
-          metricFormat: metricFormat as "CURRENCY" | "PERCENTAGE" | "NUMBER",
-          additionalMetrics:
-            additionalMetrics.length > 0 ? additionalMetrics : null,
-          previousGoalsReview:
-            previousGoalsReview.length > 0 ? previousGoalsReview : null,
-          goalsCompletionRate:
-            previousGoalsReview.length > 0 ? goalsCompletionRate : null,
+    const payload = {
+      ...data,
+      weeksToLaunch: data.isLaunched ? null : data.weeksToLaunch,
+      metricFormat: metricFormat as "CURRENCY" | "PERCENTAGE" | "NUMBER",
+      additionalMetrics:
+        additionalMetrics.length > 0 ? additionalMetrics : null,
+      previousGoalsReview:
+        previousGoalsReview.length > 0 ? previousGoalsReview : null,
+      goalsCompletionRate:
+        previousGoalsReview.length > 0 ? goalsCompletionRate : null,
+    };
+
+    if (isEditMode) {
+      updateMutation.mutate(
+        {
+          startupId,
+          updateId: existingUpdate.id,
+          data: payload,
         },
-      },
-      {
-        onSuccess: () => {
-          setSubmitted(true);
-          onSuccess?.();
+        {
+          onSuccess: () => {
+            setSubmitted(true);
+            onSuccess?.();
+          },
         },
-      },
-    );
+      );
+    } else {
+      createMutation.mutate(
+        {
+          startupId,
+          data: payload,
+        },
+        {
+          onSuccess: () => {
+            setSubmitted(true);
+            onSuccess?.();
+          },
+        },
+      );
+    }
   };
+
+  const isPending = isEditMode
+    ? updateMutation.isPending
+    : createMutation.isPending;
 
   if (submitted) {
     return (
@@ -218,11 +305,14 @@ export function WeeklyUpdateForm({
             </svg>
           </div>
           <h3 className="text-lg font-semibold text-green-900 dark:text-green-100">
-            Week {currentWeekNumber} Update Submitted!
+            {isEditMode
+              ? `Week ${currentWeekNumber} Update Saved!`
+              : `Week ${currentWeekNumber} Update Submitted!`}
           </h3>
           <p className="mt-2 text-green-700 dark:text-green-300">
-            Your weekly progress has been recorded. AI analysis will be
-            generated shortly.
+            {isEditMode
+              ? "Your changes have been saved successfully."
+              : "Your weekly progress has been recorded. AI analysis will be generated shortly."}
           </p>
         </CardContent>
       </Card>
@@ -652,14 +742,14 @@ export function WeeklyUpdateForm({
         </Card>
 
         <div className="flex justify-end gap-4">
-          <Button type="button" variant="outline" disabled={mutation.isPending}>
+          <Button type="button" variant="outline" disabled={isPending}>
             Save Draft
           </Button>
-          <Button type="submit" disabled={mutation.isPending}>
-            {mutation.isPending && (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            )}
-            Submit Week {currentWeekNumber} Update
+          <Button type="submit" disabled={isPending}>
+            {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isEditMode
+              ? "Save Changes"
+              : `Submit Week ${currentWeekNumber} Update`}
           </Button>
         </div>
       </form>

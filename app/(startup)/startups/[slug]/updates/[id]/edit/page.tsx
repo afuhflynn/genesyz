@@ -41,6 +41,11 @@ export default async function EditUpdatePage({ params }: EditUpdatePageProps) {
       id: true,
       name: true,
       slug: true,
+      isLaunched: true,
+      primaryMetricType: true,
+      _count: {
+        select: { weeklyUpdates: true },
+      },
     },
   });
 
@@ -71,7 +76,6 @@ export default async function EditUpdatePage({ params }: EditUpdatePageProps) {
     : null;
 
   if (update.isLocked || (editableUntil && editableUntil <= now)) {
-    // Redirect back to updates list with a message
     redirect(`/startups/${slug}/updates?error=locked`);
   }
 
@@ -84,24 +88,54 @@ export default async function EditUpdatePage({ params }: EditUpdatePageProps) {
     orderBy: { weekNumber: "desc" },
     select: {
       goals: {
-        select: { content: true, completed: true },
+        select: { content: true },
         orderBy: { priority: "asc" },
       },
     },
   });
+
+  const previousGoals = previousUpdate?.goals.map((g) => g.content) || [];
 
   return (
     <EditWeeklyUpdate
       startupId={startup.id}
       startupSlug={startup.slug}
       startupName={startup.name}
-      update={{
-        ...update,
-        userLearnings: update.userLearnings || "",
-        topImprovements: update.topImprovements || "",
-        biggestObstacle: update.biggestObstacle || "",
+      weekNumber={update.weekNumber}
+      submissionCount={startup._count.weeklyUpdates}
+      isLaunched={startup.isLaunched}
+      currentPrimaryMetric={startup.primaryMetricType}
+      previousGoals={previousGoals}
+      existingUpdate={{
+        id: update.id,
+        weekNumber: update.weekNumber,
+        isLaunched: update.isLaunched,
+        weeksToLaunch: update.weeksToLaunch,
+        usersTalkedTo: update.usersTalkedTo,
+        userLearnings: update.userLearnings,
+        primaryMetricType: update.primaryMetricType,
+        primaryMetricValue: update.primaryMetricValue,
+        metricPeriod: update.metricPeriod,
+        metricFormat: update.metricFormat,
+        customMetricName: update.customMetricName,
+        additionalMetrics: update.additionalMetrics as Array<{
+          type: string;
+          value: number;
+          period?: string | null;
+          customMetricName?: string | null;
+        }> | null,
+        previousGoalsReview: update.previousGoalsReview as Array<{
+          goalText: string;
+          completed: boolean;
+        }> | null,
+        goalsCompletionRate: update.goalsCompletionRate,
+        moraleScore: update.moraleScore,
+        topImprovements: update.topImprovements,
+        biggestObstacle: update.biggestObstacle,
+        editableUntil: update.editableUntil,
+        isLocked: update.isLocked,
+        goals: update.goals,
       }}
-      previousGoals={previousUpdate?.goals || []}
     />
   );
 }

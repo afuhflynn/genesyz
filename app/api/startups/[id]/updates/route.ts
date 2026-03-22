@@ -392,9 +392,27 @@ export async function PATCH(
   const updated = await db.weeklyUpdate.update({
     where: { id: updateId },
     data: {
+      ...(updateData.isLaunched !== undefined && {
+        isLaunched: updateData.isLaunched,
+      }),
+      ...(updateData.weeksToLaunch !== undefined && {
+        weeksToLaunch: updateData.weeksToLaunch,
+      }),
+      ...(updateData.primaryMetricType !== undefined && {
+        primaryMetricType: updateData.primaryMetricType,
+      }),
       ...(updateData.primaryMetricValue !== undefined && {
         primaryMetricValue: updateData.primaryMetricValue,
         primaryMetricDelta: metricDelta,
+      }),
+      ...(updateData.metricPeriod !== undefined && {
+        metricPeriod: updateData.metricPeriod,
+      }),
+      ...(updateData.metricFormat !== undefined && {
+        metricFormat: updateData.metricFormat,
+      }),
+      ...(updateData.customMetricName !== undefined && {
+        customMetricName: updateData.customMetricName,
       }),
       ...(updateData.usersTalkedTo !== undefined && {
         usersTalkedTo: updateData.usersTalkedTo,
@@ -413,6 +431,12 @@ export async function PATCH(
       }),
       ...(updateData.additionalMetrics !== undefined && {
         additionalMetrics: updateData.additionalMetrics,
+      }),
+      ...(updateData.previousGoalsReview !== undefined && {
+        previousGoalsReview: updateData.previousGoalsReview,
+      }),
+      ...(updateData.goalsCompletionRate !== undefined && {
+        goalsCompletionRate: updateData.goalsCompletionRate,
       }),
       ...(updateData.goals !== undefined && {
         goals: {
@@ -433,6 +457,27 @@ export async function PATCH(
     },
     include: { goals: true },
   });
+
+  // Sync startup-level metric state if primary metric changed
+  if (
+    updateData.primaryMetricType !== undefined ||
+    updateData.primaryMetricValue !== undefined
+  ) {
+    await db.startup.update({
+      where: { id: startup.id },
+      data: {
+        ...(updateData.isLaunched !== undefined && {
+          isLaunched: updateData.isLaunched,
+        }),
+        ...(updateData.primaryMetricType !== undefined && {
+          primaryMetricType: updateData.primaryMetricType,
+        }),
+        ...(updateData.primaryMetricValue !== undefined && {
+          primaryMetricValue: updateData.primaryMetricValue,
+        }),
+      },
+    });
+  }
 
   return NextResponse.json(updated);
 }

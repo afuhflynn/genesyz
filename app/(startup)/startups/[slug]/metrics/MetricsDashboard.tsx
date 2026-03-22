@@ -1,7 +1,13 @@
 "use client";
 
 import { format } from "date-fns";
-import { ArrowLeft, Target, TrendingDown, TrendingUp } from "lucide-react";
+import {
+  ArrowLeft,
+  BarChart3,
+  Target,
+  TrendingDown,
+  TrendingUp,
+} from "lucide-react";
 import Link from "next/link";
 import {
   Area,
@@ -18,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useStartup, useWeeklyUpdates } from "@/hooks";
+import { formatMetricValue, getMetricFormat } from "@/lib/constants/metrics";
 
 interface MetricsDashboardProps {
   slug: string;
@@ -395,6 +402,143 @@ export function MetricsDashboard({ slug }: MetricsDashboardProps) {
           )}
         </CardContent>
       </Card>
+
+      {/* Additional Metrics */}
+      {(() => {
+        const updatesWithAdditional = latestUpdates.filter(
+          (u) => u.additionalMetrics && u.additionalMetrics.length > 0,
+        );
+
+        if (updatesWithAdditional.length === 0) return null;
+
+        const metricTypeSet = new Set<string>();
+        for (const u of updatesWithAdditional) {
+          for (const m of u.additionalMetrics || []) {
+            metricTypeSet.add(m.type);
+          }
+        }
+        const metricTypes = Array.from(metricTypeSet);
+
+        return metricTypes.map((metricType) => {
+          const metricLabel = metricType.replace(/_/g, " ").toLowerCase();
+          const metricFmt = getMetricFormat(metricType) as
+            | "CURRENCY"
+            | "PERCENTAGE"
+            | "NUMBER";
+
+          const chartData = [...updatesWithAdditional]
+            .reverse()
+            .map((update) => {
+              const metric = update.additionalMetrics?.find(
+                (m) => m.type === metricType,
+              );
+              return {
+                week: `W${update.weekNumber}`,
+                value: metric?.value ?? null,
+                fullDate: format(new Date(update.weekStart), "MMM d"),
+              };
+            })
+            .filter((d) => d.value !== null);
+
+          if (chartData.length === 0) return null;
+
+          return (
+            <Card key={metricType}>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  {metricLabel}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {chartData.length > 1 && (
+                    <div className="h-48 w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={chartData}>
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            className="stroke-muted"
+                          />
+                          <XAxis
+                            dataKey="week"
+                            className="text-xs"
+                            tickLine={false}
+                            axisLine={false}
+                          />
+                          <YAxis
+                            className="text-xs"
+                            tickLine={false}
+                            axisLine={false}
+                          />
+                          <Tooltip
+                            content={({ active, payload }) => {
+                              if (active && payload && payload.length) {
+                                const data = payload[0].payload;
+                                return (
+                                  <div className="rounded-lg border bg-background p-2 shadow-md">
+                                    <p className="text-sm font-medium">
+                                      {data.fullDate}
+                                    </p>
+                                    <p className="text-lg font-bold text-primary">
+                                      {formatMetricValue(data.value, metricFmt)}
+                                    </p>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="value"
+                            stroke="#8b5cf6"
+                            strokeWidth={2}
+                            dot={{ fill: "#8b5cf6", strokeWidth: 2 }}
+                            activeDot={{ r: 6 }}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    {[...updatesWithAdditional].reverse().map((update) => {
+                      const metric = update.additionalMetrics?.find(
+                        (m) => m.type === metricType,
+                      );
+                      if (!metric) return null;
+                      return (
+                        <div
+                          key={`${update.id}-${metricType}`}
+                          className="flex items-center justify-between rounded-lg border p-3"
+                        >
+                          <div>
+                            <p className="font-medium">
+                              Week {update.weekNumber}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {format(
+                                new Date(update.weekStart),
+                                "MMM d, yyyy",
+                              )}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xl font-bold">
+                              {formatMetricValue(metric.value, metricFmt)}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        });
+      })()}
     </div>
   );
 }
