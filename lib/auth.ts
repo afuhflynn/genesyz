@@ -55,11 +55,26 @@ export const auth = betterAuth({
     },
   },
   trustedOrigins: [process.env.NEXT_PUBLIC_APP_URL! || "http://localhost:3000"],
+  databaseHooks: {
+    user: {
+      create: {
+        after: async (user) => {
+          // Create default user entitlement
+          await db.entitlement.create({
+            data: {
+              userId: user.id,
+            },
+          });
+        },
+      },
+    },
+  },
   plugins: [
     polar({
       client: new Polar({
         accessToken: process.env.POLAR_ACCESS_TOKEN!,
-        server: "sandbox",
+        server:
+          process.env.NODE_ENV === "development" ? "sandbox" : "production",
       }),
 
       createCustomerOnSignUp: true,
@@ -78,6 +93,13 @@ export const auth = betterAuth({
         usage(),
         webhooks({
           secret: process.env.POLAR_WEBHOOK_SECRET!,
+          onCustomerStateChanged: async (payload) => {
+            payload.data.grantedBenefits.forEach(async (b) => {
+              // @todo Work on this later
+              // b.properties.
+              console.log(b);
+            });
+          },
           onSubscriptionCreated: async (payload) => {
             await handleSubscriptionChange(payload);
           },

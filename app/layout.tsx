@@ -5,7 +5,7 @@ import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { extractRouterConfig } from "uploadthing/server";
 import { ourFileRouter } from "@/app/api/uploadthing/core";
-import { ThemeProvider } from "@/components/provders/theme-provider";
+import { ThemeProvider } from "@/components/providers/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { QueryProvider } from "@/providers/query-provider";
 import { Suspense } from "react";
