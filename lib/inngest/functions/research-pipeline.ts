@@ -1,46 +1,9 @@
-import { realtime } from "inngest";
 import { v4 as uuid4 } from "uuid";
-import z from "zod";
 import { runResearchPipeline } from "@/lib/agents/pipeline";
 import { db } from "@/lib/db";
 import { sendResearchCompleteEmail } from "@/lib/email/send";
 import { inngest } from "../client";
-
-export const ideaChannel = realtime.channel({
-  name: ({ ideaId }: { ideaId: string }) => `idea:${ideaId}`,
-  topics: {
-    "parse.idea": {
-      schema: z.object({
-        status: z.enum(["INITIATE", "COMPLETE"]),
-        message: z.string(),
-        id: z.string(),
-      }),
-    },
-    "research.started": {
-      schema: z.object({
-        status: z.enum(["PROCESSING", "PENDING"]),
-        message: z.string(),
-        id: z.string(),
-      }),
-    },
-    "research.progress": {
-      schema: z.object({
-        status: z.string(),
-        message: z.string(),
-        id: z.string().optional(),
-      }),
-    },
-    "research.finished": {
-      schema: z.object({
-        success: z.boolean(),
-        ideaId: z.string(),
-        overallScore: z.number(),
-        message: z.string(),
-        id: z.string(),
-      }),
-    },
-  },
-});
+import { ideaChannel } from "@/lib/inngest/channels";
 
 /**
  * Research Pipeline Function

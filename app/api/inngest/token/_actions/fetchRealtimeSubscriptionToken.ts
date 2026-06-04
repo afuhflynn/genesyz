@@ -4,7 +4,7 @@ import { getSubscriptionToken, type Realtime } from "inngest";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { inngest } from "@/lib/inngest/client";
-import type { ideaChannel } from "@/lib/inngest/functions/research-pipeline";
+import type { ideaChannel } from "@/lib/inngest/channels";
 
 export type UserChannelToken = Realtime.Token<
   typeof ideaChannel,

@@ -8,7 +8,7 @@ import { runInterpreterAgent } from "./interpreter";
 import { runMarketResearchAgent } from "./market-research";
 import { runSynthesisAgent } from "./synthesis";
 import { runTrendAnalysisAgent } from "./trend-analysis";
-import { ideaChannel } from "@/lib/inngest/functions/research-pipeline";
+import { ideaChannel } from "@/lib/inngest/channels";
 import type {
   AgentInput,
   AgentOutput,

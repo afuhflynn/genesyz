@@ -1,7 +1,7 @@
 "use client";
 
 import { useRealtime } from "inngest/react";
-import { ideaChannel } from "@/lib/inngest/functions/research-pipeline";
+import { ideaChannel } from "@/lib/inngest/channels";
 import {
   AlertCircle,
   AlertTriangle,
