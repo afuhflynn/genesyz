@@ -1,6 +1,6 @@
 // ex. /app/actions/get-subscribe-token.ts
 "use server";
-import { getSubscriptionToken, type Realtime } from "@inngest/realtime";
+import { getSubscriptionToken, type Realtime } from "inngest";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { inngest } from "@/lib/inngest/client";

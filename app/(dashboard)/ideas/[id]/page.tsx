@@ -1,6 +1,7 @@
 "use client";
 
-import { useInngestSubscription } from "@inngest/realtime/hooks";
+import { useRealtime } from "inngest/react";
+import { ideaChannel } from "@/lib/inngest/functions/research-pipeline";
 import {
   AlertCircle,
   AlertTriangle,
@@ -91,17 +92,21 @@ export default function IdeaDetailPage() {
   }, [idea]);
 
   // Subscribe to real-time updates
-  const { latestData } = useInngestSubscription({
-    refreshToken: async () =>
-      await fetchRealtimeSubscriptionToken(id as string),
+  const { messages } = useRealtime({
+    channel: ideaChannel({ ideaId: id }),
+    topics: ["research.started", "research.progress", "research.finished", "parse.idea"],
+    token: () => fetchRealtimeSubscriptionToken(id as string),
+    enabled: idea?.status === "PROCESSING" || idea?.status === "PENDING",
   });
 
   useEffect(() => {
-    if (latestData) {
-      const message = (latestData.data as any).message;
-      const topic = latestData.topic;
-      const status = (latestData.data as any).status;
-      const eventId = (latestData.data as any).id;
+    for (const msg of messages.delta) {
+      if (msg.kind !== "data") continue;
+      const data = msg.data as any;
+      const topic = msg.topic;
+      const message = data.message;
+      const status = data.status;
+      const eventId = data.id;
 
       setResearchProgress((prev) => {
         const exists = prev.find((item) => item.step === topic);
@@ -131,7 +136,7 @@ export default function IdeaDetailPage() {
         }
       });
     }
-  }, [latestData]);
+  }, [messages.delta]);
 
   useEffect(() => {
     if (idea?.status === "RESEARCHED") {

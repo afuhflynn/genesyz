@@ -1,6 +1,13 @@
 packages:
   - .
 
+allowBuilds:
+  '@prisma/engines': true
+  msgpackr-extract: true
+  prisma: true
+  protobufjs: true
+  sharp: true
+
 ignoredBuiltDependencies:
   - '@prisma/engines'
   - prisma

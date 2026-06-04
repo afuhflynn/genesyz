@@ -354,7 +354,7 @@ Order: external packages → CSS → `@/` absolute imports. Use `import type` fo
 | `@ai-sdk/google` | `^3.0.6` | Model `"gemini-2.5-flash"` |
 | `zod` | `^4.3.5` | **Zod v4** — breaking changes from v3, verify community libs |
 | `@prisma/client` | `^7.3.0` | Adapter-based — PgBouncer not configured |
-| `@inngest/realtime` | `^0.4.5` | Pre-stable — API may change |
+
 | `recharts` | `2.15.4` (exact) | Exact pin |
 | `framer-motion` | `^12.24.10` | Compatible with React 19 |
 | `tailwindcss` | `^4` | v4 — CSS-first config, no JS config file |

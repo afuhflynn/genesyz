@@ -1,4 +1,4 @@
-import { getSubscriptionToken, Realtime } from "@inngest/realtime";
+import { getSubscriptionToken } from "inngest";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
