@@ -1,0 +1,33 @@
+diff --git a/dist/bun-sqlite-dialect-DzNwOpKv.mjs b/dist/bun-sqlite-dialect-DzNwOpKv.mjs
+index adfbfd3b7700e4aa10d5d63aef4d25c806c9cbb9..70dbf04e6de440cb4301369e0e369a310fbe2333 100644
+--- a/dist/bun-sqlite-dialect-DzNwOpKv.mjs
++++ b/dist/bun-sqlite-dialect-DzNwOpKv.mjs
+@@ -1,4 +1,5 @@
+-import { CompiledQuery, DEFAULT_MIGRATION_LOCK_TABLE, DEFAULT_MIGRATION_TABLE, DefaultQueryCompiler, sql } from "kysely";
++import { DEFAULT_MIGRATION_LOCK_TABLE, DEFAULT_MIGRATION_TABLE } from "kysely/migration";
++import { CompiledQuery, DefaultQueryCompiler, sql } from "kysely";
+ //#region src/bun-sqlite-dialect.ts
+ var BunSqliteAdapter = class {
+ 	get supportsCreateIfNotExists() {
+diff --git a/dist/d1-sqlite-dialect-C2B7YsIT.mjs b/dist/d1-sqlite-dialect-C2B7YsIT.mjs
+index 1545e428a73da3747b96b142d7a0f40eaaa41b0e..4cc89cc3ef6cbec1c1ec659cc4872a5d8383c509 100644
+--- a/dist/d1-sqlite-dialect-C2B7YsIT.mjs
++++ b/dist/d1-sqlite-dialect-C2B7YsIT.mjs
+@@ -1,4 +1,5 @@
+-import { DEFAULT_MIGRATION_LOCK_TABLE, DEFAULT_MIGRATION_TABLE, SqliteAdapter, SqliteQueryCompiler } from "kysely";
++import { DEFAULT_MIGRATION_LOCK_TABLE, DEFAULT_MIGRATION_TABLE } from "kysely/migration";
++import { SqliteAdapter, SqliteQueryCompiler } from "kysely";
+ //#region src/d1-sqlite-dialect.ts
+ var D1SqliteAdapter = class extends SqliteAdapter {};
+ var D1SqliteDriver = class {
+diff --git a/dist/node-sqlite-dialect.mjs b/dist/node-sqlite-dialect.mjs
+index 878100c374a231456d1965b1298bb7d8fa14df7c..afbf6e1c14856e65e4a27f4ae2de3ff29a498bf2 100644
+--- a/dist/node-sqlite-dialect.mjs
++++ b/dist/node-sqlite-dialect.mjs
+@@ -1,4 +1,5 @@
+-import { CompiledQuery, DEFAULT_MIGRATION_LOCK_TABLE, DEFAULT_MIGRATION_TABLE, DefaultQueryCompiler, sql } from "kysely";
++import { DEFAULT_MIGRATION_LOCK_TABLE, DEFAULT_MIGRATION_TABLE } from "kysely/migration";
++import { CompiledQuery, DefaultQueryCompiler, sql } from "kysely";
+ //#region src/node-sqlite-dialect.ts
+ var NodeSqliteAdapter = class {
+ 	get supportsCreateIfNotExists() {
