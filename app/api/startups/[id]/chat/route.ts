@@ -1,5 +1,5 @@
-import { openai } from "@ai-sdk/openai";
 import { stepCountIs, streamText } from "ai";
+import { model } from "@/lib/ai/models";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { tools } from "@/lib/ai/tools";
@@ -145,7 +145,7 @@ NOTE:
 If the user asks for a pitch review or market analysis, use your tools to get the most up-to-date information.`;
 
     const result = streamText({
-      model: openai("gpt-5.2-chat-latest"),
+      model,
       system: systemPrompt,
       tools: {
         ...tools,
