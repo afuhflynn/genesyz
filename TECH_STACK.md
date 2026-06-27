@@ -9,9 +9,7 @@
 | **Database** | PostgreSQL 15 (Docker, port 5446) | Health-checked, persistent volume |
 | **ORM** | Prisma 7 | `prisma.config.ts` format, 45 models, 17 enums |
 | **Auth** | Better Auth 1.4 | Email/password, Google OAuth, Magic Link + Arcjet rate limiting |
-| **AI (Primary)** | OpenAI GPT-4o via `@ai-sdk/openai` | Used for heavy reasoning and synthesis |
-| **AI (Secondary)** | Mistral `open-mixtral-8x7b` via OpenRouter | Cost-effective backup |
-| **AI (Tertiary)** | Google Gemini 2.5 Flash via `@ai-sdk/google` | Resilient final fallback |
+| **AI Model** | Google Gemini 2.5 Flash via `@ai-sdk/google` | Single model for all agents |
 | **AI SDK** | Vercel AI SDK v6 | `generateObject`, `generateText`, `streamText`, `useChat` |
 | **Background Jobs** | Inngest 3.48 | 14 functions (6 cron, 8 event-driven) with Realtime middleware |
 | **Rate Limiting** | Arcjet | Shield + Bot detection + per-endpoint AI rate limits |
@@ -43,7 +41,7 @@
 | Database | `DATABASE_URL` | Yes |
 | App | `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_APP_NAME` | Yes |
 | Auth | `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Partial (secret + URL required) |
-| AI | `GOOGLE_GENERATIVE_AI_API_KEY`, `MISTRAL_API_KEY`, `TAVILY_API_KEY` | Partial (one AI key needed) |
+| AI | `GOOGLE_GENERATIVE_AI_API_KEY`, `TAVILY_API_KEY` | Partial (Gemini key needed) |
 | Vector | `PINECONE_API_KEY`, `PINECONE_INDEX`, `PINECONE_ENVIRONMENT` | No (unused) |
 | Storage | `UPLOADTHING_TOKEN` | Partial (for file uploads) |
 | Email | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` | No (graceful fallback) |
@@ -55,7 +53,7 @@
 
 | What Changed | Old (README) | New (Actual) |
 |-------------|-------------|--------------|
-| AI Models | Dual (Mistral primary + Gemini fallback) | **Triple** (GPT-4o primary + Mistral secondary + Gemini tertiary) |
+| AI Models | Triple (GPT-4o primary + Mistral secondary + Gemini tertiary) | **Single** (Gemini 2.5 Flash only) |
 | File Storage | DigitalOcean Spaces | **UploadThing** (DO Spaces not configured) |
 | Rate Limiting | Not mentioned | **Arcjet** (Shield + Bot detection + AI endpoint limits) |
 | Background Jobs | Mentioned generically | **14 Inngest functions** (6 crons, 8 event-driven) |
@@ -76,7 +74,7 @@ See `UNUSED_DEPENDENCIES.md` for full analysis. Notable:
 ## Migrations & Changes
 
 ### v0.1 → Current
-- Single-model → Dual-model → **Triple-model fallback** (GPT-4o added as primary)
+- Single-model → Dual-model → Triple-model fallback → **Single-model: Gemini 2.5 Flash**
 - Idea validator → **Full Startup OS** (tracker, accelerator hub, opportunities, strategic advisory)
 - Basic auth → **Better Auth** with social login and magic link
 - Simple scoring → **6-agent pipeline** with real-time streaming

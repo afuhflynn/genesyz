@@ -1,7 +1,7 @@
 import { streamText } from "ai";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
-import { models } from "@/lib/ai/models";
+import { model } from "@/lib/ai/models";
 import { tools } from "@/lib/ai/tools";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -86,18 +86,8 @@ Use the 'getIdeaContext' tool to fetch more details if needed.`;
       }
     }
 
-    // Use primary model by default, or specific model if requested
-    let aiModel;
-    if (model === "mistral" || model === "secondary") {
-      aiModel = models.secondary;
-    } else if (model === "google" || model === "tertiary") {
-      aiModel = models.tertiary;
-    } else {
-      aiModel = models.primary;
-    }
-
     const result = streamText({
-      model: aiModel,
+      model,
       system: systemPrompt,
       tools: tools,
       messages,

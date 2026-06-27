@@ -1,6 +1,5 @@
-import { getSubscriptionToken } from "inngest";
-import { headers } from "next/headers";
 import { NextResponse } from "next/server";
+import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { inngest } from "@/lib/inngest/client";
 
@@ -20,12 +19,20 @@ export async function GET(request: Request) {
     return new NextResponse("Missing ideaId", { status: 400 });
   }
 
-  // Generate a token for the specific idea channel
-  const token = await getSubscriptionToken(inngest, {
-    channel: `idea:${ideaId}`,
-    topics: ["research.started", "research.progress", "research.finished"],
-  });
+  const api = (inngest as unknown as Record<string, unknown>).inngestApi as {
+    getSubscriptionToken: (
+      channel: string,
+      topics: string[],
+    ) => Promise<string>;
+  };
 
-  console.log({ token });
-  return NextResponse.json({ token });
+  const key = await api.getSubscriptionToken(`idea:${ideaId}`, [
+    "research.started",
+    "research.progress",
+    "research.finished",
+  ]);
+
+  return NextResponse.json({
+    token: { key, channel: `idea:${ideaId}`, topics: ["research.started", "research.progress", "research.finished"] },
+  });
 }

@@ -11,8 +11,8 @@ export const followerAddedFn = inngest.createFunction(
   {
     id: "follower-added",
     name: "Startup Follower Added Notification",
+    triggers: { event: "startup.follower.added" },
   },
-  { event: "startup.follower.added" },
   async ({ event, step }) => {
     const { startupId, startupName, startupSlug, followerEmail, followerName } =
       event.data;
@@ -34,8 +34,8 @@ export const teamMemberAddedFn = inngest.createFunction(
   {
     id: "team-member-added-notification",
     name: "Team Member Added Notification",
+    triggers: { event: "startup.member.added" },
   },
-  { event: "startup.member.added" },
   async ({ event, step }) => {
     const {
       startupId,
@@ -116,8 +116,8 @@ export const followerWeeklyUpdateFn = inngest.createFunction(
   {
     id: "follower-weekly-update-notification",
     name: "Follower Weekly Update Notification",
+    triggers: { event: "startup.weeklyUpdate.followerNotification" },
   },
-  { event: "startup.weeklyUpdate.followerNotification" },
   async ({ event, step }) => {
     const { updateId, startupId } = event.data;
 

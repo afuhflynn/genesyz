@@ -6,7 +6,7 @@
 - **Package manager**: pnpm (enforced, no npm/yarn)
 - **Linter/Formatter**: Biome 2.x with React & Next.js rules
 - **Auth**: Better Auth 1.4.x (email/password, Google OAuth, magic link)
-- **AI**: Multi-agent pipeline with triple-model fallback (GPT-4o → Mistral → Gemini)
+- **AI**: Multi-agent pipeline with Gemini 2.5 Flash (single model)
 - **Background jobs**: Inngest 3.x (event-driven + cron)
 - **Billing**: Polar SDK via `@polar-sh/better-auth` plugin
 - **Rate limiting**: Arcjet (beta 1.0.0-beta.16 — exact pin)
@@ -201,24 +201,16 @@ Served at `POST /api/inngest`. Event naming: `dot.notation.camelCase` (e.g., `"i
 
 ## 7. AI Agent Pipeline
 
-### Model Fallback Chain
+### Model
 
-```
-Primary:   GPT-4o     (@ai-sdk/openai)
-Secondary: Mistral    (@ai-sdk/mistral, model: "open-mixtral-8x7b")
-Tertiary:  Gemini     (@ai-sdk/google, model: "gemini-2.5-flash")
-```
+Single model: **Gemini 2.5 Flash** (`@ai-sdk/google`, `"gemini-2.5-flash"`)
 
-**Known issue:** `"open-mixtral-8x7b"` is a legacy/deprecated Mistral model name. It should be updated to `"mistral-small-latest"` or `"mistral-medium-latest"` when Mistral sunsets the old naming.
+### Generation (`lib/ai/fallback.ts`)
 
-### Fallback Mechanism (`lib/ai/fallback.ts`)
-
-1. Try `generateObject()` with primary model
-2. On schema complexity error ("too many states"), fall back to `generateText()` + JSON parsing (for all 3)
-3. On other errors, try secondary, then tertiary
-4. If all fail, throws `All AI generation strategies failed`
-
-**Missing:** No retry-with-backoff in the fallback chain. If all 3 models rate-limit, the request fails immediately.
+1. Try `generateObject()` with schema
+2. On schema complexity error ("too many states"), fall back to `generateText()` + `safeJsonParse()`
+3. `safeJsonParse()` tries multiple strategies: direct parse, markdown code block extraction, regex extraction, trailing-comma/single-quote auto-fix
+4. If all fail, throws error
 
 ### Agent Pipeline
 
@@ -349,9 +341,7 @@ Order: external packages → CSS → `@/` absolute imports. Use `import type` fo
 | `@arcjet/ip` | `1.0.0-beta.16` (exact) | Beta — do not upgrade without full testing |
 | `@polar-sh/sdk` | `^0.42.1` | Watch for breaking minor versions |
 | `@polar-sh/better-auth` | `^1.6.3` | Check compatibility with `better-auth` upgrades |
-| `@ai-sdk/openai` | `^3.0.7` | Model `"gpt-4o"` — monitor for deprecation |
-| `@ai-sdk/mistral` | `^3.0.5` | Model `"open-mixtral-8x7b"` is legacy — plan migration |
-| `@ai-sdk/google` | `^3.0.6` | Model `"gemini-2.5-flash"` |
+| `@ai-sdk/google` | `^3.0.6` | Model `"gemini-2.5-flash"` — single model |
 | `zod` | `^4.3.5` | **Zod v4** — breaking changes from v3, verify community libs |
 | `@prisma/client` | `^7.3.0` | Adapter-based — PgBouncer not configured |
 

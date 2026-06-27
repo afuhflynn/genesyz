@@ -11,8 +11,8 @@ export const reevaluationFunction = inngest.createFunction(
   {
     id: "monthly-reevaluation",
     name: "Monthly Idea Re-evaluation",
-  },
-  { cron: "0 0 1 * *" }, // First day of every month
+    triggers: { cron: "0 0 1 * *" },
+  }, // First day of every month
   async ({ step }) => {
     // Step 1: Get all active ideas eligible for re-evaluation
     // (e.g., researched > 30 days ago and not archived)

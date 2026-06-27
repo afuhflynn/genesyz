@@ -13,8 +13,8 @@ export const weeklyStrategicReportFunction = inngest.createFunction(
   {
     id: "weekly-strategic-report",
     name: "Weekly Strategic Report",
-  },
-  { cron: "0 9 * * 1" }, // Every Monday at 9:00 AM UTC
+    triggers: { cron: "0 9 * * 1" },
+  }, // Every Monday at 9:00 AM UTC
 
   async ({ step }: { step: any }) => {
     // Step 1: Get all users with active ideas

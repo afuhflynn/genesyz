@@ -6,8 +6,8 @@ export const analyzeWeeklyUpdateFn = inngest.createFunction(
   {
     id: "analyze-weekly-update",
     name: "Analyze Weekly Update",
+    triggers: { event: "weeklyUpdate.created" },
   },
-  { event: "weeklyUpdate.created" },
   async ({ event, step }) => {
     const { updateId, startupId } = event.data;
 

@@ -6,8 +6,8 @@ export const sendStartupFeatureAnnouncement = inngest.createFunction(
   {
     id: "send-startup-feature-announcement",
     name: "Send Startup Feature Announcement",
+    triggers: { event: "announcement.startupFeature" },
   },
-  { event: "announcement.startupFeature" },
   async ({ event, step }) => {
     const { userId } = event.data;
 
@@ -40,8 +40,8 @@ export const broadcastStartupFeatureAnnouncement = inngest.createFunction(
   {
     id: "broadcast-startup-feature-announcement",
     name: "Broadcast Startup Feature Announcement to All Users",
+    triggers: { event: "announcement.startupFeature.broadcast" },
   },
-  { event: "announcement.startupFeature.broadcast" },
   async ({ step }) => {
     const users = await step.run("fetch-all-users", async () => {
       return db.user.findMany({
