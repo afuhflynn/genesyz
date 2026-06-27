@@ -8,8 +8,7 @@ import { PLANS } from "@/lib/polar/client";
 import { inngest } from "../client";
 
 export const sendVerificationEmailFunction = inngest.createFunction(
-  { id: "send-verification-email", name: "Send Verification Email" },
-  { event: "email.send.verification" },
+  { id: "send-verification-email", name: "Send Verification Email", triggers: { event: "email.send.verification" } },
   async ({ event, step }) => {
     const { email, name, code, url } = event.data;
 
@@ -27,8 +26,7 @@ export const sendVerificationEmailFunction = inngest.createFunction(
 );
 
 export const sendWelcomeEmailFunction = inngest.createFunction(
-  { id: "send-welcome-email", name: "Send Welcome Email" },
-  { event: "email.send.welcome" },
+  { id: "send-welcome-email", name: "Send Welcome Email", triggers: { event: "email.send.welcome" } },
   async ({ event, step }) => {
     const { email, name } = event.data;
 
@@ -65,8 +63,7 @@ export const sendWelcomeEmailFunction = inngest.createFunction(
 );
 
 export const sendPasswordResetEmailFunction = inngest.createFunction(
-  { id: "send-password-reset-email", name: "Send Password Reset Email" },
-  { event: "email.send.passwordReset" },
+  { id: "send-password-reset-email", name: "Send Password Reset Email", triggers: { event: "email.send.passwordReset" } },
   async ({ event, step }) => {
     const { email, name, url } = event.data;
 
@@ -83,8 +80,7 @@ export const sendPasswordResetEmailFunction = inngest.createFunction(
 );
 
 export const sendMagicLinkEmailFunction = inngest.createFunction(
-  { id: "send-magic-link-email", name: "Send Magic Link Email" },
-  { event: "email.send.magicLink" },
+  { id: "send-magic-link-email", name: "Send Magic Link Email", triggers: { event: "email.send.magicLink" } },
   async ({ event, step }) => {
     const { email, url } = event.data;
 

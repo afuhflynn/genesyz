@@ -7,8 +7,8 @@ export const weeklyUpdateReminderFn = inngest.createFunction(
   {
     id: "weekly-update-reminder",
     name: "Weekly Update Reminder Email",
+    triggers: { event: "startup.weeklyReminder" },
   },
-  { event: "startup.weeklyReminder" },
   async ({ event, step }) => {
     const { startupId, userId, reminderDay } = event.data;
 
@@ -112,8 +112,8 @@ export const weeklyUpdateReminderCronFriday = inngest.createFunction(
   {
     id: "weekly-update-reminder-cron-friday",
     name: "Weekly Update Reminder Cron (Friday 17:00 UTC)",
+    triggers: { cron: "0 17 * * 5" },
   },
-  { cron: "0 17 * * 5" },
   async ({ step }) => {
     const startupsNeedingReminder = await step.run(
       "fetch-startups-without-update",
@@ -178,8 +178,8 @@ export const weeklyUpdateReminderCronSaturday = inngest.createFunction(
   {
     id: "weekly-update-reminder-cron-saturday",
     name: "Weekly Update Reminder Cron (Saturday 17:00 UTC)",
+    triggers: { cron: "0 17 * * 6" },
   },
-  { cron: "0 17 * * 6" },
   async ({ step }) => {
     const startupsNeedingReminder = await step.run(
       "fetch-startups-without-update",

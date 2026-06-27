@@ -18,8 +18,8 @@ export const weeklyStartupReportFn = inngest.createFunction(
   {
     id: "weekly-startup-report",
     name: "Weekly Startup Report Email",
+    triggers: { event: "startup.weeklyReport" },
   },
-  { event: "startup.weeklyReport" },
   async ({ event, step }) => {
     const { startupId } = event.data;
 
@@ -138,8 +138,8 @@ export const weeklyStartupReportCron = inngest.createFunction(
   {
     id: "weekly-startup-report-cron",
     name: "Weekly Startup Report Cron (Sundays 9 AM UTC)",
+    triggers: { cron: "0 9 * * 0" },
   },
-  { cron: "0 9 * * 0" },
   async ({ step }) => {
     const startups = await step.run("fetch-active-startups", async () => {
       return db.startup.findMany({

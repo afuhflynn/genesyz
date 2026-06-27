@@ -79,7 +79,7 @@ IdeasVault is an AI-powered platform that takes founders from raw idea → valid
 | **Database** | PostgreSQL 15 (via Docker Compose, port 5446) |
 | **ORM** | Prisma 7 |
 | **Auth** | Better Auth (email/password, Google OAuth, Magic Link) |
-| **AI** | Vercel AI SDK v6 — GPT-4o (primary), Mistral Mixtral (secondary), Gemini Flash (tertiary) |
+| **AI** | Vercel AI SDK v6 — Gemini 2.5 Flash (single model) |
 | **Background Jobs** | Inngest (14 functions: 6 crons, 8 event-driven) |
 | **Rate Limiting** | Arcjet |
 | **File Storage** | UploadThing |

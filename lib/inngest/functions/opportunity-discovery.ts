@@ -12,8 +12,8 @@ export const opportunityDiscoveryCron = inngest.createFunction(
   {
     id: "startup-opportunity-discovery-daily",
     name: "Startup Opportunity Discovery (Daily 06:00 UTC)",
+    triggers: { cron: "0 6 * * *" },
   },
-  { cron: "0 6 * * *" },
   async ({ step }) => {
     const startups = await step.run("fetch-active-startups", async () => {
       return db.startup.findMany({

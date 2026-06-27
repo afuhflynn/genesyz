@@ -1,19 +1,11 @@
-// ex. /app/actions/get-subscribe-token.ts
 "use server";
-import { getSubscriptionToken, type Realtime } from "inngest";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { inngest } from "@/lib/inngest/client";
-import type { ideaChannel } from "@/lib/inngest/channels";
-
-export type UserChannelToken = Realtime.Token<
-  typeof ideaChannel,
-  ["research.started", "research.progress", "research.finished", "parse.idea"]
->;
 
 export async function fetchRealtimeSubscriptionToken(
   ideaId: string,
-): Promise<UserChannelToken> {
+): Promise<{ key: string; apiBaseUrl?: string }> {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
@@ -22,16 +14,19 @@ export async function fetchRealtimeSubscriptionToken(
     throw new Error("Unauthorized");
   }
 
-  // This creates a token using the Inngest API that is bound to the channel and topic:
-  const token = await getSubscriptionToken(inngest, {
-    channel: `idea:${ideaId}`,
-    topics: [
-      "research.started",
-      "research.progress",
-      "research.finished",
-      "parse.idea",
-    ],
-  });
+  const api = (inngest as unknown as Record<string, unknown>).inngestApi as {
+    getSubscriptionToken: (
+      channel: string,
+      topics: string[],
+    ) => Promise<string>;
+  };
 
-  return token as any;
+  const key = await api.getSubscriptionToken(`idea:${ideaId}`, [
+    "research.started",
+    "research.progress",
+    "research.finished",
+    "parse.idea",
+  ]);
+
+  return { key };
 }

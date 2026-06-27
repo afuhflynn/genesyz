@@ -1,3 +1,4 @@
+import { stepCountIs } from "ai";
 import {
   generateObjectWithFallback,
   generateTextWithFallback,
@@ -55,7 +56,7 @@ Please fetch the latest industry news for these categories: ${categories.join(
 Identify any deltas between the current state and previous snapshots.
 Synthesize how market shifts or internal changes affect the founder's portfolio.`,
       tools,
-      maxSteps: 5,
+      stopWhen: stepCountIs(5),
     }, "STRATEGIC_ADVISORY_RESEARCH");
 
     const marketData = textResult.text;

@@ -61,9 +61,9 @@ Post-Pipeline Conversational Agents (operate on stored research):
 
 ```
 generateObjectWithFallback<T>(prompt, schema):
-  1. Try GPT-4o (primary)
+  1. Try generateObject() with Gemini 2.5 Flash
      ├─ Success → return parsed + validated object
-     └─ Schema complexity error → try text fallback
+     └─ Schema complexity error → fall back to generateText
         ├─ generateText with JSON instruction
         ├─ safeJsonParse() — multi-strategy JSON extraction
         │  ├─ direct JSON.parse
@@ -72,11 +72,7 @@ generateObjectWithFallback<T>(prompt, schema):
         │  ├─ auto-fix (trailing commas, single quotes)
         │  └─ Zod validation at each step
         └─ Success → return mock GenerateObjectResult
-  2. Try Mistral Mixtral (secondary)
-     └─ Same fallback pattern as GPT-4o
-  3. Try Gemini Flash (tertiary)
-     └─ Same fallback pattern
-  4. All models failed → throw "All AI generation strategies failed"
+  2. All attempts failed → throw error
 ```
 
 ## 2. Inngest Event Flow

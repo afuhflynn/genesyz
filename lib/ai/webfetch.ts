@@ -106,7 +106,7 @@ export async function getContentType(url: string): Promise<string | null> {
       maxRedirects: 3,
       headers: DEFAULT_HEADERS,
     });
-    return response.headers["content-type"] || null;
+    return (response.headers["content-type"] as string) || null;
   } catch {
     return null;
   }

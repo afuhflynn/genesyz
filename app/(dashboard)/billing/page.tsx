@@ -42,7 +42,6 @@ export default function BillingPage() {
       await authClient.checkout({
         products: [productId],
         successUrl: "/dashboard?checkout_id={CHECKOUT_ID}",
-        authenticatedUsersOnly: true,
         slug: planId,
       });
     } catch (error) {

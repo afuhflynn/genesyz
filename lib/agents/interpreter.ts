@@ -1,4 +1,3 @@
-import { getModels } from "@/lib/ai/models";
 import { generateObjectWithFallback } from "@/lib/ai/fallback";
 import { db } from "@/lib/db";
 import { detectLocationFromText } from "@/lib/location";

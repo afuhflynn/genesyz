@@ -32,11 +32,14 @@ export const researchPipelineFunction = inngest.createFunction(
     concurrency: {
       limit: 5, // Limit concurrent research jobs
     },
+    triggers: { event: "idea.submitted" },
   },
-  { event: "idea.submitted" },
-  async ({ event, step, publish }) => {
+  async ({ event, step }) => {
     const { ideaId, userId } = event.data;
     const ch = ideaChannel({ ideaId });
+
+    const publish = (topicRef: any, data: any) =>
+      step.realtime.publish(uuid4(), topicRef, data);
 
     publish(ch["parse.idea"], {
       status: "INITIATE",

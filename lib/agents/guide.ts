@@ -6,11 +6,9 @@
 import type { ResearchPacket } from "@prisma/client";
 import { stepCountIs, streamText } from "ai";
 import { generateTextWithFallback } from "@/lib/ai/fallback";
-import { getModels } from "@/lib/ai/models";
+import { model } from "@/lib/ai/models";
 import { tools } from "@/lib/ai/tools";
 import { db } from "@/lib/db";
-
-const { primaryModel } = getModels();
 
 // Message type for AI SDK
 interface ChatMessage {
@@ -377,10 +375,8 @@ export async function streamGuideMessage(
     content: message,
   });
 
-  // Create stream - streaming doesn't use the simple fallback helper yet
-  // but we use the primaryModel (OpenAI) as requested
   const result = streamText({
-    model: primaryModel,
+    model,
     messages,
     tools,
     stopWhen: stepCountIs(3),

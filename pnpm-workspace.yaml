@@ -1,20 +1,6 @@
-packages:
-  - .
-
 allowBuilds:
   '@prisma/engines': true
   msgpackr-extract: true
   prisma: true
   protobufjs: true
   sharp: true
-
-ignoredBuiltDependencies:
-  - '@prisma/engines'
-  - prisma
-  - protobufjs
-  - sharp
-  - unrs-resolver
-
-onlyBuiltDependencies:
-  - esbuild
-  - msgpackr-extract
