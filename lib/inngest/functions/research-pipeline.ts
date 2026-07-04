@@ -2,19 +2,13 @@ import { v4 as uuid4 } from "uuid";
 import { runResearchPipeline } from "@/lib/agents/pipeline";
 import { db } from "@/lib/db";
 import { sendResearchCompleteEmail } from "@/lib/email/send";
-import { inngest } from "../client";
 import { ideaChannel } from "@/lib/inngest/channels";
+import { inngest } from "../client";
 
 /**
  * Research Pipeline Function
  * Triggered when a new idea is submitted
- * Runs multi-agent AI research pipeline with dual-model architecture
- *
- * **AI Model Strategy**:
- * - Primary Model: Mistral `open-mixtral-8x7b` (cost-effective for high-volume)
- * - Fallback Model: Google Gemini 2.5 Flash (automatic failover on API errors)
- * - Each agent uses try-catch pattern to switch models
- * - Model usage is tracked in `researchLog.model` field for monitoring
+ * Runs multi-agent AI research pipeline
  *
  * **Agent Pipeline**:
  * 1. Interpreter Agent (understands idea from vague inputs)
@@ -23,6 +17,13 @@ import { ideaChannel } from "@/lib/inngest/channels";
  * 4. Execution Friction Agent (identifies technical and operational risks)
  * 5. Deep Research Agent (uses web search for market validation)
  * 6. Synthesis Agent (combines all data into final score and verdict)
+ *
+ * **Inngest Versioning**:
+ * - Step IDs must be deterministic strings, never random values
+ * - Transient progress updates use non-durable `publish()` (no step ID)
+ * - Durable state transitions use `step.realtime.publish` with stable IDs
+ * - Changing step structure (add/remove/reorder) affects in-progress runs
+ * - See RULES.md "Inngest Function Versioning" for details
  */
 export const researchPipelineFunction = inngest.createFunction(
   {
@@ -38,14 +39,13 @@ export const researchPipelineFunction = inngest.createFunction(
     const { ideaId, userId } = event.data;
     const ch = ideaChannel({ ideaId });
 
-    const publish = (topicRef: any, data: any) =>
-      step.realtime.publish(uuid4(), topicRef, data);
-
-    publish(ch["parse.idea"], {
+    // Transient: non-durable publish — no step ID needed
+    await inngest.realtime.publish(ch["parse.idea"], {
       status: "INITIATE",
       message: "AI research pipeline initiated",
       id: uuid4(),
     });
+
     // Step 1: Create research job record
     const job = await step.run("create-research-job", async () => {
       return await db.researchJob.create({
@@ -65,8 +65,8 @@ export const researchPipelineFunction = inngest.createFunction(
       });
     });
 
-    // Publish start event
-    publish(ch["research.started"], {
+    // Transient: non-durable publish
+    await inngest.realtime.publish(ch["research.started"], {
       status: "PROCESSING",
       message: "AI research pipeline started",
       id: uuid4(),
@@ -74,11 +74,14 @@ export const researchPipelineFunction = inngest.createFunction(
 
     // Step 3: Run the research pipeline
     const result = await step.run("run-research-pipeline", async () => {
-      return await runResearchPipeline(ideaId, publish);
+      return await runResearchPipeline(
+        ideaId,
+        inngest.realtime.publish.bind(inngest.realtime),
+      );
     });
 
-    // Publish progress event
-    publish(ch["research.progress"], {
+    // Transient: non-durable publish
+    await inngest.realtime.publish(ch["research.progress"], {
       status: result.success ? "COMPLETED" : "FAILED",
       message: result.success
         ? "AI research completed successfully"
@@ -204,17 +207,21 @@ export const researchPipelineFunction = inngest.createFunction(
       });
     }
 
-    // Publish final completion event for realtime
+    // Durable publish for final state — deterministic step ID for memoization
     const synthesisAny = result.synthesis as any;
     const overallScore =
       synthesisAny?.overallScore ?? synthesisAny?.scores?.overall?.score ?? 0;
-    publish(ch["research.finished"], {
-      success: result.success,
-      ideaId,
-      overallScore,
-      message: "Deep Research and Analysis finished.",
-      id: uuid4(),
-    });
+    await step.realtime.publish(
+      "publish-research-finished",
+      ch["research.finished"],
+      {
+        success: result.success,
+        ideaId,
+        overallScore,
+        message: "Deep Research and Analysis finished.",
+        id: uuid4(),
+      },
+    );
 
     return {
       success: result.success,

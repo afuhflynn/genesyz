@@ -348,3 +348,75 @@ Order: external packages → CSS → `@/` absolute imports. Use `import type` fo
 | `recharts` | `2.15.4` (exact) | Exact pin |
 | `framer-motion` | `^12.24.10` | Compatible with React 19 |
 | `tailwindcss` | `^4` | v4 — CSS-first config, no JS config file |
+
+---
+
+## 14. Inngest Function Versioning
+
+Inngest uses step-based memoization. Each step has a unique ID; changing step IDs between deployments breaks in-progress runs.
+
+### Step ID Rules
+
+- **Must be deterministic strings** — never use `uuid4()`, `Math.random()`, or `Date.now()` as step IDs
+- **Descriptive**: `"charge-customer-payment"` not `"step-1"`
+- **Stable**: Avoid IDs that encode values that might change
+- **Unique**: Each step in a function needs a distinct ID
+
+```typescript
+// ✅ Correct — deterministic, descriptive
+await step.run("send-order-confirmation", async () => { ... });
+
+// ❌ Wrong — random ID breaks memoization
+const publish = (topic, data) => step.realtime.publish(uuid4(), topic, data);
+
+// ✅ Correct — non-durable publish for transient updates (no step ID)
+async ({ event, step, publish }) => {
+  publish(ch.status, { message: "Processing..." });
+};
+
+// ✅ Correct — durable publish with stable step ID
+await step.realtime.publish("publish-research-finished", ch.topic, data);
+```
+
+### Publish Patterns
+
+| Pattern | Use When | Step ID Needed |
+|---|---|---|
+| `publish(topic, data)` (handler arg) | Transient progress updates, fire-and-forget | No |
+| `step.realtime.publish(id, topic, data)` | Important final state that must survive retries | Yes — deterministic string |
+| `step.sendEvent(id, event)` | Emit events to trigger other functions | Yes — deterministic string |
+
+### Evolving Functions Safely
+
+- **Adding steps**: Safe — new steps execute when discovered by in-progress runs
+- **Modifying step code (same ID)**: Safe — in-progress runs use memoized result; new runs use updated logic
+- **Changing step ID**: Forces re-execution — only when you *want* in-progress runs to re-run a step
+- **Reordering steps**: Logs a warning — handled gracefully but indicates version drift
+- **Removing steps**: Safe — memoized data for removed steps is ignored
+
+### Major Rewrites (Breaking Changes)
+
+For full rewrites incompatible with in-progress runs, use timestamp-based routing:
+
+```typescript
+const CUTOVER_TS = 1704067200000;
+
+export const processUploadV1 = inngest.createFunction({
+  id: "process-upload",
+  triggers: { event: "file/uploaded", if: `event.ts < ${CUTOVER_TS}` },
+  // ...old logic continues for in-progress runs
+});
+
+export const processUploadV2 = inngest.createFunction({
+  id: "process-upload-v2",
+  triggers: { event: "file/uploaded", if: `event.ts >= ${CUTOVER_TS}` },
+  // ...new logic for new events
+});
+```
+
+### Recovering from Stuck Runs
+
+When step IDs change and old runs fail with `"Could not find step..."`:
+
+1. **Cancel** the stuck runs in the Inngest dashboard (or via REST API)
+2. **Re-trigger** the original events so fresh runs start with current step IDs
