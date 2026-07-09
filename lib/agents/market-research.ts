@@ -130,10 +130,11 @@ Keep total under 2000 words. Output valid JSON only.`;
   });
 
   // Calculate confidence based on market data availability
-  const competitorCount = marketResearch.competitors.length;
-  const hasMarketSize = Boolean(marketResearch.marketSize.global?.tam);
+  const competitors = marketResearch.competitors ?? [];
+  const competitorCount = competitors.length;
+  const hasMarketSize = Boolean(marketResearch.marketSize?.global?.tam);
   const marketConfidence =
-    marketResearch.marketSize.global?.confidence || "medium";
+    marketResearch.marketSize?.global?.confidence || "medium";
   const confidenceBonus =
     marketConfidence === "high"
       ? 0.3
@@ -149,6 +150,6 @@ Keep total under 2000 words. Output valid JSON only.`;
     agentType: "MARKET_RESEARCH",
     content: marketResearch,
     confidence,
-    reasoning: `Identified ${competitorCount} competitors and ${marketResearch.marketSize.regional ? "regional + " : ""}global market sizing data`,
+    reasoning: `Identified ${competitorCount} competitors and ${marketResearch.marketSize?.regional ? "regional + " : ""}global market sizing data`,
   };
 }

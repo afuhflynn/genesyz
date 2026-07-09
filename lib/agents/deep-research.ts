@@ -83,7 +83,7 @@ Search for real competitors, market gaps, and technical challenges. Consider loc
   );
 
   const researchData = textResult.text;
-  const toolResults = textResult.toolResults;
+  const toolResults = textResult.toolResults ?? [];
 
   // Step 2: Synthesize into structured object
   const { result: objResult, modelUsed: synthesisModelUsed } =
@@ -124,6 +124,6 @@ ${JSON.stringify(toolResults, null, 2)}`,
     agentType: "DEEP_RESEARCH",
     content: deepResearchContent,
     confidence: 0.85,
-    reasoning: `Performed ${toolResults.length} web searches to validate market gaps and technical feasibility.`,
+    reasoning: `Performed ${toolResults?.length ?? 0} web searches to validate market gaps and technical feasibility.`,
   };
 }
