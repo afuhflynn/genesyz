@@ -88,7 +88,7 @@ Use the 'getIdeaContext' tool to fetch more details if needed.`;
 
     const result = streamText({
       model,
-      system: systemPrompt,
+      instructions: systemPrompt,
       tools: tools,
       messages,
     });
