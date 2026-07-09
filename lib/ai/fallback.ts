@@ -3,12 +3,11 @@ import {
   type GenerateTextResult,
   generateObject,
   generateText,
-  type LanguageModel,
 } from "ai";
 import { model as geminiModel } from "./models";
 import { z } from "zod";
 
-const model: LanguageModel = geminiModel;
+const model = geminiModel;
 
 interface FallbackOptions {
   schema: z.ZodTypeAny;
@@ -91,11 +90,11 @@ export async function generateObjectWithFallback<T>(
   try {
     const result = await generateObject({
       schema,
-      system,
+      instructions: system,
       prompt,
       model,
     });
-    return { result: result as GenerateObjectResult<T>, modelUsed: "gemini-2.5-flash" };
+    return { result: result as unknown as GenerateObjectResult<T>, modelUsed: "gemini-3.5-flash" };
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
     console.warn(`[${agentName}] generateObject failed:`, message);
@@ -115,14 +114,14 @@ export async function generateObjectWithFallback<T>(
 
 async function generateTextFallbackWithSchema<T>(
   schema: z.ZodTypeAny,
-  system: string | undefined,
+  instructions: string | undefined,
   prompt: string,
   agentName: string,
 ): Promise<{ result: GenerateObjectResult<T>; modelUsed: string }> {
   for (let i = 0; i < 2; i++) {
     try {
       const textResult = await generateText({
-        system: `${system}\n\nIMPORTANT: Respond with valid JSON only. No markdown, no explanations.`,
+        instructions: `${instructions}\n\nIMPORTANT: Respond with valid JSON only. No markdown, no explanations.`,
         prompt: `${prompt}\n\nRespond as a JSON object matching this schema: ${JSON.stringify(schema.description ? { type: (schema._def as { typeName?: string }).typeName } : {}).slice(0, 500)}...`,
         model,
       });
@@ -130,15 +129,15 @@ async function generateTextFallbackWithSchema<T>(
       const text = textResult.text;
       const parsed = await safeJsonParse(text, schema);
 
-      console.log(`[${agentName}] Successfully parsed using gemini-2.5-flash with text fallback`);
+      console.log(`[${agentName}] Successfully parsed using gemini-3.5-flash with text fallback`);
 
       return {
         result: {
           object: parsed,
           usage: textResult.usage,
           finishReason: textResult.finishReason,
-        } as GenerateObjectResult<T>,
-        modelUsed: "gemini-2.5-flash-text-fallback",
+        } as unknown as GenerateObjectResult<T>,
+        modelUsed: "gemini-3.5-flash-text-fallback",
       };
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
@@ -152,13 +151,13 @@ async function generateTextFallbackWithSchema<T>(
 export async function generateTextWithFallback(
   options: Record<string, unknown>,
   agentName: string,
-): Promise<{ result: GenerateTextResult<any, any>; modelUsed: string }> {
+): Promise<{ result: GenerateTextResult<any, any, any>; modelUsed: string }> {
   try {
     const result = await generateText({
       ...options,
       model,
     } as any);
-    return { result, modelUsed: "gemini-2.5-flash" };
+    return { result: result as any, modelUsed: "gemini-3.5-flash" };
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
     console.warn(`[${agentName}] Gemini generation failed:`, message);

@@ -61,9 +61,6 @@ export function ChatInterface({ ideas = [] }: ChatInterfaceProps) {
         includeResearch,
         vcMode,
       },
-      headers: {
-        "Content-Type": "application/json",
-      },
       credentials: "same-origin",
     }),
   });

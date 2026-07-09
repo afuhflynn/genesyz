@@ -1,4 +1,4 @@
-import { stepCountIs, streamText } from "ai";
+import { isStepCount, streamText } from "ai";
 import { model } from "@/lib/ai/models";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
@@ -146,11 +146,11 @@ If the user asks for a pitch review or market analysis, use your tools to get th
 
     const result = streamText({
       model,
-      system: systemPrompt,
+      instructions: systemPrompt,
       tools: {
         ...tools,
       },
-      stopWhen: stepCountIs(20),
+      stopWhen: isStepCount(20),
       messages: coreMessages,
       onFinish: async ({ text, toolCalls, toolResults, usage }) => {
         try {
@@ -194,7 +194,7 @@ If the user asks for a pitch review or market analysis, use your tools to get th
       },
     });
 
-    return result.toUIMessageStreamResponse({
+    return result.toTextStreamResponse({
       headers: {
         "x-conversation-id": conversationId || "",
       },

@@ -68,7 +68,7 @@ Be helpful, clear, and concise. Use the research data to inform your responses.`
 
     const result = streamText({
       model,
-      system: systemPrompt,
+      instructions: systemPrompt,
       messages,
     });
 

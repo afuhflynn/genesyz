@@ -1,7 +1,7 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport, UIDataTypes, UIMessage, UITools } from "ai";
+import { DefaultChatTransport } from "ai";
 import {
   BotIcon,
   CheckIcon,
@@ -88,7 +88,7 @@ export function VCCoach({ startupId, startupName }: VCCoachProps) {
       body: {
         conversationId: params.conversationId,
       },
-      fetch: async (url, init) => {
+      fetch: async (url: RequestInfo | URL, init: RequestInit | undefined) => {
         const response = await fetch(url, init);
         const convId = response.headers.get("x-conversation-id");
         if (convId && !params.conversationId) {
@@ -116,27 +116,27 @@ export function VCCoach({ startupId, startupName }: VCCoachProps) {
         // If message has tool calls/results, we should ideally map them back
         // For now, simple text mapping is used, but we can extend for full tool support
         if (m.toolCalls && Array.isArray(m.toolCalls)) {
-          m.toolCalls.forEach((tc: any) => {
+          for (const tc of m.toolCalls) {
             parts.push({
               type: "tool-call",
               toolCallId: tc.toolCallId || tc.id,
               toolName: tc.toolName || tc.function?.name,
               args: tc.args || JSON.parse(tc.function?.arguments || "{}"),
-              state: "output-available",
+              state: "call-completed",
             });
-          });
+          }
         }
 
         if (m.toolResults && Array.isArray(m.toolResults)) {
-          m.toolResults.forEach((tr: any) => {
+          for (const tr of m.toolResults) {
             parts.push({
               type: "tool-result",
               toolCallId: tr.toolCallId,
               toolName: tr.toolName,
               result: tr.result,
-              state: "output-available",
+              isError: false,
             });
-          });
+          }
         }
 
         return {
@@ -146,7 +146,7 @@ export function VCCoach({ startupId, startupName }: VCCoachProps) {
           createdAt: new Date(m.createdAt),
         };
       });
-      setMessages(mappedMessages as UIMessage<unknown, UIDataTypes, UITools>[]);
+      setMessages(mappedMessages as any);
     } else if (!params.conversationId) {
       setMessages([]);
     }

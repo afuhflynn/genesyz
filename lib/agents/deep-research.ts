@@ -1,4 +1,4 @@
-import { stepCountIs } from "ai";
+import { isStepCount } from "ai";
 import {
   generateObjectWithFallback,
   generateTextWithFallback,
@@ -77,7 +77,7 @@ Category: ${interpretedIdea?.category || "Not specified"}${locationPromptSection
 
 Search for real competitors, market gaps, and technical challenges. Consider location-specific factors.`,
       tools,
-      stopWhen: stepCountIs(5), // Allow up to 5 steps of research
+      stopWhen: isStepCount(5), // Allow up to 5 steps of research
     },
     "DEEP_RESEARCH",
   );
