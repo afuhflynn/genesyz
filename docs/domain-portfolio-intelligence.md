@@ -11,38 +11,38 @@ Portfolio-level Chief of Staff that analyzes all of a founder's ideas, gathers r
 
 ### Two-Phase Architecture
 
-**Phase 1 — Market Pulse Research**
+**Phase 1 - Market Pulse Research**
 - Receives portfolio summary (all ideas with metrics and history)
 - Uses Tavily web search tools (max 5 steps)
 - Fetches industry news for all categories in the portfolio
 
-**Phase 2 — Structured Report Generation**
+**Phase 2 - Structured Report Generation**
 - Synthesizes portfolio data + market intelligence + tool results
 - Produces comprehensive weekly strategic report
 
 ### Operating Principles
-1. **Judgment over analysis** — Opinionated and decisive
-2. **Decision-first** — Every idea gets Go/Pause/Kill
-3. **Structured risk** — Categorizes risk as Market/Product/Financial/Team
-4. **Action-oriented** — One priority per week + one thing to stop doing
-5. **Delta detection** — Compares current vs historical snapshots
-6. **Brain-drilling** — 3-5 high-pressure questions to challenge assumptions
-7. **Prioritization** — One primary focus (50-80% allocation), others ≤20%
-8. **Measurable outcomes** — Quantifiable success criteria
-9. **Kill criteria** — Explicit, timeboxed conditions for abandoning ideas
+1. **Judgment over analysis** - Opinionated and decisive
+2. **Decision-first** - Every idea gets Go/Pause/Kill
+3. **Structured risk** - Categorizes risk as Market/Product/Financial/Team
+4. **Action-oriented** - One priority per week + one thing to stop doing
+5. **Delta detection** - Compares current vs historical snapshots
+6. **Brain-drilling** - 3-5 high-pressure questions to challenge assumptions
+7. **Prioritization** - One primary focus (50-80% allocation), others ≤20%
+8. **Measurable outcomes** - Quantifiable success criteria
+9. **Kill criteria** - Explicit, timeboxed conditions for abandoning ideas
 
 ### Output Schema
-- `executiveSummary` — 2-3 sentence portfolio status
-- `portfolioThemes` — 3-5 key themes across portfolio
-- `marketPulse` — 3-5 market observations
-- `verdicts` — Go/Pause/Kill per idea
-- `primaryFocus` — Main focus with time allocation (0-100%)
-- `brainDrillingQuestions` — 3-5 tough questions
-- `vcSentiment` — VC sentiment assessment
-- `investmentPotential` — High/Medium/Low
-- `weeklyFocus` — One priority action
-- `topRisks` — 3 biggest risks
-- `failureReasons` — 3-5 failure reasons to watch
+- `executiveSummary` - 2-3 sentence portfolio status
+- `portfolioThemes` - 3-5 key themes across portfolio
+- `marketPulse` - 3-5 market observations
+- `verdicts` - Go/Pause/Kill per idea
+- `primaryFocus` - Main focus with time allocation (0-100%)
+- `brainDrillingQuestions` - 3-5 tough questions
+- `vcSentiment` - VC sentiment assessment
+- `investmentPotential` - High/Medium/Low
+- `weeklyFocus` - One priority action
+- `topRisks` - 3 biggest risks
+- `failureReasons` - 3-5 failure reasons to watch
 
 ## Weekly Strategic Report
 
@@ -76,10 +76,10 @@ First day of every month at 00:00 UTC via Inngest cron (`monthly-reevaluation`).
 ## Research Feed
 
 Per-startup aggregated timeline:
-- `IDEA_RESEARCH` — Initial validation research
-- `WEEKLY_REPORT` — AI analysis reports (one per week)
-- `WEEKLY_DIGEST` — Strategic portfolio digests (weekly)
-- `WEEKLY_REMINDER` — Update reminder notifications (Friday/Saturday)
+- `IDEA_RESEARCH` - Initial validation research
+- `WEEKLY_REPORT` - AI analysis reports (one per week)
+- `WEEKLY_DIGEST` - Strategic portfolio digests (weekly)
+- `WEEKLY_REMINDER` - Update reminder notifications (Friday/Saturday)
 
 **Route**: `/startups/[slug]/research-feed`
 **API**: `GET /api/startups/[id]/research-feed` (paginated, filterable by type and date range)
@@ -87,5 +87,5 @@ Per-startup aggregated timeline:
 ## Data Model
 
 Key models:
-- `IdeaSnapshot` — Periodic state captures with verdict, state, deltas
-- `ResearchFeedItem` — Feed entries with type, title, summary, content (idempotency key for deduplication)
+- `IdeaSnapshot` - Periodic state captures with verdict, state, deltas
+- `ResearchFeedItem` - Feed entries with type, title, summary, content (idempotency key for deduplication)

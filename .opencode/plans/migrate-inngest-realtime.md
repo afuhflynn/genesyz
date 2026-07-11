@@ -8,7 +8,7 @@
 
 ---
 
-### 1. `package.json` — Remove `@inngest/realtime`
+### 1. `package.json` - Remove `@inngest/realtime`
 
 Remove this line from `dependencies`:
 ```diff
@@ -19,7 +19,7 @@ Then run `pnpm install` to clean lockfile.
 
 ---
 
-### 2. `lib/inngest/client.ts` — Remove `realtimeMiddleware`
+### 2. `lib/inngest/client.ts` - Remove `realtimeMiddleware`
 
 **Replace lines 1-9:**
 ```typescript
@@ -45,11 +45,11 @@ export const inngest = new Inngest({
 });
 ```
 
-**Reason:** In v4, realtime is built-in — no middleware registration needed.
+**Reason:** In v4, realtime is built-in - no middleware registration needed.
 
 ---
 
-### 3. `lib/inngest/functions/research-pipeline.ts` — Rewrite channel def + update publish calls
+### 3. `lib/inngest/functions/research-pipeline.ts` - Rewrite channel def + update publish calls
 
 **Change import (line 1):**
 ```diff
@@ -120,11 +120,11 @@ List of all publish call sites to update in this file:
 | 392 | `research.progress` | → `publish(ch["research.progress"], { status: result.success ? "COMPLETED" : "FAILED", message: result.success ? "AI research completed successfully" : "AI research failed", id: uuid4() })` |
 | 527 | `research.finished` | → `publish(ch["research.finished"], { success: result.success, ideaId, overallScore, message: "Deep Research and Analysis finished.", id: uuid4() })` |
 
-Note: The `research.progress` at line 392 previously included `result:` in the data payload. This field is now dropped since the schema only validates `{ status, message, id }`. This is fine — the result data was never consumed on the client side via the realtime subscription.
+Note: The `research.progress` at line 392 previously included `result:` in the data payload. This field is now dropped since the schema only validates `{ status, message, id }`. This is fine - the result data was never consumed on the client side via the realtime subscription.
 
 ---
 
-### 4. `lib/agents/pipeline.ts` — Import type change + 12 publish calls
+### 4. `lib/agents/pipeline.ts` - Import type change + 12 publish calls
 
 **Change import (line 1):**
 ```diff
@@ -150,9 +150,9 @@ const ch = ideaChannel({ ideaId });
 + publish(ch["research.progress"], { status, message, id })
 ```
 
-Lines 94, 108, 120, 135, 147, 162, 174, 189, 201, 217, 229, 244 — all change `research.progress` topic, same pattern.
+Lines 94, 108, 120, 135, 147, 162, 174, 189, 201, 217, 229, 244 - all change `research.progress` topic, same pattern.
 
-Note: Line 135 currently has a typo `marketRsearchStepId` (should be `marketResearchStepId`) — the `marketRsearchStepId` was included as a property alongside `id` in the data object. With the new schema, only `id` is used. The `marketRsearchStepId` extra field is dropped (no client code reads it).
+Note: Line 135 currently has a typo `marketRsearchStepId` (should be `marketResearchStepId`) - the `marketRsearchStepId` was included as a property alongside `id` in the data object. With the new schema, only `id` is used. The `marketRsearchStepId` extra field is dropped (no client code reads it).
 
 ---
 
@@ -164,7 +164,7 @@ Note: Line 135 currently has a typo `marketRsearchStepId` (should be `marketRese
 + import { getSubscriptionToken, type Realtime } from "inngest";
 ```
 
-The `getSubscriptionToken` function has the same signature in v4 — just a different package. The rest of the file stays the same.
+The `getSubscriptionToken` function has the same signature in v4 - just a different package. The rest of the file stays the same.
 
 ---
 
@@ -182,7 +182,7 @@ Rest of the file stays the same.
 
 ---
 
-### 7. `app/(dashboard)/ideas/[id]/page.tsx` — Replace hook
+### 7. `app/(dashboard)/ideas/[id]/page.tsx` - Replace hook
 
 **Change import (line 3):**
 ```diff
@@ -221,7 +221,7 @@ Rest of the file stays the same.
 +     const message = data.message;
 +     const status = data.status;
 +     const eventId = data.id;
- 
+
       setResearchProgress((prev) => {
         const exists = prev.find((item) => item.step === topic);
         if (exists) {

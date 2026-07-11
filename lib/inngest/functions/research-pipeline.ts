@@ -39,7 +39,7 @@ export const researchPipelineFunction = inngest.createFunction(
     const { ideaId, userId } = event.data;
     const ch = ideaChannel({ ideaId });
 
-    // Transient: non-durable publish — no step ID needed
+    // Transient: non-durable publish - no step ID needed
     await inngest.realtime.publish(ch["parse.idea"], {
       status: "INITIATE",
       message: "AI research pipeline initiated",
@@ -207,7 +207,7 @@ export const researchPipelineFunction = inngest.createFunction(
       });
     }
 
-    // Durable publish for final state — deterministic step ID for memoization
+    // Durable publish for final state - deterministic step ID for memoization
     const synthesisAny = result.synthesis as any;
     const overallScore =
       synthesisAny?.overallScore ?? synthesisAny?.scores?.overall?.score ?? 0;

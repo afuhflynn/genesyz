@@ -9,7 +9,7 @@
 - **AI**: Multi-agent pipeline with Gemini 2.5 Flash (single model)
 - **Background jobs**: Inngest 3.x (event-driven + cron)
 - **Billing**: Polar SDK via `@polar-sh/better-auth` plugin
-- **Rate limiting**: Arcjet (beta 1.0.0-beta.16 — exact pin)
+- **Rate limiting**: Arcjet (beta 1.0.0-beta.16 - exact pin)
 - **File uploads**: UploadThing 7.x (images, audio, PDF)
 - **Email**: Nodemailer + SMTP (NOT Resend SDK)
 
@@ -92,17 +92,17 @@ Auth check is the **first thing** after the function signature.
 
 Use Next.js route groups `(group)` for logical URL-free organization:
 
-- `(auth)` — sign-in, sign-up, forgot-password, reset-password, verify-email, magic-link
-- `(dashboard)` — dashboard, ideas, startups, settings, billing, onboarding, admin, chat, my-accelerators
-- `(marketing)` — landing, about, faq, how-it-works, pricing
-- `(public)` — public ideas listing
-- `(startup)` — startup-specific routes
+- `(auth)` - sign-in, sign-up, forgot-password, reset-password, verify-email, magic-link
+- `(dashboard)` - dashboard, ideas, startups, settings, billing, onboarding, admin, chat, my-accelerators
+- `(marketing)` - landing, about, faq, how-it-works, pricing
+- `(public)` - public ideas listing
+- `(startup)` - startup-specific routes
 
 ### Component Directory Structure
 
-- `components/ui/` — shadcn/Radix primitive components only
-- `components/<domain>/` — feature components grouped by domain
-- `components/layout/` — Header, Sidebar, Footer, Navbar, UserNav
+- `components/ui/` - shadcn/Radix primitive components only
+- `components/<domain>/` - feature components grouped by domain
+- `components/layout/` - Header, Sidebar, Footer, Navbar, UserNav
 
 ---
 
@@ -191,7 +191,7 @@ Handled internally by `@polar-sh/better-auth` plugin in `lib/auth.ts`. No separa
 
 **Critical coupling:** Polar's `customerId` = the app's `userId`. If Polar's ID format changes, entitlement sync breaks.
 
-**Known bug:** `onCustomerStateChanged` uses `forEach` + `await` (`lib/auth.ts:97`) — `forEach` does not respect `await`. Replace with `for...of`.
+**Known bug:** `onCustomerStateChanged` uses `forEach` + `await` (`lib/auth.ts:97`) - `forEach` does not respect `await`. Replace with `for...of`.
 
 ### Inngest Event Ingestion
 
@@ -230,7 +230,7 @@ Then optionally: `strategic-advisory` for startup ideas.
 
 - Single shared Prisma Client instance in `lib/db.ts`
 - Uses `@prisma/adapter-pg` (adapter-based approach)
-- **PgBouncer NOT configured** — if using PgBouncer in transaction mode, add `?pgbouncer=true` to `DATABASE_URL` or configure the adapter
+- **PgBouncer NOT configured** - if using PgBouncer in transaction mode, add `?pgbouncer=true` to `DATABASE_URL` or configure the adapter
 
 ### Schema Conventions
 
@@ -263,14 +263,14 @@ Add JSDoc to ALL exported functions describing:
 
 Order: external packages → CSS → `@/` absolute imports. Use `import type` for type-only imports.
 
-**Never** import `@prisma/client` types in client components — even with `import type`. If you need types, define them locally or in `lib/api-client.ts`.
+**Never** import `@prisma/client` types in client components - even with `import type`. If you need types, define them locally or in `lib/api-client.ts`.
 
 ### TypeScript
 
 - `interface` for public API types, component props, and exported types
 - `type` for unions, utility types, and `z.infer` results
 - Prisma-generated types imported as `import type { Idea, User } from "@prisma/client"` (server-side only)
-- Avoid `any` — use `unknown` + type guards
+- Avoid `any` - use `unknown` + type guards
 
 ### Component Patterns
 
@@ -304,7 +304,7 @@ Order: external packages → CSS → `@/` absolute imports. Use `import type` fo
 
 - **Conventional commits**: `feat:`, `fix:`, `chore:`, `docs:`, `refactor:`, `test:`, `perf:`, `ci:`
 - Keep commits focused on a single concern
-- Do NOT commit secrets, API keys, or `.env` files — `.env*` in `.gitignore`
+- Do NOT commit secrets, API keys, or `.env` files - `.env*` in `.gitignore`
 
 ### Code Review
 
@@ -325,7 +325,7 @@ Order: external packages → CSS → `@/` absolute imports. Use `import type` fo
 
 - **README.md** must stay in sync with API changes, new features, and dependency updates
 - **RULES.md** (this file) updated when new conventions or anti-patterns are identified
-- **TODO.md** tracks pending work — update as items are completed or discovered
+- **TODO.md** tracks pending work - update as items are completed or discovered
 - Keep `docs/` directory up to date with domain docs and architecture reference
 - When renaming/restructuring directories, update all imports and document the change
 
@@ -335,19 +335,19 @@ Order: external packages → CSS → `@/` absolute imports. Use `import type` fo
 
 | Package | Version | Notes |
 |---|---|---|
-| `next` | `16.1.1` (exact) | Very new — verify plugin compatibility |
+| `next` | `16.1.1` (exact) | Very new - verify plugin compatibility |
 | `react`/`react-dom` | `19.2.3` (exact) | Latest stable |
-| `@arcjet/next` | `1.0.0-beta.16` (exact) | Beta — do not upgrade without full testing |
-| `@arcjet/ip` | `1.0.0-beta.16` (exact) | Beta — do not upgrade without full testing |
+| `@arcjet/next` | `1.0.0-beta.16` (exact) | Beta - do not upgrade without full testing |
+| `@arcjet/ip` | `1.0.0-beta.16` (exact) | Beta - do not upgrade without full testing |
 | `@polar-sh/sdk` | `^0.42.1` | Watch for breaking minor versions |
 | `@polar-sh/better-auth` | `^1.6.3` | Check compatibility with `better-auth` upgrades |
-| `@ai-sdk/google` | `^3.0.6` | Model `"gemini-2.5-flash"` — single model |
-| `zod` | `^4.3.5` | **Zod v4** — breaking changes from v3, verify community libs |
-| `@prisma/client` | `^7.3.0` | Adapter-based — PgBouncer not configured |
+| `@ai-sdk/google` | `^3.0.6` | Model `"gemini-2.5-flash"` - single model |
+| `zod` | `^4.3.5` | **Zod v4** - breaking changes from v3, verify community libs |
+| `@prisma/client` | `^7.3.0` | Adapter-based - PgBouncer not configured |
 
 | `recharts` | `2.15.4` (exact) | Exact pin |
 | `framer-motion` | `^12.24.10` | Compatible with React 19 |
-| `tailwindcss` | `^4` | v4 — CSS-first config, no JS config file |
+| `tailwindcss` | `^4` | v4 - CSS-first config, no JS config file |
 
 ---
 
@@ -357,24 +357,24 @@ Inngest uses step-based memoization. Each step has a unique ID; changing step ID
 
 ### Step ID Rules
 
-- **Must be deterministic strings** — never use `uuid4()`, `Math.random()`, or `Date.now()` as step IDs
+- **Must be deterministic strings** - never use `uuid4()`, `Math.random()`, or `Date.now()` as step IDs
 - **Descriptive**: `"charge-customer-payment"` not `"step-1"`
 - **Stable**: Avoid IDs that encode values that might change
 - **Unique**: Each step in a function needs a distinct ID
 
 ```typescript
-// ✅ Correct — deterministic, descriptive
+// ✅ Correct - deterministic, descriptive
 await step.run("send-order-confirmation", async () => { ... });
 
-// ❌ Wrong — random ID breaks memoization
+// ❌ Wrong - random ID breaks memoization
 const publish = (topic, data) => step.realtime.publish(uuid4(), topic, data);
 
-// ✅ Correct — non-durable publish for transient updates (no step ID)
+// ✅ Correct - non-durable publish for transient updates (no step ID)
 async ({ event, step, publish }) => {
   publish(ch.status, { message: "Processing..." });
 };
 
-// ✅ Correct — durable publish with stable step ID
+// ✅ Correct - durable publish with stable step ID
 await step.realtime.publish("publish-research-finished", ch.topic, data);
 ```
 
@@ -383,16 +383,16 @@ await step.realtime.publish("publish-research-finished", ch.topic, data);
 | Pattern | Use When | Step ID Needed |
 |---|---|---|
 | `publish(topic, data)` (handler arg) | Transient progress updates, fire-and-forget | No |
-| `step.realtime.publish(id, topic, data)` | Important final state that must survive retries | Yes — deterministic string |
-| `step.sendEvent(id, event)` | Emit events to trigger other functions | Yes — deterministic string |
+| `step.realtime.publish(id, topic, data)` | Important final state that must survive retries | Yes - deterministic string |
+| `step.sendEvent(id, event)` | Emit events to trigger other functions | Yes - deterministic string |
 
 ### Evolving Functions Safely
 
-- **Adding steps**: Safe — new steps execute when discovered by in-progress runs
-- **Modifying step code (same ID)**: Safe — in-progress runs use memoized result; new runs use updated logic
-- **Changing step ID**: Forces re-execution — only when you *want* in-progress runs to re-run a step
-- **Reordering steps**: Logs a warning — handled gracefully but indicates version drift
-- **Removing steps**: Safe — memoized data for removed steps is ignored
+- **Adding steps**: Safe - new steps execute when discovered by in-progress runs
+- **Modifying step code (same ID)**: Safe - in-progress runs use memoized result; new runs use updated logic
+- **Changing step ID**: Forces re-execution - only when you *want* in-progress runs to re-run a step
+- **Reordering steps**: Logs a warning - handled gracefully but indicates version drift
+- **Removing steps**: Safe - memoized data for removed steps is ignored
 
 ### Major Rewrites (Breaking Changes)
 

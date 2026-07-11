@@ -16,7 +16,7 @@ Better Auth handlers wrapped with Arcjet rate limiting.
 | POST | `/api/auth/custom/forgot-password` | Request password reset (triggers Better Auth) |
 | PUT | `/api/auth/custom/reset-password` | Confirm password reset with token |
 | GET | `/api/auth/[...all]` | Better Auth handlers (session, user, etc.) |
-| POST | `/api/auth/[...all]` | Better Auth handlers (sign-in, sign-out, etc.) — Arcjet wrapped |
+| POST | `/api/auth/[...all]` | Better Auth handlers (sign-in, sign-out, etc.) - Arcjet wrapped |
 
 ## Ideas (13 endpoints)
 
@@ -122,8 +122,8 @@ Better Auth handlers wrapped with Arcjet rate limiting.
 
 | Method | Route | Description |
 |--------|-------|-------------|
-| GET | `/api/admin/stats` | Dashboard stats (total users, ideas, researched ideas) — ADMIN role |
-| GET | `/api/admin/users` | Paginated users with search — ADMIN role |
+| GET | `/api/admin/stats` | Dashboard stats (total users, ideas, researched ideas) - ADMIN role |
+| GET | `/api/admin/users` | Paginated users with search - ADMIN role |
 
 ## Assets (1 endpoint)
 

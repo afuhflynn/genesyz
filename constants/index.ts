@@ -5,9 +5,10 @@ export const faqs = [
       "Genesyz uses a 6-agent AI research pipeline. When you submit an idea, specialized agents are triggered sequentially: an Interpreter structures your input, Market Research analyzes TAM/SAM/SOM and competitors, Trend Analysis checks timing and technology readiness, Execution Friction assesses complexity and risks, Deep Research performs web search via Tavily for market validation, and finally a Synthesis agent combines everything into a final score and verdict. Progress is streamed in real-time.",
   },
   {
-    question: "What's the difference between idea validation and startup tracking?",
+    question:
+      "What's the difference between idea validation and startup tracking?",
     answer:
-      "Idea validation is the first step — our AI pipeline researches your concept and gives you a Go/Pause/Kill verdict with supporting data. Once validated, you can convert your idea into a startup profile and begin tracking execution: weekly check-ins with AI coaching, Kanban task boards, metrics dashboards, streak gamification, and team collaboration. Think of validation as the 'should I build this?' phase and tracking as the 'how do I build it?' phase.",
+      "Idea validation is the first step - our AI pipeline researches your concept and gives you a Go/Pause/Kill verdict with supporting data. Once validated, you can convert your idea into a startup profile and begin tracking execution: weekly check-ins with AI coaching, Kanban task boards, metrics dashboards, streak gamification, and team collaboration. Think of validation as the 'should I build this?' phase and tracking as the 'how do I build it?' phase.",
   },
   {
     question: "What is the Accelerator Hub?",
@@ -32,12 +33,12 @@ export const faqs = [
   {
     question: "What kind of inputs can I provide for idea validation?",
     answer:
-      "Currently, you can provide text descriptions. Voice memo uploads and image/OCR inputs are available in the UI as a Beta feature — they are being connected to production-grade storage. Text input is fully supported and drives the complete 6-agent pipeline.",
+      "Currently, you can provide text descriptions. Voice memo uploads and image/OCR inputs are available in the UI as a Beta feature - they are being connected to production-grade storage. Text input is fully supported and drives the complete 6-agent pipeline.",
   },
   {
     question: "Is my idea data secure and private?",
     answer:
-      "Yes. Your data is tenant-isolated — no cross-user access is possible. We do not use your proprietary idea data to train our base AI models. All entitlements and access controls are enforced server-side.",
+      "Yes. Your data is tenant-isolated - no cross-user access is possible. We do not use your proprietary idea data to train our base AI models. All entitlements and access controls are enforced server-side.",
   },
   {
     question: "What AI model powers Genesyz?",
@@ -72,6 +73,6 @@ export const faqs = [
   {
     question: "How accurate is the AI research?",
     answer:
-      "AI provides a powerful starting point for validation, but it should complement — not replace — your own primary research and customer interviews. Use our reports to identify blind spots, validate assumptions, and guide your go-to-market strategy.",
+      "AI provides a powerful starting point for validation, but it should complement - not replace - your own primary research and customer interviews. Use our reports to identify blind spots, validate assumptions, and guide your go-to-market strategy.",
   },
 ];

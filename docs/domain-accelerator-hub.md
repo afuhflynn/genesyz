@@ -10,7 +10,7 @@ The Accelerator Hub is a full program management system for running startup acce
 
 | Role | Level | Key Permissions |
 |------|-------|----------------|
-| OWNER | 5 (admin) | Full access — manage_accelerator, manage_team, manage_cohorts, manage_startups, manage_events, manage_kpis, view_metrics, view_startups, submit_reports, flag_startups |
+| OWNER | 5 (admin) | Full access - manage_accelerator, manage_team, manage_cohorts, manage_startups, manage_events, manage_kpis, view_metrics, view_startups, submit_reports, flag_startups |
 | PROGRAM_MANAGER | 4 | manage_cohorts, manage_startups, manage_kpis, view_metrics, view_startups, submit_reports, flag_startups, manage_events |
 | OPERATIONS_LEAD | 3 | manage_events, view_startups, manage_startups, view_metrics |
 | MENTOR | 2 | view_startups (assigned only) |
@@ -31,9 +31,9 @@ The Accelerator Hub is a full program management system for running startup acce
 - Delete: With authorization check
 
 ### Public Pages
-- `/accelerators` — Browse all public/active programs with search
-- `/accelerators/[slug]` — Detail page with stats, benefits, cohorts
-- `/accelerators/[slug]/apply` — Application form (name, email, phone, startup, pitch)
+- `/accelerators` - Browse all public/active programs with search
+- `/accelerators/[slug]` - Detail page with stats, benefits, cohorts
+- `/accelerators/[slug]/apply` - Application form (name, email, phone, startup, pitch)
 
 ## Cohorts
 
@@ -52,11 +52,11 @@ The Accelerator Hub is a full program management system for running startup acce
 ## Events
 
 ### Event Types
-1. **workshop** — Educational session
-2. **mentor_session** — One-on-one or group mentoring
-3. **office_hours** — Open office hours
-4. **networking** — Networking event
-5. **demo_day** — Demo day / pitch event
+1. **workshop** - Educational session
+2. **mentor_session** - One-on-one or group mentoring
+3. **office_hours** - Open office hours
+4. **networking** - Networking event
+5. **demo_day** - Demo day / pitch event
 
 ### Event Fields
 - title, description, event type, scheduled date/time
@@ -109,7 +109,7 @@ Cohort-wide strategic analysis for accelerator managers. Identifies patterns acr
 - **KPI forecast**: Whether program-level KPIs are on track with analysis
 
 ### Trigger
-POST to `/api/accelerators/[slug]/coach` — collects all startup data, updates, flags, and KPIs, then runs AI analysis.
+POST to `/api/accelerators/[slug]/coach` - collects all startup data, updates, flags, and KPIs, then runs AI analysis.
 
 ## Investor One-Pager
 
@@ -125,7 +125,7 @@ Print-ready startup profiles for demo days, combining founder data, growth metri
 
 ### Export
 - Browser print-to-PDF (`window.print()`)
-- Growth chart: **placeholder** — not yet implemented
+- Growth chart: **placeholder** - not yet implemented
 
 **API**: GET `/api/accelerators/[slug]/startups/[id]/investor-profile`
 
@@ -146,19 +146,19 @@ Print-ready startup profiles for demo days, combining founder data, growth metri
 ## Data Model
 
 Key models in `prisma/schema.prisma`:
-- `Accelerator` — Program definition (45 fields)
-- `AcceleratorMember` — Role assignment (unique: acceleratorId + userId)
-- `AcceleratorInvitation` — Email-based invites with token
-- `Cohort` — Program cohort with date range
-- `CohortStartup` — Composite join table (cohortId + startupId)
-- `AcceleratorEvent` — Scheduled events with RSVP
-- `EventAttendance` — Composite join table (eventId + userId)
-- `Mentor` — Mentor profiles with expertise array
-- `MentorMatch` — Mentor-startup pairing (unique: mentorId + startupId)
-- `AcceleratorKPI` — Program-level KPIs
-- `AcceleratorWeeklyReport` — Weekly progress summaries
-- `StartupFlag` — At-risk flagging (severity: warning/critical)
-- `AcceleratorApplication` — Incoming applications
+- `Accelerator` - Program definition (45 fields)
+- `AcceleratorMember` - Role assignment (unique: acceleratorId + userId)
+- `AcceleratorInvitation` - Email-based invites with token
+- `Cohort` - Program cohort with date range
+- `CohortStartup` - Composite join table (cohortId + startupId)
+- `AcceleratorEvent` - Scheduled events with RSVP
+- `EventAttendance` - Composite join table (eventId + userId)
+- `Mentor` - Mentor profiles with expertise array
+- `MentorMatch` - Mentor-startup pairing (unique: mentorId + startupId)
+- `AcceleratorKPI` - Program-level KPIs
+- `AcceleratorWeeklyReport` - Weekly progress summaries
+- `StartupFlag` - At-risk flagging (severity: warning/critical)
+- `AcceleratorApplication` - Incoming applications
 
 ## Bootstrap
 

@@ -115,7 +115,7 @@ export async function sendWelcomeEmail(options: {
 
   return sendEmail({
     to,
-    subject: "Welcome to Genesyz — let’s validate your first startup idea",
+    subject: "Welcome to Genesyz - let’s validate your first startup idea",
     html,
     text: `Welcome to Genesyz, ${userName}! You're now in the AI co-founder workspace for validating and executing startup ideas. Validate your first idea now: ${APP_URL}/dashboard`,
   });
@@ -431,7 +431,7 @@ export async function sendWeeklyStrategicReportEmail(options: {
   const markdownContent = `
 # Founder Focus This Week
 
-## ${primaryFocus.ideaTitle} — ${primaryFocus.allocation}% time allocation
+## ${primaryFocus.ideaTitle} - ${primaryFocus.allocation}% time allocation
 
 ### Executive Summary
 ${advisoryAny.executiveSummary || "No summary available"}
@@ -590,7 +590,7 @@ ${formatRiskCliffs()}
     .slice(0, 2)
     .map((a: any) => a.title || "Action")
     .join(", ");
-  const slackSummary = `🎯 Weekly Focus: ${primaryFocus.ideaTitle} (${primaryFocus.allocation}%) — Key actions: ${actionTitles}. VC angle: ${vcSentiment || vcCorner.investorAngle || "N/A"}`;
+  const slackSummary = `🎯 Weekly Focus: ${primaryFocus.ideaTitle} (${primaryFocus.allocation}%) - Key actions: ${actionTitles}. VC angle: ${vcSentiment || vcCorner.investorAngle || "N/A"}`;
 
   // Generate JSON output
   const jsonOutput = {
@@ -916,7 +916,7 @@ export async function sendWeeklyUpdateReminderEmail(options: {
   });
 
   const subject = isFriday
-    ? `Weekly update due for ${startupName} — Week ${weekNumber}`
+    ? `Weekly update due for ${startupName} - Week ${weekNumber}`
     : `Last chance: Submit your weekly update for ${startupName}`;
 
   return sendEmail({
@@ -954,10 +954,10 @@ export async function sendStartupFeatureAnnouncementEmail(options: {
         📊 Enhanced Metrics Tracking
       </p>
       <ul style="margin: 0; padding-left: 20px; color: #475569; font-size: 13px; line-height: 1.7;">
-        <li><strong>35+ categorized metrics</strong> — Revenue, engagement, marketplace, growth</li>
-        <li><strong>Smart formatting</strong> — $1,234 for currency, 15.5% for percentages</li>
-        <li><strong>Flexible periods</strong> — Daily, weekly, monthly, quarterly, yearly</li>
-        <li><strong>Custom metrics</strong> — Define your own when standards don't fit</li>
+        <li><strong>35+ categorized metrics</strong> - Revenue, engagement, marketplace, growth</li>
+        <li><strong>Smart formatting</strong> - $1,234 for currency, 15.5% for percentages</li>
+        <li><strong>Flexible periods</strong> - Daily, weekly, monthly, quarterly, yearly</li>
+        <li><strong>Custom metrics</strong> - Define your own when standards don't fit</li>
       </ul>
     </div>
 
@@ -966,9 +966,9 @@ export async function sendStartupFeatureAnnouncementEmail(options: {
         ✅ Weekly Goal Review
       </p>
       <ul style="margin: 0; padding-left: 20px; color: #475569; font-size: 13px; line-height: 1.7;">
-        <li><strong>Checkbox tracking</strong> — Mark goals complete with one click</li>
-        <li><strong>Auto-calculated rates</strong> — See "2/3 completed, 67%"</li>
-        <li><strong>AI accountability</strong> — Coach factors in execution consistency</li>
+        <li><strong>Checkbox tracking</strong> - Mark goals complete with one click</li>
+        <li><strong>Auto-calculated rates</strong> - See "2/3 completed, 67%"</li>
+        <li><strong>AI accountability</strong> - Coach factors in execution consistency</li>
       </ul>
     </div>
 
@@ -1015,7 +1015,7 @@ export async function sendStartupFeatureAnnouncementEmail(options: {
   const html = renderPremiumEmail({
     title: "Platform Update",
     previewTextText:
-      "From idea validation to execution tracking — Genesyz is now a complete startup operating system.",
+      "From idea validation to execution tracking - Genesyz is now a complete startup operating system.",
     contentHtml,
     badge: "Update",
   });
@@ -1416,7 +1416,7 @@ export async function sendStartupMemberRoleChangedEmail(options: {
       <p style="margin: 0 0 16px 0; color: #0f172a;">
         <strong>New role:</strong> ${newRole}
       </p>
-      
+
       ${
         newPermissions.length > 0
           ? `
@@ -1652,7 +1652,7 @@ export async function sendFollowerWeeklyUpdateEmail(options: {
       <p style="font-size: 14px; color: #e2e8f0; margin: 0 0 16px 0; line-height: 1.6;">
         ${aiAnalysis.summary}
       </p>
-      
+
       ${
         aiAnalysis.comparisonWithPrevious.length > 0
           ? `
@@ -1665,7 +1665,7 @@ export async function sendFollowerWeeklyUpdateEmail(options: {
       `
           : ""
       }
-      
+
       ${
         aiAnalysis.immediateActions.length > 0
           ? `

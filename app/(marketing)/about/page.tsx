@@ -1,4 +1,11 @@
-import { Building2, Lightbulb, Rocket, Target, TrendingUp, Users } from "lucide-react";
+import {
+  Building2,
+  Lightbulb,
+  Rocket,
+  Target,
+  TrendingUp,
+  Users,
+} from "lucide-react";
 
 export default function AboutPage() {
   return (
@@ -11,7 +18,7 @@ export default function AboutPage() {
           </h1>
           <p className="text-xl text-slate-300 max-w-2xl mx-auto leading-relaxed">
             From idea to exit. Genesyz helps founders validate, track, and scale
-            their startups — all in one platform.
+            their startups - all in one platform.
           </p>
         </div>
       </section>
@@ -25,14 +32,13 @@ export default function AboutPage() {
                 Genesyz was built for founders who need more than an idea
                 validator. The insight was simple: validation is just the first
                 step. Once you know your idea has potential, you need to execute
-                — and execution is where most startups fail.
+                - and execution is where most startups fail.
               </p>
               <p className="text-muted-foreground mb-4 leading-relaxed">
                 So we built a complete operating system. A 6-agent AI pipeline
-                validates your idea. A startup execution tracker helps you
-                ship. Team collaboration keeps everyone aligned. The
-                Accelerator Hub connects you with programs that can grow your
-                startup.
+                validates your idea. A startup execution tracker helps you ship.
+                Team collaboration keeps everyone aligned. The Accelerator Hub
+                connects you with programs that can grow your startup.
               </p>
               <p className="text-muted-foreground leading-relaxed">
                 Genesyz is the platform we wished existed when we were building
@@ -48,7 +54,9 @@ export default function AboutPage() {
 
       <section className="py-24 bg-slate-50">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-16">What Genesyz Does</h2>
+          <h2 className="text-3xl font-bold text-center mb-16">
+            What Genesyz Does
+          </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <div className="p-6 rounded-2xl bg-white border">
               <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center mb-4">
@@ -68,8 +76,8 @@ export default function AboutPage() {
               <h3 className="font-bold mb-2">Startup Execution Tracker</h3>
               <p className="text-sm text-muted-foreground">
                 Convert validated ideas into startup profiles. Track weekly
-                updates with 34+ metrics, Kanban tasks, goals, and streaks.
-                Get AI-powered coaching on every update.
+                updates with 34+ metrics, Kanban tasks, goals, and streaks. Get
+                AI-powered coaching on every update.
               </p>
             </div>
             <div className="p-6 rounded-2xl bg-white border">

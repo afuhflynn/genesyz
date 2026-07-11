@@ -115,7 +115,7 @@ Package Manager
 PRODUCT DEFINITION
 ────────────────────────────────
 
-Build **Genesyz** — the AI-powered Startup Operating System for founders.
+Build **Genesyz** - the AI-powered Startup Operating System for founders.
 
 Core goals:
 - Validate ideas instantly with a 6-agent AI research pipeline
@@ -130,8 +130,8 @@ CORE FEATURES (FULLY IMPLEMENT)
 
 ### 1. Idea Validation (6-Agent AI Pipeline)
 - Text input (primary)
-- Voice notes (upload + transcription) — *Coming Soon*
-- Image upload (OCR + semantic extraction) — *Coming Soon*
+- Voice notes (upload + transcription) - *Coming Soon*
+- Image upload (OCR + semantic extraction) - *Coming Soon*
 - Six-agent pipeline: Interpreter → Market Research → Trend Analysis → Execution Friction → Deep Research → Synthesis
 - Real-time progress streaming via Inngest Realtime
 - Per-idea Guide Agent for follow-up Q&A

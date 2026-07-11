@@ -13,15 +13,15 @@ The Startup Execution Tracker converts validated ideas into active startup profi
 4. Location is captured via geographic selector (continent → country → region → city)
 
 ### Startup Fields
-- **name**, **slug** — Unique identifiers
-- **tagline**, **description** — Pitch and full description
-- **industry** — Free-text industry tag
-- **stage** — `IDEA → VALIDATION → BUILDING → LAUNCHED → SCALING`
-- **targetMarket** — `CONSUMER`, `SMB`, `ENTERPRISE`
-- **website**, **location** — Contact info
-- **primaryMetricType** — The single metric the founder commits to (default: `USER_CONVERSATIONS`)
-- **isLaunched**, **launchDate**, **weeksToLaunch** — Launch tracking
-- **currentWeekNumber** — Auto-incremented week counter (relative to creation date)
+- **name**, **slug** - Unique identifiers
+- **tagline**, **description** - Pitch and full description
+- **industry** - Free-text industry tag
+- **stage** - `IDEA → VALIDATION → BUILDING → LAUNCHED → SCALING`
+- **targetMarket** - `CONSUMER`, `SMB`, `ENTERPRISE`
+- **website**, **location** - Contact info
+- **primaryMetricType** - The single metric the founder commits to (default: `USER_CONVERSATIONS`)
+- **isLaunched**, **launchDate**, **weeksToLaunch** - Launch tracking
+- **currentWeekNumber** - Auto-incremented week counter (relative to creation date)
 
 ### Idea-to-Startup Pipeline
 - The `ConvertToStartupCTA` component is shown on researched ideas with no existing startup
@@ -44,12 +44,12 @@ Only `USER_CONVERSATIONS` metric is tracked. Fields:
 
 ### Post-Launch Mode (`isLaunched: true`)
 Unlocks full metric catalog (34 types across 6 categories):
-- **Revenue & Financial** — MRR, ARR, Gross/Net Revenue, Take Rate, etc.
-- **User & Engagement** — DAU, WAU, MAU, Retention, Churn, etc.
-- **Marketplace & Transactions** — GMV, Completed Orders, Bookings
-- **Growth & Trajectory** — WoW Growth, MoM Growth
-- **Special Cases** — Signed Contracts, Pipeline Value, Product Milestones
-- **Custom** — Named custom metric
+- **Revenue & Financial** - MRR, ARR, Gross/Net Revenue, Take Rate, etc.
+- **User & Engagement** - DAU, WAU, MAU, Retention, Churn, etc.
+- **Marketplace & Transactions** - GMV, Completed Orders, Bookings
+- **Growth & Trajectory** - WoW Growth, MoM Growth
+- **Special Cases** - Signed Contracts, Pipeline Value, Product Milestones
+- **Custom** - Named custom metric
 
 Up to 5 additional metrics can be tracked per week alongside the primary metric.
 
@@ -74,7 +74,7 @@ Triggered by Inngest on `weeklyUpdate.created` event:
 A separate follower-friendly analysis is generated for external subscribers.
 
 #### API Endpoint
-`POST /api/startups/[id]/updates` — Creates weekly update, triggers streak sync and AI analysis events.
+`POST /api/startups/[id]/updates` - Creates weekly update, triggers streak sync and AI analysis events.
 
 ### Metrics Dashboard
 **Route**: `/startups/[slug]/metrics`
@@ -109,7 +109,7 @@ A Kanban board using `@dnd-kit`:
 | VIEWER | view |
 
 ### Team Management
-- Owner is implicit (the startup creator) — no join table record needed
+- Owner is implicit (the startup creator) - no join table record needed
 - Members stored in `StartupMember` join table with role
 - Owner cannot be assigned via API; only ADMIN, MEMBER, VIEWER can be invited
 - Search users by name/email via `/api/users/search`
@@ -131,17 +131,17 @@ An AI-powered strategic advisor chat:
 - Session ID persisted in URL via nuqs (bookmarkable)
 - Suggested questions: review weekly update, pitch prep, competitor analysis, growth priorities
 
-**API**: `POST /api/startups/[id]/chat` — Streaming AI chat endpoint.
+**API**: `POST /api/startups/[id]/chat` - Streaming AI chat endpoint.
 
 ## Research Feed
 
 **Route**: `/startups/[slug]/research-feed`
 
 Aggregated timeline of AI-generated content:
-- `IDEA_RESEARCH` — Initial idea validation research
-- `WEEKLY_REPORT` — Weekly AI analysis reports
-- `WEEKLY_DIGEST` — Weekly strategic portfolio digests
-- `WEEKLY_REMINDER` — AI-generated update reminders
+- `IDEA_RESEARCH` - Initial idea validation research
+- `WEEKLY_REPORT` - Weekly AI analysis reports
+- `WEEKLY_DIGEST` - Weekly strategic portfolio digests
+- `WEEKLY_REMINDER` - AI-generated update reminders
 
 Filterable by type and date range. Paginated (20 items/page).
 
@@ -154,5 +154,5 @@ Displays current streak, longest streak, milestone progress, and at-risk status.
 ## Profile & Settings
 
 **Routes**:
-- `/startups/[slug]/profile` — Edit startup profile, manage team
-- `/startups/[slug]/settings` — General settings, team management, danger zone (delete startup)
+- `/startups/[slug]/profile` - Edit startup profile, manage team
+- `/startups/[slug]/settings` - General settings, team management, danger zone (delete startup)

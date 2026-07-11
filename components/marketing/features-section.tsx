@@ -108,7 +108,7 @@ const featureCategories = [
       {
         title: "Opportunities Board",
         description:
-          "AI-discovered funding opportunities, fellowships, accelerators, and grants — updated daily via web search. Track through a 7-stage pipeline.",
+          "AI-discovered funding opportunities, fellowships, accelerators, and grants - updated daily via web search. Track through a 7-stage pipeline.",
         icon: Globe,
         color: "text-sky-500",
         bg: "bg-sky-50",
@@ -154,7 +154,7 @@ export function FeaturesSection() {
             transition={{ delay: 0.1 }}
             className="text-lg text-slate-600"
           >
-            Genesyz is a complete startup operating system — from first idea to
+            Genesyz is a complete startup operating system - from first idea to
             scaling execution, team collaboration, and accelerator programs.
           </motion.p>
         </div>

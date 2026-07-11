@@ -43,9 +43,9 @@ export function Hero() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="text-lg md:text-xl text-slate-600 mb-10 max-w-3xl leading-relaxed"
           >
-            Genesyz is your AI co-founder — pressure-test an idea, research the
-            market, and then operate your startup with weekly metrics, a research
-            feed, and a strategic VC Coach in your corner.
+            Genesyz is your AI co-founder - pressure-test an idea, research the
+            market, and then operate your startup with weekly metrics, a
+            research feed, and a strategic VC Coach in your corner.
           </motion.p>
 
           <motion.div

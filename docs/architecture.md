@@ -65,7 +65,7 @@ generateObjectWithFallback<T>(prompt, schema):
      ├─ Success → return parsed + validated object
      └─ Schema complexity error → fall back to generateText
         ├─ generateText with JSON instruction
-        ├─ safeJsonParse() — multi-strategy JSON extraction
+        ├─ safeJsonParse() - multi-strategy JSON extraction
         │  ├─ direct JSON.parse
         │  ├─ markdown code block extraction
         │  ├─ regex {…} or […] extraction
@@ -165,19 +165,19 @@ User ──→ Entitlement (1:1)
   │
   ├── Idea ──→ IdeaInput (1:N)
   │     ├── ResearchJob (1:N)
-  │     ├── ResearchPacket (1:N) — one per agent per run
-  │     ├── IdeaScore (1:N) — versioned scores
-  │     ├── ResearchLog (1:N) — prompt/response audit trail
-  │     ├── UrlContent (1:N) — scraped URL contents
-  │     ├── PromptVersion (1:N) — edit history
+  │     ├── ResearchPacket (1:N) - one per agent per run
+  │     ├── IdeaScore (1:N) - versioned scores
+  │     ├── ResearchLog (1:N) - prompt/response audit trail
+  │     ├── UrlContent (1:N) - scraped URL contents
+  │     ├── PromptVersion (1:N) - edit history
   │     ├── GuideConversation ──→ GuideMessage (1:N)
-  │     ├── IdeaSnapshot (1:N) — periodic state captures
-  │     └── Startup (1:1, optional) — conversion target
+  │     ├── IdeaSnapshot (1:N) - periodic state captures
+  │     └── Startup (1:1, optional) - conversion target
   │
   ├── Startup ──→ StartupStreak (1:1)
   │     ├── WeeklyUpdate ──→ WeeklyGoal (1:N)
   │     │                └── WeeklyMetricEntry (1:N)
-  │     ├── StartupMetric (1:N) — named metrics
+  │     ├── StartupMetric (1:N) - named metrics
   │     ├── StartupGoal (1:N)
   │     ├── TaskList ──→ Task (1:N)
   │     ├── StartupMember (1:N)
@@ -186,8 +186,8 @@ User ──→ Entitlement (1:1)
   │     ├── StartupOpportunity (1:N)
   │     ├── ResearchFeedItem (1:N)
   │     ├── StartupFlag (1:N)
-  │     ├── MentorMatch (1:N) — accelerator mentor pairing
-  │     ├── CohortStartup (1:N) — accelerator cohort membership
+  │     ├── MentorMatch (1:N) - accelerator mentor pairing
+  │     ├── CohortStartup (1:N) - accelerator cohort membership
   │     └── AcceleratorApplication (1:N)
   │
   ├── Accelerator ──→ Cohort ──→ CohortStartup (1:N)
@@ -292,18 +292,18 @@ app/layout.tsx (root)
                       └── Analytics (Vercel)
 
 lib/
-  ├── auth.ts + auth-client.ts — Better Auth instance
-  ├── db.ts — Prisma client singleton (PrismaPg adapter)
-  ├── agents/ — 10 AI agents
-  ├── ai/ — Model definitions, fallback, tools
-  ├── inngest/client.ts — Inngest client + typed events
-  ├── inngest/functions/ — 14 Inngest functions
-  ├── email/ — Nodemailer client + templates
-  ├── polar/ — Polar SDK + plan definitions
-  ├── location/ — Geo detection + research context
-  ├── opportunities/ — Discovery + generation
-  ├── scraping/ — URL extraction + content scraping
-  └── uploadthing-server.ts — UploadThing config
+  ├── auth.ts + auth-client.ts - Better Auth instance
+  ├── db.ts - Prisma client singleton (PrismaPg adapter)
+  ├── agents/ - 10 AI agents
+  ├── ai/ - Model definitions, fallback, tools
+  ├── inngest/client.ts - Inngest client + typed events
+  ├── inngest/functions/ - 14 Inngest functions
+  ├── email/ - Nodemailer client + templates
+  ├── polar/ - Polar SDK + plan definitions
+  ├── location/ - Geo detection + research context
+  ├── opportunities/ - Discovery + generation
+  ├── scraping/ - URL extraction + content scraping
+  └── uploadthing-server.ts - UploadThing config
 
 proxy.ts (Arcjet middleware)
   └── Arcjet Shield + Bot detection (LIVE)

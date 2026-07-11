@@ -40,7 +40,7 @@ export function Footer() {
             <p className="mt-4 max-w-xs text-sm text-muted-foreground leading-relaxed">
               Genesyz is the AI-powered startup operating system. Validate
               ideas, track execution, manage accelerator programs, and
-              collaborate with your team — all in one place.
+              collaborate with your team - all in one place.
             </p>
             <div className="mt-6 flex space-x-4">
               <Link

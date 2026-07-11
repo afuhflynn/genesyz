@@ -476,7 +476,7 @@ export function MetricsDashboard({ slug }: MetricsDashboardProps) {
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
-                  {/* AreaChart with gradient — same style as Primary Metric */}
+                  {/* AreaChart with gradient - same style as Primary Metric */}
                   {chartData.length > 0 && (
                     <div className="h-64 w-full">
                       <ResponsiveContainer width="100%" height="100%">
@@ -560,7 +560,7 @@ export function MetricsDashboard({ slug }: MetricsDashboardProps) {
                     </div>
                   )}
 
-                  {/* List with delta — same style as Primary Metric */}
+                  {/* List with delta - same style as Primary Metric */}
                   <div className="space-y-2">
                     {latestUpdates.map((update) => {
                       const metric = update.additionalMetrics?.find(

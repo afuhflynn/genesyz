@@ -21,7 +21,7 @@ export default function ContactPage() {
     e.preventDefault();
     setSubmitting(true);
 
-    // Simulate sending — in production, this would hit an API route
+    // Simulate sending - in production, this would hit an API route
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     toast.success("Message sent! We'll get back to you soon.");
@@ -40,8 +40,8 @@ export default function ContactPage() {
             Contact Us
           </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Have a question, feedback, or want to discuss a custom plan? We&apos;d
-            love to hear from you.
+            Have a question, feedback, or want to discuss a custom plan?
+            We&apos;d love to hear from you.
           </p>
         </div>
       </section>

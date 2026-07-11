@@ -1,4 +1,4 @@
-# Genesyz — Startup Operating System
+# Genesyz - Startup Operating System
 
 Genesyz is an AI-powered platform that takes founders from raw idea → validated concept → active startup → scaled business. It combines multi-agent AI research, execution tracking, team collaboration, opportunity discovery, and accelerator program management into a single operating system.
 
@@ -7,12 +7,12 @@ Genesyz is an AI-powered platform that takes founders from raw idea → validate
 ### AI-Powered Idea Validation
 - **Multi-modal input**: Submit ideas via text, voice recording (auto-transcribed), or images (OCR-extracted)
 - **6-agent research pipeline** running sequentially with real-time progress streaming:
-  - **Interpreter** — Structures vague input into title/summary/problem/solution; detects URLs and locations
-  - **Market Research** — Analyzes TAM/SAM/SOM (dual-currency: USD + local), competitors, trends, barriers
-  - **Trend Analysis** — Timing verdict (too-early / right-time / late / too-late), tech readiness score
-  - **Execution Friction** — Technical complexity, resource estimates, risk factors, quick wins
-  - **Deep Research** — Tavily web search for market gaps, 3-phase roadmap, pivot options, strategic moat
-  - **Synthesis** — Final scores (0-100) and verdict (pursue-immediately / needs-more-research / not-recommended)
+  - **Interpreter** - Structures vague input into title/summary/problem/solution; detects URLs and locations
+  - **Market Research** - Analyzes TAM/SAM/SOM (dual-currency: USD + local), competitors, trends, barriers
+  - **Trend Analysis** - Timing verdict (too-early / right-time / late / too-late), tech readiness score
+  - **Execution Friction** - Technical complexity, resource estimates, risk factors, quick wins
+  - **Deep Research** - Tavily web search for market gaps, 3-phase roadmap, pivot options, strategic moat
+  - **Synthesis** - Final scores (0-100) and verdict (pursue-immediately / needs-more-research / not-recommended)
 - **AI model**: Google Gemini 3.5 Flash (single model with text-only fallback for schema errors)
 - **Smart re-research**: AI determines if prompt edits are "major" or "minor" to avoid unnecessary reruns
 - **Prompt version control**: Full edit history with timestamps and triggered-research tracking
@@ -53,7 +53,7 @@ Genesyz is an AI-powered platform that takes founders from raw idea → validate
 - **Mentor management**: Expertise tagging, mentor-startup matching with focus areas, searchable directory
 - **KPI tracking**: Per-program KPIs with inline editing, progress bars, deadline tracking
 - **Weekly reports**: Manager-submitted progress summaries with AI-generated summaries
-- **AI Hub Coach**: Cohort-wide health analysis — pattern detection, at-risk identification, KPI forecasting
+- **AI Hub Coach**: Cohort-wide health analysis - pattern detection, at-risk identification, KPI forecasting
 - **Investor one-pagers**: Auto-generated profiles combining founder data, metrics, and AI insights (print-to-PDF)
 - **Application system**: Accept and manage startup applications with status tracking
 - **RBAC**: 5 roles (OWNER / PROGRAM_MANAGER / OPERATIONS_LEAD / MENTOR / OBSERVER) with 10 permissions
@@ -79,7 +79,7 @@ Genesyz is an AI-powered platform that takes founders from raw idea → validate
 | **Database** | PostgreSQL 15 (via Docker Compose, port 5446) |
 | **ORM** | Prisma 7 |
 | **Auth** | Better Auth (email/password, Google OAuth, Magic Link) |
-| **AI** | Vercel AI SDK v7 — Gemini 3.5 Flash (single model) |
+| **AI** | Vercel AI SDK v7 - Gemini 3.5 Flash (single model) |
 | **Background Jobs** | Inngest (16 functions: 6 crons, 10 event-driven) |
 | **Rate Limiting** | Arcjet |
 | **File Storage** | UploadThing |
@@ -211,10 +211,10 @@ Genesyz is an AI-powered platform that takes founders from raw idea → validate
 
 See the `docs/` directory for detailed documentation:
 
-- `docs/domain-startup-tracker.md` — Startup execution tracker
-- `docs/domain-accelerator-hub.md` — Accelerator program management
-- `docs/domain-opportunities.md` — Opportunities board
-- `docs/domain-portfolio-intelligence.md` — Portfolio advisory
-- `docs/api-reference.md` — All 62 API endpoints
-- `docs/architecture.md` — Agent pipeline, Inngest flow, DB schema, RBAC
-- `TECH_STACK.md` — Corrected tech stack details
+- `docs/domain-startup-tracker.md` - Startup execution tracker
+- `docs/domain-accelerator-hub.md` - Accelerator program management
+- `docs/domain-opportunities.md` - Opportunities board
+- `docs/domain-portfolio-intelligence.md` - Portfolio advisory
+- `docs/api-reference.md` - All 62 API endpoints
+- `docs/architecture.md` - Agent pipeline, Inngest flow, DB schema, RBAC
+- `TECH_STACK.md` - Corrected tech stack details

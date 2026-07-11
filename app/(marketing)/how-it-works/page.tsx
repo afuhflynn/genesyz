@@ -14,7 +14,7 @@ const agents = [
   {
     name: "Interpreter Agent",
     description:
-      "Structures your raw input — whether a sentence, a paragraph, or a collection of notes — into a clear title, problem statement, solution, and category. It's the foundation everything else builds on.",
+      "Structures your raw input - whether a sentence, a paragraph, or a collection of notes - into a clear title, problem statement, solution, and category. It's the foundation everything else builds on.",
     icon: Brain,
     color: "text-blue-500",
     bg: "bg-blue-50",
@@ -30,7 +30,7 @@ const agents = [
   {
     name: "Trend Analysis Agent",
     description:
-      "Produces a timing verdict — too early, right time, late, or too late — along with a technology readiness score from 1-10. Flags emerging trends and industry shifts.",
+      "Produces a timing verdict - too early, right time, late, or too late - along with a technology readiness score from 1-10. Flags emerging trends and industry shifts.",
     icon: TrendingUp,
     color: "text-orange-500",
     bg: "bg-orange-50",

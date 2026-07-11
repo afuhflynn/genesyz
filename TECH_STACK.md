@@ -1,4 +1,4 @@
-# Genesyz — Tech Stack (Corrected)
+# Genesyz - Tech Stack (Corrected)
 
 ## Active Stack
 
@@ -65,11 +65,11 @@
 ## Installed but Not Used (Candidate Removal)
 
 See `UNUSED_DEPENDENCIES.md` for full analysis. Notable:
-- `@ai-sdk/xai`, `ai-sdk-ollama`, `@openrouter/ai-sdk-provider` — Alternative AI providers not yet integrated
-- `@pinecone-database/pinecone` — Vector search installed but not wired
-- `@react-pdf/renderer` — Dual PDF library, `pdfkit` is the active one
-- `vitest` — Listed in production deps instead of devDeps
-- `mprocs`, `list`, `streamdown`, `tokenlens` — Developer utilities in production deps
+- `@ai-sdk/xai`, `ai-sdk-ollama`, `@openrouter/ai-sdk-provider` - Alternative AI providers not yet integrated
+- `@pinecone-database/pinecone` - Vector search installed but not wired
+- `@react-pdf/renderer` - Dual PDF library, `pdfkit` is the active one
+- `vitest` - Listed in production deps instead of devDeps
+- `mprocs`, `list`, `streamdown`, `tokenlens` - Developer utilities in production deps
 
 ## Migrations & Changes
 

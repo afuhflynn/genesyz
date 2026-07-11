@@ -18,21 +18,24 @@ import {
 const validationSteps = [
   {
     title: "Capture",
-    description: "Describe your idea in plain text. Our Interpreter Agent structures it into title, problem, solution, and category.",
+    description:
+      "Describe your idea in plain text. Our Interpreter Agent structures it into title, problem, solution, and category.",
     icon: Zap,
     color: "text-yellow-500",
     bg: "bg-yellow-50",
   },
   {
     title: "Analyze",
-    description: "Five specialized AI agents research your market, analyze trends, assess execution friction, and search the web for validation data.",
+    description:
+      "Five specialized AI agents research your market, analyze trends, assess execution friction, and search the web for validation data.",
     icon: Search,
     color: "text-blue-500",
     bg: "bg-blue-50",
   },
   {
     title: "Synthesize",
-    description: "The Synthesis Agent combines all findings into a final verdict (Go/Pause/Kill), scores, and actionable recommendations.",
+    description:
+      "The Synthesis Agent combines all findings into a final verdict (Go/Pause/Kill), scores, and actionable recommendations.",
     icon: BarChart3,
     color: "text-purple-500",
     bg: "bg-purple-50",
@@ -42,21 +45,24 @@ const validationSteps = [
 const executionSteps = [
   {
     title: "Track",
-    description: "Convert your idea into a startup profile and log weekly updates with metrics, goals, and milestones.",
+    description:
+      "Convert your idea into a startup profile and log weekly updates with metrics, goals, and milestones.",
     icon: Target,
     color: "text-green-500",
     bg: "bg-green-50",
   },
   {
     title: "Improve",
-    description: "Get AI-powered coaching on every update. Manage tasks with Kanban boards. Discover opportunities automatically.",
+    description:
+      "Get AI-powered coaching on every update. Manage tasks with Kanban boards. Discover opportunities automatically.",
     icon: TrendingUp,
     color: "text-orange-500",
     bg: "bg-orange-50",
   },
   {
     title: "Scale",
-    description: "Collaborate with your team, join accelerator programs, and get portfolio-level strategic advice.",
+    description:
+      "Collaborate with your team, join accelerator programs, and get portfolio-level strategic advice.",
     icon: Users,
     color: "text-violet-500",
     bg: "bg-violet-50",
@@ -157,7 +163,7 @@ export function HowItWorksSection() {
               className="text-lg text-slate-600 leading-relaxed"
             >
               Once your idea is validated, Genesyz becomes your execution
-              operating system — tracking progress, coaching you, and connecting
+              operating system - tracking progress, coaching you, and connecting
               you with opportunities.
             </motion.p>
           </div>
@@ -210,7 +216,7 @@ export function HowItWorksSection() {
                 </h3>
                 <p className="text-slate-600 mb-8 leading-relaxed">
                   Six specialized AI agents work sequentially to provide a
-                  360-degree view of your idea&apos;s potential — from market
+                  360-degree view of your idea&apos;s potential - from market
                   sizing and trend analysis to execution risk and synthesis.
                 </p>
                 <div className="space-y-4">

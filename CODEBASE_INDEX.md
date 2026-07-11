@@ -29,7 +29,7 @@ genesyz/
 ├── .opencode/           # opencode AI config + migration plans (scan)
 ├── .vscode/             # VS Code settings (skip)
 ├── .nvii/               # NVII project tracking (scan)
-├── app/                 # Next.js App Router — 131 files (inspect)
+├── app/                 # Next.js App Router - 131 files (inspect)
 │   ├── (auth)/          # Auth pages (sign-in, sign-up, etc.)
 │   ├── (dashboard)/     # Dashboard pages (ideas, startups, billing, admin)
 │   ├── (marketing)/     # Landing, about, pricing, FAQ, accelerators, legal
@@ -37,7 +37,7 @@ genesyz/
 │   ├── (startup)/       # Startup-specific pages
 │   ├── accelerator/     # Accelerator admin
 │   └── api/             # 63 API route files
-├── components/          # React components — 156 files (inspect)
+├── components/          # React components - 156 files (inspect)
 │   ├── accelerators/    # Accelerator Hub components (9 files)
 │   ├── ai-elements/     # AI SDK primitive components (30 files)
 │   ├── auth/            # Auth form components (4 files)
@@ -60,7 +60,7 @@ genesyz/
 ├── constants/           # FAQ data, static constants (1 file) (catalog)
 ├── docs/                # Domain documentation (6 files) (catalog)
 ├── hooks/               # Custom React Query hooks (5 files) (inspect)
-├── lib/                 # Core libraries — 57 files (inspect)
+├── lib/                 # Core libraries - 57 files (inspect)
 │   ├── agents/          # 11 AI agents + types (12 files)
 │   ├── ai/              # Model definitions, fallback, tools (4 files)
 │   ├── auth/            # Sign-in utility (1 file)
@@ -75,9 +75,9 @@ genesyz/
 │   └── validators/      # Startup form validation (1 file)
 ├── nuqs/                # URL search params schema (1 file) (catalog)
 ├── patches/             # Empty directory (skip)
-├── prisma/              # DB schema + migrations — 12 files (inspect)
+├── prisma/              # DB schema + migrations - 12 files (inspect)
 ├── providers/           # React Query provider (1 file) (inspect)
-├── public/              # Static assets — 14 files (skip)
+├── public/              # Static assets - 14 files (skip)
 ├── scripts/             # Utility scripts (3 files) (catalog)
 ├── .env                 # Environment (gitignored) (skip)
 ├── .env.example         # Environment template (inspect)
@@ -110,7 +110,7 @@ genesyz/
 
 ## 3. Entry Points
 
-### HTTP (Next.js App Router — 52 pages + 63 API routes)
+### HTTP (Next.js App Router - 52 pages + 63 API routes)
 
 **Pages** (52 `page.tsx` files):
 
@@ -198,7 +198,7 @@ genesyz/
 | Analytics | 1 | Dashboard metrics (GET) |
 | Assets | 1 | Delete (DELETE) |
 
-### Background Jobs (Inngest — 16 functions, 11 registered)
+### Background Jobs (Inngest - 16 functions, 11 registered)
 
 | Function | File | Trigger | Description |
 |---|---|---|---|
@@ -472,10 +472,10 @@ Idea -> conversion -> Startup profile
 ### Unused / Questionable
 
 See `UNUSED_DEPENDENCIES.md` for full analysis. Notable:
-- `@ai-sdk/xai`, `ai-sdk-ollama`, `@openrouter/ai-sdk-provider` — alternative AI providers, not integrated
-- `@pinecone-database/pinecone` — vector search not wired
-- `@react-pdf/renderer` — dual PDF lib; `pdfkit` is active
-- `mprocs`, `list`, `streamdown`, `tokenlens` — dev utilities in production deps
+- `@ai-sdk/xai`, `ai-sdk-ollama`, `@openrouter/ai-sdk-provider` - alternative AI providers, not integrated
+- `@pinecone-database/pinecone` - vector search not wired
+- `@react-pdf/renderer` - dual PDF lib; `pdfkit` is active
+- `mprocs`, `list`, `streamdown`, `tokenlens` - dev utilities in production deps
 
 ---
 
@@ -496,7 +496,7 @@ See `UNUSED_DEPENDENCIES.md` for full analysis. Notable:
 
 | Aspect | Detail |
 |---|---|
-| **CI/CD** | GitHub Actions (push/PR to main) — lint, typecheck, build |
+| **CI/CD** | GitHub Actions (push/PR to main) - lint, typecheck, build |
 | **Deployment** | Vercel (inferred from framework + `@vercel/analytics`) |
 | **Database** | PostgreSQL 15 via Docker (local dev), port 5446 |
 | **Background Jobs** | Inngest Cloud (local dev via Inngest CLI) |
@@ -517,9 +517,9 @@ See `UNUSED_DEPENDENCIES.md` for full analysis. Notable:
 
 3. **Inngest function count**: 16 function files exist in `lib/inngest/functions/`, 11 are registered in the Inngest client. See `lib/inngest/client.ts` for registration.
 
-4. **`.nvii/` directory**: Contains `nvii.json` with a project ID — purpose unclear.
+4. **`.nvii/` directory**: Contains `nvii.json` with a project ID - purpose unclear.
 
-5. **`feedback.txt`**: Unstructured user feedback about ads/competition — not actionable.
+5. **`feedback.txt`**: Unstructured user feedback about ads/competition - not actionable.
 
 6. **No root `middleware.ts`**: Arcjet proxy in `proxy.ts` but not wired as Next.js middleware at root level.
 

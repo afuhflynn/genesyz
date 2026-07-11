@@ -39,7 +39,7 @@ export default function LandingPage() {
             Ready to build something that matters?
           </h2>
           <p className="text-xl opacity-90 mb-10 max-w-2xl mx-auto">
-            From idea validation to execution tracking to accelerator programs —
+            From idea validation to execution tracking to accelerator programs -
             Genesyz is the only platform you need.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
