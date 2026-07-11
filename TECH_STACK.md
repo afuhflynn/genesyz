@@ -9,9 +9,9 @@
 | **Database** | PostgreSQL 15 (Docker, port 5446) | Health-checked, persistent volume |
 | **ORM** | Prisma 7 | `prisma.config.ts` format, 45 models, 17 enums |
 | **Auth** | Better Auth 1.4 | Email/password, Google OAuth, Magic Link + Arcjet rate limiting |
-| **AI Model** | Google Gemini 2.5 Flash via `@ai-sdk/google` | Single model for all agents |
-| **AI SDK** | Vercel AI SDK v6 | `generateObject`, `generateText`, `streamText`, `useChat` |
-| **Background Jobs** | Inngest 3.48 | 14 functions (6 cron, 8 event-driven) with Realtime middleware |
+| **AI Model** | Google Gemini 3.5 Flash via `@ai-sdk/google` | Single model for all agents |
+| **AI SDK** | Vercel AI SDK v7 | `generateObject`, `generateText`, `streamText`, `useChat` |
+| **Background Jobs** | Inngest 4.11 | 16 functions (6 cron, 10 event-driven) with Realtime middleware |
 | **Rate Limiting** | Arcjet | Shield + Bot detection + per-endpoint AI rate limits |
 | **File Storage** | UploadThing 7.x | File uploads, PDF export storage |
 | **Billing** | Polar SDK + @polar-sh/better-auth plugin | Free (3 ideas) / Pro ($20/mo, unlimited) |
@@ -53,10 +53,10 @@
 
 | What Changed | Old (README) | New (Actual) |
 |-------------|-------------|--------------|
-| AI Models | Triple (GPT-4o primary + Mistral secondary + Gemini tertiary) | **Single** (Gemini 2.5 Flash only) |
+| AI Models | Triple (GPT-4o primary + Mistral secondary + Gemini tertiary) | **Single** (Gemini 3.5 Flash only) |
 | File Storage | DigitalOcean Spaces | **UploadThing** (DO Spaces not configured) |
 | Rate Limiting | Not mentioned | **Arcjet** (Shield + Bot detection + AI endpoint limits) |
-| Background Jobs | Mentioned generically | **14 Inngest functions** (6 crons, 8 event-driven) |
+| Background Jobs | Mentioned generically | **16 Inngest functions** (6 crons, 10 event-driven) |
 | State Management | Not mentioned | **TanStack React Query v5** |
 | URL State | Not mentioned | **nuqs** |
 | Missing middleware | Not mentioned | `proxy.ts` exists but no `middleware.ts` at root |
@@ -74,8 +74,8 @@ See `UNUSED_DEPENDENCIES.md` for full analysis. Notable:
 ## Migrations & Changes
 
 ### v0.1 → Current
-- Single-model → Dual-model → Triple-model fallback → **Single-model: Gemini 2.5 Flash**
+- Single-model → Dual-model → Triple-model fallback → **Single-model: Gemini 3.5 Flash**
 - Idea validator → **Full Startup OS** (tracker, accelerator hub, opportunities, strategic advisory)
 - Basic auth → **Better Auth** with social login and magic link
 - Simple scoring → **6-agent pipeline** with real-time streaming
-- No background jobs → **14 Inngest functions** with complex orchestration
+- No background jobs → **16 Inngest functions** with complex orchestration

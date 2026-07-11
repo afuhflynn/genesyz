@@ -2,6 +2,7 @@
   "name": "genesyz",
   "version": "0.1.0",
   "private": true,
+  "description": "The AI-Powered Startup Operating System. Validate ideas with multi-agent research, track execution with weekly updates and AI coaching, manage accelerator programs, and collaborate with your team.",
   "scripts": {
     "dev": "next dev",
     "start": "next start",

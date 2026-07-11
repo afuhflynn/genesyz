@@ -32,8 +32,8 @@ export function PricingSection() {
             transition={{ delay: 0.1 }}
             className="text-lg text-slate-600"
           >
-            Start for free and upgrade as you validate more ideas. No hidden
-            fees, no surprises.
+            Start for free and upgrade when you need more ideas. All features
+            are included from day one. No hidden fees, no surprises.
           </motion.p>
         </div>
 
@@ -50,7 +50,7 @@ export function PricingSection() {
                 {PLANS.FREE.name}
               </h3>
               <p className="text-slate-500 text-sm mb-6">
-                Perfect for exploring your first few startup ideas.
+                Everything you need to get started. 3 active ideas, all core features included.
               </p>
               <div className="flex items-baseline">
                 <span className="text-5xl font-black tracking-tight text-slate-900">
@@ -98,7 +98,7 @@ export function PricingSection() {
             <div className="mb-8">
               <h3 className="text-xl font-bold mb-2">{PLANS.PRO.name}</h3>
               <p className="text-slate-400 text-sm mb-6">
-                For serious entrepreneurs building multiple ventures.
+                Unlimited ideas and priority support for serious founders.
               </p>
               <div className="flex items-baseline">
                 <span className="text-5xl font-black tracking-tight">

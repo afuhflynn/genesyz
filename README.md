@@ -13,12 +13,12 @@ Genesyz is an AI-powered platform that takes founders from raw idea → validate
   - **Execution Friction** — Technical complexity, resource estimates, risk factors, quick wins
   - **Deep Research** — Tavily web search for market gaps, 3-phase roadmap, pivot options, strategic moat
   - **Synthesis** — Final scores (0-100) and verdict (pursue-immediately / needs-more-research / not-recommended)
-- **Triple-model fallback**: GPT-4o → Mistral Mixtral → Gemini Flash (automatic failover)
+- **AI model**: Google Gemini 3.5 Flash (single model with text-only fallback for schema errors)
 - **Smart re-research**: AI determines if prompt edits are "major" or "minor" to avoid unnecessary reruns
 - **Prompt version control**: Full edit history with timestamps and triggered-research tracking
 - **Auto-location detection**: Extracts location mentions from text for localized market sizing
 - **Auto-URL extraction**: Scrapes and stores referenced URLs for research context
-- **PDF export**: Server-generated research reports (Pro plan)
+- **PDF export**: Server-generated research reports
 - **Public sharing**: Permanent share links with nanoid tokens
 - **Per-idea Guide Agent**: Multi-session conversational AI that answers questions about research results
 
@@ -79,8 +79,8 @@ Genesyz is an AI-powered platform that takes founders from raw idea → validate
 | **Database** | PostgreSQL 15 (via Docker Compose, port 5446) |
 | **ORM** | Prisma 7 |
 | **Auth** | Better Auth (email/password, Google OAuth, Magic Link) |
-| **AI** | Vercel AI SDK v6 — Gemini 2.5 Flash (single model) |
-| **Background Jobs** | Inngest (14 functions: 6 crons, 8 event-driven) |
+| **AI** | Vercel AI SDK v7 — Gemini 3.5 Flash (single model) |
+| **Background Jobs** | Inngest (16 functions: 6 crons, 10 event-driven) |
 | **Rate Limiting** | Arcjet |
 | **File Storage** | UploadThing |
 | **Billing** | Polar (via @polar-sh/better-auth plugin) |
@@ -120,7 +120,7 @@ Genesyz is an AI-powered platform that takes founders from raw idea → validate
 ├── lib/                   # Core libraries
 │   ├── agents/          # 10 AI agents (6 pipeline + Guide, Startup Coach, Hub Coach, Strategic Advisory)
 │   ├── ai/              # Model definitions, fallback mechanism, tools (Tavily), webfetch
-│   ├── inngest/         # 14 Inngest functions
+│   ├── inngest/         # 16 Inngest functions
 │   ├── email/           # Email templates (welcome, verification, research complete, weekly digest)
 │   ├── location/        # Location detection and research context builder
 │   ├── opportunities/   # Opportunity discovery and generation

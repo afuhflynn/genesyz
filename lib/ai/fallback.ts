@@ -1,3 +1,14 @@
+/**
+ * AI Generation Fallback Module
+ *
+ * Architecture: Single model (Gemini 3.5 Flash) with text-only fallback.
+ * If generateObject fails due to schema constraints, we fall back to
+ * generateText + manual JSON parsing with retries.
+ *
+ * This is NOT a multi-model fallback. For multi-model support,
+ * the model provider in ./models.ts would need to be swapped.
+ */
+
 import {
   type GenerateObjectResult,
   type GenerateTextResult,

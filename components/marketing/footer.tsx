@@ -7,11 +7,12 @@ const footerLinks = {
     { name: "Features", href: "/#features" },
     { name: "How it Works", href: "/how-it-works" },
     { name: "Pricing", href: "/pricing" },
+    { name: "Accelerators", href: "/accelerators" },
     { name: "FAQ", href: "/faq" },
   ],
   company: [
     { name: "About Us", href: "/about" },
-    { name: "Contact", href: "/faq" }, // Linking contact to FAQ for now as per common SaaS patterns
+    { name: "Contact", href: "/contact" },
   ],
   legal: [
     { name: "Privacy Policy", href: "/privacy" },
@@ -37,31 +38,17 @@ export function Footer() {
               <span className="text-xl font-semibold">Genesyz</span>
             </Link>
             <p className="mt-4 max-w-xs text-sm text-muted-foreground leading-relaxed">
-              Genesyz helps entrepreneurs validate their startup ideas with
-              AI-powered market research and execution plans. Don't build what
-              nobody wants.
+              Genesyz is the AI-powered startup operating system. Validate
+              ideas, track execution, manage accelerator programs, and
+              collaborate with your team — all in one place.
             </p>
             <div className="mt-6 flex space-x-4">
               <Link
-                href="https://x.com/afuhflynn"
-                target="_blank"
-                className="text-muted-foreground hover:text-primary transition-colors"
-              >
-                <Twitter className="h-5 w-5" />
-              </Link>
-              <Link
-                href="https://github.com/afuhflynn"
+                href="https://github.com/afuhflynn/genesyz"
                 target="_blank"
                 className="text-muted-foreground hover:text-primary transition-colors"
               >
                 <Github className="h-5 w-5" />
-              </Link>
-              <Link
-                href="https://linkedin.com/in/afuhflynn"
-                target="_blank"
-                className="text-muted-foreground hover:text-primary transition-colors"
-              >
-                <Linkedin className="h-5 w-5" />
               </Link>
             </div>
           </div>
@@ -119,7 +106,7 @@ export function Footer() {
         </div>
         <div className="mt-12 border-t pt-8 text-center">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} Genesyz Inc. All rights reserved.
+            © {new Date().getFullYear()} Genesyz. All rights reserved.
           </p>
         </div>
       </div>

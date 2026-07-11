@@ -32,7 +32,7 @@ genesyz/
 ├── app/                 # Next.js App Router — 131 files (inspect)
 │   ├── (auth)/          # Auth pages (sign-in, sign-up, etc.)
 │   ├── (dashboard)/     # Dashboard pages (ideas, startups, billing, admin)
-│   ├── (marketing)/     # Landing, about, pricing, FAQ
+│   ├── (marketing)/     # Landing, about, pricing, FAQ, accelerators, legal
 │   ├── (public)/        # Shared idea pages
 │   ├── (startup)/       # Startup-specific pages
 │   ├── accelerator/     # Accelerator admin
@@ -110,9 +110,9 @@ genesyz/
 
 ## 3. Entry Points
 
-### HTTP (Next.js App Router — 49 pages + 63 API routes)
+### HTTP (Next.js App Router — 52 pages + 63 API routes)
 
-**Pages** (49 `page.tsx` files):
+**Pages** (52 `page.tsx` files):
 
 | Route | File | Description |
 |---|---|---|
@@ -121,6 +121,9 @@ genesyz/
 | `/faq` | `app/(marketing)/faq/page.tsx` | FAQ page |
 | `/how-it-works` | `app/(marketing)/how-it-works/page.tsx` | How it works |
 | `/pricing` | `app/(marketing)/pricing/page.tsx` | Pricing page |
+| `/privacy` | `app/(marketing)/privacy/page.tsx` | Privacy policy |
+| `/terms` | `app/(marketing)/terms/page.tsx` | Terms of service |
+| `/contact` | `app/(marketing)/contact/page.tsx` | Contact form |
 | `/sign-in` | `app/(auth)/sign-in/page.tsx` | Sign in |
 | `/sign-up` | `app/(auth)/sign-up/page.tsx` | Sign up |
 | `/forgot-password` | `app/(auth)/forgot-password/page.tsx` | Forgot password |
@@ -160,10 +163,10 @@ genesyz/
 | `/admin` | `app/(dashboard)/admin/page.tsx` | Admin panel |
 | `/admin/users` | `app/(dashboard)/admin/users/page.tsx` | User management |
 | `/admin/accelerators/[slug]` | `app/(dashboard)/admin/accelerators/[slug]/page.tsx` | Admin accelerator |
-| `/accelerators` | `app/(marketing)/_accelerators/page.tsx` | Public accelerators |
-| `/accelerators/new` | `app/(marketing)/_accelerators/new/page.tsx` | New accelerator |
-| `/accelerators/[slug]` | `app/(marketing)/_accelerators/[slug]/page.tsx` | Accelerator detail |
-| `/accelerators/[slug]/apply` | `app/(marketing)/_accelerators/[slug]/apply/page.tsx` | Apply to accelerator |
+| `/accelerators` | `app/(marketing)/accelerators/page.tsx` | Public accelerators |
+| `/accelerators/new` | `app/(marketing)/accelerators/new/page.tsx` | New accelerator |
+| `/accelerators/[slug]` | `app/(marketing)/accelerators/[slug]/page.tsx` | Accelerator detail |
+| `/accelerators/[slug]/apply` | `app/(marketing)/accelerators/[slug]/apply/page.tsx` | Apply to accelerator |
 | `/accelerator/admin` | `app/accelerator/admin/page.tsx` | Accelerator admin (no route group) |
 
 **Layouts** (5 `layout.tsx` files): Root, (auth), (dashboard), (marketing), (startup)/[slug]
@@ -195,7 +198,7 @@ genesyz/
 | Analytics | 1 | Dashboard metrics (GET) |
 | Assets | 1 | Delete (DELETE) |
 
-### Background Jobs (Inngest — 10 functions)
+### Background Jobs (Inngest — 16 functions, 11 registered)
 
 | Function | File | Trigger | Description |
 |---|---|---|---|
@@ -209,8 +212,9 @@ genesyz/
 | weekly-digest | `lib/inngest/functions/weekly-digest.ts` | Cron | Digest emails to external followers |
 | startup-feature-announcement | `lib/inngest/functions/startup-feature-announcement.ts` | Event | Feature announcements |
 | startup-follower-notifications | `lib/inngest/functions/startup-follower-notifications.ts` | Event | Follower notifications |
+| startup-weekly-report-v2 | `lib/inngest/functions/startup-weekly-report-v2.ts` | Cron | Enhanced weekly reporting |
 
-6 crons + 4 event-driven = 10 functions found. (README says 14; 4 may be unaccounted for.)
+6 crons + 5 event-driven = 11 registered functions. 5 additional function modules exist in the functions directory but are not registered in the Inngest client.
 
 ### Middleware / Proxy
 
@@ -509,9 +513,9 @@ See `UNUSED_DEPENDENCIES.md` for full analysis. Notable:
 
 1. **No tests found**: `vitest` is in deps but no `__tests__/` or `.test.ts` files were discovered.
 
-2. **Model architecture discrepancy**: README/RULES say single-model (Gemini 2.5 Flash), but `DUAL_MODEL_DOCUMENTATION_UPDATE.md` documents Mistral primary + Gemini fallback. Needs verification against `lib/ai/models.ts`.
+2. **Model architecture**: Single model: Google Gemini 3.5 Flash (via @ai-sdk/google). See `lib/ai/models.ts` and `lib/ai/fallback.ts`. Triple-model fallback was a prior spec that was never implemented.
 
-3. **Inngest function count**: README says 14 functions; only 10 function files found. 4 unaccounted for.
+3. **Inngest function count**: 16 function files exist in `lib/inngest/functions/`, 11 are registered in the Inngest client. See `lib/inngest/client.ts` for registration.
 
 4. **`.nvii/` directory**: Contains `nvii.json` with a project ID — purpose unclear.
 

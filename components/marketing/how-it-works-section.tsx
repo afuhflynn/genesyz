@@ -4,36 +4,62 @@ import { motion } from "framer-motion";
 import {
   BarChart3,
   CheckCircle2,
+  GitPullRequest,
   Search,
   ShieldCheck,
+  Sparkles,
+  Target,
   TrendingUp,
+  Users,
+  Waypoints,
   Zap,
 } from "lucide-react";
 
-const steps = [
+const validationSteps = [
   {
     title: "Capture",
-    description:
-      "Describe your idea via text, voice memo, or even a napkin sketch.",
+    description: "Describe your idea in plain text. Our Interpreter Agent structures it into title, problem, solution, and category.",
     icon: Zap,
     color: "text-yellow-500",
     bg: "bg-yellow-50",
   },
   {
     title: "Analyze",
-    description:
-      "Our AI agents perform deep market research and competitor analysis.",
+    description: "Five specialized AI agents research your market, analyze trends, assess execution friction, and search the web for validation data.",
     icon: Search,
     color: "text-blue-500",
     bg: "bg-blue-50",
   },
   {
     title: "Synthesize",
-    description:
-      "Get a comprehensive report with market fit scores and execution plans.",
+    description: "The Synthesis Agent combines all findings into a final verdict (Go/Pause/Kill), scores, and actionable recommendations.",
     icon: BarChart3,
     color: "text-purple-500",
     bg: "bg-purple-50",
+  },
+];
+
+const executionSteps = [
+  {
+    title: "Track",
+    description: "Convert your idea into a startup profile and log weekly updates with metrics, goals, and milestones.",
+    icon: Target,
+    color: "text-green-500",
+    bg: "bg-green-50",
+  },
+  {
+    title: "Improve",
+    description: "Get AI-powered coaching on every update. Manage tasks with Kanban boards. Discover opportunities automatically.",
+    icon: TrendingUp,
+    color: "text-orange-500",
+    bg: "bg-orange-50",
+  },
+  {
+    title: "Scale",
+    description: "Collaborate with your team, join accelerator programs, and get portfolio-level strategic advice.",
+    icon: Users,
+    color: "text-violet-500",
+    bg: "bg-violet-50",
   },
 ];
 
@@ -41,62 +67,136 @@ export function HowItWorksSection() {
   return (
     <section id="how-it-works" className="py-24 bg-slate-50/50 overflow-hidden">
       <div className="container mx-auto px-4">
-        <div className="text-center max-w-3xl mx-auto mb-20">
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-4xl md:text-5xl font-black tracking-tight mb-6"
-          >
-            From "What if?" to "Here's how."
-          </motion.h2>
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
-            className="text-lg text-slate-600 leading-relaxed"
-          >
-            Genesyz automates the weeks of research required to validate a
-            startup idea, giving you clarity in minutes.
-          </motion.p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
-          {/* Connector Line (Desktop) */}
-          <div className="absolute top-1/2 left-0 w-full h-0.5 bg-slate-200 -translate-y-1/2 hidden md:block -z-10" />
-
-          {steps.map((step, index) => (
+        {/* Phase 1: Validation */}
+        <div className="mb-20">
+          <div className="text-center max-w-3xl mx-auto mb-16">
             <motion.div
-              key={step.title}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: index * 0.2 }}
-              className="relative flex flex-col items-center text-center p-8 rounded-3xl bg-white border shadow-sm hover:shadow-xl transition-all group"
+              className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/5 border border-primary/10 text-primary text-xs font-bold mb-4"
             >
-              <div
-                className={`w-20 h-20 rounded-2xl ${step.bg} flex items-center justify-center mb-6 transition-transform group-hover:scale-110 group-hover:rotate-3`}
-              >
-                <step.icon className={`w-10 h-10 ${step.color}`} />
-              </div>
-              <div className="absolute -top-4 -right-4 w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center font-black text-sm border-4 border-white">
-                {index + 1}
-              </div>
-              <h3 className="text-2xl font-bold mb-4">{step.title}</h3>
-              <p className="text-slate-600 leading-relaxed">
-                {step.description}
-              </p>
+              <Sparkles className="w-3 h-3" />
+              <span>PHASE 1: VALIDATION</span>
             </motion.div>
-          ))}
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-4xl md:text-5xl font-black tracking-tight mb-6"
+            >
+              From "What if?" to "Here's how."
+            </motion.h2>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className="text-lg text-slate-600 leading-relaxed"
+            >
+              Genesyz automates weeks of research in minutes. A 6-agent AI
+              pipeline powered by Google Gemini 3.5 Flash analyzes your idea
+              from every angle.
+            </motion.p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+            <div className="absolute top-1/2 left-0 w-full h-0.5 bg-slate-200 -translate-y-1/2 hidden md:block -z-10" />
+
+            {validationSteps.map((step, index) => (
+              <motion.div
+                key={step.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.2 }}
+                className="relative flex flex-col items-center text-center p-8 rounded-3xl bg-white border shadow-sm hover:shadow-xl transition-all group"
+              >
+                <div
+                  className={`w-20 h-20 rounded-2xl ${step.bg} flex items-center justify-center mb-6 transition-transform group-hover:scale-110 group-hover:rotate-3`}
+                >
+                  <step.icon className={`w-10 h-10 ${step.color}`} />
+                </div>
+                <div className="absolute -top-4 -right-4 w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center font-black text-sm border-4 border-white">
+                  {index + 1}
+                </div>
+                <h3 className="text-2xl font-bold mb-4">{step.title}</h3>
+                <p className="text-slate-600 leading-relaxed">
+                  {step.description}
+                </p>
+              </motion.div>
+            ))}
+          </div>
         </div>
 
-        {/* Pipeline Visualization - UploadThing Style */}
+        {/* Phase 2: Execution */}
+        <div className="mb-20">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-50 border border-green-200 text-green-600 text-xs font-bold mb-4"
+            >
+              <Sparkles className="w-3 h-3" />
+              <span>PHASE 2: EXECUTION</span>
+            </motion.div>
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-4xl md:text-5xl font-black tracking-tight mb-6"
+            >
+              From validated to <span className="text-primary">scaling.</span>
+            </motion.h2>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className="text-lg text-slate-600 leading-relaxed"
+            >
+              Once your idea is validated, Genesyz becomes your execution
+              operating system — tracking progress, coaching you, and connecting
+              you with opportunities.
+            </motion.p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+            <div className="absolute top-1/2 left-0 w-full h-0.5 bg-slate-200 -translate-y-1/2 hidden md:block -z-10" />
+
+            {executionSteps.map((step, index) => (
+              <motion.div
+                key={step.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.2 }}
+                className="relative flex flex-col items-center text-center p-8 rounded-3xl bg-white border shadow-sm hover:shadow-xl transition-all group"
+              >
+                <div
+                  className={`w-20 h-20 rounded-2xl ${step.bg} flex items-center justify-center mb-6 transition-transform group-hover:scale-110 group-hover:rotate-3`}
+                >
+                  <step.icon className={`w-10 h-10 ${step.color}`} />
+                </div>
+                <div className="absolute -top-4 -right-4 w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-black text-sm border-4 border-white">
+                  {index + 1}
+                </div>
+                <h3 className="text-2xl font-bold mb-4">{step.title}</h3>
+                <p className="text-slate-600 leading-relaxed">
+                  {step.description}
+                </p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+
+        {/* Pipeline Visualization */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
-          className="mt-24 p-1 rounded-3xl bg-linear-to-br from-primary/20 via-violet-500/20 to-primary/20 shadow-2xl"
+          className="mt-8 p-1 rounded-3xl bg-linear-to-br from-primary/20 via-violet-500/20 to-primary/20 shadow-2xl"
         >
           <div className="bg-white rounded-[22px] p-8 md:p-12">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
@@ -109,17 +209,18 @@ export function HowItWorksSection() {
                   Coordinated Intelligence.
                 </h3>
                 <p className="text-slate-600 mb-8 leading-relaxed">
-                  Our proprietary pipeline coordinates multiple specialized AI
-                  agents—Market Research, Trend Analysis, and Execution
-                  Friction—to provide a 360-degree view of your idea's
-                  potential.
+                  Six specialized AI agents work sequentially to provide a
+                  360-degree view of your idea&apos;s potential — from market
+                  sizing and trend analysis to execution risk and synthesis.
                 </p>
                 <div className="space-y-4">
                   {[
-                    "Real-time market trend identification",
-                    "Automated competitor landscape mapping",
-                    "Technical feasibility & risk assessment",
-                    "Go-to-market strategy synthesis",
+                    "Market sizing with TAM/SAM/SOM analysis",
+                    "Competitor landscape and barrier identification",
+                    "Timing verdict and technology readiness scoring",
+                    "Execution complexity and resource estimation",
+                    "Web search-backed market validation",
+                    "Final synthesis with Go/Pause/Kill verdict",
                   ].map((item, i) => (
                     <div key={i} className="flex items-center gap-3">
                       <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center shrink-0">
@@ -152,8 +253,11 @@ export function HowItWorksSection() {
                   {/* Orbiting Agents */}
                   {[
                     { icon: Search, color: "bg-blue-500", delay: 0 },
-                    { icon: TrendingUp, color: "bg-orange-500", delay: 2 },
-                    { icon: ShieldCheck, color: "bg-purple-500", delay: 4 },
+                    { icon: Target, color: "bg-purple-500", delay: 1.5 },
+                    { icon: TrendingUp, color: "bg-orange-500", delay: 3 },
+                    { icon: ShieldCheck, color: "bg-rose-500", delay: 4.5 },
+                    { icon: Waypoints, color: "bg-cyan-500", delay: 6 },
+                    { icon: BarChart3, color: "bg-emerald-500", delay: 7.5 },
                   ].map((agent, i) => (
                     <motion.div
                       key={i}
@@ -169,15 +273,15 @@ export function HowItWorksSection() {
                       className="absolute w-full h-full flex items-center justify-center"
                     >
                       <div
-                        className={`w-12 h-12 ${agent.color} rounded-xl shadow-lg flex items-center justify-center -translate-y-[120px]`}
+                        className={`w-10 h-10 ${agent.color} rounded-xl shadow-lg flex items-center justify-center -translate-y-[120px]`}
                       >
-                        <agent.icon className="w-6 h-6 text-white" />
+                        <agent.icon className="w-5 h-5 text-white" />
                       </div>
                     </motion.div>
                   ))}
                 </div>
                 <div className="absolute bottom-6 text-[10px] font-mono text-slate-400 uppercase tracking-widest">
-                  Pipeline Status: Active
+                  Gemini 3.5 Flash • Inngest Realtime
                 </div>
               </div>
             </div>

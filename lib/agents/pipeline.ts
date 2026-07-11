@@ -33,17 +33,16 @@ export interface PipelineResult {
  * @returns Pipeline result with all agent outputs and synthesis
  *
  * **AI Model Architecture**:
- * - Primary Model: OpenAI `gpt-4o` (Most capable for heavy reasoning/synthesis)
- * - Secondary Model: Mistral `open-mixtral-8x7b` (Cost-effective and reliable backup)
- * - Tertiary Model: Google `gemini-2.5-flash` (Resilient final fallback)
- * - Each agent logs which model was used via `researchLog.model` field
+ * - Model: Google Gemini 3.5 Flash (single model with text-only fallback)
+ * - If schema generation fails, falls back to generateText + JSON parsing
+ * - Each agent logs the model used via `researchLog.model` field
  *
  * **Agent Pipeline**:
- * 1. Interpreter Agent (understands idea from vague inputs)
- * 2. Market Research Agent (analyzes TAM, competitors, growth rates)
- * 3. Trend Analysis Agent (checks timing and technology readiness)
- * 4. Execution Friction Agent (identifies technical and operational risks)
- * 5. Deep Research Agent (uses web search for market validation)
+ * 1. Interpreter Agent (structures vague input into title/summary/problem/solution)
+ * 2. Market Research Agent (analyzes TAM/SAM/SOM, competitors, growth rates, barriers)
+ * 3. Trend Analysis Agent (timing verdict, technology readiness score)
+ * 4. Execution Friction Agent (technical complexity, resource estimates, risk factors)
+ * 5. Deep Research Agent (web search via Tavily for market gaps and validation)
  * 6. Synthesis Agent (combines all data into final score and verdict)
  */
 export async function runResearchPipeline(

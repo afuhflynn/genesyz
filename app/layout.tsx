@@ -23,9 +23,9 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Genesyz - Validate Startup Ideas with AI",
+  title: "Genesyz — The AI-Powered Startup Operating System",
   description:
-    "Capture, research, and validate your startup ideas instantly with AI-powered market analysis.",
+    "From idea to exit. Validate your startup ideas with a 6-agent AI research pipeline, track execution with weekly updates and AI coaching, manage accelerator programs, discover opportunities, and collaborate with your team.",
   icons: {
     icon: [
       { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Genesyz",
+        alt: "Genesyz — The AI-Powered Startup Operating System",
       },
     ],
   },
