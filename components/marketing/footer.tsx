@@ -27,7 +27,7 @@ export function Footer() {
           <div className="col-span-2 lg:col-span-2">
             <Link href="/" className="flex items-center ">
               <Image
-                src="/images/logo/icon.png"
+                src="/icon.png"
                 alt="Genesyz Logo"
                 width={120}
                 height={30}
