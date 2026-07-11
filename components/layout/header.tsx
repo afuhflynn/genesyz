@@ -21,8 +21,8 @@ export function Header() {
             <Image
               src="/icon.png"
               alt="Genesyz Logo"
-              width={30}
-              height={30}
+              width={46}
+              height={46}
               className="aspect-square object-contain"
             />
 
