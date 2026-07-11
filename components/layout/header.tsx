@@ -19,7 +19,7 @@ export function Header() {
         <div className="flex md:w-full items-center justify-between">
           <Link href="/" className="items-center h-7.5 w-30 hidden md:flex">
             <Image
-              src="/images/logo/source-icon.png"
+              src="/images/logo/icon.png"
               alt="Genesyz Logo"
               width={120}
               height={30}

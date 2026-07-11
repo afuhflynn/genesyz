@@ -28,7 +28,7 @@ export function Navbar() {
         <div className="flex items-center gap-8">
           <Link href="/" className="flex items-center lg:mr-14">
             <Image
-              src="/images/logo/source-icon.png"
+              src="/images/logo/icon.png"
               alt="Genesyz Logo"
               width={120}
               height={30}

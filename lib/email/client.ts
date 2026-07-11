@@ -35,8 +35,8 @@ export async function sendEmail(options: SendEmailOptions): Promise<boolean> {
       attachments: [
         {
           filename: "Genesyz Logo",
-          path: "https://res.cloudinary.com/duzg7l0eo/image/upload/v1772257771/logo-email_z85ejj.png", // path to your image
-          cid: "unique-app-logo", // must match the src in HTML
+          path: "../../public/logo.png", // path to your image
+          cid: "genesyz-logo", // must match the src in HTML
           contentDisposition: "inline", // helps prevent showing as a separate attachment
         },
       ],
