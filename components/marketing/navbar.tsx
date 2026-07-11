@@ -30,9 +30,9 @@ export function Navbar() {
             <Image
               src="/icon.png"
               alt="Genesyz Logo"
-              width={120}
+              width={30}
               height={30}
-              className="h-14 w-auto"
+              className="aspect-square object-contain"
             />
 
             <span className="text-xl font-semibold">Genesyz</span>
