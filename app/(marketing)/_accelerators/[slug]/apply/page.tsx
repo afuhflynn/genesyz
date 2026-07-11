@@ -161,7 +161,7 @@ export default function ApplyToAcceleratorPage({ params }: ApplyPageProps) {
               <CardHeader>
                 <CardTitle>Your Startup</CardTitle>
                 <CardDescription>
-                  Link your IdeasVault startup (optional)
+                  Link your Genesyz startup (optional)
                 </CardDescription>
               </CardHeader>
               <CardContent>

@@ -213,7 +213,7 @@ export function InvestorOnePager({ slug, startupId }: { slug: string, startupId:
 
             {/* Footer */}
             <div className="pt-8 border-t flex items-center justify-between text-[10px] text-muted-foreground">
-               <div>Generated via <strong>IdeasVault Accelerator Hub</strong></div>
+               <div>Generated via <strong>Genesyz Accelerator Hub</strong></div>
                <div>Report Date: {new Date().toLocaleDateString()}</div>
             </div>
           </div>

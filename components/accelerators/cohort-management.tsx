@@ -327,7 +327,7 @@ export function CohortManagement({ slug, currentRole }: { slug: string, currentR
                           <DialogContent className="sm:max-w-[500px]">
                              <DialogHeader>
                                 <DialogTitle>Onboard Startups</DialogTitle>
-                                <DialogDescription>Search for startups on IdeasVault to add them to {selectedCohort.name}.</DialogDescription>
+                                <DialogDescription>Search for startups on Genesyz to add them to {selectedCohort.name}.</DialogDescription>
                              </DialogHeader>
                              <div className="space-y-4 py-4">
                                 <div className="flex gap-2">

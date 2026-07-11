@@ -279,7 +279,7 @@ export function StartupProfileForm({
                       </div>
                     </FormControl>
                     <FormDescription>
-                      ideasvault.app/startups/{field.value || "your-slug"}
+                      genesyz.ai/startups/{field.value || "your-slug"}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

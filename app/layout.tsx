@@ -23,7 +23,7 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "IdeasVault - Validate Startup Ideas with AI",
+  title: "Genesyz - Validate Startup Ideas with AI",
   description:
     "Capture, research, and validate your startup ideas instantly with AI-powered market analysis.",
   icons: {
@@ -45,7 +45,7 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "IdeasVault",
+        alt: "Genesyz",
       },
     ],
   },

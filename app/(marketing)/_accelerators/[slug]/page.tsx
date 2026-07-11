@@ -21,7 +21,7 @@ export async function generateMetadata({
   }
 
   return {
-    title: `${accelerator.name} | IdeasVault`,
+    title: `${accelerator.name} | Genesyz`,
     description:
       accelerator.description || `Learn more about ${accelerator.name}`,
   };

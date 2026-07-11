@@ -29,13 +29,13 @@ export function Navbar() {
           <Link href="/" className="flex items-center lg:mr-14">
             <Image
               src="/images/logo/source-icon.png"
-              alt="IdeasVault Logo"
+              alt="Genesyz Logo"
               width={120}
               height={30}
               className="h-14 w-auto"
             />
 
-            <span className="text-xl font-semibold">IdeasVault</span>
+            <span className="text-xl font-semibold">Genesyz</span>
           </Link>
           <nav className="hidden md:flex items-center gap-6">
             {navLinks.map((link) => (

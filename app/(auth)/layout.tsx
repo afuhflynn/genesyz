@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Auth | IdeasVault",
+  title: "Auth | Genesyz",
   description:
-    "IdeasVault auth. Create, signin into your account, update password and more.",
+    "Genesyz auth. Create, signin into your account, update password and more.",
 };
 
 export default function AuthLayout({

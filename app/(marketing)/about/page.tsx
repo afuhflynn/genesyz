@@ -21,16 +21,16 @@ export default function AboutPage() {
         <div className="container mx-auto px-4 max-w-4xl">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
             <div>
-              <h2 className="text-3xl font-bold mb-6">The IdeasVault Story</h2>
+              <h2 className="text-3xl font-bold mb-6">The Genesyz Story</h2>
               <p className="text-muted-foreground mb-4 leading-relaxed">
-                IdeasVault was born out of the frustration of seeing talented
+                Genesyz was born out of the frustration of seeing talented
                 founders spend months building products that didn't have a
                 market.
               </p>
               <p className="text-muted-foreground leading-relaxed">
                 We realized that the research phase—the most critical part of
                 starting a company—was often skipped because it was too slow,
-                too expensive, or too boring. We built IdeasVault to make
+                too expensive, or too boring. We built Genesyz to make
                 validation instant, data-driven, and accessible to everyone.
               </p>
             </div>

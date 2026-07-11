@@ -1,7 +1,7 @@
 import { db } from "../lib/db";
 
 async function main() {
-  console.log("Seeding IdeasVault Accelerator Program...");
+  console.log("Seeding Genesyz Accelerator Program...");
 
   // Find or create a placeholder owner (we'll need to assign this later)
   const placeholderUser = await db.user.findFirst({
@@ -19,7 +19,7 @@ async function main() {
 
   // Check if accelerator already exists
   const existingAccelerator = await db.accelerator.findUnique({
-    where: { slug: "ideasvault-accelerator" },
+    where: { slug: "genesyz-accelerator" },
   });
 
   if (existingAccelerator) {
@@ -27,19 +27,19 @@ async function main() {
     return;
   }
 
-  // Create the IdeasVault Accelerator Program
+  // Create the Genesyz Accelerator Program
   const accelerator = await db.accelerator.create({
     data: {
-      name: "IdeasVault Accelerator Program",
-      slug: "ideasvault-accelerator",
+      name: "Genesyz Accelerator Program",
+      slug: "genesyz-accelerator",
       description:
-        "The official IdeasVault internal accelerator program for startups. Join our cohort to get weekly coaching, mentor access, and investor connections.",
+        "The official Genesyz internal accelerator program for startups. Join our cohort to get weekly coaching, mentor access, and investor connections.",
       programType: "accelerator",
       durationWeeks: 12,
       benefits:
         "- Weekly AI-powered coaching\n- Mentor matching\n- Investor demo day\n- Community access\n- Resources and tools",
       requirements:
-        "- Active startup on IdeasVault\n- Commitment to weekly updates\n- Open to feedback and coaching",
+        "- Active startup on Genesyz\n- Commitment to weekly updates\n- Open to feedback and coaching",
       maxStartups: 50,
       isPublic: true,
       isActive: true,

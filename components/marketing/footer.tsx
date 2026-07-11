@@ -28,16 +28,16 @@ export function Footer() {
             <Link href="/" className="flex items-center ">
               <Image
                 src="/images/logo/source-icon.png"
-                alt="IdeasVault Logo"
+                alt="Genesyz Logo"
                 width={120}
                 height={30}
                 className="h-14 w-auto"
               />
 
-              <span className="text-xl font-semibold">IdeasVault</span>
+              <span className="text-xl font-semibold">Genesyz</span>
             </Link>
             <p className="mt-4 max-w-xs text-sm text-muted-foreground leading-relaxed">
-              IdeasVault helps entrepreneurs validate their startup ideas with
+              Genesyz helps entrepreneurs validate their startup ideas with
               AI-powered market research and execution plans. Don't build what
               nobody wants.
             </p>
@@ -119,7 +119,7 @@ export function Footer() {
         </div>
         <div className="mt-12 border-t pt-8 text-center">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} IdeasVault Inc. All rights reserved.
+            © {new Date().getFullYear()} Genesyz Inc. All rights reserved.
           </p>
         </div>
       </div>

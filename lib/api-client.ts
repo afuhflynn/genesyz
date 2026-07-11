@@ -1,6 +1,6 @@
 /**
  * =================================
- * IdeasVault API Client
+ * Genesyz API Client
  * Centralized API interface for all backend calls
  * =================================
  */

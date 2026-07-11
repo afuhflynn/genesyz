@@ -5,7 +5,7 @@ import { db } from "@/lib/db";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Accelerators | IdeasVault",
+  title: "Accelerators | Genesyz",
   description: "Browse and join accelerator programs to grow your startup",
 };
 

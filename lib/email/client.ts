@@ -27,14 +27,14 @@ export async function sendEmail(options: SendEmailOptions): Promise<boolean> {
   try {
     await transporter.sendMail({
       from: `Flynn at ${process.env.NEXT_PUBLIC_APP_NAME} <${process.env.SMTP_USER}>`,
-      replyTo: "IdeasVault <noreply@ideasvault.com>",
+      replyTo: "Genesyz <noreply@genesyz.ai>",
       to: options.to,
       subject: options.subject,
       html: options.html,
       text: options.text,
       attachments: [
         {
-          filename: "IdeasVault Logo",
+          filename: "Genesyz Logo",
           path: "https://res.cloudinary.com/duzg7l0eo/image/upload/v1772257771/logo-email_z85ejj.png", // path to your image
           cid: "unique-app-logo", // must match the src in HTML
           contentDisposition: "inline", // helps prevent showing as a separate attachment

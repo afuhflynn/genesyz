@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { StartupsList } from "./StartupsList";
 
 export const metadata: Metadata = {
-  title: "Startups | IdeasVault",
+  title: "Startups | Genesyz",
   description: "Manage your startup profiles",
 };
 

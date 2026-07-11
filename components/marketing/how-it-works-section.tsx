@@ -57,7 +57,7 @@ export function HowItWorksSection() {
             transition={{ delay: 0.1 }}
             className="text-lg text-slate-600 leading-relaxed"
           >
-            IdeasVault automates the weeks of research required to validate a
+            Genesyz automates the weeks of research required to validate a
             startup idea, giving you clarity in minutes.
           </motion.p>
         </div>

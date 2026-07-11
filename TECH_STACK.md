@@ -1,4 +1,4 @@
-# IdeasVault — Tech Stack (Corrected)
+# Genesyz — Tech Stack (Corrected)
 
 ## Active Stack
 

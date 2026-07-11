@@ -20,13 +20,13 @@ export function Header() {
           <Link href="/" className="items-center h-7.5 w-30 hidden md:flex">
             <Image
               src="/images/logo/source-icon.png"
-              alt="IdeasVault Logo"
+              alt="Genesyz Logo"
               width={120}
               height={30}
               className="h-14 w-auto"
             />
 
-            <span className="text-xl font-semibold">IdeasVault</span>
+            <span className="text-xl font-semibold">Genesyz</span>
           </Link>
           <div className="md:mr-5 absolute md:relative right-5 self-center md:right-0 flex items-center gap-3">
             {/* <WorkspaceSwitcher /> */}

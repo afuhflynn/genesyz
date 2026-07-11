@@ -39,7 +39,7 @@ export default function LandingPage() {
             Ready to validate your next big idea?
           </h2>
           <p className="text-xl opacity-90 mb-10 max-w-2xl mx-auto">
-            Join hundreds of founders who use IdeasVault to save months of
+            Join hundreds of founders who use Genesyz to save months of
             wasted effort and build with confidence.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">

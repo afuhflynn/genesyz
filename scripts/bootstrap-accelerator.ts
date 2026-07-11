@@ -3,7 +3,7 @@
 import { db } from "../lib/db";
 
 /**
- * Bootstrap script to add users to the IdeasVault Accelerator Program
+ * Bootstrap script to add users to the Genesyz Accelerator Program
  *
  * Usage:
  *   pnpm bootstrap:accelerator add-user --email=user@email.com --role=PROGRAM_MANAGER
@@ -70,7 +70,7 @@ async function createAccelerator() {
 
   // Check if accelerator already exists
   const existingAccelerator = await db.accelerator.findUnique({
-    where: { slug: "ideasvault-accelerator" },
+    where: { slug: "genesyz-accelerator" },
   });
 
   if (existingAccelerator) {
@@ -80,19 +80,19 @@ async function createAccelerator() {
     return;
   }
 
-  // Create the IdeasVault Accelerator Program
+  // Create the Genesyz Accelerator Program
   const accelerator = await db.accelerator.create({
     data: {
-      name: "IdeasVault Accelerator Program",
-      slug: "ideasvault-accelerator",
+      name: "Genesyz Accelerator Program",
+      slug: "genesyz-accelerator",
       description:
-        "The official IdeasVault internal accelerator program for startups. Join our cohort to get weekly coaching, mentor access, and investor connections.",
+        "The official Genesyz internal accelerator program for startups. Join our cohort to get weekly coaching, mentor access, and investor connections.",
       programType: "accelerator",
       durationWeeks: 12,
       benefits:
         "- Weekly AI-powered coaching\n- Mentor matching\n- Investor demo day\n- Community access\n- Resources and tools",
       requirements:
-        "- Active startup on IdeasVault\n- Commitment to weekly updates\n- Open to feedback and coaching",
+        "- Active startup on Genesyz\n- Commitment to weekly updates\n- Open to feedback and coaching",
       maxStartups: 50,
       isPublic: true,
       isActive: true,
@@ -109,7 +109,7 @@ async function createAccelerator() {
     },
   });
 
-  console.log("✅ Created IdeasVault Accelerator Program");
+  console.log("✅ Created Genesyz Accelerator Program");
   console.log(`   Name: ${accelerator.name}`);
   console.log(`   Owner: ${user.email}`);
   console.log(`   URL: /admin/accelerators/${accelerator.slug}`);
@@ -154,7 +154,7 @@ async function addUserToAccelerator() {
 
   // Find accelerator
   const accelerator = await db.accelerator.findUnique({
-    where: { slug: "ideasvault-accelerator" },
+    where: { slug: "genesyz-accelerator" },
   });
 
   if (!accelerator) {
@@ -201,7 +201,7 @@ async function addUserToAccelerator() {
 
 async function listMembers() {
   const accelerator = await db.accelerator.findUnique({
-    where: { slug: "ideasvault-accelerator" },
+    where: { slug: "genesyz-accelerator" },
     include: {
       members: {
         include: {

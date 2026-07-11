@@ -9,7 +9,7 @@ interface CofoundersPageProps {
 }
 
 export const metadata: Metadata = {
-  title: "Co-Founder Match | IdeasVault",
+  title: "Co-Founder Match | Genesyz",
   description: "Find your perfect co-founder",
 };
 

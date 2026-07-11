@@ -11,7 +11,7 @@ export default function FAQPage() {
           </h1>
           <p className="text-xl text-muted-foreground mb-10">
             Have questions? We're here to help you get the most out of
-            IdeasVault.
+            Genesyz.
           </p>
           <SearchBar />
         </div>
@@ -50,7 +50,7 @@ export default function FAQPage() {
             Our support team is available 24/7 to help you with any issues or
             questions you might have.
           </p>
-          <a href="mailto:help@ideasvault.com" target="_blank" rel="noopener">
+          <a href="mailto:support@genesyz.ai" target="_blank" rel="noopener">
             <button
               type={"button"}
               className="h-14 px-10 bg-primary text-primary-foreground rounded-xl font-bold hover:bg-primary/90 transition-colors"

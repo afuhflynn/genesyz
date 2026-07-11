@@ -1,6 +1,6 @@
 /**
  * =================================
- * IdeasVault React Query Hooks
+ * Genesyz React Query Hooks
  * Type-safe data fetching with caching
  * =================================
  */

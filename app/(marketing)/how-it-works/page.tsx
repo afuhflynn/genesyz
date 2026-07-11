@@ -14,7 +14,7 @@ export default function HowItWorksPage() {
       <section className="py-20 bg-slate-50 dark:bg-transparent border-b">
         <div className="container mx-auto px-4 text-center">
           <h1 className="text-4xl font-bold tracking-tight sm:text-6xl mb-6">
-            How IdeasVault Works
+            How Genesyz Works
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Our multi-agent AI pipeline performs deep research so you don't have

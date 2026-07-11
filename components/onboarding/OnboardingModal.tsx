@@ -65,7 +65,7 @@ export function OnboardingModal() {
             <Sparkles className="h-8 w-8 text-primary" />
           </div>
 
-          <h2 className="text-2xl font-bold mb-2">Welcome to IdeasVault!</h2>
+          <h2 className="text-2xl font-bold mb-2">Welcome to Genesyz!</h2>
           <p className="text-muted-foreground mb-8">
             Let's quickly capture your startup idea through a guided
             conversation. Our AI will analyze it and provide actionable

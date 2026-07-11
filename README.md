@@ -1,6 +1,6 @@
-# IdeasVault — Startup Operating System
+# Genesyz — Startup Operating System
 
-IdeasVault is an AI-powered platform that takes founders from raw idea → validated concept → active startup → scaled business. It combines multi-agent AI research, execution tracking, team collaboration, opportunity discovery, and accelerator program management into a single operating system.
+Genesyz is an AI-powered platform that takes founders from raw idea → validated concept → active startup → scaled business. It combines multi-agent AI research, execution tracking, team collaboration, opportunity discovery, and accelerator program management into a single operating system.
 
 ## Features
 
@@ -146,8 +146,8 @@ IdeasVault is an AI-powered platform that takes founders from raw idea → valid
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/afuhflynn/ideas-vault.git
-   cd ideas-vault
+   git clone https://github.com/afuhflynn/genesyz.git
+   cd genesyz
    ```
 
 2. **Install dependencies**:

@@ -11,7 +11,7 @@ export const faqs = [
   {
     question: "How does the AI validation process work?",
     answer:
-      "IdeasVault uses a multi-agent AI pipeline. When you submit an idea, specialized agents are triggered to perform market research, analyze current trends, and evaluate execution friction. Finally, a synthesis agent combines these findings into a comprehensive report.",
+      "Genesyz uses a multi-agent AI pipeline. When you submit an idea, specialized agents are triggered to perform market research, analyze current trends, and evaluate execution friction. Finally, a synthesis agent combines these findings into a comprehensive report.",
   },
   {
     question: "Is my idea data secure and private?",

@@ -33,7 +33,7 @@ function renderPremiumEmail(options: {
   <div style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);">
     <!-- Header -->
     <div style="background: #0f172a; padding: 32px; text-align: center; color: #ffffff;">
-      <img src="cid:unique-app-logo" alt="IdeasVault" width="120" style="margin-bottom: 16px;">
+      <img src="cid:unique-app-logo" alt="Genesyz" width="120" style="margin-bottom: 16px;">
       ${
         badge
           ? `
@@ -52,7 +52,7 @@ function renderPremiumEmail(options: {
 
   <div style="text-align: center; margin-top: 24px;">
     <p style="font-size: 11px; color: #94a3b8;">
-      © ${new Date().getFullYear()} IdeasVault. ${
+      © ${new Date().getFullYear()} Genesyz. ${
         footerHtml ||
         `<a href="${APP_URL}/settings" style="color: #64748b; text-decoration: underline;">Manage Preferences</a>`
       }
@@ -84,7 +84,7 @@ export async function sendWelcomeEmail(options: {
 
     <div style="background: #f8fafc; border-radius: 12px; padding: 24px; margin-bottom: 24px; border: 1px solid #e2e8f0;">
       <h3 style="font-size: 18px; font-weight: 600; color: #0f172a; margin: 0 0 12px 0;">
-        Launch faster with IdeasVault:
+        Launch faster with Genesyz:
       </h3>
       <ul style="margin: 0; padding-left: 20px; color: #475569;">
         <li style="margin-bottom: 8px;">Validate ideas with a multi-agent AI research pipeline</li>
@@ -108,16 +108,16 @@ export async function sendWelcomeEmail(options: {
   `;
 
   const html = renderPremiumEmail({
-    title: "Welcome to IdeasVault",
+    title: "Welcome to Genesyz",
     contentHtml,
     badge: "Welcome",
   });
 
   return sendEmail({
     to,
-    subject: "Welcome to IdeasVault — let’s validate your first startup idea",
+    subject: "Welcome to Genesyz — let’s validate your first startup idea",
     html,
-    text: `Welcome to IdeasVault, ${userName}! You're now in the AI co-founder workspace for validating and executing startup ideas. Validate your first idea now: ${APP_URL}/dashboard`,
+    text: `Welcome to Genesyz, ${userName}! You're now in the AI co-founder workspace for validating and executing startup ideas. Validate your first idea now: ${APP_URL}/dashboard`,
   });
 }
 
@@ -225,7 +225,7 @@ export async function sendDigestEmail(options: {
 
   return sendEmail({
     to,
-    subject: `Your Weekly IdeasVault Digest - ${totalIdeas} ideas, avg score ${averageScore}`,
+    subject: `Your Weekly Genesyz Digest - ${totalIdeas} ideas, avg score ${averageScore}`,
     html,
     text: `Hi ${userName}, you have ${totalIdeas} active ideas with an average score of ${averageScore}. Visit ${APP_URL}/dashboard to see more.`,
   });
@@ -769,7 +769,7 @@ export async function sendVerificationEmail(options: {
 
   return sendEmail({
     to,
-    subject: "Verify your IdeasVault account",
+    subject: "Verify your Genesyz account",
     html,
     text: `Hi ${userName}, your verification code is: ${code}. Or verify here: ${url}`,
   });
@@ -814,7 +814,7 @@ export async function sendPasswordResetEmail(options: {
 
   return sendEmail({
     to,
-    subject: "Reset your IdeasVault password",
+    subject: "Reset your Genesyz password",
     html,
     text: `Hi ${userName}, reset your password here: ${url}`,
   });
@@ -836,12 +836,12 @@ export async function sendMagicLinkEmail(options: {
     </h2>
 
     <p style="font-size: 16px; color: #475569; margin-bottom: 24px; text-align: center;">
-      Click the button below to sign in to your IdeasVault account. This link will expire in 10 minutes.
+      Click the button below to sign in to your Genesyz account. This link will expire in 10 minutes.
     </p>
 
     <div style="text-align: center; margin-bottom: 24px;">
       <a href="${url}" style="display: inline-block; background: #F5A623; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(245, 166, 35, 0.2);">
-        Sign In to IdeasVault
+        Sign In to Genesyz
       </a>
     </div>
 
@@ -851,16 +851,16 @@ export async function sendMagicLinkEmail(options: {
   `;
 
   const html = renderPremiumEmail({
-    title: "Sign In to IdeasVault",
+    title: "Sign In to Genesyz",
     contentHtml,
     badge: "Security",
   });
 
   return sendEmail({
     to,
-    subject: "Sign in to IdeasVault",
+    subject: "Sign in to Genesyz",
     html,
-    text: `Sign in to IdeasVault here: ${url}`,
+    text: `Sign in to Genesyz here: ${url}`,
   });
 }
 
@@ -905,7 +905,7 @@ export async function sendWeeklyUpdateReminderEmail(options: {
     </div>
 
     <p style="font-size: 13px; color: #94a3b8; text-align: center; margin: 0;">
-      You're receiving this because you have an active startup on IdeasVault.
+      You're receiving this because you have an active startup on Genesyz.
     </p>
   `;
 
@@ -935,7 +935,7 @@ export async function sendStartupFeatureAnnouncementEmail(options: {
 
   const contentHtml = `
     <p style="font-size: 16px; color: #475569; margin: 0 0 24px 0; line-height: 1.6;">
-      Hi ${userName}, IdeasVault is evolving. We started as an idea validation
+      Hi ${userName}, Genesyz is evolving. We started as an idea validation
       tool. Now we're a startup operating system for execution-focused founders.
     </p>
 
@@ -1015,7 +1015,7 @@ export async function sendStartupFeatureAnnouncementEmail(options: {
   const html = renderPremiumEmail({
     title: "Platform Update",
     previewTextText:
-      "From idea validation to execution tracking — IdeasVault is now a complete startup operating system.",
+      "From idea validation to execution tracking — Genesyz is now a complete startup operating system.",
     contentHtml,
     badge: "Update",
   });
@@ -1025,7 +1025,7 @@ export async function sendStartupFeatureAnnouncementEmail(options: {
     subject:
       "Track what matters: 35+ new metrics + better execution tools for your startup",
     html,
-    text: `Hi ${userName}, IdeasVault is evolving. We're now a startup operating system for execution-focused founders. New: 35+ categorized metrics, smart formatting, weekly goal review with completion rates. Less guessing. More measurable traction. View your startups at ${APP_URL}/startups`,
+    text: `Hi ${userName}, Genesyz is evolving. We're now a startup operating system for execution-focused founders. New: 35+ categorized metrics, smart formatting, weekly goal review with completion rates. Less guessing. More measurable traction. View your startups at ${APP_URL}/startups`,
   });
 }
 
@@ -1340,7 +1340,7 @@ export async function sendStartupMemberInvitedEmail(options: {
 
   const contentHtml = `
     <p style="font-size: 16px; color: #475569; margin: 0 0 24px 0;">
-      <strong>${inviterName}</strong> has invited you to join <strong>${startupName}</strong> on IdeasVault as a <strong>${role}</strong>.
+      <strong>${inviterName}</strong> has invited you to join <strong>${startupName}</strong> on Genesyz as a <strong>${role}</strong>.
     </p>
 
     ${
@@ -1373,9 +1373,9 @@ export async function sendStartupMemberInvitedEmail(options: {
 
   return sendEmail({
     to,
-    subject: `You're invited to join ${startupName} on IdeasVault`,
+    subject: `You're invited to join ${startupName} on Genesyz`,
     html,
-    text: `${inviterName} has invited you to join ${startupName} on IdeasVault as a ${role}. View the startup at ${APP_URL}/startups/${startupSlug}`,
+    text: `${inviterName} has invited you to join ${startupName} on Genesyz as a ${role}. View the startup at ${APP_URL}/startups/${startupSlug}`,
   });
 }
 
@@ -1468,7 +1468,7 @@ export async function sendNewFollowerAddedEmail(options: {
 
   const contentHtml = `
     <p style="font-size: 16px; color: #475569; margin: 0 0 24px 0;">
-      Hi ${greetingName}, you've been added as a follower to <strong>${startupName}</strong> on IdeasVault.
+      Hi ${greetingName}, you've been added as a follower to <strong>${startupName}</strong> on Genesyz.
     </p>
 
     <div style="background: #f8fafc; border-radius: 12px; padding: 24px; margin-bottom: 24px; border: 1px solid #e2e8f0;">
@@ -1497,7 +1497,7 @@ export async function sendNewFollowerAddedEmail(options: {
 
   return sendEmail({
     to,
-    subject: `You're now following ${startupName} on IdeasVault`,
+    subject: `You're now following ${startupName} on Genesyz`,
     html,
     text: `Hi ${greetingName}, you've been added as a follower to ${startupName}. You'll receive weekly progress updates. View the startup at ${APP_URL}/startups/${startupSlug}`,
   });

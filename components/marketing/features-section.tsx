@@ -84,7 +84,7 @@ export function FeaturesSection() {
             transition={{ delay: 0.1 }}
             className="text-lg text-slate-600"
           >
-            IdeasVault provides a complete toolkit for modern entrepreneurs to
+            Genesyz provides a complete toolkit for modern entrepreneurs to
             validate, research, and plan their next venture.
           </motion.p>
         </div>

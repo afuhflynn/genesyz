@@ -166,4 +166,4 @@ Key models in `prisma/schema.prisma`:
 pnpm bootstrap:accelerator create-accelerator --email=<owner-email>
 ```
 
-This script initializes the IdeasVault accelerator program with the specified owner.
+This script initializes the Genesyz accelerator program with the specified owner.

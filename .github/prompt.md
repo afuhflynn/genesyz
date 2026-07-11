@@ -115,7 +115,7 @@ Package Manager
 PRODUCT DEFINITION
 ────────────────────────────────
 
-Build **IdeasVault** — an AI-powered idea vault for founders.
+Build **Genesyz** — an AI-powered startup validation platform for founders.
 
 Core goals:
 - Capture ideas instantly

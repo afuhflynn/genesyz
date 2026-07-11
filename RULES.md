@@ -1,4 +1,4 @@
-# IdeasVault Rules
+# Genesyz Rules
 
 ## 1. Project Overview
 

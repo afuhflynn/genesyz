@@ -1,4 +1,4 @@
-// IdeasVault Prisma Schema
+// Genesyz Prisma Schema
 // AI-powered idea vault for founders
 
 generator client {

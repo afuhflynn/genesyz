@@ -10,9 +10,9 @@ export default async function AcceleratorAdminPage() {
     redirect("/sign-in");
   }
 
-  // Find the IdeasVault Accelerator
+  // Find the Genesyz Accelerator
   const accelerator = await db.accelerator.findUnique({
-    where: { slug: "ideasvault-accelerator" },
+    where: { slug: "genesyz-accelerator" },
     select: { id: true, slug: true },
   });
 

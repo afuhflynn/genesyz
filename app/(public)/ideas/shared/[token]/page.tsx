@@ -82,7 +82,7 @@ export default async function SharedResearchPage({
 
             <div className="pt-4 border-t">
               <p className="text-sm text-muted-foreground">
-                Researched by {idea.user?.name || "IdeasVault user"}
+                Researched by {idea.user?.name || "Genesyz user"}
               </p>
               <Button asChild className="mt-4">
                 <a href="/ideas">Create Your Own Research</a>

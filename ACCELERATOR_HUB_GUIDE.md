@@ -1,12 +1,12 @@
 # Accelerator Hub: Technical & User Documentation
 
-Welcome to the **IdeasVault Accelerator Hub**. This internal platform is designed to help accelerator managers, operations leads, and mentors oversee startup cohorts with AI-powered precision.
+Welcome to the **Genesyz Accelerator Hub**. This internal platform is designed to help accelerator managers, operations leads, and mentors oversee startup cohorts with AI-powered precision.
 
 ---
 
 ## 1. Overview
 
-The IdeasVault Accelerator Program is an internal program for managing and supporting startups on the IdeasVault platform. It provides:
+The Genesyz Accelerator Program is an internal program for managing and supporting startups on the Genesyz platform. It provides:
 
 - Centralized cohort/batch management
 - Growth & performance monitoring with aggregated metrics
@@ -56,7 +56,7 @@ To prevent operational "hazards" and protect sensitive startup data, the Hub use
 
 ### Bootstrap the Accelerator
 
-Run the bootstrap script to create the IdeasVault Accelerator Program:
+Run the bootstrap script to create the Genesyz Accelerator Program:
 
 ```bash
 # Create the accelerator with a specific owner
@@ -87,7 +87,7 @@ pnpm bootstrap:accelerator list-members
 
 ### 📦 Centralized Batch Management (Cohorts)
 Managers can define specific "Batches" (e.g., *Winter 2026*).
-- **Startup Search:** Integrated search to find any startup on IdeasVault by name, industry, or founder email.
+- **Startup Search:** Integrated search to find any startup on Genesyz by name, industry, or founder email.
 - **One-Click Onboarding:** Instantly assign startups to a cohort.
 - **Performance Overview:** A real-time table showing the stage, last update time, and "Morale Score" of every startup in the batch.
 
@@ -144,8 +144,8 @@ The official record of the accelerator's progress.
 ### For Admins (OWNER/PROGRAM_MANAGER)
 
 1. **Access the Accelerator Hub:**
-   - Navigate to `/accelerator/admin` (redirects to `/admin/accelerators/ideasvault-accelerator`)
-   - Or directly: `/admin/accelerators/ideasvault-accelerator`
+   - Navigate to `/accelerator/admin` (redirects to `/admin/accelerators/genesyz-accelerator`)
+   - Or directly: `/admin/accelerators/genesyz-accelerator`
 
 2. **Create a Cohort:**
    - Go to the **Cohorts** tab
@@ -155,7 +155,7 @@ The official record of the accelerator's progress.
 3. **Add Startups to Cohort:**
    - Click on a cohort
    - Use "Add Startup" to search and onboard startups
-   - Select from existing IdeasVault startups
+   - Select from existing Genesyz startups
 
 4. **Manage Team:**
    - Go to the **Team** tab
@@ -179,7 +179,7 @@ The official record of the accelerator's progress.
 
 ### For Mentors
 
-1. Access the accelerator via `/admin/accelerators/ideasvault-accelerator`
+1. Access the accelerator via `/admin/accelerators/genesyz-accelerator`
 2. View assigned startups in the dashboard
 3. Provide feedback and schedule sessions
 
@@ -325,7 +325,7 @@ pnpm db:push:reset
 ### Accelerator Bootstrap
 
 ```bash
-# Create the IdeasVault Accelerator Program
+# Create the Genesyz Accelerator Program
 pnpm bootstrap:accelerator create-accelerator --email=OWNER_EMAIL
 
 # Add a user to the accelerator

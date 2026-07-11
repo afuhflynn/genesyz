@@ -13,7 +13,7 @@ interface NewStartupPageProps {
 }
 
 export const metadata: Metadata = {
-  title: "Create Startup | IdeasVault",
+  title: "Create Startup | Genesyz",
   description: "Turn your validated idea into an active startup",
 };
 

@@ -43,7 +43,7 @@ export function Hero() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="text-lg md:text-xl text-slate-600 mb-10 max-w-2xl leading-relaxed"
           >
-            Stop wasting months building what nobody wants. IdeasVault uses a
+            Stop wasting months building what nobody wants. Genesyz uses a
             multi-agent AI pipeline to give you instant market research,
             competitor analysis, and a step-by-step execution plan.
           </motion.p>
@@ -93,7 +93,7 @@ export function Hero() {
                   <div className="w-3 h-3 rounded-full bg-slate-200" />
                 </div>
                 <div className="flex-1 max-w-md h-7 bg-white border rounded-md mx-auto flex items-center px-3 text-[10px] text-slate-400">
-                  ideasvault.com/dashboard/new-idea
+                  genesyz.ai/dashboard/new-idea
                 </div>
               </div>
               {/* Content Placeholder */}
