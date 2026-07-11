@@ -16,7 +16,7 @@ export function Header() {
         <div className="flex md:hidden">
           <MobileSidebar />
         </div>
-        <div className="flex md:w-full items-center justify-between">
+        <div className="flex md:w-full items-center justify-between md:px-5">
           <Link href="/" className="items-center h-7.5 w-30 hidden md:flex">
             <Image
               src="/icon.png"
@@ -28,7 +28,7 @@ export function Header() {
 
             <span className="text-xl font-semibold">Genesyz</span>
           </Link>
-          <div className="md:mr-5 absolute md:relative right-5 self-center md:right-0 flex items-center gap-3">
+          <div className="absolute md:relative right-5 self-center md:right-0 flex items-center gap-3">
             {/* <WorkspaceSwitcher /> */}
             <UserNav user={session?.user} />
           </div>
