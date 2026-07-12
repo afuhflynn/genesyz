@@ -380,15 +380,17 @@ export const getStartupContext = tool({
       stage: startup.stage,
       targetMarket: startup.targetMarket,
       isLaunched: startup.isLaunched,
-      idea: {
-        title: startup.idea.title,
-        summary: startup.idea.summary,
-        research: startup.idea.researchPackets.map((p) => ({
-          type: p.agentType,
-          content: p.content,
-        })),
-        score: startup.idea.scores[0],
-      },
+      idea: startup.idea
+        ? {
+            title: startup.idea.title,
+            summary: startup.idea.summary,
+            research: startup.idea.researchPackets.map((p) => ({
+              type: p.agentType,
+              content: p.content,
+            })),
+            score: startup.idea.scores[0],
+          }
+        : null,
       weeklyUpdates: startup.weeklyUpdates,
       metrics: startup.metrics,
       tasks: startup.tasks,

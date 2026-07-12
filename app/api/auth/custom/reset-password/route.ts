@@ -1,18 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
+import { resetPasswordSchema } from "@/lib/validators/auth";
 
 export async function PUT(req: NextRequest) {
-  const { password, token } = await req.json();
-
   try {
-    if (!token || !password) {
-      return NextResponse.json(
-        { success: false, message: "Token and password are required" },
-        { status: 400 },
-      );
-    }
+    const body = await req.json();
+    const { password, token } = resetPasswordSchema.parse(body);
 
-    // Better Auth handles the token validation and password update
     const { status } = await auth.api.resetPassword({
       body: {
         newPassword: password,

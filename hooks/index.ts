@@ -646,7 +646,7 @@ export function useCreateStartup() {
 
   return useMutation({
     mutationFn: (data: {
-      ideaId: string;
+      ideaId?: string;
       name: string;
       slug: string;
       tagline?: string;
@@ -657,6 +657,16 @@ export function useCreateStartup() {
       logoUrl?: string;
       website?: string;
       location?: string;
+      locationContext?: {
+        continent?: string;
+        continentCode?: string;
+        country?: string;
+        countryCode?: string;
+        region?: string;
+        regionCode?: string;
+        city?: string;
+        isGlobal?: boolean;
+      };
     }) => api.mutations.startups.create(data),
     onSuccess: (startup) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.startups.all });

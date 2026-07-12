@@ -1,26 +1,20 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { inngest } from "@/lib/inngest/client";
+import { verifyEmailTokenSchema } from "@/lib/validators/auth";
 
 /**
  * @description Handles email verification via token.
  */
 export async function POST(req: NextRequest) {
-  const { token } = await req.json();
-
   try {
-    if (!token)
-      return NextResponse.json(
-        { success: false, message: "Token is required!" },
-        { status: 400 },
-      );
-
-    // We can use Better Auth's internal API to verify the email if it's a Better Auth token
-    // For now, we'll refactor the custom logic to use 'db'
+    const body = await req.json();
+    const { token } = verifyEmailTokenSchema.parse(body);
 
     const foundUser = await db.user.findFirst({
       where: {
-        verificationCode: token, // Assuming token is stored in verificationCode or similar
+        verificationCode: token,
+        verificationExpiry: { gte: new Date() },
       },
     });
 
@@ -38,6 +32,7 @@ export async function POST(req: NextRequest) {
       data: {
         emailVerified: true,
         verificationCode: null,
+        verificationExpiry: null,
       },
     });
 

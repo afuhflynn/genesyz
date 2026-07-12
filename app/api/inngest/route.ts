@@ -28,6 +28,7 @@ import {
   weeklyStartupReportCron,
   weeklyStartupReportFn,
 } from "@/lib/inngest/functions/startup-weekly-report";
+import { cleanupUnverifiedUsers } from "@/lib/inngest/functions/cleanup-unverified";
 import { weeklyStrategicReportFunction } from "@/lib/inngest/functions/weekly-digest";
 
 // Export Inngest serve handler with all functions
@@ -53,5 +54,6 @@ export const { GET, POST, PUT } = serve({
     followerAddedFn,
     teamMemberAddedFn,
     followerWeeklyUpdateFn,
+    cleanupUnverifiedUsers,
   ],
 });

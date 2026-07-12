@@ -6,21 +6,16 @@ import {
 } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { inngest } from "@/lib/inngest/client";
+import { signUpSchema } from "@/lib/validators/auth";
 
 /**
  * @description Handles user signup, ensures a unique username is auto-generated,
  * and sends a verification email.
  */
 export async function POST(req: NextRequest) {
-  const { email } = await req.json();
-
   try {
-    // Validate input
-    if (!email)
-      return NextResponse.json(
-        { success: false, message: "Email is required!" },
-        { status: 400 },
-      );
+    const body = await req.json();
+    const { email } = signUpSchema.parse(body);
 
     // Ensure user record exists
     const existingUser = await db.user.findUnique({ where: { email } });
@@ -40,12 +35,13 @@ export async function POST(req: NextRequest) {
     const verificationCode = generateVerificationCode();
     const verificationToken = generateToken();
 
-    // Update user with username and verification info if needed
+    // Update user with username and verification info
     await db.user.update({
       where: { email },
       data: {
         username: uniqueUsername,
         verificationCode,
+        verificationExpiry: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
       },
     });
 
