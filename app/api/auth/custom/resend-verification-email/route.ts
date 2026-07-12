@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { generateToken, generateVerificationCode } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
-import { inngest } from "@/lib/inngest/client";
+import { sendVerificationEmail } from "@/lib/email/send";
 import { resendVerificationSchema } from "@/lib/validators/auth";
 
 export async function PUT(req: NextRequest) {
@@ -39,15 +39,11 @@ export async function PUT(req: NextRequest) {
       },
     });
 
-    // Send verification email via Inngest
-    await inngest.send({
-      name: "email.send.verification",
-      data: {
-        email,
-        name: user.name,
-        code: verificationCode,
-        url: `${process.env.NEXT_PUBLIC_APP_URL}/verify-email?token=${verificationToken}`,
-      },
+    await sendVerificationEmail({
+      to: email,
+      userName: user.name,
+      code: verificationCode,
+      url: `${process.env.NEXT_PUBLIC_APP_URL}/verify-email?token=${verificationToken}`,
     });
 
     return NextResponse.json(

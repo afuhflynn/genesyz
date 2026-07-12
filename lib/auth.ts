@@ -14,6 +14,7 @@ import type { WebhookSubscriptionUpdatedPayload } from "@polar-sh/sdk/models/com
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { magicLink, organization, twoFactor } from "better-auth/plugins";
+import { sendVerificationEmail } from "@/lib/email/send";
 import { syncEntitlement } from "@/lib/polar/entitlements";
 import { db } from "./db";
 import { inngest } from "./inngest/client";
@@ -53,14 +54,11 @@ export const auth = betterAuth({
         },
       });
 
-      await inngest.send({
-        name: "email.send.verification",
-        data: {
-          email: user.email,
-          name: user.name || user.email,
-          code: token,
-          url,
-        },
+      await sendVerificationEmail({
+        to: user.email,
+        userName: user.name || user.email,
+        code: token,
+        url,
       });
     },
   },
