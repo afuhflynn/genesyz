@@ -1,6 +1,4 @@
-import { google } from "@ai-sdk/google";
-import { mistral } from "@ai-sdk/mistral";
-import { generateObject, generateText } from "ai";
+import { generateObjectWithFallback } from "@/lib/ai/fallback";
 import { db } from "@/lib/db";
 import {
   buildLocationResearchContext,
@@ -14,9 +12,6 @@ import {
   type MarketResearch,
   MarketResearchSchema,
 } from "./types";
-
-const primaryModel = mistral("open-mixtral-8x7b");
-const fallbackModel = google("gemini-2.5-flash");
 
 const SYSTEM_PROMPT = `You are a senior market research analyst with expertise in startup ecosystems, competitive analysis, and market sizing. Your role is to provide actionable market intelligence for founder ideas.
 
@@ -67,12 +62,12 @@ export async function runMarketResearchAgent(
 
   const prompt = `Conduct market research for the following startup idea:
 
-**Title:** ${interpretedIdea.title}
-**Summary:** ${interpretedIdea.summary}
-**Problem:** ${interpretedIdea.problemStatement}
-**Solution:** ${interpretedIdea.proposedSolution}
-**Target Audience:** ${interpretedIdea.targetAudience.join(", ")}
-**Category:** ${interpretedIdea.category}${locationPromptSection}
+**Title:** ${interpretedIdea?.title || "Untitled"}
+**Summary:** ${interpretedIdea?.summary || "No summary"}
+**Problem:** ${interpretedIdea?.problemStatement || "Not specified"}
+**Solution:** ${interpretedIdea?.proposedSolution || "Not specified"}
+**Target Audience:** ${interpretedIdea?.targetAudience?.join(", ") || "Not specified"}
+**Category:** ${interpretedIdea?.category || "Not specified"}${locationPromptSection}
 
 Provide market research with the following STRUCTURE (Output valid JSON only):
 
@@ -108,52 +103,15 @@ Keep total under 2000 words. Output valid JSON only.`;
   const promptHash = await hashString(prompt);
   const startTime = Date.now();
 
-  let result:
-    | Awaited<ReturnType<typeof generateObject<typeof MarketResearchSchema>>>
-    | undefined;
-  let modelUsed: string = "gemini-2.5-flash";
-
-  try {
-    let attempts = 0;
-    const maxAttempts = 3;
-
-    while (attempts < maxAttempts) {
-      try {
-        result = await generateObject({
-          model: primaryModel,
-          schema: MarketResearchSchema,
-          system: SYSTEM_PROMPT,
-          prompt,
-        });
-        modelUsed = "open-mixtral-8x7b";
-        break;
-      } catch (error) {
-        attempts++;
-        if (attempts >= maxAttempts) {
-          throw error;
-        }
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-      }
-    }
-  } catch (error) {
-    console.warn(
-      "[MARKET_RESEARCH] Mistral primary model failed after all retries, falling back to Gemini:",
-      error,
+  const { result, modelUsed } =
+    await generateObjectWithFallback<MarketResearch>(
+      {
+        schema: MarketResearchSchema,
+        system: SYSTEM_PROMPT,
+        prompt,
+      },
+      "MARKET_RESEARCH",
     );
-    result = await generateObject({
-      model: fallbackModel,
-      schema: MarketResearchSchema,
-      system: SYSTEM_PROMPT,
-      prompt,
-    });
-    modelUsed = "gemini-2.5-flash";
-  }
-
-  if (!result) {
-    throw new Error(
-      "Failed to generate market research after all attempts and fallback",
-    );
-  }
 
   const marketResearch = result.object as MarketResearch;
   const latencyMs = Date.now() - startTime;
@@ -172,10 +130,11 @@ Keep total under 2000 words. Output valid JSON only.`;
   });
 
   // Calculate confidence based on market data availability
-  const competitorCount = marketResearch.competitors.length;
-  const hasMarketSize = Boolean(marketResearch.marketSize.global?.tam);
+  const competitors = marketResearch.competitors ?? [];
+  const competitorCount = competitors.length;
+  const hasMarketSize = Boolean(marketResearch.marketSize?.global?.tam);
   const marketConfidence =
-    marketResearch.marketSize.global?.confidence || "medium";
+    marketResearch.marketSize?.global?.confidence || "medium";
   const confidenceBonus =
     marketConfidence === "high"
       ? 0.3
@@ -191,6 +150,6 @@ Keep total under 2000 words. Output valid JSON only.`;
     agentType: "MARKET_RESEARCH",
     content: marketResearch,
     confidence,
-    reasoning: `Identified ${competitorCount} competitors and ${marketResearch.marketSize.regional ? "regional + " : ""}global market sizing data`,
+    reasoning: `Identified ${competitorCount} competitors and ${marketResearch.marketSize?.regional ? "regional + " : ""}global market sizing data`,
   };
 }

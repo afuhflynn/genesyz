@@ -11,6 +11,7 @@ const navLinks = [
   { name: "Features", href: "/#features" },
   { name: "How it Works", href: "/how-it-works" },
   { name: "Pricing", href: "/pricing" },
+  { name: "Accelerators", href: "/accelerators" },
   { name: "About", href: "/about" },
   { name: "FAQ", href: "/faq" },
 ];
@@ -28,14 +29,14 @@ export function Navbar() {
         <div className="flex items-center gap-8">
           <Link href="/" className="flex items-center lg:mr-14">
             <Image
-              src="/images/logo/source-icon.png"
-              alt="IdeasVault Logo"
-              width={120}
-              height={30}
-              className="h-14 w-auto"
+              src="/icon.png"
+              alt="Genesyz Logo"
+              width={46}
+              height={46}
+              className="aspect-square object-contain"
             />
 
-            <span className="text-xl font-semibold">IdeasVault</span>
+            <span className="text-xl font-semibold">Genesyz</span>
           </Link>
           <nav className="hidden md:flex items-center gap-6">
             {navLinks.map((link) => (

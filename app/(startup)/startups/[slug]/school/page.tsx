@@ -9,7 +9,7 @@ interface SchoolPageProps {
 }
 
 export const metadata: Metadata = {
-  title: "Startup School | IdeasVault",
+  title: "Startup School | Genesyz",
   description: "Learn how to build a successful startup",
 };
 

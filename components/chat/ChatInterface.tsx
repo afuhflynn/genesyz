@@ -18,7 +18,7 @@
  */
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import { Loader2, Search, SendIcon } from "lucide-react";
+import { Briefcase, Loader2, Search, SendIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,6 +49,7 @@ export function ChatInterface({ ideas = [] }: ChatInterfaceProps) {
     "mistral",
   );
   const [includeResearch, setIncludeResearch] = useState(false);
+  const [vcMode, setVcMode] = useState(false);
   const [ideas_list, setIdeasList] = useState(ideas);
 
   const { messages, sendMessage, status, error } = useChat({
@@ -58,9 +59,7 @@ export function ChatInterface({ ideas = [] }: ChatInterfaceProps) {
         model: selectedModel,
         ideaId: selectedIdea || undefined,
         includeResearch,
-      },
-      headers: {
-        "Content-Type": "application/json",
+        vcMode,
       },
       credentials: "same-origin",
     }),
@@ -150,11 +149,30 @@ export function ChatInterface({ ideas = [] }: ChatInterfaceProps) {
               {includeResearch ? "Research On" : "Research Off"}
             </Button>
           </div>
+
+          {/* VC Coach Toggle */}
+          <div className="flex items-end">
+            <Button
+              variant={vcMode ? "default" : "outline"}
+              size="sm"
+              onClick={() => setVcMode(!vcMode)}
+              className={`flex gap-2 ${vcMode ? "bg-green-600 hover:bg-green-700" : ""}`}
+            >
+              <Briefcase className="w-4 h-4" />
+              {vcMode ? "VC Coach On" : "VC Coach"}
+            </Button>
+          </div>
         </div>
         {includeResearch && (
           <p className="text-xs text-blue-600 mt-2">
             💡 Research mode: Responses will include real-time web data and
             market insights
+          </p>
+        )}
+        {vcMode && (
+          <p className="text-xs text-green-600 mt-2">
+            💡 VC Coach mode: Get investor perspective feedback on your pitch,
+            business model, and growth strategy
           </p>
         )}
       </div>

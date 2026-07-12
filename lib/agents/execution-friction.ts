@@ -1,6 +1,4 @@
-import { google } from "@ai-sdk/google";
-import { mistral } from "@ai-sdk/mistral";
-import { generateObject } from "ai";
+import { generateObjectWithFallback } from "@/lib/ai/fallback";
 import { db } from "@/lib/db";
 import {
   buildLocationResearchContext,
@@ -13,9 +11,6 @@ import {
   ExecutionFrictionSchema,
   type InterpretedIdea,
 } from "./types";
-
-const primaryModel = mistral("open-mixtral-8x7b");
-const fallbackModel = google("gemini-2.5-flash");
 
 const SYSTEM_PROMPT = `You are a seasoned startup operator and technical advisor. Your role is to assess the practical challenges of executing on a startup idea.
 
@@ -56,12 +51,12 @@ export async function runExecutionFrictionAgent(
 
   const prompt = `Assess the execution challenges for the following startup idea:
 
-**Title:** ${interpretedIdea.title}
-**Summary:** ${interpretedIdea.summary}
-**Problem:** ${interpretedIdea.problemStatement}
-**Solution:** ${interpretedIdea.proposedSolution}
-**Key Features:** ${interpretedIdea.keyFeatures.join(", ")}
-**Category:** ${interpretedIdea.category}${locationPromptSection}
+**Title:** ${interpretedIdea?.title || "Untitled"}
+**Summary:** ${interpretedIdea?.summary || "No summary"}
+**Problem:** ${interpretedIdea?.problemStatement || "Not specified"}
+**Solution:** ${interpretedIdea?.proposedSolution || "Not specified"}
+**Key Features:** ${interpretedIdea?.keyFeatures?.join(", ") || "Not specified"}
+**Category:** ${interpretedIdea?.category || "Not specified"}${locationPromptSection}
 
 Analyze technical complexity, resource requirements, risks, and provide actionable recommendations. Consider location-specific factors like talent availability, infrastructure, and local regulations.`;
 
@@ -69,32 +64,14 @@ Analyze technical complexity, resource requirements, risks, and provide actionab
 
   const startTime = Date.now();
 
-  let result: Awaited<
-    ReturnType<typeof generateObject<typeof ExecutionFrictionSchema>>
-  >;
-  let modelUsed: string;
-
-  try {
-    result = await generateObject({
-      model: primaryModel,
+  const { result, modelUsed } = await generateObjectWithFallback(
+    {
       schema: ExecutionFrictionSchema,
       system: SYSTEM_PROMPT,
       prompt,
-    });
-    modelUsed = "open-mixtral-8x7b";
-  } catch (error) {
-    console.warn(
-      "[EXECUTION_FRICTION] Mistral primary model failed, falling back to Gemini:",
-      error,
-    );
-    result = await generateObject({
-      model: fallbackModel,
-      schema: ExecutionFrictionSchema,
-      system: SYSTEM_PROMPT,
-      prompt,
-    });
-    modelUsed = "gemini-2.5-flash";
-  }
+    },
+    "EXECUTION_FRICTION",
+  );
 
   const latencyMs = Date.now() - startTime;
 
@@ -110,9 +87,10 @@ Analyze technical complexity, resource requirements, risks, and provide actionab
       latencyMs,
     },
   });
-
-  const techComplexity = result.object.technicalComplexity.score;
-  const riskCount = result.object.riskFactors.length;
+  // @ts-expect-error
+  const techComplexity = result?.object?.technicalComplexity?.score;
+  // @ts-expect-error
+  const riskCount = result?.object?.riskFactors?.length;
   // Lower complexity and fewer high-severity risks = higher confidence
   const confidence = Math.max(
     0.4,

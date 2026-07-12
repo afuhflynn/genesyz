@@ -1,7 +1,13 @@
 "use client";
 
 import { format } from "date-fns";
-import { ArrowLeft, Target, TrendingDown, TrendingUp } from "lucide-react";
+import {
+  ArrowLeft,
+  BarChart3,
+  Target,
+  TrendingDown,
+  TrendingUp,
+} from "lucide-react";
 import Link from "next/link";
 import {
   Area,
@@ -18,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useStartup, useWeeklyUpdates } from "@/hooks";
+import { formatMetricValue, getMetricFormat } from "@/lib/constants/metrics";
 
 interface MetricsDashboardProps {
   slug: string;
@@ -174,7 +181,7 @@ export function MetricsDashboard({ slug }: MetricsDashboardProps) {
           {latestUpdates.length > 0 ? (
             <div className="space-y-6">
               {/* Chart */}
-              {metricChartData.length > 1 && (
+              {metricChartData.length > 0 && (
                 <div className="h-64 w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={metricChartData}>
@@ -313,7 +320,7 @@ export function MetricsDashboard({ slug }: MetricsDashboardProps) {
           {latestUpdates.length > 0 ? (
             <div className="space-y-6">
               {/* Chart */}
-              {conversationsChartData.length > 1 && (
+              {conversationsChartData.length > 0 && (
                 <div className="h-48 w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={conversationsChartData}>
@@ -395,6 +402,233 @@ export function MetricsDashboard({ slug }: MetricsDashboardProps) {
           )}
         </CardContent>
       </Card>
+
+      {/* Additional Metrics */}
+      {(() => {
+        // Collect all unique additional metric types across ALL updates (not just latest 8)
+        // so we can compute deltas from previous weeks
+        const allUpdates = updates;
+        const metricTypeSet = new Set<string>();
+        for (const u of allUpdates) {
+          for (const m of u.additionalMetrics || []) {
+            metricTypeSet.add(m.type);
+          }
+        }
+        const metricTypes = Array.from(metricTypeSet);
+
+        if (metricTypes.length === 0) return null;
+
+        return metricTypes.map((metricType) => {
+          const metricLabel = metricType.replace(/_/g, " ").toLowerCase();
+          const metricFmt = getMetricFormat(metricType) as
+            | "CURRENCY"
+            | "PERCENTAGE"
+            | "NUMBER";
+          const gradientId = `colorAdditional_${metricType}`;
+
+          // Build chart data from latestUpdates, computing delta from previous week
+          const chartData = [...latestUpdates]
+            .filter((u) =>
+              u.additionalMetrics?.some((m) => m.type === metricType),
+            )
+            .reverse()
+            .map((update, _idx, arr) => {
+              const metric = update.additionalMetrics?.find(
+                (m) => m.type === metricType,
+              );
+              if (!metric) return null;
+
+              // Find previous update that also has this metric
+              const prevUpdate = arr
+                .slice(0, _idx)
+                .reverse()
+                .find((u) =>
+                  u.additionalMetrics?.some((m) => m.type === metricType),
+                );
+              const prevMetric = prevUpdate?.additionalMetrics?.find(
+                (m) => m.type === metricType,
+              );
+
+              let delta: number | null = null;
+              if (prevMetric && prevMetric.value !== 0) {
+                delta =
+                  ((metric.value - prevMetric.value) / prevMetric.value) * 100;
+              }
+
+              return {
+                week: `W${update.weekNumber}`,
+                value: metric.value,
+                delta,
+                fullDate: format(new Date(update.weekStart), "MMM d"),
+              };
+            })
+            .filter((d): d is NonNullable<typeof d> => d !== null);
+
+          if (chartData.length === 0) return null;
+
+          return (
+            <Card key={metricType}>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  {metricLabel} History
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-6">
+                  {/* AreaChart with gradient - same style as Primary Metric */}
+                  {chartData.length > 0 && (
+                    <div className="h-64 w-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={chartData}>
+                          <defs>
+                            <linearGradient
+                              id={gradientId}
+                              x1="0"
+                              y1="0"
+                              x2="0"
+                              y2="1"
+                            >
+                              <stop
+                                offset="5%"
+                                stopColor="#8b5cf6"
+                                stopOpacity={0.3}
+                              />
+                              <stop
+                                offset="95%"
+                                stopColor="#8b5cf6"
+                                stopOpacity={0}
+                              />
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid
+                            strokeDasharray="3 3"
+                            className="stroke-muted"
+                          />
+                          <XAxis
+                            dataKey="week"
+                            className="text-xs"
+                            tickLine={false}
+                            axisLine={false}
+                          />
+                          <YAxis
+                            className="text-xs"
+                            tickLine={false}
+                            axisLine={false}
+                          />
+                          <Tooltip
+                            content={({ active, payload }) => {
+                              if (active && payload && payload.length) {
+                                const data = payload[0].payload;
+                                return (
+                                  <div className="rounded-lg border bg-background p-2 shadow-md">
+                                    <p className="text-sm font-medium">
+                                      {data.fullDate}
+                                    </p>
+                                    <p className="text-lg font-bold text-primary">
+                                      {formatMetricValue(data.value, metricFmt)}
+                                    </p>
+                                    {data.delta !== null &&
+                                      data.delta !== undefined && (
+                                        <p
+                                          className={`text-xs ${
+                                            data.delta >= 0
+                                              ? "text-green-600"
+                                              : "text-red-600"
+                                          }`}
+                                        >
+                                          {data.delta >= 0 ? "+" : ""}
+                                          {data.delta.toFixed(1)}%
+                                        </p>
+                                      )}
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }}
+                          />
+                          <Area
+                            type="monotone"
+                            dataKey="value"
+                            stroke="#8b5cf6"
+                            strokeWidth={2}
+                            fillOpacity={1}
+                            fill={`url(#${gradientId})`}
+                          />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+
+                  {/* List with delta - same style as Primary Metric */}
+                  <div className="space-y-2">
+                    {latestUpdates.map((update) => {
+                      const metric = update.additionalMetrics?.find(
+                        (m) => m.type === metricType,
+                      );
+                      if (!metric) return null;
+
+                      // Find previous update with this metric for delta
+                      const prevUpdate = allUpdates
+                        .filter(
+                          (u) =>
+                            u.weekNumber < update.weekNumber &&
+                            u.additionalMetrics?.some(
+                              (m) => m.type === metricType,
+                            ),
+                        )
+                        .sort((a, b) => b.weekNumber - a.weekNumber)[0];
+                      const prevMetric = prevUpdate?.additionalMetrics?.find(
+                        (m) => m.type === metricType,
+                      );
+
+                      let delta: number | null = null;
+                      if (prevMetric && prevMetric.value !== 0) {
+                        delta =
+                          ((metric.value - prevMetric.value) /
+                            prevMetric.value) *
+                          100;
+                      }
+
+                      return (
+                        <div
+                          key={`${update.id}-${metricType}`}
+                          className="flex items-center justify-between rounded-lg border p-3"
+                        >
+                          <div>
+                            <p className="font-medium">
+                              Week {update.weekNumber}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {format(new Date(update.weekStart), "MMM d")} -{" "}
+                              {format(new Date(update.weekEnd), "MMM d, yyyy")}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xl font-bold">
+                              {formatMetricValue(metric.value, metricFmt)}
+                            </p>
+                            {delta !== null && (
+                              <p
+                                className={`text-sm ${
+                                  delta >= 0 ? "text-green-600" : "text-red-600"
+                                }`}
+                              >
+                                {delta >= 0 ? "+" : ""}
+                                {delta.toFixed(1)}%
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          );
+        });
+      })()}
     </div>
   );
 }

@@ -76,16 +76,16 @@ export function WorkspaceSwitcher({
           </>
         )}
 
-        <Button
-          variant="ghost"
-          className="w-full justify-start text-muted-foreground"
-          asChild
-        >
-          <Link href="/ideas">
-            <Plus className="mr-2 h-4 w-4" />
-            Create Startup
-          </Link>
-        </Button>
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start text-muted-foreground"
+                  asChild
+                >
+                  <Link href="/startups/new">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Create Startup
+                  </Link>
+                </Button>
       </div>
     );
   }
@@ -138,7 +138,7 @@ export function WorkspaceSwitcher({
 
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link href="/ideas" className="cursor-pointer">
+          <Link href="/startups/new" className="cursor-pointer">
             <Plus className="mr-2 h-4 w-4" />
             Create New Startup
           </Link>

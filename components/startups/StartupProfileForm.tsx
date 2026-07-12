@@ -50,15 +50,17 @@ const startupFormSchema = z.object({
     .optional(),
   targetMarket: z.enum(["CONSUMER", "SMB", "ENTERPRISE"]).optional(),
   website: z.string().url("Must be a valid URL").optional().or(z.literal("")),
-  location: z.string().max(200).optional(),
+  location: z.string().min(1, "Location is required").max(200),
 });
 
 type StartupFormValues = z.infer<typeof startupFormSchema>;
 
 interface StartupProfileFormProps {
-  ideaId: string;
+  ideaId?: string;
   ideaTitle?: string;
   ideaSummary?: string;
+  initialLocation?: string;
+  initialLocationContext?: Record<string, unknown> | null;
   existingStartup?: {
     id: string;
     name: string;
@@ -70,8 +72,10 @@ interface StartupProfileFormProps {
     targetMarket: string | null;
     website: string | null;
     location: string | null;
+    locationContext?: Record<string, unknown> | null;
   };
   onSuccess?: () => void;
+  canEdit?: boolean;
 }
 
 function generateSlug(name: string): string {
@@ -95,15 +99,20 @@ export function StartupProfileForm({
   ideaId,
   ideaTitle,
   ideaSummary,
+  initialLocation,
+  initialLocationContext,
   existingStartup,
   onSuccess,
+  canEdit = true,
 }: StartupProfileFormProps) {
   const router = useRouter();
   const [slugChecking, setSlugChecking] = useState(false);
   const [slugAvailable, setSlugAvailable] = useState<boolean | null>(null);
-  const [selectedLocation, setSelectedLocation] = useState<LocationContext | null>(
-    null,
-  );
+  const [selectedLocation, setSelectedLocation] =
+    useState<LocationContext | null>(
+      (existingStartup?.locationContext ||
+        initialLocationContext) as LocationContext | null,
+    );
 
   const createMutation = useCreateStartup();
   const updateMutation = useUpdateStartup();
@@ -116,7 +125,10 @@ export function StartupProfileForm({
     resolver: zodResolver(startupFormSchema),
     defaultValues: {
       name: existingStartup?.name || ideaTitle || "",
-      slug: existingStartup?.slug || "",
+      slug:
+        existingStartup?.slug ||
+        generateSlug(ideaTitle || "") ||
+        "",
       tagline: existingStartup?.tagline || "",
       description: existingStartup?.description || ideaSummary || "",
       industry: existingStartup?.industry || "",
@@ -125,9 +137,11 @@ export function StartupProfileForm({
         (existingStartup?.targetMarket as StartupFormValues["targetMarket"]) ||
         undefined,
       website: existingStartup?.website || "",
-      location: existingStartup?.location || "",
+      location: existingStartup?.location || initialLocation || "",
     },
   });
+
+  const [slugManuallyEdited, setSlugManuallyEdited] = useState(isEditing);
 
   const name = form.watch("name");
 
@@ -162,6 +176,10 @@ export function StartupProfileForm({
       }
     }
 
+    const locationStr = selectedLocation
+      ? formatLocationValue(selectedLocation)
+      : data.location;
+
     const payload = {
       ...data,
       tagline: data.tagline || undefined,
@@ -170,9 +188,14 @@ export function StartupProfileForm({
       stage: data.stage,
       targetMarket: data.targetMarket,
       website: data.website || undefined,
-      location:
-        formatLocationValue(selectedLocation) || data.location || undefined,
+      location: locationStr || undefined,
+      locationContext: selectedLocation || undefined,
     };
+
+    if (!payload.location) {
+      form.setError("location", { message: "Location is required" });
+      return;
+    }
 
     if (isEditing) {
       updateMutation.mutate(
@@ -185,7 +208,7 @@ export function StartupProfileForm({
       );
     } else {
       createMutation.mutate(
-        { ...payload, ideaId },
+        ideaId ? { ...payload, ideaId } : payload,
         {
           onSuccess: () => {
             onSuccess?.();
@@ -220,13 +243,16 @@ export function StartupProfileForm({
                     <FormControl>
                       <Input
                         placeholder="Acme Inc"
+                        disabled={!canEdit}
                         {...field}
                         onChange={(e) => {
                           field.onChange(e);
-                          if (!isEditing && !form.getValues("slug")) {
-                            const slug = generateSlug(e.target.value);
-                            form.setValue("slug", slug);
-                            handleSlugCheck(slug);
+                          if (!slugManuallyEdited) {
+                            const newSlug = generateSlug(e.target.value);
+                            form.setValue("slug", newSlug, {
+                              shouldValidate: true,
+                            });
+                            handleSlugCheck(newSlug);
                           }
                         }}
                       />
@@ -246,9 +272,11 @@ export function StartupProfileForm({
                       <div className="relative">
                         <Input
                           placeholder="acme-inc"
+                          disabled={!canEdit}
                           {...field}
                           onChange={(e) => {
                             field.onChange(e);
+                            setSlugManuallyEdited(true);
                             handleSlugCheck(e.target.value);
                           }}
                         />
@@ -268,7 +296,7 @@ export function StartupProfileForm({
                       </div>
                     </FormControl>
                     <FormDescription>
-                      ideasvault.app/startups/{field.value || "your-slug"}
+                      genesyz.ai/startups/{field.value || "your-slug"}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -286,6 +314,7 @@ export function StartupProfileForm({
                     <Input
                       placeholder="A short, memorable description of what you do"
                       maxLength={200}
+                      disabled={!canEdit}
                       {...field}
                     />
                   </FormControl>
@@ -303,6 +332,7 @@ export function StartupProfileForm({
                   <FormControl>
                     <Textarea
                       placeholder="Describe your startup in detail..."
+                      disabled={!canEdit}
                       className="min-h-32"
                       maxLength={5000}
                       {...field}
@@ -324,6 +354,7 @@ export function StartupProfileForm({
                       <Input
                         placeholder="SaaS, FinTech, HealthTech..."
                         {...field}
+                        disabled={!canEdit}
                       />
                     </FormControl>
                     <FormMessage />
@@ -339,7 +370,7 @@ export function StartupProfileForm({
                     <FormLabel>Stage</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger disabled={!canEdit}>
                           <SelectValue placeholder="Select stage" />
                         </SelectTrigger>
                       </FormControl>
@@ -364,7 +395,7 @@ export function StartupProfileForm({
                     <FormLabel>Target Market</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
-                        <SelectTrigger>
+                        <SelectTrigger disabled={!canEdit}>
                           <SelectValue placeholder="Select market" />
                         </SelectTrigger>
                       </FormControl>
@@ -390,7 +421,11 @@ export function StartupProfileForm({
                   <FormItem>
                     <FormLabel>Website</FormLabel>
                     <FormControl>
-                      <Input placeholder="https://yourstartup.com" {...field} />
+                      <Input
+                        placeholder="https://yourstartup.com"
+                        disabled={!canEdit}
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -411,6 +446,7 @@ export function StartupProfileForm({
                           setSelectedLocation(location);
                           field.onChange(formatLocationValue(location));
                         }}
+                        canEdit={canEdit}
                       />
                     </FormControl>
                     <FormDescription>
@@ -424,23 +460,27 @@ export function StartupProfileForm({
               />
             </div>
 
-            <div className="flex justify-end gap-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => router.back()}
-                disabled={isPending}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={isPending || slugAvailable === false}
-              >
-                {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isEditing ? "Save Changes" : "Create Startup Profile"}
-              </Button>
-            </div>
+            {canEdit && (
+              <div className="flex justify-end gap-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => router.back()}
+                  disabled={isPending}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isPending || slugAvailable === false}
+                >
+                  {isPending && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
+                  {isEditing ? "Save Changes" : "Create Startup Profile"}
+                </Button>
+              </div>
+            )}
           </form>
         </Form>
       </CardContent>

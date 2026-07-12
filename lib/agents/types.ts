@@ -235,37 +235,29 @@ export const ExecutionFrictionSchema = z.object({
 export type ExecutionFriction = z.infer<typeof ExecutionFrictionSchema>;
 
 // ===========================================
-// Synthesis Agent
+// Synthesis Agent - SIMPLIFIED
 // ===========================================
 
 export const SynthesisSchema = z.object({
-  overallAssessment: z.string(),
-  scores: z.object({
-    clarity: z.object({
-      score: z.number().min(0).max(100),
-      explanation: z.string(),
-    }),
-    marketReadiness: z.object({
-      score: z.number().min(0).max(100),
-      explanation: z.string(),
-    }),
-    executionFeasibility: z.object({
-      score: z.number().min(0).max(100),
-      explanation: z.string(),
-    }),
-    overall: z.object({
-      score: z.number().min(0).max(100),
-      explanation: z.string(),
-    }),
-  }),
-  recommendations: z.array(
-    z.object({
-      priority: z.enum(["high", "medium", "low"]),
-      action: z.string(),
-      rationale: z.string(),
-    }),
-  ),
-  nextSteps: z.array(z.string()),
+  overallAssessment: z.string().describe("2-3 sentence overall assessment"),
+  clarityScore: z.number().min(0).max(100).describe("Clarity score"),
+  clarityExplanation: z.string().describe("Brief explanation of clarity score"),
+  marketScore: z.number().min(0).max(100).describe("Market readiness score"),
+  marketExplanation: z.string().describe("Brief explanation of market score"),
+  executionScore: z
+    .number()
+    .min(0)
+    .max(100)
+    .describe("Execution feasibility score"),
+  executionExplanation: z
+    .string()
+    .describe("Brief explanation of execution score"),
+  overallScore: z.number().min(0).max(100).describe("Overall score"),
+  overallExplanation: z.string().describe("Brief explanation of overall score"),
+  recommendations: z
+    .array(z.string())
+    .describe("3-5 actionable recommendations"),
+  nextSteps: z.array(z.string()).describe("3-5 immediate next steps"),
   verdict: z.enum([
     "pursue-immediately",
     "pursue-with-modifications",
@@ -278,29 +270,24 @@ export const SynthesisSchema = z.object({
 export type Synthesis = z.infer<typeof SynthesisSchema>;
 
 // ===========================================
-// Deep Research Agent
+// Deep Research Agent - SIMPLIFIED
 // ===========================================
 
 export const DeepResearchSchema = z.object({
-  marketGaps: z.array(
-    z.object({
-      gap: z.string(),
-      opportunity: z.string(),
-      validationSource: z.string().nullable(),
-    }),
-  ),
+  marketGaps: z
+    .array(z.string())
+    .describe("3-5 key market gaps or opportunities"),
   technicalRoadmap: z.object({
-    phase1: z.string().describe("MVP / Initial Validation"),
-    phase2: z.string().describe("Scaling / Core Features"),
-    phase3: z.string().describe("Advanced / Ecosystem"),
+    phase1: z.string().describe("MVP / Initial Validation approach"),
+    phase2: z.string().describe("Scaling / Core Features approach"),
+    phase3: z.string().describe("Advanced / Ecosystem approach"),
   }),
-  pivotOptions: z.array(
-    z.object({
-      direction: z.string(),
-      rationale: z.string(),
-    }),
-  ),
-  strategicMoat: z.string().describe("How to build a defensible business"),
+  pivotOptions: z
+    .array(z.string())
+    .describe("2-3 potential pivot directions if needed"),
+  strategicMoat: z
+    .string()
+    .describe("How to build a defensible business (1-2 sentences)"),
 });
 
 export type DeepResearch = z.infer<typeof DeepResearchSchema>;
@@ -310,107 +297,62 @@ export type DeepResearchOutput = AgentOutput & {
 };
 
 // ===========================================
-// Strategic Advisory Agent (Portfolio Level)
+// Strategic Advisory Agent (Portfolio Level) - SIMPLIFIED
 // ===========================================
 
 export const StrategicAdvisorySchema = z.object({
-  executiveSummary: z.string(),
-  portfolioThemes: z.array(z.string()),
-  marketPulse: z.array(
-    z.object({
-      newsItem: z.string(),
-      relevance: z.string(),
-      impactOnPortfolio: z.enum(["positive", "negative", "neutral"]),
-    }),
-  ),
-  verdicts: z.array(
-    z.object({
-      ideaId: z.string(),
+  executiveSummary: z
+    .string()
+    .describe("2-3 sentence summary of portfolio status"),
+  portfolioThemes: z
+    .array(z.string())
+    .describe("3-5 key themes across portfolio"),
+  marketPulse: z
+    .array(z.string())
+    .describe("3-5 important market observations"),
+  verdicts: z
+    .array(z.string())
+    .describe(
+      "Quick verdicts for each idea: Go/Pause/Kill with 1-sentence reason",
+    ),
+  primaryFocus: z
+    .object({
       ideaTitle: z.string(),
-      verdict: z.enum(["Go", "Pause", "Kill"]),
-      onePriority: z.string(),
-      oneStop: z.string(),
-      topRisk: z.object({
-        category: z.enum(["Market", "Product", "Financial", "Team"]),
-        description: z.string(),
-      }),
-      evidence: z.array(z.string()),
-      counterArgument: z.string(),
-      timeAllocation: z.number().min(0).max(100).optional(),
-      status: z.enum(["primary", "validation", "monitoring"]).optional(),
-    }),
-  ),
-  brainDrillingQuestions: z.array(z.string()),
-  vcCorner: z.object({
-    sentiment: z.string().describe("Current VC sentiment for these categories"),
-    brutalHonesty: z.string().describe("The hard truth about these ideas"),
-    investmentPotential: z.enum(["high", "medium", "low"]),
-    investorAngle: z.string().describe("Investor Angle of the Week"),
-  }),
-  weeklyActionPlan: z.array(
-    z.object({
-      id: z.string(),
-      title: z.string(),
-      owner: z.string(),
-      due_date: z.string(),
-      priority: z.enum(["High", "Medium", "Low"]),
-      estimated_time_allocation: z.union([z.string(), z.number()]),
-      success_criteria: z.string(),
-      kill_criteria: z.string(),
-      description: z.string().optional(),
-      linked_resources: z.array(z.string()).optional(),
-    }),
-  ),
-  primaryFocus: z.object({
-    ideaTitle: z.string(),
-    allocation: z.number().min(0).max(100),
-  }),
-  riskCliffs: z.array(
-    z.object({
-      ideaTitle: z.string(),
-      failureReason: z.string(),
-    }),
-  ),
-  failureReasons: z.array(z.string()).optional(),
+      allocation: z.number().min(0).max(100),
+    })
+    .describe("Main focus idea with time allocation"),
+  brainDrillingQuestions: z
+    .array(z.string())
+    .describe("3-5 important questions to investigate"),
+  vcSentiment: z
+    .string()
+    .describe("Current VC sentiment for this portfolio's sectors"),
+  investmentPotential: z
+    .enum(["high", "medium", "low"])
+    .describe("Overall investment potential"),
+  weeklyFocus: z.string().describe("One priority action for this week"),
+  topRisks: z.array(z.string()).describe("3 biggest risks to monitor"),
+  failureReasons: z
+    .array(z.string())
+    .describe("3-5 common failure reasons to watch for"),
 });
 
 export type StrategicAdvisory = z.infer<typeof StrategicAdvisorySchema>;
 
 // ===========================================
-// State & Delta Schema
+// State & Delta Schema - SIMPLIFIED
 // ===========================================
 
 export const StateSchema = z.object({
   ideaId: z.string(),
-  metrics: z.object({
-    mau: z.number().nullable(),
-    cac: z.number().nullable(),
-    ltv: z.number().nullable(),
-    revenue: z.number().nullable(),
-    other: z.record(z.any(), z.any()).nullable(),
-  }),
-  assumptions: z.array(
-    z.object({
-      id: z.string(),
-      text: z.string(),
-      confidence: z.enum(["low", "med", "high"]),
-      evidence: z.array(z.string()),
-    }),
-  ),
-  signals: z.array(
-    z.object({
-      type: z.enum(["market", "competitor", "user", "technical"]),
-      text: z.string(),
-      source: z.string().optional(),
-    }),
-  ),
-  lastVerdict: z
-    .object({
-      date: z.string(),
-      verdict: z.enum(["Go", "Pause", "Kill"]),
-      notes: z.string(),
-    })
-    .nullable(),
+  mau: z.number().nullable(),
+  cac: z.number().nullable(),
+  ltv: z.number().nullable(),
+  revenue: z.number().nullable(),
+  assumptions: z.array(z.string()).describe("Key assumptions to track"),
+  signals: z.array(z.string()).describe("Important signals to monitor"),
+  lastVerdict: z.string().nullable().describe("Latest verdict: Go/Pause/Kill"),
+  notes: z.string().nullable().describe("Notes on current status"),
 });
 
 export type IdeaState = z.infer<typeof StateSchema>;

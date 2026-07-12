@@ -1,11 +1,12 @@
-import { google } from "@ai-sdk/google";
-import { generateObject, generateText, stepCountIs } from "ai";
+import { isStepCount } from "ai";
+import {
+  generateObjectWithFallback,
+  generateTextWithFallback,
+} from "@/lib/ai/fallback";
 import { tools } from "@/lib/ai/tools";
 import { type PortfolioInput, StrategicAdvisorySchema } from "./types";
 
-const model = google("gemini-2.5-flash");
-
-const ADVISORY_SYSTEM_PROMPT = `You are Ideas Vault — an elite AI Chief of Staff. Your purpose is to act as a high-stakes advisor for early-stage founders, helping them cut through noise and make critical execution decisions.
+const ADVISORY_SYSTEM_PROMPT = `You are Genesyz - an elite AI Chief of Staff. Your purpose is to act as a high-stakes advisor for early-stage founders, helping them cut through noise and make critical execution decisions.
 
 CORE OPERATING PRINCIPLES:
 1. JUDGMENT OVER ANALYSIS: Founders don't need more data; they need a decision. Your output must be opinionated and decisive.
@@ -42,29 +43,34 @@ export async function runStrategicAdvisoryAgent(
     // Step 1: Gather Market Pulse and Industry News
     const categories = Array.from(new Set(ideas.map((i) => i.category)));
 
-    const { text: marketData, toolResults } = await generateText({
-      model,
-      system: ADVISORY_SYSTEM_PROMPT,
-      prompt: `Analyze the following idea portfolio and provide strategic advisory as a Chief of Staff.
+    const { result: textResult } = await generateTextWithFallback(
+      {
+        system: ADVISORY_SYSTEM_PROMPT,
+        prompt: `Analyze the following idea portfolio and provide strategic advisory as a Chief of Staff.
 
 Portfolio Summary & History:
 ${portfolioSummary}
 
 Please fetch the latest industry news for these categories: ${categories.join(
-        ", ",
-      )}.
+          ", ",
+        )}.
 Identify any deltas between the current state and previous snapshots.
 Synthesize how market shifts or internal changes affect the founder's portfolio.`,
-      tools,
-      maxSteps: 5,
-    } as any);
+        tools,
+        stopWhen: isStepCount(5),
+      },
+      "STRATEGIC_ADVISORY_RESEARCH",
+    );
+
+    const marketData = textResult.text;
+    const toolResults = textResult.toolResults;
 
     // Step 2: Generate Structured Advisory Report with Weekly Strategic Format
-    const result = await generateObject({
-      model,
-      schema: StrategicAdvisorySchema,
-      system: ADVISORY_SYSTEM_PROMPT,
-      prompt: `Based on the portfolio analysis, historical deltas, and real-time market data, generate a professional Weekly Strategic Report with the following structure:
+    const { result: objResult } = await generateObjectWithFallback(
+      {
+        schema: StrategicAdvisorySchema,
+        system: ADVISORY_SYSTEM_PROMPT,
+        prompt: `Based on the portfolio analysis, historical deltas, and real-time market data, generate a professional Weekly Strategic Report with the following structure:
 
     CRITICAL INSTRUCTIONS:
     1. Designate ONE PRIMARY FOCUS idea with 50-80% time allocation (prefer CropGuard unless evidence strongly contradicts).
@@ -93,9 +99,11 @@ Synthesize how market shifts or internal changes affect the founder's portfolio.
     - vcCorner with investorAngle
     - riskCliffs with failureReasons
     - All actions must have success_criteria and kill_criteria`,
-    });
+      },
+      "STRATEGIC_ADVISORY_SYNTHESIS",
+    );
 
-    return result.object;
+    return objResult.object;
   } catch (error) {
     throw new Error(
       `Strategic Advisory Agent Error: ${(error as Error).message}`,

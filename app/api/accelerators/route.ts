@@ -14,12 +14,20 @@ export async function GET(request: NextRequest) {
       ? { isPublic: true, isActive: true }
       : session?.user
         ? {
-            OR: [{ isPublic: true }, { ownerId: session.user.id }],
+            OR: [
+              { isPublic: true },
+              { ownerId: session.user.id },
+              { members: { some: { userId: session.user.id } } },
+            ],
             isActive: true,
           }
         : { isPublic: true, isActive: true },
     include: {
       owner: { select: { id: true, name: true, image: true } },
+      members: {
+        where: session?.user ? { userId: session.user.id } : { userId: "none" },
+        select: { role: true },
+      },
       _count: { select: { cohorts: true, applications: true } },
     },
     orderBy: { createdAt: "desc" },

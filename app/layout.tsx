@@ -5,10 +5,11 @@ import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { extractRouterConfig } from "uploadthing/server";
 import { ourFileRouter } from "@/app/api/uploadthing/core";
-import { ThemeProvider } from "@/components/provders/theme-provider";
+import { ThemeProvider } from "@/components/providers/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { QueryProvider } from "@/providers/query-provider";
 import { Suspense } from "react";
+import { Analytics } from "@vercel/analytics/next";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -22,16 +23,20 @@ const ibmPlexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "IdeasVault - Validate Startup Ideas with AI",
+  title: "Genesyz - The AI-Powered Startup Operating System",
   description:
-    "Capture, research, and validate your startup ideas instantly with AI-powered market analysis.",
+    "From idea to exit. Validate your startup ideas with a 6-agent AI research pipeline, track execution with weekly updates and AI coaching, manage accelerator programs, discover opportunities, and collaborate with your team.",
   icons: {
     icon: [
       { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
       { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
     ],
     apple: [
-      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+      {
+        url: "/android-chrome-512x512.png",
+        sizes: "180x180",
+        type: "image/png",
+      },
     ],
     other: [
       { rel: "android-chrome-192x192", url: "/android-chrome-192x192.png" },
@@ -44,7 +49,7 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "IdeasVault",
+        alt: "Genesyz - The AI-Powered Startup Operating System",
       },
     ],
   },
@@ -71,6 +76,7 @@ export default function RootLayout({
                 disableTransitionOnChange
               >
                 {children}
+                <Analytics />
               </ThemeProvider>
               <Toaster />
             </QueryProvider>

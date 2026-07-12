@@ -2,10 +2,11 @@ import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { checkStartupAccess } from "@/lib/startup-permissions";
 import { updateStartupSchema } from "@/lib/validators/startup";
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -16,10 +17,15 @@ export async function GET(
 
   const { id } = await params;
 
+  const access = await checkStartupAccess(id, "view_startup");
+
+  if (!access.hasAccess || !access.startupId) {
+    return NextResponse.json({ error: "Access denied" }, { status: 403 });
+  }
+
   const startup = await db.startup.findFirst({
     where: {
-      OR: [{ id }, { slug: id }],
-      userId: session.user.id,
+      id: access.startupId,
     },
     include: {
       idea: {
@@ -68,8 +74,14 @@ export async function PATCH(
     );
   }
 
+  const access = await checkStartupAccess(id, "edit_startup");
+
+  if (!access.hasAccess || !access.startupId) {
+    return NextResponse.json({ error: "Access denied" }, { status: 403 });
+  }
+
   const existingStartup = await db.startup.findFirst({
-    where: { OR: [{ id }, { slug: id }], userId: session.user.id },
+    where: { id: access.startupId },
   });
 
   if (!existingStartup) {
@@ -108,7 +120,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -119,8 +131,14 @@ export async function DELETE(
 
   const { id } = await params;
 
+  const access = await checkStartupAccess(id, "delete_startup");
+
+  if (!access.hasAccess || !access.startupId) {
+    return NextResponse.json({ error: "Access denied" }, { status: 403 });
+  }
+
   const startup = await db.startup.findFirst({
-    where: { OR: [{ id }, { slug: id }], userId: session.user.id },
+    where: { id: access.startupId },
     include: {
       _count: { select: { weeklyUpdates: true } },
     },

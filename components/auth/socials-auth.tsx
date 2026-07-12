@@ -21,16 +21,7 @@ export const SocialsAuth = ({ isLoading }: props) => {
           redirect !== null
             ? decodeURIComponent(redirect as string)
             : "/dashboard",
-        // fetchOptions: {
-        //   onResponse(context) {
-        //       const user = context?.data?.user;
-        //       await privateAxios.post("/auth/custom/sign-up/social", {
-        //         email: user?.email,
-        //       });
-
-        //       toast.success("Signup successful!");
-        //   },
-        // },
+        errorCallbackURL: `${window.location.origin}/sign-in`,
       });
     } catch (error) {
       console.error(error);

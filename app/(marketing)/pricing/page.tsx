@@ -15,8 +15,8 @@ export default function PricingPage() {
             Simple, transparent pricing
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Start for free and upgrade as you validate more ideas. No hidden
-            fees, no surprises.
+            All features included from day one. Start free, upgrade when you
+            need more ideas. No hidden fees.
           </p>
         </div>
       </section>
@@ -42,7 +42,7 @@ export default function PricingPage() {
                   </span>
                 </div>
                 <p className="mt-4 text-sm text-muted-foreground">
-                  Perfect for exploring your first few startup ideas.
+                  Up to 3 active ideas. All features included.
                 </p>
               </div>
               <ul className="flex-1 space-y-4 mb-8">
@@ -83,7 +83,7 @@ export default function PricingPage() {
                   </span>
                 </div>
                 <p className="mt-4 text-sm text-muted-foreground">
-                  For serious entrepreneurs building multiple ventures.
+                  Unlimited ideas and priority support.
                 </p>
               </div>
               <ul className="flex-1 space-y-4 mb-8">
@@ -124,34 +124,80 @@ export default function PricingPage() {
                 <tbody className="text-sm">
                   {[
                     {
-                      name: "Active Idea Validations",
+                      name: "Active Ideas",
                       free: "3",
                       pro: "Unlimited",
                     },
                     {
-                      name: "AI Research Pipeline",
-                      free: "Standard",
-                      pro: "Priority",
-                    },
-                    {
-                      name: "Market Synthesis Report",
-                      free: "Basic",
-                      pro: "Advanced",
-                    },
-                    {
-                      name: "Competitor Analysis",
-                      free: "Limited",
-                      pro: "Full",
-                    },
-                    { name: "PDF Exports", free: "No", pro: "Yes" },
-                    { name: "Voice Memo Uploads", free: "Yes", pro: "Yes" },
-                    {
-                      name: "Napkin Sketch Vision AI",
+                      name: "6-Agent AI Research Pipeline",
                       free: "Yes",
                       pro: "Yes",
                     },
-                    { name: "Custom Execution Plans", free: "No", pro: "Yes" },
-                    { name: "Support", free: "Email", pro: "Priority 24/7" },
+                    {
+                      name: "Real-time Progress Streaming",
+                      free: "Yes",
+                      pro: "Yes",
+                    },
+                    {
+                      name: "Per-Idea Guide Agent",
+                      free: "Yes",
+                      pro: "Yes",
+                    },
+                    {
+                      name: "Startup Execution Tracker",
+                      free: "Yes",
+                      pro: "Yes",
+                    },
+                    {
+                      name: "AI Coach (Weekly Updates)",
+                      free: "Yes",
+                      pro: "Yes",
+                    },
+                    {
+                      name: "Kanban Task Boards",
+                      free: "Yes",
+                      pro: "Yes",
+                    },
+                    {
+                      name: "Streak Gamification",
+                      free: "Yes",
+                      pro: "Yes",
+                    },
+                    {
+                      name: "Team Collaboration",
+                      free: "Yes",
+                      pro: "Yes",
+                    },
+                    {
+                      name: "Opportunities Board",
+                      free: "Yes",
+                      pro: "Yes",
+                    },
+                    {
+                      name: "Accelerator Hub Access",
+                      free: "Yes",
+                      pro: "Yes",
+                    },
+                    {
+                      name: "PDF Exports",
+                      free: "Yes",
+                      pro: "Yes",
+                    },
+                    {
+                      name: "Voice Memo Uploads",
+                      free: "Beta",
+                      pro: "Beta",
+                    },
+                    {
+                      name: "Image / OCR Inputs",
+                      free: "Beta",
+                      pro: "Beta",
+                    },
+                    {
+                      name: "Support",
+                      free: "Email",
+                      pro: "Priority",
+                    },
                   ].map((row, i) => (
                     <tr
                       key={`${row.name}-${i}`}
@@ -169,6 +215,18 @@ export default function PricingPage() {
                 </tbody>
               </table>
             </div>
+          </div>
+
+          <div className="mt-16 text-center">
+            <p className="text-sm text-slate-500 font-medium">
+              Need a custom plan for your incubator or VC firm?{" "}
+              <Link
+                href="/contact"
+                className="text-primary font-bold hover:underline"
+              >
+                Contact us
+              </Link>
+            </p>
           </div>
         </div>
       </section>

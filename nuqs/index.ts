@@ -14,7 +14,10 @@ export const searchParamsSchema = {
   token: parseAsString,
   checkout_id: parseAsString,
   tab: parseAsString.withDefault("overview"),
+  conversationId: parseAsString,
   email: parseAsString,
+  error: parseAsString,
+  error_description: parseAsString,
 };
 
 type ParamsTypes = Values<{
@@ -26,7 +29,10 @@ type ParamsTypes = Values<{
   token: SingleParserBuilder<string>;
   checkout_id: SingleParserBuilder<string>;
   tab: SingleParserBuilder<string>;
+  conversationId: SingleParserBuilder<string>;
   email: SingleParserBuilder<string>;
+  error: SingleParserBuilder<string>;
+  error_description: SingleParserBuilder<string>;
 }>;
 
 // Helper function to build URLs with current params

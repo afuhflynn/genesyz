@@ -1,6 +1,6 @@
 /**
  * =================================
- * IdeasVault API Client
+ * Genesyz API Client
  * Centralized API interface for all backend calls
  * =================================
  */
@@ -18,6 +18,106 @@ import { privateAxios, publicAxios } from "@/config/axios.config";
 // ===========================================
 // Types
 // ===========================================
+// Task Types
+// ===========================================
+
+export type TaskStatus = "TODO" | "IN_PROGRESS" | "BLOCKED" | "DONE";
+
+export interface TaskItem {
+  id: string;
+  startupId: string;
+  listId: string;
+  title: string;
+  description: string | null;
+  deadline: string | null;
+  status: TaskStatus;
+  position: number;
+  completedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TaskList {
+  id: string;
+  startupId: string;
+  name: string;
+  position: number;
+  createdAt: string;
+  updatedAt: string;
+  tasks: TaskItem[];
+}
+
+export interface StartupOpportunity {
+  id: string;
+  startupId: string;
+  title: string;
+  description: string;
+  url: string;
+  category: string;
+  eligibility: string | null;
+  benefits: string | null;
+  deadline: string | null;
+  status: string;
+  source: string;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Accelerator {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  programType: string;
+  logoUrl: string | null;
+  website: string | null;
+  contactEmail: string | null;
+  durationWeeks: number | null;
+  benefits: string | null;
+  requirements: string | null;
+  maxStartups: number | null;
+  fundingAmount: string | null;
+  isPublic: boolean;
+  isActive: boolean;
+  ownerId: string;
+  createdAt: Date;
+  updatedAt: Date;
+  owner: { id: string; name: string | null; image: string | null };
+  cohorts: Array<{
+    id: string;
+    name: string;
+    description: string | null;
+    startDate: Date;
+    endDate: Date;
+    _count: { startups: number };
+  }>;
+  _count: { applications: number; cohorts: number };
+}
+
+export interface AcceleratorWithDetails extends Accelerator {
+  owner: {
+    id: string;
+    name: string | null;
+    image: string | null;
+    email: string | null;
+  };
+}
+
+export interface AcceleratorApplication {
+  id: string;
+  acceleratorId: string;
+  startupId: string | null;
+  founderEmail: string;
+  founderName: string;
+  founderPhone: string | null;
+  status: string;
+  notes: string | null;
+  answers: Record<string, unknown> | null;
+  appliedAt: Date;
+  updatedAt: Date;
+  startup: { id: string; name: string; slug: string } | null;
+}
 
 export interface IdeaWithDetails extends Idea {
   inputs: IdeaInput[];
@@ -25,10 +125,47 @@ export interface IdeaWithDetails extends Idea {
   researchPackets: ResearchPacket[];
 }
 
+export interface PromptVersion {
+  id: string;
+  ideaId: string;
+  prompt: string;
+  editedAt: string;
+  triggeredResearch: boolean;
+  editedBy: string | null;
+}
+
+export interface PromptHistoryResponse {
+  originalPrompt: string | null;
+  interpretedPrompt: string | null;
+  versions: PromptVersion[];
+}
+
 export interface CreateIdeaInput {
   text?: string;
   audioFile?: File;
   imageFile?: File;
+}
+
+export interface StartupConversation {
+  id: string;
+  startupId: string;
+  title: string | null;
+  isActive: boolean;
+  messageCount: number;
+  createdAt: Date;
+  updatedAt: Date;
+  messages?: StartupMessage[];
+}
+
+export interface StartupMessage {
+  id: string;
+  conversationId: string;
+  role: string;
+  content: string;
+  toolCalls: any;
+  toolResults: any;
+  tokensUsed: number | null;
+  createdAt: Date;
 }
 
 export interface PaginationParams {
@@ -73,6 +210,38 @@ export interface UserProfile extends User {
   };
 }
 
+export type StartupMemberRole = "OWNER" | "ADMIN" | "MEMBER" | "VIEWER";
+
+export interface StartupMember {
+  id: string;
+  userId: string;
+  role: StartupMemberRole;
+  createdAt: Date;
+  user: {
+    id: string;
+    name: string | null;
+    email: string;
+    image: string | null;
+  };
+  isOwner: boolean;
+}
+
+export interface StartupFollower {
+  id: string;
+  startupId: string;
+  email: string;
+  name: string | null;
+  createdAt: Date;
+  createdBy: string | null;
+}
+
+export interface SearchedUser {
+  id: string;
+  name: string | null;
+  email: string;
+  image: string | null;
+}
+
 // ===========================================
 // API Request Helper
 // ===========================================
@@ -90,14 +259,16 @@ async function apiRequest<T>(
   const axios = options.isPublic ? publicAxios : privateAxios;
 
   try {
-    let response;
+    let response: { data: T };
 
     switch (options.method) {
       case "GET":
         response = await axios.get<T>(endpoint);
         break;
       case "DELETE":
-        response = await axios.delete<T>(endpoint);
+        response = await axios.delete<T>(endpoint, {
+          data: options.body ?? undefined,
+        });
         break;
       case "POST":
         response = await axios.post<T>(endpoint, options.body ?? {});
@@ -147,6 +318,9 @@ export const api = {
 
       getResearchPackets: (id: string): Promise<ResearchPacket[]> =>
         apiRequest(`/ideas/${id}/research`, { method: "GET" }),
+
+      getPromptHistory: (id: string): Promise<PromptHistoryResponse> =>
+        apiRequest(`/ideas/${id}/prompt`, { method: "GET" }),
     },
 
     // Dashboard
@@ -203,6 +377,168 @@ export const api = {
           { method: "GET" },
         ),
     },
+
+    // Startups
+    startups: {
+      getAll: (params?: PaginationParams) =>
+        apiRequest<{
+          data: unknown[];
+          pagination: {
+            page: number;
+            limit: number;
+            total: number;
+            totalPages: number;
+          };
+        }>(`/startups?page=${params?.page || 1}&limit=${params?.limit || 10}`, {
+          method: "GET",
+        }),
+      getById: (id: string) =>
+        apiRequest<unknown>(`/startups/${id}`, { method: "GET" }),
+      getUpdates: (id: string, params?: PaginationParams) =>
+        apiRequest<{
+          data: unknown[];
+          pagination: {
+            page: number;
+            limit: number;
+            total: number;
+            totalPages: number;
+          };
+        }>(
+          `/startups/${id}/updates?page=${params?.page || 1}&limit=${params?.limit || 10}`,
+          { method: "GET" },
+        ),
+      getStreak: (id: string) =>
+        apiRequest<{
+          currentStreak: number;
+          longestStreak: number;
+          lastUpdateWeek: string | null;
+          streakStartDate: string | null;
+          isAtRisk: boolean;
+          nextMilestone: number;
+          weeksToMilestone: number;
+        }>(`/startups/${id}/streak`, { method: "GET" }),
+      getTaskLists: (id: string, status?: TaskStatus) =>
+        apiRequest<{ data: { lists: TaskList[] } }>(
+          `/startups/${id}/applications${status ? `?status=${status}` : ""}`,
+          { method: "GET" },
+        ),
+      getOpportunities: (
+        id: string,
+        params?: { status?: string; category?: string },
+      ) => {
+        const query = new URLSearchParams();
+
+        if (params?.status) {
+          query.set("status", params.status);
+        }
+
+        if (params?.category) {
+          query.set("category", params.category);
+        }
+
+        const queryString = query.toString();
+
+        return apiRequest<{ data: StartupOpportunity[] }>(
+          `/startups/${id}/opportunities${queryString ? `?${queryString}` : ""}`,
+          { method: "GET" },
+        );
+      },
+      generateOpportunities: (id: string) =>
+        apiRequest<{
+          data: Array<{
+            title: string;
+            description: string;
+            url?: string;
+            category: string;
+            eligibility?: string;
+            benefits?: string;
+            deadline?: string | null;
+          }>;
+          meta?: {
+            usedTavilySearch: boolean;
+            searchWarning?: string;
+          };
+        }>(`/startups/${id}/opportunities/generate`, { method: "POST" }),
+      checkSlug: (slug: string) =>
+        apiRequest<{ available: boolean }>("/startups/check-slug", {
+          method: "POST",
+          body: { slug },
+        }),
+      getIdeaStartup: (ideaId: string) =>
+        apiRequest<{
+          hasStartup: boolean;
+          startup: { id: string; slug: string; name: string } | null;
+        }>(`/ideas/${ideaId}/startup`, { method: "GET" }),
+      getMembers: (id: string) =>
+        apiRequest<{ data: StartupMember[] }>(`/startups/${id}/members`, {
+          method: "GET",
+        }),
+      searchUsers: (query: string, excludeStartup?: string) =>
+        apiRequest<{ data: SearchedUser[] }>(
+          `/users/search?q=${encodeURIComponent(query)}${
+            excludeStartup ? `&excludeStartup=${excludeStartup}` : ""
+          }`,
+          { method: "GET" },
+        ),
+      getFollowers: (id: string) =>
+        apiRequest<{ data: StartupFollower[] }>(`/startups/${id}/followers`, {
+          method: "GET",
+        }),
+      getConversations: (id: string) =>
+        apiRequest<{ data: StartupConversation[] }>(
+          `/startups/${id}/conversations`,
+          {
+            method: "GET",
+          },
+        ),
+      getConversation: (startupId: string, conversationId: string) =>
+        apiRequest<{ data: StartupConversation }>(
+          `/startups/${startupId}/conversations/${conversationId}`,
+          { method: "GET" },
+        ),
+    },
+
+    // Accelerators
+    accelerators: {
+      getAll: (params?: { publicOnly?: boolean }) =>
+        apiRequest<{ data: Accelerator[] }>(
+          `/accelerators${params?.publicOnly ? "?public=true" : ""}`,
+          { method: "GET" },
+        ),
+      getBySlug: (slug: string) =>
+        apiRequest<{ data: AcceleratorWithDetails }>(`/accelerators/${slug}`, {
+          method: "GET",
+        }),
+      checkSlug: (name: string) => {
+        const slug = name
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/(^-|-$)/g, "");
+        return apiRequest<{ available: boolean }>("/accelerators/check-slug", {
+          method: "POST",
+          body: { slug },
+        });
+      },
+      apply: (
+        slug: string,
+        data: {
+          founderEmail: string;
+          founderName: string;
+          founderPhone?: string;
+          startupId?: string;
+          answers?: Record<string, string>;
+        },
+      ) =>
+        apiRequest<AcceleratorApplication>(`/accelerators/${slug}/apply`, {
+          method: "POST",
+          body: data,
+        }),
+      getApplications: (slug: string) =>
+        apiRequest<{ data: AcceleratorApplication[] }>(
+          `/accelerators/${slug}/apply`,
+          { method: "GET" },
+        ),
+    },
   },
 
   mutations: {
@@ -251,6 +587,14 @@ export const api = {
 
       exportPdf: (id: string): Promise<{ url: string }> =>
         apiRequest(`/ideas/${id}/export`, { method: "POST" }),
+
+      updatePrompt: (
+        id: string,
+        data: { prompt: string; triggerResearch: boolean },
+      ): Promise<{
+        success: boolean;
+        researchTriggered: boolean;
+      }> => apiRequest(`/ideas/${id}/prompt`, { method: "PUT", body: data }),
     },
 
     // Assets
@@ -292,6 +636,302 @@ export const api = {
         apiRequest("/auth/custom/resend-verification-email", {
           method: "PUT",
           body: { email },
+        }),
+    },
+
+    // Startups
+    startups: {
+      create: (data: Record<string, unknown>) =>
+        apiRequest<unknown>("/startups", { method: "POST", body: data }),
+      update: (id: string, data: Record<string, unknown>) =>
+        apiRequest<unknown>(`/startups/${id}`, { method: "PATCH", body: data }),
+      delete: (id: string) =>
+        apiRequest<{ success: boolean }>(`/startups/${id}`, {
+          method: "DELETE",
+        }),
+      createWeeklyUpdate: (id: string, data: Record<string, unknown>) =>
+        apiRequest<unknown>(`/startups/${id}/updates`, {
+          method: "POST",
+          body: data,
+        }),
+      updateWeeklyUpdate: (
+        id: string,
+        data: {
+          updateId: string;
+          isLaunched?: boolean;
+          weeksToLaunch?: number | null;
+          usersTalkedTo?: number;
+          userLearnings?: string;
+          primaryMetricType?: string;
+          primaryMetricValue?: number;
+          metricPeriod?: string | null;
+          metricFormat?: string | null;
+          customMetricName?: string | null;
+          additionalMetrics?: Array<{
+            type: string;
+            value: number;
+            period?: string | null;
+            customMetricName?: string | null;
+          }> | null;
+          previousGoalsReview?: Array<{
+            goalText: string;
+            completed: boolean;
+          }> | null;
+          goalsCompletionRate?: number | null;
+          moraleScore?: number;
+          topImprovements?: string;
+          biggestObstacle?: string;
+          goals?: Array<{
+            content: string;
+            priority: number;
+            completed?: boolean;
+          }>;
+        },
+      ) =>
+        apiRequest<unknown>(`/startups/${id}/updates`, {
+          method: "PATCH",
+          body: data,
+        }),
+      updateStreak: (
+        id: string,
+        data: { weekNumber: number; weekStart: Date },
+      ) =>
+        apiRequest<unknown>(`/startups/${id}/streak`, {
+          method: "POST",
+          body: data,
+        }),
+      getTaskLists: (id: string, status?: TaskStatus) =>
+        apiRequest<{ data: { lists: TaskList[] } }>(
+          `/startups/${id}/applications${status ? `?status=${status}` : ""}`,
+          { method: "GET" },
+        ),
+      createTaskList: (
+        id: string,
+        data: {
+          name: string;
+        },
+      ) =>
+        apiRequest<unknown>(`/startups/${id}/applications`, {
+          method: "POST",
+          body: {
+            action: "create_list",
+            ...data,
+          },
+        }),
+      renameTaskList: (
+        id: string,
+        data: {
+          listId: string;
+          name: string;
+        },
+      ) =>
+        apiRequest<unknown>(`/startups/${id}/applications`, {
+          method: "PATCH",
+          body: {
+            action: "rename_list",
+            ...data,
+          },
+        }),
+      deleteTaskList: (id: string, listId: string) =>
+        apiRequest<{ success: boolean }>(`/startups/${id}/applications`, {
+          method: "DELETE",
+          body: {
+            action: "delete_list",
+            listId,
+          },
+        }),
+      createTask: (
+        id: string,
+        data: {
+          listId: string;
+          title: string;
+          description?: string;
+          deadline?: string;
+          status?: TaskStatus;
+        },
+      ) =>
+        apiRequest<{ data: TaskItem }>(`/startups/${id}/applications`, {
+          method: "POST",
+          body: {
+            action: "create_task",
+            ...data,
+          },
+        }),
+      updateTask: (
+        id: string,
+        data: {
+          taskId: string;
+          title?: string;
+          description?: string;
+          deadline?: string | null;
+        },
+      ) =>
+        apiRequest<{ success: boolean }>(`/startups/${id}/applications`, {
+          method: "PATCH",
+          body: {
+            action: "update_task",
+            ...data,
+          },
+        }),
+      moveTask: (
+        id: string,
+        data: {
+          taskId: string;
+          listId: string;
+          status: TaskStatus;
+          position?: number;
+        },
+      ) =>
+        apiRequest<{ success: boolean }>(`/startups/${id}/applications`, {
+          method: "PATCH",
+          body: {
+            action: "move_task",
+            ...data,
+          },
+        }),
+      deleteTask: (id: string, taskId: string) =>
+        apiRequest<{ success: boolean }>(`/startups/${id}/applications`, {
+          method: "DELETE",
+          body: {
+            action: "delete_task",
+            taskId,
+          },
+        }),
+      createOpportunity: (
+        id: string,
+        data: {
+          title: string;
+          description: string;
+          url: string;
+          category: string;
+          eligibility?: string;
+          benefits?: string;
+          deadline: string;
+          status?: string;
+        },
+      ) =>
+        apiRequest<StartupOpportunity>(`/startups/${id}/opportunities`, {
+          method: "POST",
+          body: data,
+        }),
+      updateOpportunity: (
+        id: string,
+        data: {
+          opportunityId: string;
+          status?: string;
+          notes?: string;
+          title?: string;
+          description?: string;
+        },
+      ) =>
+        apiRequest<StartupOpportunity>(`/startups/${id}/opportunities`, {
+          method: "PATCH",
+          body: data,
+        }),
+      deleteOpportunity: (id: string, opportunityId: string) =>
+        apiRequest<{ success: boolean }>(
+          `/startups/${id}/opportunities?opportunityId=${opportunityId}`,
+          { method: "DELETE" },
+        ),
+      addMember: (
+        id: string,
+        data: { userId: string; role?: StartupMemberRole },
+      ) =>
+        apiRequest<{ data: StartupMember }>(`/startups/${id}/members`, {
+          method: "POST",
+          body: data,
+        }),
+      updateMember: (
+        id: string,
+        memberId: string,
+        data: { role: StartupMemberRole },
+      ) =>
+        apiRequest<{ data: StartupMember }>(
+          `/startups/${id}/members/${memberId}`,
+          {
+            method: "PATCH",
+            body: data,
+          },
+        ),
+      removeMember: (id: string, memberId: string) =>
+        apiRequest<{ success: boolean }>(
+          `/startups/${id}/members/${memberId}`,
+          { method: "DELETE" },
+        ),
+      addFollower: (id: string, data: { email: string; name?: string }) =>
+        apiRequest<{ data: StartupFollower }>(`/startups/${id}/followers`, {
+          method: "POST",
+          body: data,
+        }),
+      removeFollower: (id: string, followerId: string) =>
+        apiRequest<{ success: boolean }>(
+          `/startups/${id}/followers/${followerId}`,
+          { method: "DELETE" },
+        ),
+      createConversation: (id: string, data: { title?: string }) =>
+        apiRequest<{ data: StartupConversation }>(
+          `/startups/${id}/conversations`,
+          {
+            method: "POST",
+            body: data,
+          },
+        ),
+      deleteConversation: (id: string, conversationId: string) =>
+        apiRequest<{ success: boolean }>(
+          `/startups/${id}/conversations/${conversationId}`,
+          { method: "DELETE" },
+        ),
+      toggleGoal: (goalId: string) =>
+        apiRequest<{ id: string; completed: boolean }>(`/goals/${goalId}`, {
+          method: "PATCH",
+        }),
+    },
+
+    // Accelerators
+    accelerators: {
+      create: (data: {
+        name: string;
+        description?: string;
+        programType?: string;
+        logoUrl?: string;
+        website?: string;
+        contactEmail?: string;
+        durationWeeks?: number;
+        benefits?: string;
+        requirements?: string;
+        maxStartups?: number;
+        fundingAmount?: string;
+        isPublic?: boolean;
+      }) =>
+        apiRequest<Accelerator>("/accelerators", {
+          method: "POST",
+          body: data,
+        }),
+      update: (
+        slug: string,
+        data: Partial<{
+          name: string;
+          description: string;
+          programType: string;
+          logoUrl: string;
+          website: string;
+          contactEmail: string;
+          durationWeeks: number;
+          benefits: string;
+          requirements: string;
+          maxStartups: number;
+          fundingAmount: string;
+          isPublic: boolean;
+          isActive: boolean;
+        }>,
+      ) =>
+        apiRequest<Accelerator>(`/accelerators/${slug}`, {
+          method: "PATCH",
+          body: data,
+        }),
+      delete: (slug: string) =>
+        apiRequest<{ success: boolean }>(`/accelerators/${slug}`, {
+          method: "DELETE",
         }),
     },
   },

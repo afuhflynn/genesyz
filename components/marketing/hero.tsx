@@ -23,29 +23,29 @@ export function Hero() {
             className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/5 border border-primary/10 text-primary text-sm font-medium mb-8"
           >
             <Sparkles className="w-4 h-4" />
-            <span>The future of startup validation is here</span>
+            <span>The AI-Powered Startup Operating System</span>
           </motion.div>
 
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tight text-slate-900 mb-8 leading-[0.9]"
+            className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tight text-slate-900 mb-6 leading-[0.9]"
           >
-            Validate your <br />
-            <span className="text-primary">next big idea</span> <br />
-            in minutes.
+            <span className="text-primary">Validate. Research. Build.</span>
+            <br />
+            Turn your idea into a startup.
           </motion.h1>
 
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="text-lg md:text-xl text-slate-600 mb-10 max-w-2xl leading-relaxed"
+            className="text-lg md:text-xl text-slate-600 mb-10 max-w-3xl leading-relaxed"
           >
-            Stop wasting months building what nobody wants. IdeasVault uses a
-            multi-agent AI pipeline to give you instant market research,
-            competitor analysis, and a step-by-step execution plan.
+            Genesyz is your AI co-founder - pressure-test an idea, research the
+            market, and then operate your startup with weekly metrics, a
+            research feed, and a strategic VC Coach in your corner.
           </motion.p>
 
           <motion.div
@@ -73,9 +73,34 @@ export function Hero() {
               </Button>
             </Link>
           </motion.div>
+
+          {/* Quick stats */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.35 }}
+            className="flex flex-wrap items-center justify-center gap-8 mt-12 text-sm text-slate-500"
+          >
+            <span className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-primary" />
+              6-Agent AI Pipeline
+            </span>
+            <span className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-primary" />
+              Startup Tracker
+            </span>
+            <span className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-primary" />
+              Accelerator Hub
+            </span>
+            <span className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-primary" />
+              Team Collaboration
+            </span>
+          </motion.div>
         </div>
 
-        {/* Visual Preview - UploadThing Style */}
+        {/* Visual Preview */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
@@ -93,7 +118,7 @@ export function Hero() {
                   <div className="w-3 h-3 rounded-full bg-slate-200" />
                 </div>
                 <div className="flex-1 max-w-md h-7 bg-white border rounded-md mx-auto flex items-center px-3 text-[10px] text-slate-400">
-                  ideasvault.com/dashboard/new-idea
+                  genesyz.ai/dashboard
                 </div>
               </div>
               {/* Content Placeholder */}

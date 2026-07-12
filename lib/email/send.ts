@@ -7,7 +7,7 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 // Shared Premium Layout
 // ===========================================
 
-function renderPremiumEmail(options: {
+export function renderPremiumEmail(options: {
   title: string;
   previewTextText?: string;
   contentHtml: string;
@@ -33,7 +33,7 @@ function renderPremiumEmail(options: {
   <div style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);">
     <!-- Header -->
     <div style="background: #0f172a; padding: 32px; text-align: center; color: #ffffff;">
-      <img src="cid:unique-app-logo" alt="IdeasVault" width="120" style="margin-bottom: 16px;">
+      <img src="cid:unique-app-logo" alt="Genesyz" width="120" style="margin-bottom: 16px;">
       ${
         badge
           ? `
@@ -52,7 +52,7 @@ function renderPremiumEmail(options: {
 
   <div style="text-align: center; margin-top: 24px;">
     <p style="font-size: 11px; color: #94a3b8;">
-      © ${new Date().getFullYear()} IdeasVault. ${
+      © ${new Date().getFullYear()} Genesyz. ${
         footerHtml ||
         `<a href="${APP_URL}/settings" style="color: #64748b; text-decoration: underline;">Manage Preferences</a>`
       }
@@ -79,39 +79,45 @@ export async function sendWelcomeEmail(options: {
     </h2>
 
     <p style="font-size: 16px; color: #475569; margin-bottom: 24px;">
-      Thank you for joining IdeasVault. We're excited to help you capture, research, and validate your startup ideas.
+      You just joined the AI co-founder workspace built for serious founders. Turn raw ideas into validated opportunities with clear market signals, execution guidance, and investor-ready insights.
     </p>
 
     <div style="background: #f8fafc; border-radius: 12px; padding: 24px; margin-bottom: 24px; border: 1px solid #e2e8f0;">
       <h3 style="font-size: 18px; font-weight: 600; color: #0f172a; margin: 0 0 12px 0;">
-        Here's what you can do:
+        Launch faster with Genesyz:
       </h3>
       <ul style="margin: 0; padding-left: 20px; color: #475569;">
-        <li style="margin-bottom: 8px;">Capture ideas via text, voice, or images</li>
-        <li style="margin-bottom: 8px;">Get AI-powered market research</li>
-        <li style="margin-bottom: 8px;">Receive actionable insights and scores</li>
-        <li style="margin-bottom: 8px;">Export research as professional PDFs</li>
+        <li style="margin-bottom: 8px;">Validate ideas with a multi-agent AI research pipeline</li>
+        <li style="margin-bottom: 8px;">Track weekly startup progress, goals, and momentum in one dashboard</li>
+        <li style="margin-bottom: 8px;">Discover grants, fellowships, competitions, and accelerator opportunities</li>
+        <li style="margin-bottom: 8px;">Export polished research reports to share with teammates and stakeholders</li>
       </ul>
+    </div>
+
+    <div style="background: #0f172a; border-radius: 12px; padding: 18px; margin-bottom: 24px;">
+      <p style="font-size: 14px; margin: 0; color: #e2e8f0;">
+        <strong style="color: #ffffff;">Pro tip:</strong> founders who validate their first idea in the first 24 hours build sharper products and waste less time. Start now and compound your edge.
+      </p>
     </div>
 
     <div style="text-align: center;">
       <a href="${APP_URL}/dashboard" style="display: inline-block; background: #F5A623; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(245, 166, 35, 0.2);">
-        Go to Dashboard
+        Validate Your First Idea
       </a>
     </div>
   `;
 
   const html = renderPremiumEmail({
-    title: "Welcome to IdeasVault",
+    title: "Welcome to Genesyz",
     contentHtml,
     badge: "Welcome",
   });
 
   return sendEmail({
     to,
-    subject: "Welcome to IdeasVault!",
+    subject: "Welcome to Genesyz - let’s validate your first startup idea",
     html,
-    text: `Welcome to IdeasVault, ${userName}! Visit ${APP_URL}/dashboard to get started.`,
+    text: `Welcome to Genesyz, ${userName}! You're now in the AI co-founder workspace for validating and executing startup ideas. Validate your first idea now: ${APP_URL}/dashboard`,
   });
 }
 
@@ -219,7 +225,7 @@ export async function sendDigestEmail(options: {
 
   return sendEmail({
     to,
-    subject: `Your Weekly IdeasVault Digest - ${totalIdeas} ideas, avg score ${averageScore}`,
+    subject: `Your Weekly Genesyz Digest - ${totalIdeas} ideas, avg score ${averageScore}`,
     html,
     text: `Hi ${userName}, you have ${totalIdeas} active ideas with an average score of ${averageScore}. Visit ${APP_URL}/dashboard to see more.`,
   });
@@ -232,16 +238,40 @@ export async function sendWeeklyStrategicReportEmail(options: {
 }): Promise<boolean> {
   const { to, userName, advisory } = options;
 
-  const primaryFocus = advisory.primaryFocus || {
+  // Handle both old schema (nested objects) and new schema (flat/simple)
+  const advisoryAny = advisory as any;
+
+  const primaryFocus = advisoryAny.primaryFocus || {
     ideaTitle: "Your Top Idea",
     allocation: 60,
   };
-  const marketPulse = advisory.marketPulse?.slice(0, 3) || [];
-  const vcCorner = advisory.vcCorner || {};
-  const riskCliffs = advisory.riskCliffs || [];
-  const actionPlan = advisory.weeklyActionPlan || [];
-  const totalIdeas = advisory.verdicts?.length || 0;
-  const topIdeas = advisory.verdicts?.slice(0, 3) || [];
+
+  // marketPulse: old = objects, new = strings
+  const marketPulseRaw = advisoryAny.marketPulse || [];
+  const marketPulse = Array.isArray(marketPulseRaw)
+    ? marketPulseRaw
+        .slice(0, 3)
+        .map((item: any) =>
+          typeof item === "string" ? item : item?.newsItem || "",
+        )
+        .filter(Boolean)
+    : [];
+
+  const vcCorner = advisoryAny.vcCorner || {};
+  const riskCliffs = advisoryAny.riskCliffs || [];
+  const actionPlan = advisoryAny.weeklyActionPlan || [];
+
+  // verdicts: old = objects, new = strings
+  const verdictsRaw = advisoryAny.verdicts || [];
+  const totalIdeas = Array.isArray(verdictsRaw) ? verdictsRaw.length : 0;
+  const topIdeas = Array.isArray(verdictsRaw) ? verdictsRaw.slice(0, 3) : [];
+
+  // New schema fields (may not exist in old format)
+  const vcSentiment = advisoryAny.vcSentiment || vcCorner.sentiment || "";
+  const topRisks = advisoryAny.topRisks || [];
+  const failureReasons = advisoryAny.failureReasons || [];
+  const weeklyFocus = advisoryAny.weeklyFocus || "";
+  const investmentPotential = advisoryAny.investmentPotential || "medium";
 
   // Get current date for the brief
   const now = new Date();
@@ -260,53 +290,166 @@ export async function sendWeeklyStrategicReportEmail(options: {
   // Generate preheader variants
   const preheaderVariants = [
     `Portfolio: ${totalIdeas} ideas • Primary focus: ${primaryFocus.ideaTitle} (${primaryFocus.allocation}%)`,
-    `VC Corner: ${vcCorner.sentiment ? "Market analysis ready" : "Strategic insights inside"}`,
-    `Action required: ${actionPlan.filter((a) => a.priority === "High").length} high-priority tasks`,
+    `VC Corner: ${vcSentiment || "Strategic insights inside"}`,
+    `Action required: ${actionPlan.filter((a: any) => a.priority === "High").length} high-priority tasks`,
   ];
+
+  // Format data for HTML template - handle both old and new formats
+  const formatHtmlMarketPulse = () => {
+    if (!marketPulse.length)
+      return '<li style="margin-bottom: 8px; font-size: 14px; color: #334155;">No market updates</li>';
+    return marketPulse
+      .map(
+        (item: string) =>
+          `<li style="margin-bottom: 8px; font-size: 14px; color: #334155;">${item}</li>`,
+      )
+      .join("");
+  };
+
+  const formatHtmlVerdicts = () => {
+    if (!topIdeas.length)
+      return '<p style="font-size: 13px; color: #475569;">No verdicts available</p>';
+    return topIdeas
+      .map((verdict: any) => {
+        const title =
+          typeof verdict === "string" ? verdict : verdict.ideaTitle || "Idea";
+        const priority =
+          typeof verdict === "string" ? "" : verdict.onePriority || "";
+        const status =
+          typeof verdict === "string"
+            ? "validation"
+            : verdict.status || "validation";
+        const allocation =
+          typeof verdict === "string"
+            ? "20%"
+            : (verdict.timeAllocation || 20) + "%";
+        return `
+      <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0;">
+        <h4 style="font-size: 14px; font-weight: 800; color: #0f172a; margin: 0 0 8px 0;">${title}</h4>
+        ${priority ? `<p style="font-size: 13px; color: #475569; margin: 0 0 4px 0;"><strong>Priority:</strong> ${priority}</p>` : ""}
+        <p style="font-size: 13px; color: #475569; margin: 0 0 4px 0;"><strong>Status:</strong> ${status}</p>
+        <p style="font-size: 13px; color: #475569; margin: 0;"><strong>Allocation:</strong> ${allocation}</p>
+      </div>`;
+      })
+      .join("");
+  };
+
+  const formatHtmlActionPlan = () => {
+    if (!actionPlan.length) {
+      return `<tr><td colspan="4" style="padding: 12px; color: #475569;">${weeklyFocus || "Focus on your primary goal this week"}</td></tr>`;
+    }
+    return actionPlan
+      .map((action: any) => {
+        const priority = action.priority || "Medium";
+        const priorityColor =
+          priority === "High"
+            ? "#dc2626"
+            : priority === "Medium"
+              ? "#f59e0b"
+              : "#10b981";
+        return `
+          <tr style="border-bottom: 1px solid #f1f5f9;">
+            <td style="padding: 12px; color: #334155;">
+              <strong>${action.title || "Action"}</strong>
+              <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
+                <strong>Success:</strong> ${action.success_criteria || "Complete the task"}<br>
+                <strong>Kill:</strong> ${action.kill_criteria || "N/A"}
+              </div>
+            </td>
+            <td style="padding: 12px; color: #334155;">${action.owner || "You"}</td>
+            <td style="padding: 12px; color: #334155;">${action.due_date || "This week"}</td>
+            <td style="padding: 12px; color: ${priorityColor};">
+              <span style="display: inline-block; padding: 2px 8px; background: ${priorityColor}20; border-radius: 9999px; font-size: 10px; font-weight: 800; text-transform: uppercase;">${priority}</span>
+            </td>
+          </tr>`;
+      })
+      .join("");
+  };
+
+  const formatHtmlRisks = () => {
+    if (riskCliffs.length) {
+      return riskCliffs
+        .map((risk: any) => {
+          const title = typeof risk === "string" ? "" : risk.ideaTitle || "";
+          const reason =
+            typeof risk === "string"
+              ? risk
+              : risk.failureReason || "Monitor closely";
+          return title ? `<strong>${title}:</strong> ${reason}` : reason;
+        })
+        .join("<br>");
+    }
+    if (topRisks.length) {
+      return topRisks.map((r: string) => r).join("<br>");
+    }
+    return "No specific risks identified";
+  };
+
+  // Get high priority count
+  const highPriorityCount = actionPlan.filter(
+    (a: any) => a.priority === "High",
+  ).length;
+
+  // Format data for Markdown template
+  const formatVerdicts = () => {
+    if (!topIdeas.length) return "No verdicts available";
+    return topIdeas
+      .map((verdict: any) => {
+        if (typeof verdict === "string") return `- ${verdict}`;
+        return `#### ${verdict.ideaTitle || "Idea"}\n- ${verdict.onePriority || "Continue monitoring"}\n- Status: ${verdict.status || "validation"}\n- Allocation: ${verdict.timeAllocation || 20}%`;
+      })
+      .join("\n");
+  };
+
+  const formatActionPlan = () => {
+    if (actionPlan.length) {
+      return actionPlan
+        .map((action: any) => {
+          return `- **${action.title || "Action"}** (${action.priority || "Medium"})\n  - Owner: ${action.owner || "You"}\n  - Due: ${action.due_date || "This week"}\n  - Time: ${action.estimated_time_allocation || "As needed"}\n  - Success: ${action.success_criteria || "Complete the task"}\n  - Kill: ${action.kill_criteria || "N/A"}`;
+        })
+        .join("\n");
+    }
+    return weeklyFocus || "Focus on your primary goal this week";
+  };
+
+  const formatRiskCliffs = () => {
+    if (riskCliffs.length) {
+      return riskCliffs
+        .map((risk: any) => {
+          if (typeof risk === "string") return `- ${risk}`;
+          return `- **${risk.ideaTitle || "Idea"}:** ${risk.failureReason || "Monitor closely"}`;
+        })
+        .join("\n");
+    }
+    if (topRisks.length) {
+      return topRisks.map((r: string) => `- ${r}`).join("\n");
+    }
+    return "No specific risks identified";
+  };
 
   // Generate Markdown version
   const markdownContent = `
 # Founder Focus This Week
 
-## ${primaryFocus.ideaTitle} — ${primaryFocus.allocation}% time allocation
+## ${primaryFocus.ideaTitle} - ${primaryFocus.allocation}% time allocation
 
 ### Executive Summary
-${advisory.executiveSummary}
+${advisoryAny.executiveSummary || "No summary available"}
 
 ### Market Pulse
-${marketPulse.map((item) => `- ${item.newsItem}`).join("\n")}
+${marketPulse.length ? marketPulse.map((item: string) => `- ${item}`).join("\n") : "No market updates"}
 
 ### Strategic Roadmap
-${advisory.verdicts
-  .map((verdict) => {
-    return `#### ${verdict.ideaTitle}
-- ${verdict.onePriority}
-- Status: ${verdict.status || "validation"}
-- Allocation: ${verdict.timeAllocation || 20}%
-`;
-  })
-  .join("")}
+${formatVerdicts()}
 
 ### Weekly Action Plan
-${actionPlan
-  .map((action) => {
-    return `- **${action.title}** (${action.priority})
-  - Owner: ${action.owner}
-  - Due: ${action.due_date}
-  - Time: ${action.estimated_time_allocation}
-  - Success: ${action.success_criteria}
-  - Kill: ${action.kill_criteria}
-`;
-  })
-  .join("")}
+${formatActionPlan()}
 
 ### VC Corner
-${vcCorner.sentiment}
-
-**Investor Angle:** ${vcCorner.investorAngle}
+${vcSentiment || "No VC updates available"}
 
 ### Why This Might Fail
-${riskCliffs.map((risk) => `- **${risk.ideaTitle}:** ${risk.failureReason}`).join("\n")}
+${formatRiskCliffs()}
 
 [Approve Focus]() | [Assign Owners]()
 `;
@@ -329,7 +472,7 @@ ${riskCliffs.map((risk) => `- **${risk.ideaTitle}:** ${risk.failureReason}`).joi
           <p style="font-size: 11px; color: #94a3b8; margin: 4px 0 0 0; text-transform: uppercase; font-weight: 700;">Focus Allocation</p>
         </div>
         <div>
-          <p style="font-size: 28px; font-weight: 800; color: #fbbf24; margin: 0;">${actionPlan.filter((a) => a.priority === "High").length}</p>
+          <p style="font-size: 28px; font-weight: 800; color: #fbbf24; margin: 0;">${actionPlan.filter((a: any) => a.priority === "High").length}</p>
           <p style="font-size: 11px; color: #94a3b8; margin: 4px 0 0 0; text-transform: uppercase; font-weight: 700;">High Priority</p>
         </div>
       </div>
@@ -348,33 +491,16 @@ ${riskCliffs.map((risk) => `- **${risk.ideaTitle}:** ${risk.failureReason}`).joi
 
     <h3 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0 0 12px 0;">Executive Summary</h3>
     <p style="font-size: 14px; color: #475569; margin: 0 0 24px 0; line-height: 1.6;">
-      ${advisory.executiveSummary}
+      ${advisoryAny.executiveSummary || "No summary available"}
     </p>
 
     <h3 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0 0 12px 0;">Market Pulse</h3>
     <ul style="margin: 0 0 24px 0; padding: 0 0 0 20px;">
-      ${marketPulse
-        .map(
-          (item) => `
-        <li style="margin-bottom: 8px; font-size: 14px; color: #334155;">${item.newsItem}</li>
-      `,
-        )
-        .join("")}
+      ${formatHtmlMarketPulse()}
     </ul>
 
     <h3 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0 0 12px 0;">Strategic Roadmap</h3>
-    ${advisory.verdicts
-      .map((verdict) => {
-        return `
-      <div style="margin-bottom: 16px; padding-bottom: 16px; border-bottom: 1px solid #e2e8f0;">
-        <h4 style="font-size: 14px; font-weight: 800; color: #0f172a; margin: 0 0 8px 0;">${verdict.ideaTitle}</h4>
-        <p style="font-size: 13px; color: #475569; margin: 0 0 4px 0;"><strong>Priority:</strong> ${verdict.onePriority}</p>
-        <p style="font-size: 13px; color: #475569; margin: 0 0 4px 0;"><strong>Status:</strong> ${verdict.status || "validation"}</p>
-        <p style="font-size: 13px; color: #475569; margin: 0;"><strong>Allocation:</strong> ${verdict.timeAllocation || 20}%</p>
-      </div>
-    `;
-      })
-      .join("")}
+    ${formatHtmlVerdicts()}
 
     <h3 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0 0 12px 0;">Weekly Action Plan</h3>
     <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 13px;">
@@ -387,32 +513,7 @@ ${riskCliffs.map((risk) => `- **${risk.ideaTitle}:** ${risk.failureReason}`).joi
         </tr>
       </thead>
       <tbody>
-        ${actionPlan
-          .map((action) => {
-            const priorityColor =
-              action.priority === "High"
-                ? "#dc2626"
-                : action.priority === "Medium"
-                  ? "#f59e0b"
-                  : "#10b981";
-            return `
-          <tr style="border-bottom: 1px solid #f1f5f9;">
-            <td style="padding: 12px; color: #334155;">
-              <strong>${action.title}</strong>
-              <div style="font-size: 11px; color: #64748b; margin-top: 4px;">
-                <strong>Success:</strong> ${action.success_criteria}<br>
-                <strong>Kill:</strong> ${action.kill_criteria}
-              </div>
-            </td>
-            <td style="padding: 12px; color: #334155;">${action.owner}</td>
-            <td style="padding: 12px; color: #334155;">${action.due_date}</td>
-            <td style="padding: 12px; color: ${priorityColor};">
-              <span style="display: inline-block; padding: 2px 8px; background: ${priorityColor}20; border-radius: 9999px; font-size: 10px; font-weight: 800; text-transform: uppercase;">${action.priority}</span>
-            </td>
-          </tr>
-        `;
-          })
-          .join("")}
+        ${formatHtmlActionPlan()}
       </tbody>
     </table>
 
@@ -429,21 +530,30 @@ ${riskCliffs.map((risk) => `- **${risk.ideaTitle}:** ${risk.failureReason}`).joi
           Market Sentiment
         </h4>
         <p style="font-size: 14px; color: #f8fafc; margin: 0; line-height: 1.6; font-weight: 600;">
-          ${vcCorner.sentiment}
-        </p>
-      </div>
-
-      <!-- The Hard Truth -->
-      <div style="margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid #334155;">
-        <h4 style="font-size: 11px; font-weight: 700; color: #94a3b8; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.05em;">
-          The Hard Truth
-        </h4>
-        <p style="font-size: 14px; color: #cbd5e1; margin: 0; line-height: 1.6; font-style: italic;">
-          "${vcCorner.brutalHonesty}"
+          ${vcSentiment || vcCorner.sentiment || "No VC updates available"}
         </p>
       </div>
 
       <!-- Investment Potential -->
+      <div style="margin-bottom: 20px;">
+        <h4 style="font-size: 11px; font-weight: 700; color: #94a3b8; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.05em;">
+          Investment Potential
+        </h4>
+        <p style="font-size: 14px; color: #f8fafc; margin: 0; line-height: 1.6; font-weight: 600; text-transform: capitalize;">
+          ${investmentPotential}
+        </p>
+      </div>
+
+      <!-- Why This Might Fail -->
+      <div style="margin-bottom: 0;">
+        <h4 style="font-size: 11px; font-weight: 700; color: #94a3b8; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.05em;">
+          Why This Might Fail
+        </h4>
+        <p style="font-size: 14px; color: #cbd5e1; margin: 0; line-height: 1.6;">
+          ${formatHtmlRisks()}
+        </p>
+      </div>
+    </div>
       <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
         <span style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">
           Investment Potential
@@ -456,13 +566,7 @@ ${riskCliffs.map((risk) => `- **${risk.ideaTitle}:** ${risk.failureReason}`).joi
 
     <h3 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0 0 12px 0;">Why This Might Fail</h3>
     <ul style="margin: 0 0 24px 0; padding: 0 0 0 20px;">
-      ${riskCliffs
-        .map(
-          (risk) => `
-        <li style="margin-bottom: 8px; font-size: 14px; color: #334155;"><strong>${risk.ideaTitle}:</strong> ${risk.failureReason}</li>
-      `,
-        )
-        .join("")}
+      ${formatHtmlRisks()}
     </ul>
 
     <div style="text-align: center; margin-top: 24px;">
@@ -482,10 +586,11 @@ ${riskCliffs.map((risk) => `- **${risk.ideaTitle}:** ${risk.failureReason}`).joi
   });
 
   // Generate Slack/Telegram summary
-  const slackSummary = `🎯 Weekly Focus: ${primaryFocus.ideaTitle} (${primaryFocus.allocation}%) — Key actions: ${actionPlan
+  const actionTitles = actionPlan
     .slice(0, 2)
-    .map((a) => a.title)
-    .join(", ")}. VC angle: ${vcCorner.investorAngle}`;
+    .map((a: any) => a.title || "Action")
+    .join(", ");
+  const slackSummary = `🎯 Weekly Focus: ${primaryFocus.ideaTitle} (${primaryFocus.allocation}%) - Key actions: ${actionTitles}. VC angle: ${vcSentiment || vcCorner.investorAngle || "N/A"}`;
 
   // Generate JSON output
   const jsonOutput = {
@@ -664,7 +769,7 @@ export async function sendVerificationEmail(options: {
 
   return sendEmail({
     to,
-    subject: "Verify your IdeasVault account",
+    subject: "Verify your Genesyz account",
     html,
     text: `Hi ${userName}, your verification code is: ${code}. Or verify here: ${url}`,
   });
@@ -709,7 +814,7 @@ export async function sendPasswordResetEmail(options: {
 
   return sendEmail({
     to,
-    subject: "Reset your IdeasVault password",
+    subject: "Reset your Genesyz password",
     html,
     text: `Hi ${userName}, reset your password here: ${url}`,
   });
@@ -731,12 +836,12 @@ export async function sendMagicLinkEmail(options: {
     </h2>
 
     <p style="font-size: 16px; color: #475569; margin-bottom: 24px; text-align: center;">
-      Click the button below to sign in to your IdeasVault account. This link will expire in 10 minutes.
+      Click the button below to sign in to your Genesyz account. This link will expire in 10 minutes.
     </p>
 
     <div style="text-align: center; margin-bottom: 24px;">
       <a href="${url}" style="display: inline-block; background: #F5A623; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(245, 166, 35, 0.2);">
-        Sign In to IdeasVault
+        Sign In to Genesyz
       </a>
     </div>
 
@@ -746,16 +851,16 @@ export async function sendMagicLinkEmail(options: {
   `;
 
   const html = renderPremiumEmail({
-    title: "Sign In to IdeasVault",
+    title: "Sign In to Genesyz",
     contentHtml,
     badge: "Security",
   });
 
   return sendEmail({
     to,
-    subject: "Sign in to IdeasVault",
+    subject: "Sign in to Genesyz",
     html,
-    text: `Sign in to IdeasVault here: ${url}`,
+    text: `Sign in to Genesyz here: ${url}`,
   });
 }
 
@@ -800,7 +905,7 @@ export async function sendWeeklyUpdateReminderEmail(options: {
     </div>
 
     <p style="font-size: 13px; color: #94a3b8; text-align: center; margin: 0;">
-      You're receiving this because you have an active startup on IdeasVault.
+      You're receiving this because you have an active startup on Genesyz.
     </p>
   `;
 
@@ -811,7 +916,7 @@ export async function sendWeeklyUpdateReminderEmail(options: {
   });
 
   const subject = isFriday
-    ? `Weekly update due for ${startupName} — Week ${weekNumber}`
+    ? `Weekly update due for ${startupName} - Week ${weekNumber}`
     : `Last chance: Submit your weekly update for ${startupName}`;
 
   return sendEmail({
@@ -830,7 +935,7 @@ export async function sendStartupFeatureAnnouncementEmail(options: {
 
   const contentHtml = `
     <p style="font-size: 16px; color: #475569; margin: 0 0 24px 0; line-height: 1.6;">
-      Hi ${userName}, IdeasVault is evolving. We started as an idea validation
+      Hi ${userName}, Genesyz is evolving. We started as an idea validation
       tool. Now we're a startup operating system for execution-focused founders.
     </p>
 
@@ -849,10 +954,10 @@ export async function sendStartupFeatureAnnouncementEmail(options: {
         📊 Enhanced Metrics Tracking
       </p>
       <ul style="margin: 0; padding-left: 20px; color: #475569; font-size: 13px; line-height: 1.7;">
-        <li><strong>35+ categorized metrics</strong> — Revenue, engagement, marketplace, growth</li>
-        <li><strong>Smart formatting</strong> — $1,234 for currency, 15.5% for percentages</li>
-        <li><strong>Flexible periods</strong> — Daily, weekly, monthly, quarterly, yearly</li>
-        <li><strong>Custom metrics</strong> — Define your own when standards don't fit</li>
+        <li><strong>35+ categorized metrics</strong> - Revenue, engagement, marketplace, growth</li>
+        <li><strong>Smart formatting</strong> - $1,234 for currency, 15.5% for percentages</li>
+        <li><strong>Flexible periods</strong> - Daily, weekly, monthly, quarterly, yearly</li>
+        <li><strong>Custom metrics</strong> - Define your own when standards don't fit</li>
       </ul>
     </div>
 
@@ -861,9 +966,9 @@ export async function sendStartupFeatureAnnouncementEmail(options: {
         ✅ Weekly Goal Review
       </p>
       <ul style="margin: 0; padding-left: 20px; color: #475569; font-size: 13px; line-height: 1.7;">
-        <li><strong>Checkbox tracking</strong> — Mark goals complete with one click</li>
-        <li><strong>Auto-calculated rates</strong> — See "2/3 completed, 67%"</li>
-        <li><strong>AI accountability</strong> — Coach factors in execution consistency</li>
+        <li><strong>Checkbox tracking</strong> - Mark goals complete with one click</li>
+        <li><strong>Auto-calculated rates</strong> - See "2/3 completed, 67%"</li>
+        <li><strong>AI accountability</strong> - Coach factors in execution consistency</li>
       </ul>
     </div>
 
@@ -910,7 +1015,7 @@ export async function sendStartupFeatureAnnouncementEmail(options: {
   const html = renderPremiumEmail({
     title: "Platform Update",
     previewTextText:
-      "From idea validation to execution tracking — IdeasVault is now a complete startup operating system.",
+      "From idea validation to execution tracking - Genesyz is now a complete startup operating system.",
     contentHtml,
     badge: "Update",
   });
@@ -920,7 +1025,7 @@ export async function sendStartupFeatureAnnouncementEmail(options: {
     subject:
       "Track what matters: 35+ new metrics + better execution tools for your startup",
     html,
-    text: `Hi ${userName}, IdeasVault is evolving. We're now a startup operating system for execution-focused founders. New: 35+ categorized metrics, smart formatting, weekly goal review with completion rates. Less guessing. More measurable traction. View your startups at ${APP_URL}/startups`,
+    text: `Hi ${userName}, Genesyz is evolving. We're now a startup operating system for execution-focused founders. New: 35+ categorized metrics, smart formatting, weekly goal review with completion rates. Less guessing. More measurable traction. View your startups at ${APP_URL}/startups`,
   });
 }
 
@@ -1197,6 +1302,495 @@ View full details at ${APP_URL}/startups/${startupSlug}
   return sendEmail({
     to,
     subject: `${startupName} Weekly Report - Week ${report.weekNumber}`,
+    html,
+    text: textSummary,
+  });
+}
+
+// ===========================================
+// Team Invitation Email
+// ===========================================
+
+const ROLE_PERMISSIONS_EMAIL: Record<string, string[]> = {
+  ADMIN: [
+    "Add and remove team members",
+    "Change team member roles",
+    "Edit startup profile",
+    "Submit weekly updates",
+  ],
+  MEMBER: [
+    "Submit weekly updates",
+    "View startup dashboard",
+    "View team members",
+  ],
+  VIEWER: ["View startup dashboard", "View team members"],
+};
+
+export async function sendStartupMemberInvitedEmail(options: {
+  to: string;
+  userName: string;
+  inviterName: string;
+  startupName: string;
+  startupSlug: string;
+  role: string;
+}): Promise<boolean> {
+  const { to, userName, inviterName, startupName, startupSlug, role } = options;
+
+  const permissions = ROLE_PERMISSIONS_EMAIL[role] || [];
+
+  const contentHtml = `
+    <p style="font-size: 16px; color: #475569; margin: 0 0 24px 0;">
+      <strong>${inviterName}</strong> has invited you to join <strong>${startupName}</strong> on Genesyz as a <strong>${role}</strong>.
+    </p>
+
+    ${
+      permissions.length > 0
+        ? `
+    <div style="background: #f8fafc; border-radius: 12px; padding: 24px; margin-bottom: 24px; border: 1px solid #e2e8f0;">
+      <h3 style="font-size: 18px; font-weight: 600; color: #0f172a; margin: 0 0 12px 0;">
+        Your permissions as ${role}:
+      </h3>
+      <ul style="margin: 0; padding-left: 20px; color: #475569;">
+        ${permissions.map((p) => `<li style="margin-bottom: 8px;">${p}</li>`).join("")}
+      </ul>
+    </div>
+    `
+        : ""
+    }
+
+    <div style="text-align: center;">
+      <a href="${APP_URL}/startups/${startupSlug}" style="display: inline-block; background: #F5A623; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(245, 166, 35, 0.2);">
+        View Startup
+      </a>
+    </div>
+  `;
+
+  const html = renderPremiumEmail({
+    title: `You're invited to ${startupName}!`,
+    contentHtml,
+    badge: "Team Invitation",
+  });
+
+  return sendEmail({
+    to,
+    subject: `You're invited to join ${startupName} on Genesyz`,
+    html,
+    text: `${inviterName} has invited you to join ${startupName} on Genesyz as a ${role}. View the startup at ${APP_URL}/startups/${startupSlug}`,
+  });
+}
+
+// ===========================================
+// Team Role Changed Email
+// ===========================================
+
+export async function sendStartupMemberRoleChangedEmail(options: {
+  to: string;
+  userName: string;
+  startupName: string;
+  startupSlug: string;
+  oldRole: string;
+  newRole: string;
+  changedByName: string;
+}): Promise<boolean> {
+  const {
+    to,
+    userName,
+    startupName,
+    startupSlug,
+    oldRole,
+    newRole,
+    changedByName,
+  } = options;
+
+  const newPermissions = ROLE_PERMISSIONS_EMAIL[newRole] || [];
+
+  const contentHtml = `
+    <p style="font-size: 16px; color: #475569; margin: 0 0 24px 0;">
+      Your role in <strong>${startupName}</strong> has been changed by <strong>${changedByName}</strong>.
+    </p>
+
+    <div style="background: #f8fafc; border-radius: 12px; padding: 24px; margin-bottom: 24px; border: 1px solid #e2e8f0;">
+      <p style="margin: 0 0 12px 0; color: #475569;">
+        <strong>Old role:</strong> ${oldRole}
+      </p>
+      <p style="margin: 0 0 16px 0; color: #0f172a;">
+        <strong>New role:</strong> ${newRole}
+      </p>
+
+      ${
+        newPermissions.length > 0
+          ? `
+        <h3 style="font-size: 18px; font-weight: 600; color: #0f172a; margin: 0 0 12px 0;">
+          Your new permissions:
+        </h3>
+        <ul style="margin: 0; padding-left: 20px; color: #475569;">
+          ${newPermissions.map((p) => `<li style="margin-bottom: 8px;">${p}</li>`).join("")}
+        </ul>
+      `
+          : ""
+      }
+    </div>
+
+    <div style="text-align: center;">
+      <a href="${APP_URL}/startups/${startupSlug}" style="display: inline-block; background: #F5A623; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(245, 166, 35, 0.2);">
+        View Startup
+      </a>
+    </div>
+  `;
+
+  const html = renderPremiumEmail({
+    title: `Your role in ${startupName} changed`,
+    contentHtml,
+    badge: "Role Update",
+  });
+
+  return sendEmail({
+    to,
+    subject: `Your role in ${startupName} has been changed to ${newRole}`,
+    html,
+    text: `Your role in ${startupName} has been changed from ${oldRole} to ${newRole} by ${changedByName}. View the startup at ${APP_URL}/startups/${startupSlug}`,
+  });
+}
+
+// ===========================================
+// New Follower Added Email
+// ===========================================
+
+export async function sendNewFollowerAddedEmail(options: {
+  to: string;
+  followerName?: string | null;
+  startupName: string;
+  startupSlug: string;
+}): Promise<boolean> {
+  const { to, followerName, startupName, startupSlug } = options;
+
+  const greetingName = followerName || "there";
+
+  const contentHtml = `
+    <p style="font-size: 16px; color: #475569; margin: 0 0 24px 0;">
+      Hi ${greetingName}, you've been added as a follower to <strong>${startupName}</strong> on Genesyz.
+    </p>
+
+    <div style="background: #f8fafc; border-radius: 12px; padding: 24px; margin-bottom: 24px; border: 1px solid #e2e8f0;">
+      <h3 style="font-size: 18px; font-weight: 600; color: #0f172a; margin: 0 0 12px 0;">
+        What this means
+      </h3>
+      <ul style="margin: 0; padding-left: 20px; color: #475569;">
+        <li style="margin-bottom: 8px;">You'll receive weekly progress updates about ${startupName}</li>
+        <li style="margin-bottom: 8px;">Stay informed about their journey without needing to ask</li>
+        <li style="margin-bottom: 8px;">Get insights into their metrics, goals, and milestones</li>
+      </ul>
+    </div>
+
+    <div style="text-align: center;">
+      <a href="${APP_URL}/startups/${startupSlug}" style="display: inline-block; background: #F5A623; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(245, 166, 35, 0.2);">
+        View Startup
+      </a>
+    </div>
+  `;
+
+  const html = renderPremiumEmail({
+    title: `You're now following ${startupName}`,
+    contentHtml,
+    badge: "New Follower",
+  });
+
+  return sendEmail({
+    to,
+    subject: `You're now following ${startupName} on Genesyz`,
+    html,
+    text: `Hi ${greetingName}, you've been added as a follower to ${startupName}. You'll receive weekly progress updates. View the startup at ${APP_URL}/startups/${startupSlug}`,
+  });
+}
+
+// ===========================================
+// Team Member Added Notification Email
+// ===========================================
+
+export async function sendTeamMemberAddedNotificationEmail(options: {
+  to: string;
+  userName: string;
+  startupName: string;
+  startupSlug: string;
+  newMemberName: string;
+  newMemberRole: string;
+}): Promise<boolean> {
+  const {
+    to,
+    userName,
+    startupName,
+    startupSlug,
+    newMemberName,
+    newMemberRole,
+  } = options;
+
+  const contentHtml = `
+    <p style="font-size: 16px; color: #475569; margin: 0 0 24px 0;">
+      Hi ${userName}, a new team member has been added to <strong>${startupName}</strong>.
+    </p>
+
+    <div style="background: #f8fafc; border-radius: 12px; padding: 24px; margin-bottom: 24px; border: 1px solid #e2e8f0;">
+      <h3 style="font-size: 18px; font-weight: 600; color: #0f172a; margin: 0 0 12px 0;">
+        New Team Member
+      </h3>
+      <p style="margin: 0 0 8px 0; color: #475569;">
+        <strong>Name:</strong> ${newMemberName}
+      </p>
+      <p style="margin: 0; color: #475569;">
+        <strong>Role:</strong> ${newMemberRole}
+      </p>
+    </div>
+
+    <div style="text-align: center;">
+      <a href="${APP_URL}/startups/${startupSlug}" style="display: inline-block; background: #F5A623; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(245, 166, 35, 0.2);">
+        View Startup
+      </a>
+    </div>
+  `;
+
+  const html = renderPremiumEmail({
+    title: `New team member in ${startupName}`,
+    contentHtml,
+    badge: "Team Update",
+  });
+
+  return sendEmail({
+    to,
+    subject: `New team member added to ${startupName}`,
+    html,
+    text: `Hi ${userName}, ${newMemberName} has been added to ${startupName} as a ${newMemberRole}. View the startup at ${APP_URL}/startups/${startupSlug}`,
+  });
+}
+
+// ===========================================
+// Follower Weekly Update Email (AI-Powered)
+// ===========================================
+
+interface FollowerWeeklyReportData {
+  weekNumber: number;
+  isLaunched: boolean;
+  primaryMetricType: string;
+  primaryMetricValue: number;
+  primaryMetricDelta: number | null;
+  metricPeriod?: string | null;
+  metricFormat?: "CURRENCY" | "PERCENTAGE" | "NUMBER" | null;
+  customMetricName?: string | null;
+  usersTalkedTo: number;
+  moraleScore: number;
+  userLearnings: string;
+  topImprovements?: string | null;
+  biggestObstacle?: string | null;
+  goals: Array<{ content: string; priority: number }>;
+}
+
+interface FollowerAIAnalysis {
+  summary: string;
+  comparisonWithPrevious: string[];
+  immediateActions: string[];
+}
+
+export async function sendFollowerWeeklyUpdateEmail(options: {
+  to: string;
+  followerName?: string | null;
+  startupName: string;
+  startupSlug: string;
+  currentReport: FollowerWeeklyReportData;
+  previousReports?: FollowerWeeklyReportData[];
+  aiAnalysis?: FollowerAIAnalysis;
+}): Promise<boolean> {
+  const {
+    to,
+    followerName,
+    startupName,
+    startupSlug,
+    currentReport,
+    previousReports,
+    aiAnalysis,
+  } = options;
+
+  const greetingName = followerName || "";
+
+  const primaryFormat = currentReport.metricFormat || "NUMBER";
+  const primaryValueDisplay = formatMetricValue(
+    currentReport.primaryMetricValue,
+    primaryFormat,
+  );
+
+  const metricDelta = currentReport.primaryMetricDelta;
+  const metricDeltaDisplay =
+    metricDelta !== null
+      ? `${metricDelta >= 0 ? "+" : ""}${primaryFormat === "PERCENTAGE" ? `${metricDelta.toFixed(1)}%` : formatMetricValue(Math.abs(metricDelta), primaryFormat)}`
+      : "No change";
+
+  const previousMetricsHtml =
+    previousReports && previousReports.length > 0
+      ? `
+    <h3 style="font-size: 14px; font-weight: 800; color: #0f172a; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 0.05em;">Progress Over Time</h3>
+    <div style="display: grid; grid-template-columns: repeat(${Math.min(previousReports.length + 1, 4)}, 1fr); gap: 8px; margin-bottom: 24px;">
+      ${[...previousReports]
+        .reverse()
+        .concat(currentReport)
+        .map(
+          (report, idx) => `
+        <div style="background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid ${idx === previousReports.length ? "#F5A623" : "#e2e8f0"};">
+          <div style="font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 700;">Week ${report.weekNumber}</div>
+          <div style="font-size: 16px; font-weight: 800; color: #0f172a;">${formatMetricValue(report.primaryMetricValue, report.metricFormat || "NUMBER")}</div>
+        </div>
+      `,
+        )
+        .join("")}
+    </div>
+  `
+      : "";
+
+  const aiAnalysisHtml = aiAnalysis
+    ? `
+    <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 12px; padding: 24px; margin-bottom: 24px; color: #ffffff;">
+      <h3 style="font-size: 14px; font-weight: 800; color: #fbbf24; margin: 0 0 16px 0; text-transform: uppercase; letter-spacing: 0.05em;">
+        AI Analysis
+      </h3>
+      <p style="font-size: 14px; color: #e2e8f0; margin: 0 0 16px 0; line-height: 1.6;">
+        ${aiAnalysis.summary}
+      </p>
+
+      ${
+        aiAnalysis.comparisonWithPrevious.length > 0
+          ? `
+        <h4 style="font-size: 12px; font-weight: 700; color: #94a3b8; margin: 0 0 8px 0; text-transform: uppercase;">
+          Comparison with Previous Weeks
+        </h4>
+        <ul style="margin: 0 0 16px 0; padding-left: 20px; color: #e2e8f0; font-size: 13px; line-height: 1.6;">
+          ${aiAnalysis.comparisonWithPrevious.map((item) => `<li style="margin-bottom: 6px;">${item}</li>`).join("")}
+        </ul>
+      `
+          : ""
+      }
+
+      ${
+        aiAnalysis.immediateActions.length > 0
+          ? `
+        <div style="background: rgba(245, 166, 35, 0.15); border-radius: 8px; padding: 16px; margin-top: 16px;">
+          <h4 style="font-size: 12px; font-weight: 700; color: #F5A623; margin: 0 0 8px 0; text-transform: uppercase;">
+            Do This Now
+          </h4>
+          <ul style="margin: 0; padding-left: 20px; color: #ffffff; font-size: 13px; line-height: 1.6;">
+            ${aiAnalysis.immediateActions
+              .slice(0, 3)
+              .map(
+                (action) =>
+                  `<li style="margin-bottom: 6px;"><strong>${action}</strong></li>`,
+              )
+              .join("")}
+          </ul>
+        </div>
+      `
+          : ""
+      }
+    </div>
+  `
+    : "";
+
+  const learningsHtml = currentReport.userLearnings
+    ? `
+    <div style="background: #f8fafc; border-radius: 12px; padding: 20px; margin-bottom: 24px; border: 1px solid #e2e8f0;">
+      <h3 style="font-size: 14px; font-weight: 800; color: #0f172a; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 0.05em;">
+        Key Learnings This Week
+      </h3>
+      <p style="margin: 0; font-size: 14px; color: #475569; line-height: 1.6;">
+        ${currentReport.userLearnings}
+      </p>
+    </div>
+  `
+    : "";
+
+  const goalsHtml =
+    currentReport.goals && currentReport.goals.length > 0
+      ? `
+    <div style="margin-bottom: 24px;">
+      <h3 style="font-size: 14px; font-weight: 800; color: #0f172a; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 0.05em;">
+        Goals for Next Week
+      </h3>
+      <ul style="margin: 0; padding-left: 20px; color: #475569; font-size: 14px;">
+        ${currentReport.goals
+          .map(
+            (goal, idx) => `
+          <li style="margin-bottom: 8px;">
+            <strong>${idx + 1}.</strong> ${goal.content}
+          </li>
+        `,
+          )
+          .join("")}
+      </ul>
+    </div>
+  `
+      : "";
+
+  const contentHtml = `
+    ${
+      greetingName
+        ? `<p style="font-size: 16px; color: #475569; margin: 0 0 24px 0;">
+        Hi${greetingName ? ` ${greetingName}` : ""}, here's the weekly progress update for <strong>${startupName}</strong>.
+      </p>`
+        : `<p style="font-size: 16px; color: #475569; margin: 0 0 24px 0;">
+        Here's the weekly progress update for <strong>${startupName}</strong>.
+      </p>`
+    }
+
+    ${aiAnalysisHtml}
+    ${learningsHtml}
+
+    <h3 style="font-size: 14px; font-weight: 800; color: #0f172a; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 0.05em;">This Week's Numbers</h3>
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px;">
+      ${
+        currentReport.isLaunched
+          ? `<div style="background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0;">
+        <div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 700;">${formatMetricLabel(currentReport.primaryMetricType, currentReport.customMetricName)}</div>
+        <div style="font-size: 24px; font-weight: 800; color: #0f172a;">${primaryValueDisplay}</div>
+        <div style="font-size: 12px; color: ${metricDelta && metricDelta >= 0 ? "#16a34a" : "#dc2626"}; font-weight: 600;">${metricDeltaDisplay}</div>
+      </div>`
+          : ""
+      }
+      <div style="background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0;">
+        <div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 700;">Users Talked To</div>
+        <div style="font-size: 24px; font-weight: 800; color: #0f172a;">${currentReport.usersTalkedTo}</div>
+      </div>
+      <div style="background: #f8fafc; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0;">
+        <div style="font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 700;">Morale</div>
+        <div style="font-size: 24px; font-weight: 800; color: #0f172a;">${currentReport.moraleScore}/10</div>
+      </div>
+    </div>
+
+    ${previousMetricsHtml}
+    ${goalsHtml}
+
+    <div style="text-align: center;">
+      <a href="${APP_URL}/startups/${startupSlug}" style="display: inline-block; background: #F5A623; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(245, 166, 35, 0.2);">
+        View Full Dashboard
+      </a>
+    </div>
+  `;
+
+  const html = renderPremiumEmail({
+    title: startupName,
+    contentHtml,
+    badge: `Week ${currentReport.weekNumber} Update`,
+  });
+
+  const textSummary = `
+Hi${greetingName ? ` ${greetingName}` : ""}, here's the weekly progress update for ${startupName}.
+
+Week ${currentReport.weekNumber} Summary:
+- Primary Metric: ${primaryValueDisplay} (${metricDeltaDisplay})
+- Users Talked To: ${currentReport.usersTalkedTo}
+- Morale: ${currentReport.moraleScore}/10
+${currentReport.userLearnings ? `- Key Learnings: ${currentReport.userLearnings.substring(0, 200)}...` : ""}
+
+View full details at ${APP_URL}/startups/${startupSlug}
+  `.trim();
+
+  return sendEmail({
+    to,
+    subject: `${startupName} Weekly Update - Week ${currentReport.weekNumber}`,
     html,
     text: textSummary,
   });

@@ -1,17 +1,17 @@
 services:
   postgres:
     image: postgres:15-alpine
-    container_name: ideasvault-db
+    container_name: genesyz-db
     environment:
-      POSTGRES_USER: ideasvault
-      POSTGRES_PASSWORD: ideasvault
-      POSTGRES_DB: ideasvault
+      POSTGRES_USER: genesyz
+      POSTGRES_PASSWORD: genesyz
+      POSTGRES_DB: genesyz
     ports:
       - "5446:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ideasvault"]
+      test: ["CMD-SHELL", "pg_isready -U genesyz"]
       interval: 5s
       timeout: 5s
       retries: 5

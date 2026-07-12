@@ -895,6 +895,7 @@ export const PromptInputTextarea = ({
         },
       }
     : {
+        value: props.value,
         onChange,
       };
 

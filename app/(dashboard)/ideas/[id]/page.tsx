@@ -1,6 +1,7 @@
 "use client";
 
-import { useInngestSubscription } from "@inngest/realtime/hooks";
+import { useRealtime } from "inngest/react";
+import { ideaChannel } from "@/lib/inngest/channels";
 import {
   AlertCircle,
   AlertTriangle,
@@ -9,6 +10,7 @@ import {
   Check,
   Copy,
   Download,
+  Edit,
   MoreVertical,
   RefreshCw,
 } from "lucide-react";
@@ -31,6 +33,7 @@ import {
 import { ArchiveIdeaDialog } from "@/components/ideas/[id]/ArchiveIdeaDialog";
 import { ConvertToStartupCTA } from "@/components/ideas/[id]/ConvertToStartupCTA";
 import { DeleteIdeaDialog } from "@/components/ideas/[id]/DeleteIdea";
+import { EditIdeaDialog } from "@/components/ideas/[id]/EditIdea";
 import { UnarchiveIdeaDialog } from "@/components/ideas/[id]/UnarchiveIdeaDialog";
 import { AssetTab } from "@/components/ideas/AssetTab";
 import {
@@ -89,17 +92,21 @@ export default function IdeaDetailPage() {
   }, [idea]);
 
   // Subscribe to real-time updates
-  const { latestData } = useInngestSubscription({
-    refreshToken: async () =>
-      await fetchRealtimeSubscriptionToken(id as string),
+  const { messages } = useRealtime({
+    channel: ideaChannel({ ideaId: id }),
+    topics: ["research.started", "research.progress", "research.finished", "parse.idea"],
+    token: () => fetchRealtimeSubscriptionToken(id as string),
+    enabled: idea?.status === "PROCESSING" || idea?.status === "PENDING",
   });
 
   useEffect(() => {
-    if (latestData) {
-      const message = (latestData.data as any).message;
-      const topic = latestData.topic;
-      const status = (latestData.data as any).status;
-      const eventId = (latestData.data as any).id;
+    for (const msg of messages.delta) {
+      if (msg.kind !== "data") continue;
+      const data = msg.data as any;
+      const topic = msg.topic;
+      const message = data.message;
+      const status = data.status;
+      const eventId = data.id;
 
       setResearchProgress((prev) => {
         const exists = prev.find((item) => item.step === topic);
@@ -129,7 +136,7 @@ export default function IdeaDetailPage() {
         }
       });
     }
-  }, [latestData]);
+  }, [messages.delta]);
 
   useEffect(() => {
     if (idea?.status === "RESEARCHED") {
@@ -153,6 +160,11 @@ export default function IdeaDetailPage() {
   const trends = getPacket("TREND_ANALYSIS");
   const execution = getPacket("EXECUTION_FRICTION");
   const synthesis = getPacket("SYNTHESIS");
+  const preferredMarket =
+    market?.marketSize?.regional ?? market?.marketSize?.global;
+  const tam = preferredMarket?.tam;
+  const sam = preferredMarket?.sam;
+  const som = preferredMarket?.som;
 
   const score = idea.scores[0];
 
@@ -299,21 +311,40 @@ export default function IdeaDetailPage() {
                           Key Recommendations
                         </h4>
                         <ul className="space-y-2">
-                          {synthesis.recommendations.map(
-                            (rec: any, i: number) => (
-                              <li
-                                key={i}
-                                className="flex items-start gap-2 text-sm"
-                              >
-                                <Badge
-                                  variant="outline"
-                                  className={getPriorityColor(rec.priority)}
+                          {Array.isArray(synthesis.recommendations) &&
+                            synthesis.recommendations.map(
+                              (rec: any, i: number) => (
+                                <li
+                                  key={i}
+                                  className="flex items-start gap-2 text-sm"
                                 >
-                                  {rec.priority}
-                                </Badge>
-                                <span>{rec.action}</span>
-                              </li>
-                            ),
+                                  {typeof rec === "object" && rec.priority ? (
+                                    <>
+                                      <Badge
+                                        variant="outline"
+                                        className={getPriorityColor(
+                                          rec.priority,
+                                        )}
+                                      >
+                                        {rec.priority}
+                                      </Badge>
+                                      <span>{rec.action}</span>
+                                    </>
+                                  ) : (
+                                    <span>
+                                      {typeof rec === "string"
+                                        ? rec
+                                        : JSON.stringify(rec)}
+                                    </span>
+                                  )}
+                                </li>
+                              ),
+                            )}
+                          {(!synthesis.recommendations ||
+                            synthesis.recommendations.length === 0) && (
+                            <li className="text-sm text-muted-foreground">
+                              No recommendations available
+                            </li>
                           )}
                         </ul>
                       </div>
@@ -359,6 +390,34 @@ export default function IdeaDetailPage() {
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Original Prompt */}
+              {idea.originalPrompt && (
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <div>
+                      <CardTitle>Original Prompt</CardTitle>
+                      <CardDescription>
+                        What you submitted when creating this idea
+                      </CardDescription>
+                    </div>
+                    <EditIdeaDialog
+                      id={idea.id}
+                      title={idea.title}
+                      summary={idea.summary}
+                      originalPrompt={idea.originalPrompt}
+                      archived={idea.isArchived}
+                    />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="rounded-lg bg-muted p-4">
+                      <p className="whitespace-pre-wrap text-sm">
+                        {idea.originalPrompt}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
 
             <TabsContent value="market" className="space-y-4">
@@ -374,23 +433,14 @@ export default function IdeaDetailPage() {
                           TAM
                         </p>
                         <p className="text-lg font-bold">
-                          {market?.marketSize?.regional?.tam?.usdValue ||
-                            market?.marketSize?.global?.tam?.usdValue ||
-                            market?.marketSize?.tam?.value ||
-                            "N/A"}
+                          {tam?.usdValue || tam?.value || "N/A"}
                         </p>
-                        {market?.marketSize?.regional?.tam?.value ||
-                        market?.marketSize?.global?.tam?.value ? (
+                        {tam?.value && tam?.value !== tam?.usdValue ? (
                           <p className="text-xs text-muted-foreground">
-                            {market?.marketSize?.regional?.tam?.value ||
-                              market?.marketSize?.global?.tam?.value}{" "}
-                            {market?.marketSize?.regional?.tam?.currency ||
-                              market?.marketSize?.global?.tam?.currency ||
-                              ""}
+                            {tam.value} {tam.currency || ""}
                           </p>
                         ) : null}
-                        {(market?.marketSize?.regional?.tam?.isEstimated ||
-                          market?.marketSize?.global?.tam?.isEstimated) && (
+                        {tam?.isEstimated && (
                           <Badge variant="secondary" className="mt-1 text-xs">
                             <AlertCircle className="h-3 w-3 mr-1" />
                             Estimated
@@ -402,22 +452,14 @@ export default function IdeaDetailPage() {
                           SAM
                         </p>
                         <p className="text-lg font-bold">
-                          {market?.marketSize?.regional?.sam?.usdValue ||
-                            market?.marketSize?.global?.sam?.usdValue ||
-                            "N/A"}
+                          {sam?.usdValue || sam?.value || "N/A"}
                         </p>
-                        {market?.marketSize?.regional?.sam?.value ||
-                        market?.marketSize?.global?.sam?.value ? (
+                        {sam?.value && sam?.value !== sam?.usdValue ? (
                           <p className="text-xs text-muted-foreground">
-                            {market?.marketSize?.regional?.sam?.value ||
-                              market?.marketSize?.global?.sam?.value}{" "}
-                            {market?.marketSize?.regional?.sam?.currency ||
-                              market?.marketSize?.global?.sam?.currency ||
-                              ""}
+                            {sam.value} {sam.currency || ""}
                           </p>
                         ) : null}
-                        {(market?.marketSize?.regional?.sam?.isEstimated ||
-                          market?.marketSize?.global?.sam?.isEstimated) && (
+                        {sam?.isEstimated && (
                           <Badge variant="secondary" className="mt-1 text-xs">
                             <AlertCircle className="h-3 w-3 mr-1" />
                             Estimated
@@ -429,22 +471,14 @@ export default function IdeaDetailPage() {
                           SOM
                         </p>
                         <p className="text-lg font-bold">
-                          {market?.marketSize?.regional?.som?.usdValue ||
-                            market?.marketSize?.global?.som?.usdValue ||
-                            "N/A"}
+                          {som?.usdValue || som?.value || "N/A"}
                         </p>
-                        {market?.marketSize?.regional?.som?.value ||
-                        market?.marketSize?.global?.som?.value ? (
+                        {som?.value && som?.value !== som?.usdValue ? (
                           <p className="text-xs text-muted-foreground">
-                            {market?.marketSize?.regional?.som?.value ||
-                              market?.marketSize?.global?.som?.value}{" "}
-                            {market?.marketSize?.regional?.som?.currency ||
-                              market?.marketSize?.global?.som?.currency ||
-                              ""}
+                            {som.value} {som.currency || ""}
                           </p>
                         ) : null}
-                        {(market?.marketSize?.regional?.som?.isEstimated ||
-                          market?.marketSize?.global?.som?.isEstimated) && (
+                        {som?.isEstimated && (
                           <Badge variant="secondary" className="mt-1 text-xs">
                             <AlertCircle className="h-3 w-3 mr-1" />
                             Estimated
@@ -603,13 +637,17 @@ export default function IdeaDetailPage() {
                             <span className="text-green-600 font-medium">
                               Strengths:
                             </span>{" "}
-                            {comp.strengths?.join(", ")}
+                            {Array.isArray(comp.strengths)
+                              ? comp.strengths.join(", ")
+                              : comp.strengths || "N/A"}
                           </div>
                           <div>
                             <span className="text-red-600 font-medium">
                               Weaknesses:
                             </span>{" "}
-                            {comp.weaknesses?.join(", ")}
+                            {Array.isArray(comp.weaknesses)
+                              ? comp.weaknesses.join(", ")
+                              : comp.weaknesses || "N/A"}
                           </div>
                         </div>
                       </div>

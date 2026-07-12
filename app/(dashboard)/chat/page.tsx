@@ -1,7 +1,7 @@
 import { ChatInterface } from "@/components/chat/ChatInterface";
 
 export const metadata = {
-  title: "Chat | Ideas Vault",
+  title: "Chat | Genesyz",
   description: "Chat with AI to brainstorm and refine your ideas",
 };
 

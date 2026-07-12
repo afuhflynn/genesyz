@@ -6,6 +6,7 @@ import {
   sendVerificationEmailFunction,
   sendWelcomeEmailFunction,
 } from "@/lib/inngest/functions/auth-emails";
+import { opportunityDiscoveryCron } from "@/lib/inngest/functions/opportunity-discovery";
 import { reevaluationFunction } from "@/lib/inngest/functions/re-evaluation";
 import { researchPipelineFunction } from "@/lib/inngest/functions/research-pipeline";
 import { analyzeWeeklyUpdateFn } from "@/lib/inngest/functions/startup-analysis";
@@ -13,6 +14,11 @@ import {
   broadcastStartupFeatureAnnouncement,
   sendStartupFeatureAnnouncement,
 } from "@/lib/inngest/functions/startup-feature-announcement";
+import {
+  followerAddedFn,
+  followerWeeklyUpdateFn,
+  teamMemberAddedFn,
+} from "@/lib/inngest/functions/startup-follower-notifications";
 import {
   weeklyUpdateReminderCronFriday,
   weeklyUpdateReminderCronSaturday,
@@ -22,6 +28,7 @@ import {
   weeklyStartupReportCron,
   weeklyStartupReportFn,
 } from "@/lib/inngest/functions/startup-weekly-report";
+import { cleanupUnverifiedUsers } from "@/lib/inngest/functions/cleanup-unverified";
 import { weeklyStrategicReportFunction } from "@/lib/inngest/functions/weekly-digest";
 
 // Export Inngest serve handler with all functions
@@ -43,5 +50,10 @@ export const { GET, POST, PUT } = serve({
     weeklyUpdateReminderFn,
     weeklyUpdateReminderCronFriday,
     weeklyUpdateReminderCronSaturday,
+    opportunityDiscoveryCron,
+    followerAddedFn,
+    teamMemberAddedFn,
+    followerWeeklyUpdateFn,
+    cleanupUnverifiedUsers,
   ],
 });

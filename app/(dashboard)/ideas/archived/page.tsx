@@ -142,8 +142,9 @@ export default function ArchivedIdeasPage() {
                         <EditIdeaDialog
                           id={idea.id}
                           archived={true}
-                          title={idea.title as string}
-                          summary={idea.summary as string}
+                          title={idea.title}
+                          summary={idea.summary}
+                          originalPrompt={idea.originalPrompt}
                         />
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>

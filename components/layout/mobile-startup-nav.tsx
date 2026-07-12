@@ -26,9 +26,17 @@ interface MobileStartupNavProps {
     isLaunched: boolean;
     stage: string;
   };
+  permissions: {
+    canViewStartup: boolean;
+    canManageTasks: boolean;
+    canViewSettings: boolean;
+  };
 }
 
-export function MobileStartupNav({ startup }: MobileStartupNavProps) {
+export function MobileStartupNav({
+  startup,
+  permissions,
+}: MobileStartupNavProps) {
   const [open, setOpen] = useState(false);
   const { data: startupsData } = useStartups();
   const startups = startupsData?.data || [];
@@ -42,7 +50,11 @@ export function MobileStartupNav({ startup }: MobileStartupNavProps) {
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="p-0 w-72">
-          <StartupSidebar startup={startup} className="border-none mt-6" />
+          <StartupSidebar
+            startup={startup}
+            permissions={permissions}
+            className="border-none mt-6"
+          />
         </SheetContent>
       </Sheet>
 
@@ -102,7 +114,7 @@ export function MobileStartupNav({ startup }: MobileStartupNavProps) {
 
           <DropdownMenuSeparator />
           <DropdownMenuItem asChild>
-            <Link href="/ideas">
+            <Link href="/startups/new">
               <Plus className="mr-2 h-4 w-4" />
               Create New Startup
             </Link>

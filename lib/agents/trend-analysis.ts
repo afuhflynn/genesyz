@@ -1,6 +1,4 @@
-import { google } from "@ai-sdk/google";
-import { mistral } from "@ai-sdk/mistral";
-import { generateObject } from "ai";
+import { generateObjectWithFallback } from "@/lib/ai/fallback";
 import { db } from "@/lib/db";
 import {
   buildLocationResearchContext,
@@ -13,9 +11,6 @@ import {
   type InterpretedIdea,
   TrendAnalysisSchema,
 } from "./types";
-
-const primaryModel = mistral("open-mixtral-8x7b");
-const fallbackModel = google("gemini-2.5-flash");
 
 const SYSTEM_PROMPT = `You are a technology and market trends analyst specializing in identifying timing windows for startup opportunities. Your role is to assess whether now is the right time for a given idea.
 
@@ -56,10 +51,10 @@ export async function runTrendAnalysisAgent(
 
   const prompt = `Analyze market and technology trends for the following startup idea:
 
-**Title:** ${interpretedIdea.title}
-**Summary:** ${interpretedIdea.summary}
-**Category:** ${interpretedIdea.category}
-**Target Audience:** ${interpretedIdea.targetAudience.join(", ")}${locationPromptSection}
+**Title:** ${interpretedIdea?.title || "Untitled"}
+**Summary:** ${interpretedIdea?.summary || "No summary"}
+**Category:** ${interpretedIdea?.category || "Not specified"}
+**Target Audience:** ${interpretedIdea?.targetAudience?.join(", ") || "Not specified"}${locationPromptSection}
 
 Assess the timing, technology readiness, and relevant trends that could impact this idea's success. Consider both global and location-specific trends.`;
 
@@ -67,32 +62,14 @@ Assess the timing, technology readiness, and relevant trends that could impact t
 
   const startTime = Date.now();
 
-  let result: Awaited<
-    ReturnType<typeof generateObject<typeof TrendAnalysisSchema>>
-  >;
-  let modelUsed: string;
-
-  try {
-    result = await generateObject({
-      model: primaryModel,
+  const { result, modelUsed } = await generateObjectWithFallback(
+    {
       schema: TrendAnalysisSchema,
       system: SYSTEM_PROMPT,
       prompt,
-    });
-    modelUsed = "open-mixtral-8x7b";
-  } catch (error) {
-    console.warn(
-      "[TREND_ANALYSIS] Mistral primary model failed, falling back to Gemini:",
-      error,
-    );
-    result = await generateObject({
-      model: fallbackModel,
-      schema: TrendAnalysisSchema,
-      system: SYSTEM_PROMPT,
-      prompt,
-    });
-    modelUsed = "gemini-2.5-flash";
-  }
+    },
+    "TREND_ANALYSIS",
+  );
 
   const latencyMs = Date.now() - startTime;
 
@@ -109,13 +86,15 @@ Assess the timing, technology readiness, and relevant trends that could impact t
     },
   });
 
-  const techReadiness = result.object.technologyReadiness.score;
+  // @ts-expect-error
+  const techReadiness = result?.object?.technologyReadiness?.score;
   const confidence = Math.min(0.5 + techReadiness * 0.04, 0.9);
 
   return {
     agentType: "TREND_ANALYSIS",
     content: result.object,
     confidence,
-    reasoning: `Technology readiness: ${techReadiness}/10, Timing: ${result.object.timingAssessment.verdict}`,
+    // @ts-expect-error
+    reasoning: `Technology readiness: ${techReadiness}/10, Timing: ${result?.object?.timingAssessment?.verdict}`,
   };
 }

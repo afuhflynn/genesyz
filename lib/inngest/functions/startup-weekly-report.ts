@@ -18,8 +18,8 @@ export const weeklyStartupReportFn = inngest.createFunction(
   {
     id: "weekly-startup-report",
     name: "Weekly Startup Report Email",
+    triggers: { event: "startup.weeklyReport" },
   },
-  { event: "startup.weeklyReport" },
   async ({ event, step }) => {
     const { startupId } = event.data;
 
@@ -99,6 +99,37 @@ export const weeklyStartupReportFn = inngest.createFunction(
       });
     });
 
+    await step.run("create-feed-item", async () => {
+      const idempotencyKey = `weekly-report-${startup.id}-${latestUpdate.weekNumber}`;
+      await db.researchFeedItem.upsert({
+        where: { idempotencyKey },
+        create: {
+          startupId: startup.id,
+          type: "WEEKLY_REPORT",
+          title: `Weekly Report: Week ${latestUpdate.weekNumber}`,
+          summary: latestUpdate.aiVerdict || `Report for ${startup.name}`,
+          idempotencyKey,
+          content: {
+            weekNumber: latestUpdate.weekNumber,
+            moraleScore: latestUpdate.moraleScore,
+            goalsCompletionRate: latestUpdate.goalsCompletionRate,
+            primaryMetricValue: latestUpdate.primaryMetricValue,
+            primaryMetricDelta: latestUpdate.primaryMetricDelta,
+          },
+        },
+        update: {
+          summary: latestUpdate.aiVerdict || `Report for ${startup.name}`,
+          content: {
+            weekNumber: latestUpdate.weekNumber,
+            moraleScore: latestUpdate.moraleScore,
+            goalsCompletionRate: latestUpdate.goalsCompletionRate,
+            primaryMetricValue: latestUpdate.primaryMetricValue,
+            primaryMetricDelta: latestUpdate.primaryMetricDelta,
+          },
+        },
+      });
+    });
+
     return { sent: true, startupId, weekNumber: latestUpdate.weekNumber };
   },
 );
@@ -107,8 +138,8 @@ export const weeklyStartupReportCron = inngest.createFunction(
   {
     id: "weekly-startup-report-cron",
     name: "Weekly Startup Report Cron (Sundays 9 AM UTC)",
+    triggers: { cron: "0 9 * * 0" },
   },
-  { cron: "0 9 * * 0" },
   async ({ step }) => {
     const startups = await step.run("fetch-active-startups", async () => {
       return db.startup.findMany({

@@ -1,11 +1,9 @@
-import { realtimeMiddleware } from "@inngest/realtime/middleware";
 import { Inngest } from "inngest";
 
 // Create the Inngest client
 export const inngest = new Inngest({
-  id: "ideasvault",
-  name: "IdeasVault",
-  middleware: [realtimeMiddleware()],
+  id: "genesyz",
+  name: "Genesyz",
 });
 
 // Event types for type safety
@@ -42,7 +40,6 @@ export type InngestEvents = {
     data: {
       email: string;
       name: string;
-      username: string;
     };
   };
   "email.send.passwordReset": {
@@ -87,6 +84,45 @@ export type InngestEvents = {
       startupId: string;
       userId: string;
       reminderDay: "friday" | "saturday";
+    };
+  };
+  "startup.opportunities.discovery.completed": {
+    data: {
+      startupsScanned: number;
+      startupsWithInsertions: number;
+      generatedCandidates: number;
+      insertedOpportunities: number;
+      dedupedOpportunities: number;
+      failedStartups: number;
+    };
+  };
+  "startup.follower.added": {
+    data: {
+      followerId: string;
+      startupId: string;
+      startupName: string;
+      startupSlug: string;
+      followerEmail: string;
+      followerName?: string;
+      addedByUserId: string;
+    };
+  };
+  "startup.member.added": {
+    data: {
+      startupId: string;
+      startupName: string;
+      startupSlug: string;
+      newMemberUserId: string;
+      newMemberEmail: string;
+      newMemberName: string;
+      newMemberRole: string;
+      addedByUserId: string;
+    };
+  };
+  "startup.weeklyUpdate.followerNotification": {
+    data: {
+      updateId: string;
+      startupId: string;
     };
   };
 };

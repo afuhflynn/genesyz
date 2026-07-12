@@ -1,12 +1,13 @@
 "use client";
 
-import { format } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import {
   ArrowLeft,
+  BarChart3,
   Calendar,
   CheckCircle2,
   Circle,
-  Loader2,
+  Pencil,
   Plus,
   Target,
   TrendingDown,
@@ -15,6 +16,17 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import {
   Accordion,
   AccordionContent,
   AccordionItem,
@@ -22,9 +34,10 @@ import {
 } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useStartup, useWeeklyUpdates } from "@/hooks";
+import { useStartup, useToggleGoalCompletion, useWeeklyUpdates } from "@/hooks";
+import { formatMetricValue, getMetricFormat } from "@/lib/constants/metrics";
 
 const VERDICT_CONFIG: Record<
   string,
@@ -56,6 +69,7 @@ export function WeeklyUpdatesList({ slug }: WeeklyUpdatesListProps) {
   const { data: updatesData, isLoading: updatesLoading } = useWeeklyUpdates(
     startup?.id || "",
   );
+  const toggleGoal = useToggleGoalCompletion(startup?.id || "");
 
   const isLoading = startupLoading || updatesLoading;
 
@@ -86,6 +100,33 @@ export function WeeklyUpdatesList({ slug }: WeeklyUpdatesListProps) {
   }
 
   const updates = updatesData?.data || [];
+  const latestUpdates = updates.slice(0, 8);
+
+  // Chart data: primary metric
+  const metricChartData = [...latestUpdates].reverse().map((update) => ({
+    week: `W${update.weekNumber}`,
+    value: update.primaryMetricValue,
+    delta: update.primaryMetricDelta,
+    fullDate: format(new Date(update.weekStart), "MMM d"),
+  }));
+
+  // Chart data: user conversations
+  const conversationsChartData = [...latestUpdates].reverse().map((update) => ({
+    week: `W${update.weekNumber}`,
+    value: update.usersTalkedTo,
+    fullDate: format(new Date(update.weekStart), "MMM d"),
+  }));
+
+  // Collect unique additional metric types
+  const additionalMetricTypes = Array.from(
+    new Set(
+      updates.flatMap((u) => (u.additionalMetrics || []).map((m) => m.type)),
+    ),
+  );
+
+  const primaryMetricLabel = startup.primaryMetricType
+    .replace(/_/g, " ")
+    .toLowerCase();
 
   return (
     <div className="space-y-6">
@@ -132,7 +173,7 @@ export function WeeklyUpdatesList({ slug }: WeeklyUpdatesListProps) {
         </Card>
       ) : (
         <Accordion type="single" collapsible className="space-y-4">
-          {updates.map((update) => {
+          {updates.map((update, updateIndex) => {
             const verdict = update.aiVerdict
               ? VERDICT_CONFIG[update.aiVerdict]
               : null;
@@ -140,6 +181,19 @@ export function WeeklyUpdatesList({ slug }: WeeklyUpdatesListProps) {
             const completedGoals =
               update.goals?.filter((g) => g.completed).length || 0;
             const totalGoals = update.goals?.length || 0;
+            const isLatest = updateIndex === 0;
+
+            // Check if update is still editable
+            const now = new Date();
+            const editableUntil = update.editableUntil
+              ? new Date(update.editableUntil)
+              : null;
+            const isEditable =
+              editableUntil && !update.isLocked && editableUntil > now;
+            const timeLeft =
+              editableUntil && editableUntil > now
+                ? formatDistanceToNow(editableUntil, { addSuffix: true })
+                : null;
 
             return (
               <AccordionItem
@@ -232,27 +286,54 @@ export function WeeklyUpdatesList({ slug }: WeeklyUpdatesListProps) {
                       <div>
                         <h4 className="mb-2 font-medium">Goals</h4>
                         <div className="space-y-2">
-                          {update.goals.map((goal, idx) => (
-                            <div
-                              key={`goal-${update.id}-${idx}`}
-                              className="flex items-start gap-2"
-                            >
-                              {goal.completed ? (
-                                <CheckCircle2 className="mt-0.5 h-4 w-4 text-green-600" />
-                              ) : (
-                                <Circle className="mt-0.5 h-4 w-4 text-muted-foreground" />
-                              )}
-                              <span
-                                className={
-                                  goal.completed
-                                    ? "line-through text-muted-foreground"
-                                    : ""
+                          {update.goals.map((goal, idx) =>
+                            isLatest ? (
+                              <button
+                                key={`goal-${update.id}-${goal.id || idx}`}
+                                type="button"
+                                onClick={() =>
+                                  goal.id && toggleGoal.mutate(goal.id)
                                 }
+                                disabled={toggleGoal.isPending}
+                                className="flex w-full items-start gap-2 rounded-lg border p-2 text-left transition-colors hover:bg-muted/50 disabled:opacity-50"
                               >
-                                {goal.content}
-                              </span>
-                            </div>
-                          ))}
+                                {goal.completed ? (
+                                  <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-600" />
+                                ) : (
+                                  <Circle className="mt-0.5 h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                                )}
+                                <span
+                                  className={`text-sm ${
+                                    goal.completed
+                                      ? "line-through text-muted-foreground"
+                                      : ""
+                                  }`}
+                                >
+                                  {goal.content}
+                                </span>
+                              </button>
+                            ) : (
+                              <div
+                                key={`goal-${update.id}-${goal.id || idx}`}
+                                className="flex w-full items-start gap-2 rounded-lg border p-2"
+                              >
+                                {goal.completed ? (
+                                  <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-green-600" />
+                                ) : (
+                                  <Circle className="mt-0.5 h-4 w-4 flex-shrink-0 text-muted-foreground" />
+                                )}
+                                <span
+                                  className={`text-sm ${
+                                    goal.completed
+                                      ? "line-through text-muted-foreground"
+                                      : ""
+                                  }`}
+                                >
+                                  {goal.content}
+                                </span>
+                              </div>
+                            ),
+                          )}
                         </div>
                       </div>
                     )}
@@ -331,6 +412,38 @@ export function WeeklyUpdatesList({ slug }: WeeklyUpdatesListProps) {
                         )}
                       </div>
                     )}
+
+                    {/* Edit Button & Time Remaining */}
+                    <div className="flex items-center justify-between pt-4 border-t">
+                      {isEditable && timeLeft ? (
+                        <div className="flex items-center gap-4">
+                          <Badge
+                            variant="outline"
+                            className="bg-blue-50 text-blue-700 border-blue-200"
+                          >
+                            Edit window: {timeLeft}
+                          </Badge>
+                          <Button asChild size="sm">
+                            <Link
+                              href={`/startups/${slug}/updates/${update.id}/edit`}
+                            >
+                              <Pencil className="mr-2 h-4 w-4" />
+                              Edit Update
+                            </Link>
+                          </Button>
+                        </div>
+                      ) : update.isLocked ||
+                        (editableUntil && editableUntil <= now) ? (
+                        <Badge
+                          variant="outline"
+                          className="bg-gray-50 text-gray-500 border-gray-200"
+                        >
+                          Editing window closed
+                        </Badge>
+                      ) : (
+                        <div />
+                      )}
+                    </div>
                   </div>
                 </AccordionContent>
               </AccordionItem>

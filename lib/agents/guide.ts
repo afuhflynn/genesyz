@@ -3,10 +3,10 @@
  * Conversational agent for deep-dive research exploration
  */
 
-import { google } from "@ai-sdk/google";
-import { mistral } from "@ai-sdk/mistral";
 import type { ResearchPacket } from "@prisma/client";
-import { generateText, stepCountIs, streamText } from "ai";
+import { isStepCount, streamText } from "ai";
+import { generateTextWithFallback } from "@/lib/ai/fallback";
+import { model } from "@/lib/ai/models";
 import { tools } from "@/lib/ai/tools";
 import { db } from "@/lib/db";
 
@@ -15,9 +15,6 @@ interface ChatMessage {
   role: "user" | "assistant" | "system";
   content: string;
 }
-
-const primaryModel = mistral("open-mixtral-8x7b");
-const fallbackModel = google("gemini-2.5-flash");
 
 const GUIDE_SYSTEM_PROMPT = `You are an expert AI Research Guide for startup founders. Your role is to help users deeply understand and explore their research results through conversation.
 
@@ -207,11 +204,10 @@ Start by offering to help the user explore their research results.`;
 
 Keep it friendly and encouraging (2-3 sentences).`;
 
-  const result = await generateText({
-    model: primaryModel,
+  const { result } = await generateTextWithFallback({
     system: systemMessage,
     prompt: initialPrompt,
-  });
+  }, "AI_GUIDE_INIT");
 
   // Store initial assistant message
   await db.guideMessage.create({
@@ -292,25 +288,10 @@ export async function sendGuideMessage(
   });
 
   // Generate response with tools
-  let result: any;
-  let modelUsed: string;
-
-  try {
-    result = await generateText({
-      model: primaryModel,
-      messages,
-      tools,
-    });
-    modelUsed = "open-mixtral-8x7b";
-  } catch (error) {
-    console.warn("[AI_GUIDE] Primary model failed, falling back:", error);
-    result = await generateText({
-      model: fallbackModel,
-      messages,
-      tools,
-    });
-    modelUsed = "gemini-2.5-flash";
-  }
+  const { result } = await generateTextWithFallback({
+    messages,
+    tools,
+  }, "AI_GUIDE_MESSAGE");
 
   // Store assistant response
   const assistantMessage = await db.guideMessage.create({
@@ -394,12 +375,11 @@ export async function streamGuideMessage(
     content: message,
   });
 
-  // Create stream
   const result = streamText({
-    model: primaryModel,
+    model,
     messages,
     tools,
-    stopWhen: stepCountIs(3),
+    stopWhen: isStepCount(3),
   });
 
   return result.toTextStreamResponse();
@@ -509,12 +489,11 @@ Provide a JSON response with:
 Be constructive and helpful. Focus on substantive differences, not minor wording changes.`;
 
   try {
-    const result = await generateText({
-      model: fallbackModel, // Use faster model for this analysis
+    const { result } = await generateTextWithFallback({
       system:
         "You are an expert at analyzing communication and interpretation accuracy.",
       prompt,
-    });
+    }, "AI_GUIDE_CONTEXTUALIZATION");
 
     // Try to parse as JSON, fallback to text analysis
     try {

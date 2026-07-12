@@ -1,6 +1,8 @@
-import { google } from "@ai-sdk/google";
-import { mistral } from "@ai-sdk/mistral";
-import { generateObject, generateText, stepCountIs } from "ai";
+import { isStepCount } from "ai";
+import {
+  generateObjectWithFallback,
+  generateTextWithFallback,
+} from "@/lib/ai/fallback";
 import { tools } from "@/lib/ai/tools";
 import { db } from "@/lib/db";
 import {
@@ -15,9 +17,6 @@ import {
   DeepResearchSchema,
   type InterpretedIdea,
 } from "./types";
-
-const primaryModel = mistral("open-mixtral-8x7b");
-const fallbackModel = google("gemini-2.5-flash");
 
 const RESEARCH_SYSTEM_PROMPT = `You are a world-class startup researcher. Your goal is to find "hard truths" about a startup idea.
 You have access to web search tools. Use them to:
@@ -65,70 +64,46 @@ export async function runDeepResearchAgent(
 
   const startTime = Date.now();
 
-  let modelUsed: string;
-
   // Step 1: Gather Information using tools
-  let researchData: string;
-  let toolResults: any[];
-
-  try {
-    const primaryResult = await generateText({
-      model: primaryModel,
+  const { result: textResult, modelUsed } = await generateTextWithFallback(
+    {
       system: RESEARCH_SYSTEM_PROMPT,
       prompt: `Perform deep research for this startup idea:
-Title: ${interpretedIdea.title}
-Summary: ${interpretedIdea.summary}
-Problem: ${interpretedIdea.problemStatement}
-Solution: ${interpretedIdea.proposedSolution}
-Category: ${interpretedIdea.category}${locationPromptSection}
+Title: ${interpretedIdea?.title || "Untitled"}
+Summary: ${interpretedIdea?.summary || "No summary"}
+Problem: ${interpretedIdea?.problemStatement || "Not specified"}
+Solution: ${interpretedIdea?.proposedSolution || "Not specified"}
+Category: ${interpretedIdea?.category || "Not specified"}${locationPromptSection}
 
 Search for real competitors, market gaps, and technical challenges. Consider location-specific factors.`,
       tools,
-      stopWhen: stepCountIs(5), // Allow up to 5 steps of research
-    });
-    researchData = primaryResult.text;
-    toolResults = primaryResult.toolResults;
-    modelUsed = "open-mixtral-8x7b";
-  } catch (error) {
-    console.warn(
-      "[DEEP_RESEARCH] Mistral primary model failed, falling back to Gemini for research:",
-      error,
-    );
-    const fallbackResult = await generateText({
-      model: fallbackModel,
-      system: RESEARCH_SYSTEM_PROMPT,
-      prompt: `Perform deep research for this startup idea:
-Title: ${interpretedIdea.title}
-Summary: ${interpretedIdea.summary}
-Problem: ${interpretedIdea.problemStatement}
-Solution: ${interpretedIdea.proposedSolution}
-Category: ${interpretedIdea.category}
+      stopWhen: isStepCount(5), // Allow up to 5 steps of research
+    },
+    "DEEP_RESEARCH",
+  );
 
-Search for real competitors, market gaps, and technical challenges.`,
-      tools,
-      stopWhen: stepCountIs(5),
-    });
-    researchData = fallbackResult.text;
-    toolResults = fallbackResult.toolResults;
-    modelUsed = "gemini-2.5-flash";
-  }
+  const researchData = textResult.text;
+  const toolResults = textResult.toolResults ?? [];
 
   // Step 2: Synthesize into structured object
-  const result = await generateObject({
-    model: primaryModel,
-    schema: DeepResearchSchema,
-    system: SYNTHESIS_SYSTEM_PROMPT,
-    prompt: `Based on the following research data, generate a structured deep research report:
+  const { result: objResult, modelUsed: synthesisModelUsed } =
+    await generateObjectWithFallback<DeepResearch>(
+      {
+        schema: DeepResearchSchema,
+        system: SYNTHESIS_SYSTEM_PROMPT,
+        prompt: `Based on the following research data, generate a structured deep research report:
 
 ${researchData}
 
 Tool Results:
 ${JSON.stringify(toolResults, null, 2)}`,
-  });
+      },
+      "DEEP_RESEARCH_SYNTHESIS",
+    );
 
   const latencyMs = Date.now() - startTime;
   const deepResearchContent: DeepResearch = DeepResearchSchema.parse(
-    result.object,
+    objResult.object,
   );
 
   // Log research call
@@ -139,8 +114,8 @@ ${JSON.stringify(toolResults, null, 2)}`,
       promptHash: await hashString(researchData),
       prompt: researchData,
       response: JSON.stringify(deepResearchContent),
-      model: modelUsed,
-      tokensUsed: result.usage?.totalTokens,
+      model: `${modelUsed} + ${synthesisModelUsed}`,
+      tokensUsed: objResult.usage?.totalTokens,
       latencyMs,
     },
   });
@@ -149,6 +124,6 @@ ${JSON.stringify(toolResults, null, 2)}`,
     agentType: "DEEP_RESEARCH",
     content: deepResearchContent,
     confidence: 0.85,
-    reasoning: `Performed ${toolResults.length} web searches to validate market gaps and technical feasibility.`,
+    reasoning: `Performed ${toolResults?.length ?? 0} web searches to validate market gaps and technical feasibility.`,
   };
 }

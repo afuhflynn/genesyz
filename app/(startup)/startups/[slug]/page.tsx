@@ -10,7 +10,7 @@ export async function generateMetadata({
 }: StartupPageProps): Promise<Metadata> {
   const { slug } = await params;
   return {
-    title: `${slug} | IdeasVault`,
+    title: `${slug} | Genesyz`,
     description: "Startup dashboard and weekly progress tracking",
   };
 }

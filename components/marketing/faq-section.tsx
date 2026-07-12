@@ -49,7 +49,7 @@ export function FAQSection() {
             Frequently Asked Questions
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            Everything you need to know about IdeasVault.
+            Everything you need to know about Genesyz.
           </p>
         </div>
 

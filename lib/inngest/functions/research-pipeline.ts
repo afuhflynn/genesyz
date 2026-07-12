@@ -1,327 +1,14 @@
-import { channel, topic } from "@inngest/realtime";
 import { v4 as uuid4 } from "uuid";
-import z from "zod";
 import { runResearchPipeline } from "@/lib/agents/pipeline";
-import { DeepResearchSchema } from "@/lib/agents/types";
 import { db } from "@/lib/db";
 import { sendResearchCompleteEmail } from "@/lib/email/send";
+import { ideaChannel } from "@/lib/inngest/channels";
 import { inngest } from "../client";
-
-export const ideaChannel = channel((ideaId: string) => `idea:${ideaId}`)
-  .addTopic(
-    topic("research.started").schema(
-      z.object({
-        status: z.enum(["PROCESSING", "PENDING"]),
-        message: z.string(),
-        id: z.string(),
-      }),
-    ),
-  )
-  .addTopic(
-    topic("research.progress").schema(
-      z.object({
-        status: z.enum(["COMPLETED", "FAILED"]),
-        message: z.string(),
-        result: z.object({
-          success: z.boolean(),
-          id: z.string(),
-          outputs: z.object({
-            INTERPRETER: z.object({
-              content: z.object({
-                problemStatement: z.string(),
-                proposedSolution: z.string(),
-                uniqueValue: z.string(),
-              }),
-              confidence: z.number(),
-            }),
-            MARKET_RESEARCH: z.object({
-              content: z.object({
-                marketSize: z.object({
-                  global: z.object({
-                    location: z.string(),
-                    tam: z.object({
-                      value: z.string(),
-                      usdValue: z.string(),
-                      currency: z.string(),
-                      isEstimated: z.boolean(),
-                      methodology: z.string(),
-                      confidence: z.enum(["high", "medium", "low"]).optional(),
-                      year: z.number().optional(),
-                    }),
-                    sam: z.object({
-                      value: z.string(),
-                      usdValue: z.string(),
-                      currency: z.string(),
-                      isEstimated: z.boolean(),
-                      methodology: z.string(),
-                      confidence: z.enum(["high", "medium", "low"]).optional(),
-                      year: z.number().optional(),
-                    }),
-                    som: z.object({
-                      value: z.string(),
-                      usdValue: z.string(),
-                      currency: z.string(),
-                      isEstimated: z.boolean(),
-                      methodology: z.string(),
-                      confidence: z.enum(["high", "medium", "low"]).optional(),
-                      year: z.number().optional(),
-                    }),
-                    marketCap: z
-                      .object({
-                        globalMarketCap: z.object({
-                          value: z.string(),
-                          usdValue: z.string(),
-                          currency: z.string(),
-                          isEstimated: z.boolean(),
-                          methodology: z.string(),
-                          confidence: z
-                            .enum(["high", "medium", "low"])
-                            .optional(),
-                          year: z.number().optional(),
-                        }),
-                        industryMarketCap: z.object({
-                          value: z.string(),
-                          usdValue: z.string(),
-                          currency: z.string(),
-                          isEstimated: z.boolean(),
-                          methodology: z.string(),
-                          confidence: z
-                            .enum(["high", "medium", "low"])
-                            .optional(),
-                          year: z.number().optional(),
-                        }),
-                        potentialStartupValuation: z.object({
-                          value: z.string(),
-                          usdValue: z.string(),
-                          currency: z.string(),
-                          isEstimated: z.boolean(),
-                          methodology: z.string(),
-                          confidence: z
-                            .enum(["high", "medium", "low"])
-                            .optional(),
-                          year: z.number().optional(),
-                        }),
-                        methodology: z.string(),
-                      })
-                      .optional(),
-                    growthRate: z.object({
-                      value: z.string(),
-                      methodology: z.string(),
-                      period: z.string().optional(),
-                    }),
-                    confidence: z.enum(["high", "medium", "low"]),
-                    dataSource: z.string().optional(),
-                  }),
-                  regional: z
-                    .object({
-                      location: z.string(),
-                      tam: z.object({
-                        value: z.string(),
-                        usdValue: z.string(),
-                        currency: z.string(),
-                        isEstimated: z.boolean(),
-                        methodology: z.string(),
-                        confidence: z
-                          .enum(["high", "medium", "low"])
-                          .optional(),
-                        year: z.number().optional(),
-                      }),
-                      sam: z.object({
-                        value: z.string(),
-                        usdValue: z.string(),
-                        currency: z.string(),
-                        isEstimated: z.boolean(),
-                        methodology: z.string(),
-                        confidence: z
-                          .enum(["high", "medium", "low"])
-                          .optional(),
-                        year: z.number().optional(),
-                      }),
-                      som: z.object({
-                        value: z.string(),
-                        usdValue: z.string(),
-                        currency: z.string(),
-                        isEstimated: z.boolean(),
-                        methodology: z.string(),
-                        confidence: z
-                          .enum(["high", "medium", "low"])
-                          .optional(),
-                        year: z.number().optional(),
-                      }),
-                      growthRate: z.object({
-                        value: z.string(),
-                        methodology: z.string(),
-                        period: z.string().optional(),
-                      }),
-                      confidence: z.enum(["high", "medium", "low"]),
-                      dataSource: z.string().optional(),
-                    })
-                    .optional(),
-                  local: z
-                    .object({
-                      location: z.string(),
-                      tam: z.object({
-                        value: z.string(),
-                        usdValue: z.string(),
-                        currency: z.string(),
-                        isEstimated: z.boolean(),
-                        methodology: z.string(),
-                        confidence: z
-                          .enum(["high", "medium", "low"])
-                          .optional(),
-                        year: z.number().optional(),
-                      }),
-                      sam: z.object({
-                        value: z.string(),
-                        usdValue: z.string(),
-                        currency: z.string(),
-                        isEstimated: z.boolean(),
-                        methodology: z.string(),
-                        confidence: z
-                          .enum(["high", "medium", "low"])
-                          .optional(),
-                        year: z.number().optional(),
-                      }),
-                      som: z.object({
-                        value: z.string(),
-                        usdValue: z.string(),
-                        currency: z.string(),
-                        isEstimated: z.boolean(),
-                        methodology: z.string(),
-                        confidence: z
-                          .enum(["high", "medium", "low"])
-                          .optional(),
-                        year: z.number().optional(),
-                      }),
-                      growthRate: z.object({
-                        value: z.string(),
-                        methodology: z.string(),
-                        period: z.string().optional(),
-                      }),
-                      confidence: z.enum(["high", "medium", "low"]),
-                      dataSource: z.string().optional(),
-                    })
-                    .optional(),
-                  year: z.number().optional(),
-                  currency: z.string().optional(),
-                  methodology: z.string(),
-                }),
-                competitors: z.array(
-                  z.object({
-                    name: z.string(),
-                    description: z.string(),
-                    strengths: z.array(z.string()),
-                    weaknesses: z.array(z.string()),
-                  }),
-                ),
-                marketTrends: z.array(z.string()),
-                barriers: z.array(z.string()),
-                opportunities: z.array(z.string()),
-              }),
-              confidence: z.number(),
-            }),
-            TREND_ANALYSIS: z.object({
-              content: z.object({
-                technologyReadiness: z.object({
-                  score: z.number(),
-                  explanation: z.string(),
-                }),
-                timingAssessment: z.object({
-                  verdict: z.string(),
-                  reasoning: z.string(),
-                }),
-              }),
-              confidence: z.number(),
-            }),
-            EXECUTION_FRICTION: z.object({
-              content: z.object({
-                technicalComplexity: z.object({
-                  score: z.number(),
-                  explanation: z.string(),
-                }),
-                riskFactors: z.array(
-                  z.object({
-                    risk: z.string(),
-                    mitigation: z.string(),
-                  }),
-                ),
-              }),
-              confidence: z.number(),
-            }),
-            DEEP_RESEARCH: z.object({
-              content: DeepResearchSchema,
-              confidence: z.number(),
-            }),
-            SYNTHESIS: z.object({
-              content: z.object({
-                scores: z.object({
-                  overall: z.object({
-                    score: z.number(),
-                    explanation: z.string(),
-                  }),
-                  clarity: z.object({
-                    score: z.number(),
-                    explanation: z.string(),
-                  }),
-                  marketReadiness: z.object({
-                    score: z.number(),
-                    explanation: z.string(),
-                  }),
-                  executionFeasibility: z.object({
-                    score: z.number(),
-                    explanation: z.string(),
-                  }),
-                }),
-                recommendations: z.array(z.string()),
-                verdict: z.string(),
-              }),
-            }),
-          }),
-        }),
-      }),
-    ),
-  )
-  .addTopic(
-    topic("research.finished").schema(
-      z
-        .object({
-          success: z.boolean(),
-          ideaId: z.string(),
-          overallScore: z.number(),
-          id: z.string(),
-        })
-        .transform((data) => {
-          return {
-            success: data.success,
-            ideaId: data.ideaId,
-            overallScore: data.overallScore,
-          };
-        })
-        .refine((data) => data.success, "Research failed")
-        .refine((data) => data.overallScore !== null, "Research failed")
-        .refine((data) => data.overallScore !== undefined, "Research failed"),
-    ),
-  )
-  .addTopic(
-    topic("parse.idea").schema(
-      z.object({
-        status: z.enum(["INITIATE", "COMPLETE"]),
-        message: z.string(),
-        id: z.string(),
-      }),
-    ),
-  );
 
 /**
  * Research Pipeline Function
  * Triggered when a new idea is submitted
- * Runs multi-agent AI research pipeline with dual-model architecture
- *
- * **AI Model Strategy**:
- * - Primary Model: Mistral `open-mixtral-8x7b` (cost-effective for high-volume)
- * - Fallback Model: Google Gemini 2.5 Flash (automatic failover on API errors)
- * - Each agent uses try-catch pattern to switch models
- * - Model usage is tracked in `researchLog.model` field for monitoring
+ * Runs multi-agent AI research pipeline
  *
  * **Agent Pipeline**:
  * 1. Interpreter Agent (understands idea from vague inputs)
@@ -330,6 +17,13 @@ export const ideaChannel = channel((ideaId: string) => `idea:${ideaId}`)
  * 4. Execution Friction Agent (identifies technical and operational risks)
  * 5. Deep Research Agent (uses web search for market validation)
  * 6. Synthesis Agent (combines all data into final score and verdict)
+ *
+ * **Inngest Versioning**:
+ * - Step IDs must be deterministic strings, never random values
+ * - Transient progress updates use non-durable `publish()` (no step ID)
+ * - Durable state transitions use `step.realtime.publish` with stable IDs
+ * - Changing step structure (add/remove/reorder) affects in-progress runs
+ * - See RULES.md "Inngest Function Versioning" for details
  */
 export const researchPipelineFunction = inngest.createFunction(
   {
@@ -339,20 +33,19 @@ export const researchPipelineFunction = inngest.createFunction(
     concurrency: {
       limit: 5, // Limit concurrent research jobs
     },
+    triggers: { event: "idea.submitted" },
   },
-  { event: "idea.submitted" },
-  async ({ event, step, publish }) => {
+  async ({ event, step }) => {
     const { ideaId, userId } = event.data;
+    const ch = ideaChannel({ ideaId });
 
-    publish({
-      channel: `idea:${ideaId}`,
-      topic: "parse.idea",
-      data: {
-        status: "INITIATE",
-        message: "AI research pipeline initiated",
-        id: uuid4(),
-      },
+    // Transient: non-durable publish - no step ID needed
+    await inngest.realtime.publish(ch["parse.idea"], {
+      status: "INITIATE",
+      message: "AI research pipeline initiated",
+      id: uuid4(),
     });
+
     // Step 1: Create research job record
     const job = await step.run("create-research-job", async () => {
       return await db.researchJob.create({
@@ -372,34 +65,28 @@ export const researchPipelineFunction = inngest.createFunction(
       });
     });
 
-    // Publish start event
-    publish({
-      channel: `idea:${ideaId}`,
-      topic: "research.started",
-      data: {
-        status: "PROCESSING",
-        message: "AI research pipeline started",
-        id: uuid4(),
-      },
+    // Transient: non-durable publish
+    await inngest.realtime.publish(ch["research.started"], {
+      status: "PROCESSING",
+      message: "AI research pipeline started",
+      id: uuid4(),
     });
 
     // Step 3: Run the research pipeline
     const result = await step.run("run-research-pipeline", async () => {
-      return await runResearchPipeline(ideaId, publish);
+      return await runResearchPipeline(
+        ideaId,
+        inngest.realtime.publish.bind(inngest.realtime),
+      );
     });
 
-    // Publish progress event
-    publish({
-      channel: `idea:${ideaId}`,
-      topic: "research.progress",
-      data: {
-        status: result.success ? "COMPLETED" : "FAILED",
-        message: result.success
-          ? "AI research completed successfully"
-          : "AI research failed",
-        result: result.success ? result : null,
-        id: uuid4(),
-      },
+    // Transient: non-durable publish
+    await inngest.realtime.publish(ch["research.progress"], {
+      status: result.success ? "COMPLETED" : "FAILED",
+      message: result.success
+        ? "AI research completed successfully"
+        : "AI research failed",
+      id: uuid4(),
     });
 
     // Step 4: Update research job status
@@ -416,6 +103,11 @@ export const researchPipelineFunction = inngest.createFunction(
 
     // Step 5: Create audit log
     await step.run("create-audit-log", async () => {
+      const synthesisAny = result.synthesis as any;
+      const overallScore =
+        synthesisAny?.overallScore ?? synthesisAny?.scores?.overall?.score ?? 0;
+      const verdict = synthesisAny?.verdict;
+
       await db.auditLog.create({
         data: {
           userId,
@@ -424,8 +116,8 @@ export const researchPipelineFunction = inngest.createFunction(
           resourceId: ideaId,
           metadata: {
             success: result.success,
-            overallScore: result.synthesis?.scores?.overall?.score,
-            verdict: result.synthesis?.verdict,
+            overallScore,
+            verdict,
           },
         },
       });
@@ -438,47 +130,103 @@ export const researchPipelineFunction = inngest.createFunction(
         const idea = await db.idea.findUnique({ where: { id: ideaId } });
 
         if (user?.email && idea) {
+          const synthesisAny = result.synthesis as any;
           await sendResearchCompleteEmail({
             to: user.email,
             userName: user.name || "Founder",
             ideaTitle: idea.title || "Untitled Idea",
             ideaId: idea.id,
-            overallScore: result.synthesis.scores.overall.score,
-            verdict: result.synthesis.verdict,
+            overallScore:
+              synthesisAny.overallScore ??
+              synthesisAny.scores?.overall?.score ??
+              0,
+            verdict: synthesisAny.verdict,
           });
         }
       });
     }
 
-    // Step 7: Send completion event for other listeners
+    // Step 7: Create Research Feed Item if Startup exists
+    if (result.success && result.synthesis) {
+      await step.run("create-research-feed-item", async () => {
+        const startup = await db.startup.findUnique({
+          where: { ideaId },
+        });
+
+        if (startup) {
+          const synthesisAny = result.synthesis as any;
+          const overallScore =
+            synthesisAny.overallScore ??
+            synthesisAny.scores?.overall?.score ??
+            0;
+          const overallExplanation =
+            synthesisAny.overallExplanation ??
+            synthesisAny.scores?.overall?.explanation ??
+            "";
+          const verdict = synthesisAny.verdict;
+
+          const idempotencyKey = `idea-research-${ideaId}-${startup.id}`;
+          await db.researchFeedItem.upsert({
+            where: { idempotencyKey },
+            create: {
+              startupId: startup.id,
+              ideaId,
+              type: "IDEA_RESEARCH",
+              title: `Initial Research: ${startup.name}`,
+              summary: overallExplanation,
+              idempotencyKey,
+              content: {
+                overallScore,
+                verdict,
+              },
+            },
+            update: {
+              summary: overallExplanation,
+              content: {
+                overallScore,
+                verdict,
+              },
+            },
+          });
+        }
+      });
+    }
+
+    // Step 8: Send completion event for other listeners
     if (result.success) {
+      const synthesisAny = result.synthesis as any;
+      const overallScore =
+        synthesisAny.overallScore ?? synthesisAny.scores?.overall?.score ?? 0;
       await step.sendEvent("send-completion-event", {
         name: "idea.research.completed",
         data: {
           ideaId,
           userId,
-          overallScore: result.synthesis.scores.overall.score,
+          overallScore,
         },
       });
     }
 
-    // Publish final completion event for realtime
-    publish({
-      channel: `idea:${ideaId}`,
-      topic: "research.finished",
-      data: {
+    // Durable publish for final state - deterministic step ID for memoization
+    const synthesisAny = result.synthesis as any;
+    const overallScore =
+      synthesisAny?.overallScore ?? synthesisAny?.scores?.overall?.score ?? 0;
+    await step.realtime.publish(
+      "publish-research-finished",
+      ch["research.finished"],
+      {
         success: result.success,
         ideaId,
-        overallScore: result.synthesis?.scores?.overall?.score,
+        overallScore,
         message: "Deep Research and Analysis finished.",
         id: uuid4(),
       },
-    });
+    );
 
     return {
       success: result.success,
       ideaId,
-      overallScore: result.synthesis?.scores?.overall?.score,
+      overallScore,
     };
   },
 );

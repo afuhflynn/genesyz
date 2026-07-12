@@ -1,18 +1,15 @@
-import { google } from "@ai-sdk/google";
-import { mistral } from "@ai-sdk/mistral";
-import { generateObject } from "ai";
+import { generateObjectWithFallback } from "@/lib/ai/fallback";
 import { db } from "@/lib/db";
 import { detectLocationFromText } from "@/lib/location";
-import { extractUrlsFromSources } from "@/lib/scraping";
+import { extractUrlsFromSources, sanitizeUrlStrings } from "@/lib/scraping";
 import { hashString } from "@/lib/utils";
+import { z } from "zod";
 import {
   type AgentInput,
   type AgentOutput,
+  InterpretedIdea,
   InterpretedIdeaSchema,
 } from "./types";
-
-const primaryModel = mistral("open-mixtral-8x7b");
-const fallbackModel = google("gemini-2.5-flash");
 
 const SYSTEM_PROMPT = `You are an expert startup analyst and idea interpreter. Your role is to take raw, unstructured founder ideas and transform them into clear, structured representations.
 
@@ -23,10 +20,26 @@ Guidelines:
 - Use clear, professional language
 - If information is genuinely missing, make reasonable inferences but note uncertainty`;
 
+const ChangeSignificanceSchema = z.object({
+  significance: z.enum(["major_change", "minor_change"]),
+  reason: z.string(),
+});
+
+type ChangeAssessment = z.infer<typeof ChangeSignificanceSchema>;
+
 export async function runInterpreterAgent(
   input: AgentInput,
 ): Promise<AgentOutput> {
   const { ideaId, rawInput } = input;
+  const existingIdea = await db.idea.findUnique({
+    where: { id: ideaId },
+    select: {
+      title: true,
+      summary: true,
+      originalPrompt: true,
+      extractedUrls: true,
+    },
+  });
 
   // Combine all input sources
   const combinedInput = [
@@ -62,32 +75,16 @@ Transform this into a structured idea representation. Be thorough but concise.`;
   const promptHash = await hashString(prompt);
 
   const startTime = Date.now();
-  let result: Awaited<
-    ReturnType<typeof generateObject<typeof InterpretedIdeaSchema>>
-  >;
-  let modelUsed: string;
 
-  try {
-    result = await generateObject({
-      model: primaryModel,
-      schema: InterpretedIdeaSchema,
-      system: SYSTEM_PROMPT,
-      prompt,
-    });
-    modelUsed = "open-mixtral-8x7b";
-  } catch (error) {
-    console.warn(
-      `[INTERPRETER] Mistral primary model failed, falling back to Gemini:`,
-      error,
+  const { result, modelUsed } =
+    await generateObjectWithFallback<InterpretedIdea>(
+      {
+        schema: InterpretedIdeaSchema,
+        system: SYSTEM_PROMPT,
+        prompt,
+      },
+      "INTERPRETER",
     );
-    result = await generateObject({
-      model: fallbackModel,
-      schema: InterpretedIdeaSchema,
-      system: SYSTEM_PROMPT,
-      prompt,
-    });
-    modelUsed = "gemini-2.5-flash";
-  }
 
   const latencyMs = Date.now() - startTime;
 
@@ -116,15 +113,65 @@ Transform this into a structured idea representation. Be thorough but concise.`;
   // Update idea with interpreted prompt and extracted data
   const interpretedPrompt = `Title: ${result.object.title}\n\nSummary: ${result.object.summary}\n\nProblem: ${result.object.problemStatement}\n\nSolution: ${result.object.proposedSolution}`;
 
+  let shouldReplaceTitleAndSummary = true;
+  let changeAssessmentReason = "No existing title/summary to compare.";
+
+  if (existingIdea?.title && existingIdea.summary) {
+    const comparisonPrompt = `You are comparing two interpretations of the same idea to determine if the new prompt materially changes the idea framing.
+
+Current user prompt:
+${rawInput.text || "N/A"}
+
+Previous stored title:
+${existingIdea.title}
+
+Previous stored summary:
+${existingIdea.summary}
+
+New generated title:
+${result.object.title}
+
+New generated summary:
+${result.object.summary}
+
+Classify as:
+- major_change: framing, positioning, user segment, or core value proposition materially changed.
+- minor_change: mostly wording/style/clarity updates with same core idea.
+
+Return valid JSON only.`;
+
+    const assessment = await generateObjectWithFallback<ChangeAssessment>(
+      {
+        schema: ChangeSignificanceSchema,
+        prompt: comparisonPrompt,
+      },
+      "INTERPRETER_CHANGE_ASSESSMENT",
+    );
+
+    shouldReplaceTitleAndSummary =
+      assessment.result.object.significance === "major_change";
+    changeAssessmentReason = assessment.result.object.reason;
+  }
+
+  const newUrls = sanitizeUrlStrings(extractedUrls);
+  const mergedUrls = sanitizeUrlStrings([
+    ...(existingIdea?.extractedUrls || []),
+    ...newUrls,
+  ]);
+
   await db.idea.update({
     where: { id: ideaId },
     data: {
       interpretedPrompt,
-      title: result.object.title,
-      summary: result.object.summary,
+      ...(shouldReplaceTitleAndSummary
+        ? {
+            title: result.object.title,
+            summary: result.object.summary,
+          }
+        : {}),
       // Merge with existing URLs if any
       extractedUrls: {
-        push: extractedUrls.map((u) => u.normalizedUrl),
+        set: mergedUrls,
       },
     },
   });
@@ -133,6 +180,6 @@ Transform this into a structured idea representation. Be thorough but concise.`;
     agentType: "INTERPRETER",
     content: result.object,
     confidence,
-    reasoning: `Interpreted from ${inputSources} input source(s). ${extractedUrls.length > 0 ? `Found ${extractedUrls.length} URL(s).` : ""} ${locationMentions.length > 0 ? `Detected ${locationMentions.length} location mention(s).` : ""}`,
+    reasoning: `Interpreted from ${inputSources} input source(s). ${extractedUrls.length > 0 ? `Found ${extractedUrls.length} URL(s).` : ""} ${locationMentions.length > 0 ? `Detected ${locationMentions.length} location mention(s).` : ""} ${shouldReplaceTitleAndSummary ? "Major prompt shift detected; refreshed title/summary." : "Minor prompt shift detected; preserved title/summary."} ${changeAssessmentReason}`,
   };
 }

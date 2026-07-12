@@ -13,8 +13,8 @@ export const weeklyStrategicReportFunction = inngest.createFunction(
   {
     id: "weekly-strategic-report",
     name: "Weekly Strategic Report",
-  },
-  { cron: "0 9 * * 1" }, // Every Monday at 9:00 AM UTC
+    triggers: { cron: "0 9 * * 1" },
+  }, // Every Monday at 9:00 AM UTC
 
   async ({ step }: { step: any }) => {
     // Step 1: Get all users with active ideas
@@ -88,6 +88,7 @@ export const weeklyStrategicReportFunction = inngest.createFunction(
                 orderBy: { date: "desc" },
                 take: 12, // Keep 12 weeks of memory
               },
+              startup: true,
             },
           },
         },
@@ -100,7 +101,7 @@ export const weeklyStrategicReportFunction = inngest.createFunction(
           // 1. Run Strategic Advisory Agent for top-tier report
           const advisory = (await runStrategicAdvisoryAgent({
             userId: user.id,
-            ideas: user.ideas.map((idea: any) => {
+            ideas: user.ideas.map((idea) => {
               const interpreterPacket = idea.researchPackets[0];
               const content = interpreterPacket?.content as any;
               return {
@@ -119,23 +120,52 @@ export const weeklyStrategicReportFunction = inngest.createFunction(
           })) as StrategicAdvisory;
 
           // 2. Persist verdicts and snapshots
-          for (const verdict of advisory.verdicts) {
-            const idea = user.ideas.find((i: any) => i.id === verdict.ideaId);
+          const advisoryAny = advisory as any;
+          for (const verdictItem of advisoryAny.verdicts) {
+            // Handle both old format (object) and new format (string)
+            const verdictText =
+              typeof verdictItem === "string" ? verdictItem : "";
+            const verdictObj =
+              typeof verdictItem === "object" ? verdictItem : null;
+
+            // Try to find idea by ID (old format) or by title (new format)
+            let idea = null;
+            if (verdictObj?.ideaId) {
+              idea = user.ideas.find((i: any) => i.id === verdictObj.ideaId);
+            } else if (verdictText) {
+              // For new format, try to match by title or just use first idea
+              idea =
+                user.ideas.find((i: any) =>
+                  i.title
+                    ?.toLowerCase()
+                    .includes(
+                      verdictText.toLowerCase().substring(0, 20).toLowerCase(),
+                    ),
+                ) || user.ideas[0];
+            }
+
             if (idea) {
               const lastSnapshot = idea.snapshots[0];
               const lastVerdict = lastSnapshot?.verdict as any;
 
-              // Calculate robust deltas
+              // Calculate robust deltas - handle both formats
+              const currentVerdict =
+                verdictObj?.verdict ||
+                (typeof verdictItem === "string"
+                  ? verdictItem.split(":")[0]
+                  : "Go");
+              const currentPriority = verdictObj?.onePriority || "";
+              const currentRisk = verdictObj?.topRisk?.description || "";
+
               const deltas = {
                 verdictChanged: lastVerdict
-                  ? lastVerdict.verdict !== verdict.verdict
+                  ? lastVerdict.verdict !== currentVerdict
                   : false,
                 priorityChanged: lastVerdict
-                  ? lastVerdict.onePriority !== verdict.onePriority
+                  ? lastVerdict.onePriority !== currentPriority
                   : false,
                 newRisks: lastVerdict
-                  ? verdict.topRisk.description !==
-                    lastVerdict.topRisk.description
+                  ? currentRisk !== (lastVerdict.topRisk?.description || "")
                   : true,
                 metricDeltas: {} as Record<string, number>,
               };
@@ -171,7 +201,7 @@ export const weeklyStrategicReportFunction = inngest.createFunction(
                     assumptions: idea.assumptions,
                     signals: [],
                   },
-                  verdict: verdict as any,
+                  verdict: verdictObj as any,
                   deltas: deltas as any,
                 },
               });
@@ -184,6 +214,61 @@ export const weeklyStrategicReportFunction = inngest.createFunction(
             userName: user.name || "Founder",
             advisory,
           });
+
+          // 4. Create Research Feed Items for each startup in the digest
+          const today = new Date().toISOString().split("T")[0]; // Use date as part of key
+          for (const verdictItem of advisoryAny.verdicts) {
+            // Handle both old format (object) and new format (string)
+            const vText = typeof verdictItem === "string" ? verdictItem : "";
+            const vObj = typeof verdictItem === "object" ? verdictItem : null;
+
+            let idea = null;
+            if (vObj?.ideaId) {
+              idea = user.ideas.find((i: any) => i.id === vObj.ideaId);
+            } else if (vText) {
+              idea =
+                user.ideas.find((i: any) =>
+                  i.title
+                    ?.toLowerCase()
+                    .includes(vText.toLowerCase().substring(0, 20)),
+                ) || user.ideas[0];
+            }
+
+            if (idea && idea.startup) {
+              const idempotencyKey = `weekly-digest-${idea.startup.id}-${today}`;
+              const vVerdict =
+                vObj?.verdict ||
+                (typeof verdictItem === "string"
+                  ? verdictItem.split(":")[0]
+                  : "Go");
+              const vPriority = vObj?.onePriority || "";
+              const vRisk = vObj?.topRisk?.description || "";
+
+              await db.researchFeedItem.upsert({
+                where: { idempotencyKey },
+                create: {
+                  startupId: idea.startup.id,
+                  type: "WEEKLY_DIGEST",
+                  title: `Weekly Strategic Digest: ${idea.startup.name}`,
+                  summary: advisoryAny.executiveSummary || vText,
+                  idempotencyKey,
+                  content: {
+                    verdict: vVerdict,
+                    onePriority: vPriority,
+                    topRisk: vRisk,
+                  },
+                },
+                update: {
+                  summary: advisoryAny.executiveSummary || vText,
+                  content: {
+                    verdict: vVerdict,
+                    onePriority: vPriority,
+                    topRisk: vRisk,
+                  },
+                },
+              });
+            }
+          }
 
           emailResults.push({ userId: user.id, success: true });
         } catch (error) {

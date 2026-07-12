@@ -1,8 +1,7 @@
-import { google } from "@ai-sdk/google";
-import { mistral } from "@ai-sdk/mistral";
 import { streamText } from "ai";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
+import { model } from "@/lib/ai/models";
 import { tools } from "@/lib/ai/tools";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -17,10 +16,45 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { messages, model = "mistral", ideaId } = await req.json();
+    const {
+      messages,
+      model = "primary",
+      ideaId,
+      vcMode = false,
+    } = await req.json();
 
-    // Build system prompt based on the "AI Interrogation" philosophy
-    let systemPrompt = `You are Ideas Vault — an AI Chief of Staff focused on helping early-stage founders decide what to do next.
+    let systemPrompt: string;
+
+    if (vcMode) {
+      systemPrompt = `You are a VC (Venture Capitalist) Coach specializing in early-stage startups. Your role is to provide honest, investor-level feedback on startups, pitches, and business strategies.
+
+VC COACH RULES:
+1. Think like an investor - focus on scalability, market size, defensibility, and team
+2. Ask hard questions about revenue model, customer acquisition, and competition
+3. Provide constructive criticism that helps founders improve their pitch
+4. Look for red flags and areas that need more validation
+5. Suggest concrete improvements to the business model or pitch
+6. Be direct and honest - founders need realistic feedback, not cheerleading
+
+KEY AREAS TO EVALUATE:
+- Market opportunity and TAM (Total Addressable Market)
+- Business model and monetization strategy
+- Competition and moat/defensibility
+- Team and founder background
+- Traction and metrics
+- Capital efficiency and burn rate
+- Clear path to Series A
+
+When reviewing a pitch or business, provide:
+1. Overall assessment (Strong / Promising / Needs Work / Pass)
+2. Key strengths
+3. Critical concerns (the "kryptonite")
+4. Specific recommendations
+5. Questions an investor would definitely ask
+
+If the user asks general startup questions, provide advice from an investor's perspective.`;
+    } else {
+      systemPrompt = `You are Genesyz - an AI Chief of Staff focused on helping early-stage founders decide what to do next.
 
 CORE RULES:
 1. Always prioritize DECISIONS over raw analysis.
@@ -29,29 +63,16 @@ CORE RULES:
 4. Each verdict must include: 1 next priority, 1 stop action, 1 risk/assumption, evidence bullets, and one counter-argument.
 5. Use tools to fetch idea context, research, and history.
 6. If the user asks general questions, determine which tools to make use of (web search, industry news, etc.).
-7. Be "brain-drilling" — ask high-pressure, high-value questions to force clarity.
+7. Be "brain-drilling" - ask high-pressure, high-value questions to force clarity.
 
 BRAIN-DRILLING QUESTIONS:
 - What is the single measurable outcome you want this idea to produce in 12 weeks?
 - Who would pay $50 for this next week? Describe a real person.
 - What is the smallest valid experiment that would prove a real user will pay or sign up this month?
-- Which assumption, if false, kills the idea immediately?
+- Which assumption, if false, kills the idea immediately?`;
+    }
 
-When a verdict is issued, it MUST match this JSON schema:
-{
-  "idea_id": "string",
-  "date": "string",
-  "verdict": "Go|Pause|Kill",
-  "one_priority": "string",
-  "one_stop": "string",
-  "top_risk": "string",
-  "evidence": ["string"],
-  "assumptions": [{"id": "string", "text": "string", "confidence": "low|med|high"}],
-  "counter_argument": "string",
-  "next_steps": [{"task_id": "string", "desc": "string", "owner": "string", "due": "string"}]
-}`;
-
-    if (ideaId) {
+    if (ideaId && !vcMode) {
       const idea = await db.idea.findUnique({
         where: { id: ideaId, userId: session.user.id },
         select: { title: true, summary: true },
@@ -65,15 +86,9 @@ Use the 'getIdeaContext' tool to fetch more details if needed.`;
       }
     }
 
-    // Get model instance
-    const aiModel =
-      model === "mistral"
-        ? mistral("open-mixtral-8x7b")
-        : google("gemini-2.5-flash");
-
     const result = streamText({
-      model: aiModel,
-      system: systemPrompt,
+      model,
+      instructions: systemPrompt,
       tools: tools,
       messages,
     });

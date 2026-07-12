@@ -111,7 +111,7 @@ export function UserNav({ user }: UserNavProps) {
                   )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link href="/ideas">
+                    <Link href="/startups/new">
                       <Plus className="mr-2 h-4 w-4" />
                       New Startup
                     </Link>
@@ -142,7 +142,7 @@ export function UserNav({ user }: UserNavProps) {
                   </div>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild className="bg-primary/5">
-                    <Link href="/ideas" className="font-medium">
+                    <Link href="/startups/new" className="font-medium">
                       <Sparkles className="mr-2 h-4 w-4 text-primary" />
                       Create Your First Startup
                     </Link>

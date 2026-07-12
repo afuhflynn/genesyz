@@ -1,7 +1,34 @@
+import { OpportunityCategory, OpportunityStatus } from "@prisma/client";
 import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import {
+  isDeadlineOnOrAfterTodayUTC,
+  isValidOpportunityUrl,
+  normalizeOpportunityUrl,
+} from "@/lib/opportunities/discovery";
+import { checkStartupAccess } from "@/lib/startup-permissions";
+
+const CreateOpportunitySchema = z.object({
+  title: z.string().trim().min(1),
+  description: z.string().trim().min(1),
+  url: z.string().trim().min(1),
+  category: z.nativeEnum(OpportunityCategory),
+  eligibility: z.string().trim().optional(),
+  benefits: z.string().trim().optional(),
+  deadline: z.string().trim().min(1),
+  status: z.nativeEnum(OpportunityStatus).optional(),
+});
+
+const PatchOpportunitySchema = z.object({
+  opportunityId: z.string().trim().min(1),
+  status: z.nativeEnum(OpportunityStatus).optional(),
+  notes: z.string().optional(),
+  title: z.string().optional(),
+  description: z.string().optional(),
+});
 
 export async function GET(
   request: NextRequest,
@@ -15,14 +42,24 @@ export async function GET(
 
   const { id: startupIdOrSlug } = await params;
   const { searchParams } = new URL(request.url);
-  const category = searchParams.get("category");
-  const status = searchParams.get("status");
+  const categoryParam = searchParams.get("category");
+  const statusParam = searchParams.get("status");
 
-  const startup = await db.startup.findFirst({
-    where: {
-      OR: [{ id: startupIdOrSlug }, { slug: startupIdOrSlug }],
-      userId: session.user.id,
-    },
+  const category = categoryParam
+    ? z.nativeEnum(OpportunityCategory).safeParse(categoryParam)
+    : null;
+  const status = statusParam
+    ? z.nativeEnum(OpportunityStatus).safeParse(statusParam)
+    : null;
+
+  const access = await checkStartupAccess(startupIdOrSlug, "view_startup");
+
+  if (!access.hasAccess || !access.startupId) {
+    return NextResponse.json({ error: "Access denied" }, { status: 403 });
+  }
+
+  const startup = await db.startup.findUnique({
+    where: { id: access.startupId },
   });
 
   if (!startup) {
@@ -32,8 +69,8 @@ export async function GET(
   const opportunities = await db.startupOpportunity.findMany({
     where: {
       startupId: startup.id,
-      ...(category && { category: category as any }),
-      ...(status && { status: status as any }),
+      ...(category?.success && { category: category.data }),
+      ...(status?.success && { status: status.data }),
     },
     orderBy: { createdAt: "desc" },
   });
@@ -52,13 +89,40 @@ export async function POST(
   }
 
   const { id: startupIdOrSlug } = await params;
-  const body = await request.json();
+  const rawBody = await request.json();
+  const parsedBody = CreateOpportunitySchema.safeParse(rawBody);
 
-  const startup = await db.startup.findFirst({
-    where: {
-      OR: [{ id: startupIdOrSlug }, { slug: startupIdOrSlug }],
-      userId: session.user.id,
-    },
+  if (!parsedBody.success) {
+    return NextResponse.json(
+      { error: "Invalid payload", details: parsedBody.error.flatten() },
+      { status: 400 },
+    );
+  }
+
+  const body = parsedBody.data;
+
+  if (!isValidOpportunityUrl(body.url)) {
+    return NextResponse.json(
+      { error: "A valid opportunity URL is required" },
+      { status: 400 },
+    );
+  }
+
+  if (!isDeadlineOnOrAfterTodayUTC(body.deadline)) {
+    return NextResponse.json(
+      { error: "Deadline must be today or a future date (UTC)" },
+      { status: 400 },
+    );
+  }
+
+  const access = await checkStartupAccess(startupIdOrSlug, "manage_tasks");
+
+  if (!access.hasAccess || !access.startupId) {
+    return NextResponse.json({ error: "Access denied" }, { status: 403 });
+  }
+
+  const startup = await db.startup.findUnique({
+    where: { id: access.startupId },
   });
 
   if (!startup) {
@@ -70,11 +134,11 @@ export async function POST(
       startupId: startup.id,
       title: body.title,
       description: body.description,
-      url: body.url,
+      url: normalizeOpportunityUrl(body.url) || body.url,
       category: body.category,
       eligibility: body.eligibility,
       benefits: body.benefits,
-      deadline: body.deadline ? new Date(body.deadline) : null,
+      deadline: new Date(body.deadline),
       status: body.status || "DISCOVERED",
       source: "manual",
     },
@@ -104,21 +168,26 @@ export async function PATCH(
   }
 
   const { id: startupIdOrSlug } = await params;
-  const body = await request.json();
-  const { opportunityId, ...updateData } = body;
+  const rawBody = await request.json();
+  const parsedBody = PatchOpportunitySchema.safeParse(rawBody);
 
-  if (!opportunityId) {
+  if (!parsedBody.success) {
     return NextResponse.json(
-      { error: "Opportunity ID is required" },
+      { error: "Invalid payload", details: parsedBody.error.flatten() },
       { status: 400 },
     );
   }
 
-  const startup = await db.startup.findFirst({
-    where: {
-      OR: [{ id: startupIdOrSlug }, { slug: startupIdOrSlug }],
-      userId: session.user.id,
-    },
+  const { opportunityId, ...updateData } = parsedBody.data;
+
+  const access = await checkStartupAccess(startupIdOrSlug, "manage_tasks");
+
+  if (!access.hasAccess || !access.startupId) {
+    return NextResponse.json({ error: "Access denied" }, { status: 403 });
+  }
+
+  const startup = await db.startup.findUnique({
+    where: { id: access.startupId },
   });
 
   if (!startup) {
@@ -170,20 +239,30 @@ export async function DELETE(
     );
   }
 
-  const startup = await db.startup.findFirst({
-    where: {
-      OR: [{ id: startupIdOrSlug }, { slug: startupIdOrSlug }],
-      userId: session.user.id,
-    },
+  const access = await checkStartupAccess(startupIdOrSlug, "manage_tasks");
+
+  if (!access.hasAccess || !access.startupId) {
+    return NextResponse.json({ error: "Access denied" }, { status: 403 });
+  }
+
+  const startup = await db.startup.findUnique({
+    where: { id: access.startupId },
   });
 
   if (!startup) {
     return NextResponse.json({ error: "Startup not found" }, { status: 404 });
   }
 
-  await db.startupOpportunity.delete({
-    where: { id: opportunityId },
+  const deleted = await db.startupOpportunity.deleteMany({
+    where: { id: opportunityId, startupId: startup.id },
   });
+
+  if (!deleted.count) {
+    return NextResponse.json(
+      { error: "Opportunity not found" },
+      { status: 404 },
+    );
+  }
 
   return NextResponse.json({ success: true });
 }

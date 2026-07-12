@@ -10,14 +10,18 @@ import {
   GraduationCap,
   Lightbulb,
   Loader2,
+  MoreHorizontal,
   Plus,
   Rocket,
   Search,
+  Sparkles,
+  Trash2,
   Trophy,
   Users,
 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -35,6 +39,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -46,7 +57,16 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useStartup } from "@/hooks";
+import { useGenerateOpportunities } from "@/hooks";
+
+type OpportunityStatus =
+  | "DISCOVERED"
+  | "BOOKMARKED"
+  | "TO_APPLY"
+  | "APPLIED"
+  | "INTERVIEWING"
+  | "ACCEPTED"
+  | "REJECTED";
 
 interface Opportunity {
   id: string;
@@ -56,10 +76,20 @@ interface Opportunity {
   category: string;
   eligibility?: string;
   benefits?: string;
-  deadline?: Date | null;
-  status: string;
+  deadline?: string | null;
+  status: OpportunityStatus;
   source: string;
-  createdAt: Date;
+  createdAt: string;
+}
+
+interface GeneratedOpportunity {
+  title: string;
+  description: string;
+  url?: string;
+  category: string;
+  eligibility?: string;
+  benefits?: string;
+  deadline?: string | null;
 }
 
 const CATEGORY_ICONS: Record<string, typeof Rocket> = {
@@ -84,7 +114,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   OTHER: "Other",
 };
 
-const STATUS_COLORS: Record<string, string> = {
+const STATUS_COLORS: Record<OpportunityStatus, string> = {
   DISCOVERED: "bg-gray-100 text-gray-800",
   BOOKMARKED: "bg-blue-100 text-blue-800",
   TO_APPLY: "bg-yellow-100 text-yellow-800",
@@ -94,67 +124,242 @@ const STATUS_COLORS: Record<string, string> = {
   REJECTED: "bg-red-100 text-red-800",
 };
 
+const MARK_STATUS_OPTIONS: Array<{
+  label: string;
+  value: OpportunityStatus;
+}> = [
+  { label: "Mark as Applied", value: "APPLIED" },
+  { label: "Mark as Interviewing", value: "INTERVIEWING" },
+  { label: "Mark as Accepted", value: "ACCEPTED" },
+  { label: "Mark as Rejected", value: "REJECTED" },
+];
+
+function parseApiError(defaultMessage: string, fallback: unknown): string {
+  if (fallback instanceof Error) {
+    return fallback.message || defaultMessage;
+  }
+
+  return defaultMessage;
+}
+
 export default function OpportunitiesPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const { slug } = (params as any).then ? {} : { slug: "" };
-  const [slugResolved, setSlugResolved] = useState("");
+  const [slug, setSlug] = useState("");
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [filterStatus, setFilterStatus] = useState("all");
 
-  const { data: startup } = useStartup(
-    slugResolved || (params as any).slug || "",
+  const [generatedOpportunities, setGeneratedOpportunities] = useState<
+    GeneratedOpportunity[]
+  >([]);
+  const [isGenerateOpen, setIsGenerateOpen] = useState(false);
+  const [generationWarning, setGenerationWarning] = useState<string | null>(
+    null,
   );
+  const [addingOpportunityTitle, setAddingOpportunityTitle] = useState<
+    string | null
+  >(null);
+  const [updatingOpportunityId, setUpdatingOpportunityId] = useState<
+    string | null
+  >(null);
 
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const resolvedParams = (params as any).then ? {} : { slug };
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const effectiveSlug = slugResolved || (params as any).slug || "";
+  const generateMutation = useGenerateOpportunities(slug);
 
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const fetchOpportunities = async () => {
-    if (!effectiveSlug) return;
+  useEffect(() => {
+    params.then((resolvedParams) => setSlug(resolvedParams.slug));
+  }, [params]);
+
+  const fetchOpportunities = useCallback(async () => {
+    if (!slug) return;
+
     setIsLoading(true);
     try {
-      const res = await fetch(`/api/startups/${effectiveSlug}/opportunities`);
-      if (res.ok) {
-        const data = await res.json();
-        setOpportunities(data.data || []);
+      const res = await fetch(`/api/startups/${slug}/opportunities`);
+      if (!res.ok) {
+        throw new Error("Failed to fetch opportunities");
       }
+
+      const data = await res.json();
+      setOpportunities(data.data || []);
     } catch (error) {
       console.error("Failed to fetch opportunities:", error);
+      toast.error("Failed to load opportunities");
     } finally {
       setIsLoading(false);
     }
+  }, [slug]);
+
+  useEffect(() => {
+    if (slug) {
+      fetchOpportunities();
+    }
+  }, [slug, fetchOpportunities]);
+
+  const updateOpportunityStatus = async (
+    opportunityId: string,
+    nextStatus: OpportunityStatus,
+    successMessage: string,
+  ) => {
+    if (!slug) return;
+
+    const previous = opportunities;
+    setUpdatingOpportunityId(opportunityId);
+    setOpportunities((current) =>
+      current.map((item) =>
+        item.id === opportunityId ? { ...item, status: nextStatus } : item,
+      ),
+    );
+
+    try {
+      const response = await fetch(`/api/startups/${slug}/opportunities`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ opportunityId, status: nextStatus }),
+      });
+
+      if (!response.ok) {
+        let message = "Failed to update opportunity status";
+        try {
+          const body = await response.json();
+          message = body.error || message;
+        } catch {
+          // ignore
+        }
+        throw new Error(message);
+      }
+
+      toast.success(successMessage);
+    } catch (error) {
+      setOpportunities(previous);
+      toast.error(parseApiError("Failed to update opportunity status", error));
+    } finally {
+      setUpdatingOpportunityId(null);
+    }
   };
 
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  // useEffect(() => {
-  //   if (effectiveSlug) {
-  //     fetchOpportunities();
-  //   }
-  // }, [effectiveSlug]);
+  const handleGenerateOpportunities = async () => {
+    if (!slug) return;
+
+    try {
+      const result = await generateMutation.mutateAsync();
+      setGeneratedOpportunities(result.data || []);
+      setGenerationWarning(result.meta?.searchWarning || null);
+      setIsGenerateOpen(true);
+    } catch (error) {
+      console.error("Failed to generate opportunities:", error);
+    }
+  };
+
+  const handleAddGeneratedOpportunity = async (
+    opportunity: GeneratedOpportunity,
+  ) => {
+    if (!slug) return;
+
+    setAddingOpportunityTitle(opportunity.title);
+    try {
+      const response = await fetch(`/api/startups/${slug}/opportunities`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: opportunity.title,
+          description: opportunity.description,
+          url: opportunity.url || "",
+          category: opportunity.category,
+          eligibility: opportunity.eligibility,
+          benefits: opportunity.benefits,
+          deadline: opportunity.deadline,
+          status: "TO_APPLY",
+        }),
+      });
+
+      if (!response.ok) {
+        let message = "Failed to add opportunity";
+        try {
+          const body = await response.json();
+          message = body.error || message;
+        } catch {
+          // ignore
+        }
+        throw new Error(message);
+      }
+
+      await fetchOpportunities();
+      setGeneratedOpportunities((previous) =>
+        previous.filter((item) => item.title !== opportunity.title),
+      );
+      toast.success("Opportunity saved to To Apply");
+    } catch (error) {
+      console.error("Failed to add opportunity:", error);
+      toast.error(parseApiError("Failed to add opportunity", error));
+    } finally {
+      setAddingOpportunityTitle(null);
+    }
+  };
+
+  const handleDismissGeneratedOpportunity = (
+    opportunity: GeneratedOpportunity,
+  ) => {
+    setGeneratedOpportunities((previous) =>
+      previous.filter((item) => item.title !== opportunity.title),
+    );
+  };
+
+  const handleDeleteOpportunity = async (opportunityId: string) => {
+    if (!slug) return;
+
+    const previous = opportunities;
+    setUpdatingOpportunityId(opportunityId);
+    setOpportunities((current) =>
+      current.filter((item) => item.id !== opportunityId),
+    );
+
+    try {
+      const response = await fetch(
+        `/api/startups/${slug}/opportunities?opportunityId=${encodeURIComponent(opportunityId)}`,
+        { method: "DELETE" },
+      );
+
+      if (!response.ok) {
+        let message = "Failed to delete opportunity";
+        try {
+          const body = await response.json();
+          message = body.error || message;
+        } catch {
+          // ignore
+        }
+        throw new Error(message);
+      }
+
+      toast.success("Opportunity deleted");
+    } catch (error) {
+      setOpportunities(previous);
+      toast.error(parseApiError("Failed to delete opportunity", error));
+    } finally {
+      setUpdatingOpportunityId(null);
+    }
+  };
 
   const filteredOpportunities =
     filterStatus === "all"
       ? opportunities
-      : opportunities.filter((o) => o.status === filterStatus);
+      : opportunities.filter((item) => item.status === filterStatus);
 
   const statusCounts = {
     all: opportunities.length,
-    DISCOVERED: opportunities.filter((o) => o.status === "DISCOVERED").length,
-    BOOKMARKED: opportunities.filter((o) => o.status === "BOOKMARKED").length,
-    TO_APPLY: opportunities.filter((o) => o.status === "TO_APPLY").length,
-    APPLIED: opportunities.filter((o) => o.status === "APPLIED").length,
-    INTERVIEWING: opportunities.filter((o) => o.status === "INTERVIEWING")
+    DISCOVERED: opportunities.filter((item) => item.status === "DISCOVERED")
       .length,
-    ACCEPTED: opportunities.filter((o) => o.status === "ACCEPTED").length,
-    REJECTED: opportunities.filter((o) => o.status === "REJECTED").length,
+    BOOKMARKED: opportunities.filter((item) => item.status === "BOOKMARKED")
+      .length,
+    TO_APPLY: opportunities.filter((item) => item.status === "TO_APPLY").length,
+    APPLIED: opportunities.filter((item) => item.status === "APPLIED").length,
+    INTERVIEWING: opportunities.filter((item) => item.status === "INTERVIEWING")
+      .length,
+    ACCEPTED: opportunities.filter((item) => item.status === "ACCEPTED").length,
+    REJECTED: opportunities.filter((item) => item.status === "REJECTED").length,
   };
 
   return (
@@ -162,7 +367,7 @@ export default function OpportunitiesPage({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button asChild variant="ghost" size="sm">
-            <Link href={`/startups/${effectiveSlug}`}>
+            <Link href={`/startups/${slug}`}>
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back
             </Link>
@@ -171,71 +376,182 @@ export default function OpportunitiesPage({
             Opportunities
           </h1>
         </div>
-        <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Opportunity
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>Add New Opportunity</DialogTitle>
-              <DialogDescription>
-                Add a fellowship, scholarship, funding opportunity, or
-                competition to track.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="title">Title</Label>
-                <Input id="title" placeholder="Y Combinator W26" />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="category">Category</Label>
-                <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="ACCELERATOR">Accelerator</SelectItem>
-                    <SelectItem value="FELLOWSHIP">Fellowship</SelectItem>
-                    <SelectItem value="SCHOLARSHIP">Scholarship</SelectItem>
-                    <SelectItem value="FUNDING">Funding</SelectItem>
-                    <SelectItem value="COMPETITION">Competition</SelectItem>
-                    <SelectItem value="GRANT">Grant</SelectItem>
-                    <SelectItem value="MENTORSHIP">Mentorship</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="url">URL</Label>
-                <Input id="url" placeholder="https://..." />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="description">Description</Label>
-                <Input id="description" placeholder="Brief description..." />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="deadline">Deadline</Label>
-                <Input id="deadline" type="date" />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsAddOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={() => setIsAddOpen(false)}>
+
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={handleGenerateOpportunities}
+            disabled={generateMutation.isPending}
+          >
+            {generateMutation.isPending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Sparkles className="mr-2 h-4 w-4" />
+            )}
+            Generate AI Recommendations
+          </Button>
+
+          <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
                 Add Opportunity
               </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>Add New Opportunity</DialogTitle>
+                <DialogDescription>
+                  Add a fellowship, scholarship, funding opportunity, or
+                  competition to track.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="title">Title</Label>
+                  <Input id="title" placeholder="Y Combinator W26" />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="category">Category</Label>
+                  <Select>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ACCELERATOR">Accelerator</SelectItem>
+                      <SelectItem value="FELLOWSHIP">Fellowship</SelectItem>
+                      <SelectItem value="SCHOLARSHIP">Scholarship</SelectItem>
+                      <SelectItem value="FUNDING">Funding</SelectItem>
+                      <SelectItem value="COMPETITION">Competition</SelectItem>
+                      <SelectItem value="GRANT">Grant</SelectItem>
+                      <SelectItem value="MENTORSHIP">Mentorship</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="url">URL</Label>
+                  <Input id="url" placeholder="https://..." />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="description">Description</Label>
+                  <Input id="description" placeholder="Brief description..." />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="deadline">Deadline</Label>
+                  <Input id="deadline" type="date" />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsAddOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={() => setIsAddOpen(false)}>
+                  Add Opportunity
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
-      {/* Status Filter Tabs */}
+      <Dialog open={isGenerateOpen} onOpenChange={setIsGenerateOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>AI Opportunity Recommendations</DialogTitle>
+            <DialogDescription>
+              Review suggestions before adding them to your tracked
+              opportunities.
+            </DialogDescription>
+          </DialogHeader>
+
+          {generationWarning && (
+            <div className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+              {generationWarning}
+            </div>
+          )}
+
+          <div className="max-h-[60vh] space-y-3 overflow-y-auto pr-1">
+            {generatedOpportunities.length === 0 ? (
+              <div className="rounded-md border p-6 text-center text-sm text-muted-foreground">
+                No pending generated opportunities.
+              </div>
+            ) : (
+              generatedOpportunities.map((opportunity, index) => {
+                const Icon = CATEGORY_ICONS[opportunity.category] || Lightbulb;
+
+                return (
+                  <Card key={`${opportunity.title}-${index}`}>
+                    <CardHeader className="pb-2">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                          <div className="rounded-md bg-primary/10 p-2">
+                            <Icon className="h-4 w-4 text-primary" />
+                          </div>
+                          <div>
+                            <CardTitle className="text-base">
+                              {opportunity.title}
+                            </CardTitle>
+                            <CardDescription>
+                              {CATEGORY_LABELS[opportunity.category] ||
+                                opportunity.category}
+                            </CardDescription>
+                          </div>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <p className="text-sm text-muted-foreground">
+                        {opportunity.description}
+                      </p>
+
+                      {opportunity.deadline && (
+                        <div className="text-xs text-muted-foreground">
+                          Deadline:{" "}
+                          {format(
+                            new Date(opportunity.deadline),
+                            "MMM d, yyyy",
+                          )}
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          onClick={() =>
+                            handleAddGeneratedOpportunity(opportunity)
+                          }
+                          disabled={
+                            addingOpportunityTitle === opportunity.title
+                          }
+                        >
+                          {addingOpportunityTitle === opportunity.title ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : (
+                            <Plus className="mr-2 h-4 w-4" />
+                          )}
+                          Add to Tracked
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            handleDismissGeneratedOpportunity(opportunity)
+                          }
+                        >
+                          Dismiss
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <Tabs value={filterStatus} onValueChange={setFilterStatus}>
-        <TabsList className="flex flex-wrap h-auto">
+        <TabsList className="flex h-auto flex-wrap">
           <TabsTrigger value="all" className="flex items-center gap-2">
             All
             <span className="ml-1 rounded-full bg-secondary px-2 py-0.5 text-xs">
@@ -277,8 +593,8 @@ export default function OpportunitiesPage({
         <TabsContent value={filterStatus} className="mt-4">
           {isLoading ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-48" />
+              {[1, 2, 3].map((index) => (
+                <Skeleton key={index} className="h-48" />
               ))}
             </div>
           ) : filteredOpportunities.length === 0 ? (
@@ -301,6 +617,13 @@ export default function OpportunitiesPage({
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {filteredOpportunities.map((opportunity) => {
                 const Icon = CATEGORY_ICONS[opportunity.category] || Lightbulb;
+                const canVisit = Boolean(opportunity.url);
+                const canSave =
+                  opportunity.status === "DISCOVERED" ||
+                  opportunity.status === "BOOKMARKED";
+                const isStatusUpdating =
+                  updatingOpportunityId === opportunity.id;
+
                 return (
                   <Card key={opportunity.id} className="flex flex-col">
                     <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
@@ -327,7 +650,7 @@ export default function OpportunitiesPage({
                       </span>
                     </CardHeader>
                     <CardContent className="flex-1">
-                      <p className="text-sm text-muted-foreground line-clamp-3">
+                      <p className="line-clamp-3 text-sm text-muted-foreground">
                         {opportunity.description}
                       </p>
                       {opportunity.deadline && (
@@ -342,25 +665,96 @@ export default function OpportunitiesPage({
                       )}
                     </CardContent>
                     <div className="flex items-center gap-2 border-t p-4">
-                      <Button variant="outline" size="sm" className="flex-1">
-                        <Bookmark className="mr-2 h-4 w-4" />
-                        Save
-                      </Button>
                       <Button
                         variant="outline"
                         size="sm"
                         className="flex-1"
-                        asChild
+                        disabled={!canSave || isStatusUpdating}
+                        onClick={() =>
+                          updateOpportunityStatus(
+                            opportunity.id,
+                            "TO_APPLY",
+                            "Opportunity saved to To Apply",
+                          )
+                        }
                       >
-                        <a
-                          href={opportunity.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <ExternalLink className="mr-2 h-4 w-4" />
-                          Visit
-                        </a>
+                        {isStatusUpdating ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <Bookmark className="mr-2 h-4 w-4" />
+                        )}
+                        {canSave ? "Save" : "Saved"}
                       </Button>
+
+                      {canVisit ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                          asChild
+                        >
+                          <a
+                            href={opportunity.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <ExternalLink className="mr-2 h-4 w-4" />
+                            Visit
+                          </a>
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                          disabled
+                        >
+                          No URL
+                        </Button>
+                      )}
+
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label="More actions"
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          {MARK_STATUS_OPTIONS.map((option) => (
+                            <DropdownMenuItem
+                              key={option.value}
+                              disabled={
+                                option.value === opportunity.status ||
+                                isStatusUpdating
+                              }
+                              onClick={() =>
+                                updateOpportunityStatus(
+                                  opportunity.id,
+                                  option.value,
+                                  `Opportunity marked as ${option.label.replace("Mark as ", "")}`,
+                                )
+                              }
+                            >
+                              {option.label}
+                            </DropdownMenuItem>
+                          ))}
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            disabled={isStatusUpdating}
+                            className="text-destructive focus:text-destructive"
+                            onClick={() =>
+                              handleDeleteOpportunity(opportunity.id)
+                            }
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete Opportunity
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </Card>
                 );

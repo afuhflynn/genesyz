@@ -52,7 +52,7 @@ const INITIAL_MESSAGE: Message = {
   id: "1",
   role: "system",
   content:
-    "Welcome! I'm your IdeasVault assistant. I'll help you capture and validate your startup idea through a quick conversation. Let's start with your name.",
+    "Welcome! I'm your Genesyz assistant. I'll help you capture and validate your startup idea through a quick conversation. Let's start with your name.",
   type: "text",
 };
 

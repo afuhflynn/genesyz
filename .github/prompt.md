@@ -84,11 +84,11 @@ Billing / Payments
 - Server-side entitlement enforcement (NO client checks)
 
 AI
-- Vercel AI SDK
+- Vercel AI SDK v7
 - @ai-sdk/react
-- @ai-sdk/google (Gemini 2.5 Flash)
-- @ai-sdk/mistral (Mistral open-mixtral-8x7b)
-- Dual-Model Architecture: Mistral primary, Gemini fallback for resilience
+- @ai-sdk/google (Gemini 3.5 Flash)
+- Single-model architecture: Gemini 3.5 Flash with text-only fallback for schema errors
+- Note: @ai-sdk/mistral, @ai-sdk/openai, and @ai-sdk/xai packages exist but are not wired
 
 Background & Realtime
 - **Inngest**
@@ -115,114 +115,111 @@ Package Manager
 PRODUCT DEFINITION
 ────────────────────────────────
 
-Build **IdeasVault** — an AI-powered idea vault for founders.
+Build **Genesyz** - the AI-powered Startup Operating System for founders.
 
 Core goals:
-- Capture ideas instantly
-- Research ideas passively
-- Surface actionable insights
-- Reduce founder procrastination
-- Respect privacy and IP
+- Validate ideas instantly with a 6-agent AI research pipeline
+- Track execution with weekly updates, AI coaching, Kanban tasks, and streak gamification
+- Manage accelerator/incubator programs with cohorts, events, mentors, and KPIs
+- Discover funding opportunities and portfolio intelligence
+- Collaborate with your team and share progress with followers
 
 ────────────────────────────────
 CORE FEATURES (FULLY IMPLEMENT)
 ────────────────────────────────
 
-### 1. Idea Capture
-- Text input
-- Voice notes (upload + transcription)
-- Image upload (OCR + semantic extraction)
-- Raw input stored permanently
-- Structured interpretation stored separately
+### 1. Idea Validation (6-Agent AI Pipeline)
+- Text input (primary)
+- Voice notes (upload + transcription) - *Coming Soon*
+- Image upload (OCR + semantic extraction) - *Coming Soon*
+- Six-agent pipeline: Interpreter → Market Research → Trend Analysis → Execution Friction → Deep Research → Synthesis
+- Real-time progress streaming via Inngest Realtime
+- Per-idea Guide Agent for follow-up Q&A
+- Prompt editing with smart re-research
+- URL auto-extraction and scraping
+- Location-aware market sizing (TAM/SAM/SOM, dual-currency)
 
-### 2. AI Research System (REAL, NOT MOCKED)
-Implement a **multi-agent pipeline**, each as a TypeScript module:
+### 2. Startup Execution Tracker
+- Convert validated ideas into startup profiles with stage lifecycle
+- Weekly check-ins with AI-powered analysis (ON_TRACK / NEEDS_ATTENTION / AT_RISK)
+- 34+ metric types across 6 categories
+- Streak gamification with milestone rewards
+- Kanban task boards (TODO / IN_PROGRESS / BLOCKED / DONE)
+- Unlimited goals with priority levels
+- Metrics dashboards with charts
+- Per-startup AI Coach (VC perspective)
 
-- InterpreterAgent
-- MarketResearchAgent
-- TrendAnalysisAgent
-- ExecutionFrictionAgent
-- SynthesisAgent
+### 3. Team Collaboration
+- 4 roles: OWNER, ADMIN, MEMBER, VIEWER
+- Team management with search/invite
+- External followers with weekly digest emails
+- Audit logging
 
-Each agent must:
-- Have strict input/output types
-- Use Vercel AI SDK
-- Return confidence metadata
-- Log prompts + raw responses to DB
+### 4. Opportunities Board
+- AI-discovered opportunities (daily cron via Tavily)
+- 7 categories: Fellowship, Scholarship, Funding, Competition, Accelerator, Grant, Mentorship
+- 7-stage pipeline: DISCOVERED → BOOKMARKED → TO_APPLY → APPLIED → INTERVIEWING → ACCEPTED / REJECTED
+- Automated deduplication
 
-### 3. Inngest Orchestration
-- Event: `idea.submitted`
-- Step-based pipeline with retries
-- Idempotent execution
-- Realtime progress updates
-- Scheduled weekly digest (cron)
-- Scheduled re-evaluation jobs for ideas
+### 5. Accelerator Program Manager
+- Program lifecycle with public/private visibility
+- Cohort management with onboarding flows
+- Event scheduling (workshop, mentor_session, office_hours, networking, demo_day)
+- Mentor management with expertise tagging and matching
+- KPI tracking with progress bars and deadlines
+- Weekly manager reports with AI summaries
+- AI Hub Coach for cohort-wide health analysis
+- Investor one-pager auto-generation (PDF)
+- Application system with status tracking
+- RBAC: 5 roles (OWNER / PROGRAM_MANAGER / OPERATIONS_LEAD / MENTOR / OBSERVER)
 
-### 4. Scoring System
-- Idea clarity score
-- Market readiness score
-- Execution friction score
-- Overall readiness score
-- Scores must be explainable
+### 6. Portfolio Intelligence
+- Strategic Advisory Agent: portfolio-level Go/Pause/Kill verdicts
+- Weekly strategic reports (Monday cron)
+- Monthly re-evaluation of ideas older than 30 days
+- Research feed: idea research, weekly reports, digests, reminders
 
-### 5. UI Pages (ALL REQUIRED)
-- Landing (credible, restrained)
-- Auth (Better Auth)
-- Dashboard (ideas + scores)
-- Idea capture
-- Idea detail (expandable research packets)
-- Billing (Polar)
-- Account / settings
-- Admin panel
+### 7. Inngest Orchestration (16 functions, 11 registered)
+- 5 cron jobs: strategic report, startup report, reminders, opportunity discovery, monthly re-evaluation, feature announcements
+- 9 event-driven: research pipeline, weekly reports, emails, startup analysis, notifications
+- Real-time progress streaming
 
-### 6. Billing & Entitlements (IMPORTANT)
-- Use **Polar**
-- Plans:
-  - Free: 3 active ideas
-  - Pro: unlimited
-- Enforce limits **server-side**
-- Middleware:
-  `isAllowedToCreateIdea(userId)`
-- Sync Polar entitlements with Better Auth users
+### 8. Billing & Entitlements
+- Polar subscriptions
+- Free: 3 active ideas
+- Pro ($20/month): unlimited
+- Server-side enforcement
 
-### 7. Storage
-- DigitalOcean Spaces for:
-  - Audio
-  - Images
-  - PDF exports
-- Signed URLs for secure access
-
-### 8. Email
-- Welcome email
-- Weekly digest email
-- Triggered via Inngest
-- Templates must be clean and professional
-
-### 9. Exports
-- Export idea research packet as PDF
-- Store PDF in Spaces
-- Download via signed URL
+### 9. Storage & Exports
+- UploadThing for file storage
+- PDF exports of idea research packets (react-pdf)
+- DigitalOcean Spaces (S3-compatible) configured
 
 ### 10. Security & Privacy
 - Strict tenant isolation
+- Server-side entitlement enforcement
 - No cross-user access
-- No training on user data without opt-in
-- Audit logs for research runs
 
 ────────────────────────────────
 DATABASE REQUIREMENTS
 ────────────────────────────────
 
-Must include tables for:
-- users (via Better Auth)
-- ideas
-- idea_inputs (raw)
-- research_jobs
-- research_packets
-- idea_scores
-- idea_research_logs (prompts + outputs)
-- entitlements (from Polar)
+Must include tables for (see Prisma schema for full details):
+- users, accounts, sessions, verifications (Better Auth)
+- ideas, idea_inputs, research_packets, idea_scores
+- startups, startup_members, startup_followers
+- weekly_updates, weekly_update_metrics, weekly_update_goals
+- streak_milestones
+- tasks, task_comments
+- opportunities, opportunity_applications
+- accelerator_programs, cohorts, cohort_applications
+- events, rsvps
+- mentors, mentor_startups
+- kpis, kpi_progress
+- reports
+- research_logs
 - audit_logs
+- entitlements (Polar)
 
 ────────────────────────────────
 DELIVERABLES (MUST OUTPUT)
@@ -234,10 +231,10 @@ DELIVERABLES (MUST OUTPUT)
 4. `pnpm-lock.yaml`
 5. Prisma schema + migrations
 6. Next.js config files
-7. Inngest event + cron functions
-8. AI agent modules
-9. UI pages (TSX)
-10. DO Spaces upload logic
+7. Inngest event + cron functions (16 total, 11 registered)
+8. AI agent modules (6 agents)
+9. UI pages for all products (marketing, dashboard, startup, accelerator)
+10. UploadThing + DigitalOcean Spaces config
 11. Polar integration
 12. Better Auth integration
 13. Middleware for plan enforcement
@@ -252,11 +249,13 @@ ACCEPTANCE CRITERIA
 - `pnpm install` works
 - `docker-compose up` starts DB
 - `pnpm dev` runs app
-- User signs up via Google
+- User signs up via Google or email/password
 - User subscribes via Polar
-- Idea submission triggers research pipeline
+- Idea submission triggers 6-agent research pipeline with real-time progress
 - Scores + packets appear in UI
-- Weekly digest cron runs
+- User can convert idea to startup and track execution
+- Weekly update cron runs with AI analysis
+- Accelerator programs can be created and managed
 - UI looks intentional and professional
 
 ────────────────────────────────

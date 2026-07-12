@@ -1,6 +1,6 @@
 /**
  * =================================
- * IdeasVault React Query Hooks
+ * Genesyz React Query Hooks
  * Type-safe data fetching with caching
  * =================================
  */
@@ -9,9 +9,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
+  type Accelerator,
+  type AcceleratorApplication,
   api,
   type IdeaWithDetails,
   type PaginationParams,
+  type StartupOpportunity,
+  type TaskStatus,
 } from "@/lib/api-client";
 import { authClient, signIn, signUp } from "@/lib/auth-client";
 
@@ -26,6 +30,7 @@ export const queryKeys = {
       [...queryKeys.ideas.all, "list", params] as const,
     detail: (id: string) => [...queryKeys.ideas.all, "detail", id] as const,
     research: (id: string) => [...queryKeys.ideas.all, "research", id] as const,
+    prompt: (id: string) => [...queryKeys.ideas.all, "prompt", id] as const,
   },
   startups: {
     all: ["startups"] as const,
@@ -34,6 +39,18 @@ export const queryKeys = {
     detail: (id: string) => [...queryKeys.startups.all, "detail", id] as const,
     updates: (id: string) =>
       [...queryKeys.startups.all, "updates", id] as const,
+    tasks: (id: string, status?: TaskStatus) =>
+      [...queryKeys.startups.all, "tasks", id, status] as const,
+    opportunities: (
+      id: string,
+      params?: { status?: string; category?: string },
+    ) => [...queryKeys.startups.all, "opportunities", id, params] as const,
+    followers: (id: string) =>
+      [...queryKeys.startups.all, "followers", id] as const,
+    conversations: (id: string) =>
+      [...queryKeys.startups.all, "conversations", id] as const,
+    conversation: (id: string, convId: string) =>
+      [...queryKeys.startups.conversations(id), convId] as const,
   },
   dashboard: {
     all: ["dashboard"] as const,
@@ -85,6 +102,15 @@ export function useIdeaResearch(id: string) {
     queryFn: () => api.queries.ideas.getResearchPackets(id),
     enabled: !!id,
     staleTime: 10 * 60 * 1000, // 10 minutes - research doesn't change often
+  });
+}
+
+export function useIdeaPromptHistory(id: string) {
+  return useQuery({
+    queryKey: queryKeys.ideas.prompt(id),
+    queryFn: () => api.queries.ideas.getPromptHistory(id),
+    enabled: !!id,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -185,6 +211,31 @@ export function useRerunResearch() {
     },
     onError: (error: Error) => {
       toast.error(error.message || "Failed to restart research");
+    },
+  });
+}
+
+export function useUpdateIdeaPrompt() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      prompt,
+      triggerResearch,
+    }: {
+      id: string;
+      prompt: string;
+      triggerResearch: boolean;
+    }) => api.mutations.ideas.updatePrompt(id, { prompt, triggerResearch }),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.ideas.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.ideas.detail(id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.ideas.prompt(id) });
+      toast.success("Idea prompt updated");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to update prompt");
     },
   });
 }
@@ -452,13 +503,32 @@ export interface StartupWithDetails {
     primaryMetricType: string;
     primaryMetricValue: number;
     primaryMetricDelta: number | null;
+    metricPeriod: string | null;
+    metricFormat: string | null;
+    customMetricName: string | null;
+    additionalMetrics: Array<{
+      type: string;
+      value: number;
+      period?: string | null;
+      customMetricName?: string | null;
+    }> | null;
+    previousGoalsReview: Array<{
+      goalText: string;
+      completed: boolean;
+    }> | null;
+    goalsCompletionRate: number | null;
     moraleScore: number;
     topImprovements: string | null;
     biggestObstacle: string | null;
     aiAnalysis: any;
     aiVerdict: string | null;
     aiRecommendations: any;
-    goals: Array<{ content: string; completed: boolean; priority: number }>;
+    goals: Array<{
+      id: string;
+      content: string;
+      completed: boolean;
+      priority: number;
+    }>;
   }>;
   goals: Array<{
     id: string;
@@ -488,6 +558,20 @@ export interface WeeklyUpdateWithGoals {
   primaryMetricType: string;
   primaryMetricValue: number;
   primaryMetricDelta: number | null;
+  metricPeriod: string | null;
+  metricFormat: string | null;
+  customMetricName: string | null;
+  additionalMetrics: Array<{
+    type: string;
+    value: number;
+    period?: string | null;
+    customMetricName?: string | null;
+  }> | null;
+  previousGoalsReview: Array<{
+    goalText: string;
+    completed: boolean;
+  }> | null;
+  goalsCompletionRate: number | null;
   moraleScore: number;
   topImprovements: string | null;
   biggestObstacle: string | null;
@@ -495,6 +579,8 @@ export interface WeeklyUpdateWithGoals {
   aiVerdict: string | null;
   aiRecommendations: any;
   createdAt: Date;
+  editableUntil: Date | null;
+  isLocked: boolean;
   goals: Array<{
     id: string;
     content: string;
@@ -506,28 +592,17 @@ export interface WeeklyUpdateWithGoals {
 export function useStartups(params?: PaginationParams) {
   return useQuery({
     queryKey: queryKeys.startups.list(params),
-    queryFn: async () => {
-      const queryParams = new URLSearchParams({
-        page: String(params?.page || 1),
-        limit: String(params?.limit || 10),
-      });
-      const response = await fetch(`/api/startups?${queryParams}`);
-      if (!response.ok) throw new Error("Failed to fetch startups");
-      return response.json();
-    },
+    queryFn: () => api.queries.startups.getAll(params),
     staleTime: 5 * 60 * 1000,
   });
 }
 
-export function useStartup(id: string) {
+export function useStartup(idOrSlug: string) {
   return useQuery({
-    queryKey: queryKeys.startups.detail(id),
-    queryFn: async () => {
-      const response = await fetch(`/api/startups/${id}`);
-      if (!response.ok) throw new Error("Failed to fetch startup");
-      return response.json() as Promise<StartupWithDetails>;
-    },
-    enabled: !!id,
+    queryKey: queryKeys.startups.detail(idOrSlug),
+    queryFn: () =>
+      api.queries.startups.getById(idOrSlug) as Promise<StartupWithDetails>,
+    enabled: !!idOrSlug,
     staleTime: 5 * 60 * 1000,
   });
 }
@@ -535,16 +610,8 @@ export function useStartup(id: string) {
 export function useWeeklyUpdates(startupId: string, params?: PaginationParams) {
   return useQuery({
     queryKey: queryKeys.startups.updates(startupId),
-    queryFn: async () => {
-      const queryParams = new URLSearchParams({
-        page: String(params?.page || 1),
-        limit: String(params?.limit || 10),
-      });
-      const response = await fetch(
-        `/api/startups/${startupId}/updates?${queryParams}`,
-      );
-      if (!response.ok) throw new Error("Failed to fetch weekly updates");
-      return response.json() as Promise<{
+    queryFn: () =>
+      api.queries.startups.getUpdates(startupId, params) as Promise<{
         data: WeeklyUpdateWithGoals[];
         pagination: {
           page: number;
@@ -552,8 +619,16 @@ export function useWeeklyUpdates(startupId: string, params?: PaginationParams) {
           total: number;
           totalPages: number;
         };
-      }>;
-    },
+      }>,
+    enabled: !!startupId,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useStartupStreak(startupId: string) {
+  return useQuery({
+    queryKey: [...queryKeys.startups.detail(startupId), "streak"],
+    queryFn: () => api.queries.startups.getStreak(startupId),
     enabled: !!startupId,
     staleTime: 5 * 60 * 1000,
   });
@@ -561,15 +636,7 @@ export function useWeeklyUpdates(startupId: string, params?: PaginationParams) {
 
 export function useCheckSlug() {
   return useMutation({
-    mutationFn: async (slug: string) => {
-      const response = await fetch("/api/startups/check-slug", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ slug }),
-      });
-      if (!response.ok) throw new Error("Failed to check slug");
-      return response.json() as Promise<{ available: boolean }>;
-    },
+    mutationFn: (slug: string) => api.queries.startups.checkSlug(slug),
   });
 }
 
@@ -578,8 +645,8 @@ export function useCreateStartup() {
   const router = useRouter();
 
   return useMutation({
-    mutationFn: async (data: {
-      ideaId: string;
+    mutationFn: (data: {
+      ideaId?: string;
       name: string;
       slug: string;
       tagline?: string;
@@ -590,23 +657,22 @@ export function useCreateStartup() {
       logoUrl?: string;
       website?: string;
       location?: string;
-    }) => {
-      const response = await fetch("/api/startups", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to create startup");
-      }
-      return response.json();
-    },
+      locationContext?: {
+        continent?: string;
+        continentCode?: string;
+        country?: string;
+        countryCode?: string;
+        region?: string;
+        regionCode?: string;
+        city?: string;
+        isGlobal?: boolean;
+      };
+    }) => api.mutations.startups.create(data),
     onSuccess: (startup) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.startups.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.ideas.all });
       toast.success("Startup profile created!");
-      router.push(`/startups/${startup.slug}`);
+      router.push(`/startups/${(startup as { slug: string }).slug}`);
     },
     onError: (error: Error) => {
       toast.error(error.message || "Failed to create startup");
@@ -618,24 +684,8 @@ export function useUpdateStartup() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      id,
-      data,
-    }: {
-      id: string;
-      data: Record<string, unknown>;
-    }) => {
-      const response = await fetch(`/api/startups/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to update startup");
-      }
-      return response.json();
-    },
+    mutationFn: ({ id, data }: { id: string; data: Record<string, unknown> }) =>
+      api.mutations.startups.update(id, data),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.startups.all });
       queryClient.invalidateQueries({
@@ -654,16 +704,7 @@ export function useDeleteStartup() {
   const router = useRouter();
 
   return useMutation({
-    mutationFn: async (id: string) => {
-      const response = await fetch(`/api/startups/${id}`, {
-        method: "DELETE",
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to delete startup");
-      }
-      return response.json();
-    },
+    mutationFn: (id: string) => api.mutations.startups.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.startups.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.ideas.all });
@@ -680,7 +721,7 @@ export function useCreateWeeklyUpdate() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
+    mutationFn: ({
       startupId,
       data,
     }: {
@@ -715,18 +756,7 @@ export function useCreateWeeklyUpdate() {
           completed?: boolean;
         }>;
       };
-    }) => {
-      const response = await fetch(`/api/startups/${startupId}/updates`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to create weekly update");
-      }
-      return response.json();
-    },
+    }) => api.mutations.startups.createWeeklyUpdate(startupId, data),
     onSuccess: (_, { startupId }) => {
       queryClient.invalidateQueries({
         queryKey: queryKeys.startups.detail(startupId),
@@ -742,21 +772,804 @@ export function useCreateWeeklyUpdate() {
   });
 }
 
+export function useUpdateWeeklyUpdate() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      startupId,
+      updateId,
+      data,
+    }: {
+      startupId: string;
+      updateId: string;
+      data: {
+        isLaunched?: boolean;
+        weeksToLaunch?: number | null;
+        usersTalkedTo?: number;
+        userLearnings?: string;
+        primaryMetricType?: string;
+        primaryMetricValue?: number;
+        metricPeriod?: string | null;
+        metricFormat?: string | null;
+        customMetricName?: string | null;
+        additionalMetrics?: Array<{
+          type: string;
+          value: number;
+          period?: string | null;
+          customMetricName?: string | null;
+        }> | null;
+        previousGoalsReview?: Array<{
+          goalText: string;
+          completed: boolean;
+        }> | null;
+        goalsCompletionRate?: number | null;
+        moraleScore?: number;
+        topImprovements?: string;
+        biggestObstacle?: string;
+        goals?: Array<{
+          content: string;
+          priority: number;
+          completed?: boolean;
+        }>;
+      };
+    }) =>
+      api.mutations.startups.updateWeeklyUpdate(startupId, {
+        updateId,
+        ...data,
+      }),
+    onSuccess: (_, { startupId }) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.startups.detail(startupId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.startups.updates(startupId),
+      });
+      toast.success("Weekly update saved!");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to save weekly update");
+    },
+  });
+}
+
+export function useToggleGoalCompletion(startupId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (goalId: string) => api.mutations.startups.toggleGoal(goalId),
+    onMutate: async (goalId) => {
+      await queryClient.cancelQueries({
+        queryKey: queryKeys.startups.updates(startupId),
+      });
+
+      const previousUpdates = queryClient.getQueryData(
+        queryKeys.startups.updates(startupId),
+      );
+
+      // Optimistically toggle the goal in cache
+      queryClient.setQueryData(
+        queryKeys.startups.updates(startupId),
+        (old: { data: WeeklyUpdateWithGoals[] } | undefined) => {
+          if (!old) return old;
+          return {
+            ...old,
+            data: old.data.map((update) => ({
+              ...update,
+              goals: update.goals.map((goal) =>
+                goal.id === goalId
+                  ? { ...goal, completed: !goal.completed }
+                  : goal,
+              ),
+            })),
+          };
+        },
+      );
+
+      return { previousUpdates };
+    },
+    onError: (_error, _goalId, context) => {
+      if (context?.previousUpdates) {
+        queryClient.setQueryData(
+          queryKeys.startups.updates(startupId),
+          context.previousUpdates,
+        );
+      }
+      toast.error("Failed to update goal");
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.startups.updates(startupId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.startups.detail(startupId),
+      });
+    },
+  });
+}
+
 export function useIdeaStartup(ideaId: string) {
   return useQuery({
     queryKey: [...queryKeys.ideas.detail(ideaId), "startup"],
-    queryFn: async () => {
-      const response = await fetch(`/api/ideas/${ideaId}/startup`);
-      if (!response.ok) throw new Error("Failed to check startup");
-      return response.json() as Promise<{
+    queryFn: () =>
+      api.queries.startups.getIdeaStartup(ideaId) as Promise<{
         hasStartup: boolean;
         startup: { id: string; slug: string; name: string } | null;
-      }>;
-    },
+      }>,
     enabled: !!ideaId,
     staleTime: 5 * 60 * 1000,
   });
 }
 
+export function useTaskLists(startupId: string, status?: TaskStatus) {
+  return useQuery({
+    queryKey: queryKeys.startups.tasks(startupId, status),
+    queryFn: () => api.queries.startups.getTaskLists(startupId, status),
+    enabled: !!startupId,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useCreateTaskList() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      startupId,
+      data,
+    }: {
+      startupId: string;
+      data: {
+        name: string;
+      };
+    }) => api.mutations.startups.createTaskList(startupId, data),
+    onSuccess: (_, { startupId }) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.startups.tasks(startupId),
+      });
+      toast.success("Task list created!");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to create task list");
+    },
+  });
+}
+
+export function useRenameTaskList() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      startupId,
+      data,
+    }: {
+      startupId: string;
+      data: {
+        listId: string;
+        name: string;
+      };
+    }) => api.mutations.startups.renameTaskList(startupId, data),
+    onSuccess: (_, { startupId }) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.startups.tasks(startupId),
+      });
+      toast.success("Task list renamed!");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to rename task list");
+    },
+  });
+}
+
+export function useDeleteTaskList() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      startupId,
+      listId,
+    }: {
+      startupId: string;
+      listId: string;
+    }) => api.mutations.startups.deleteTaskList(startupId, listId),
+    onSuccess: (_, { startupId }) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.startups.tasks(startupId),
+      });
+      toast.success("Task list deleted!");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to delete task list");
+    },
+  });
+}
+
+export function useCreateTask() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      startupId,
+      data,
+    }: {
+      startupId: string;
+      data: {
+        listId: string;
+        title: string;
+        description?: string;
+        deadline?: string;
+        status?: TaskStatus;
+      };
+    }) => api.mutations.startups.createTask(startupId, data),
+    onSuccess: (_, { startupId }) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.startups.tasks(startupId),
+      });
+      toast.success("Task created!");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to create task");
+    },
+  });
+}
+
+export function useMoveTask() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      startupId,
+      data,
+    }: {
+      startupId: string;
+      data: {
+        taskId: string;
+        listId: string;
+        status: TaskStatus;
+        position?: number;
+      };
+    }) => api.mutations.startups.moveTask(startupId, data),
+    onSuccess: (_, { startupId }) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.startups.tasks(startupId),
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to move task");
+    },
+  });
+}
+
+export function useDeleteTask() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      startupId,
+      taskId,
+    }: {
+      startupId: string;
+      taskId: string;
+    }) => api.mutations.startups.deleteTask(startupId, taskId),
+    onSuccess: (_, { startupId }) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.startups.tasks(startupId),
+      });
+      toast.success("Task deleted!");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to delete task");
+    },
+  });
+}
+
+export function useUpdateTask() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      startupId,
+      data,
+    }: {
+      startupId: string;
+      data: {
+        taskId: string;
+        title?: string;
+        description?: string;
+        deadline?: string | null;
+      };
+    }) => api.mutations.startups.updateTask(startupId, data),
+    onSuccess: (_, { startupId }) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.startups.tasks(startupId),
+      });
+      toast.success("Task updated!");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to update task");
+    },
+  });
+}
+
+export function useGenerateOpportunities(startupId: string) {
+  return useMutation({
+    mutationFn: () => api.queries.startups.generateOpportunities(startupId),
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to generate opportunities");
+    },
+  });
+}
+
+export function useOpportunities(
+  startupId: string,
+  params?: { status?: string; category?: string },
+) {
+  return useQuery({
+    queryKey: queryKeys.startups.opportunities(startupId, params),
+    queryFn: () => api.queries.startups.getOpportunities(startupId, params),
+    enabled: !!startupId,
+    staleTime: 2 * 60 * 1000,
+  });
+}
+
+export function useCreateOpportunity() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      startupId,
+      data,
+    }: {
+      startupId: string;
+      data: {
+        title: string;
+        description: string;
+        url: string;
+        category: string;
+        eligibility?: string;
+        benefits?: string;
+        deadline: string;
+        status?: string;
+      };
+    }) => api.mutations.startups.createOpportunity(startupId, data),
+    onSuccess: (_, { startupId }) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.startups.opportunities(startupId),
+      });
+      toast.success("Opportunity created");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to create opportunity");
+    },
+  });
+}
+
+export function useUpdateOpportunity() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      startupId,
+      data,
+    }: {
+      startupId: string;
+      data: {
+        opportunityId: string;
+        status?: string;
+        notes?: string;
+        title?: string;
+        description?: string;
+      };
+    }) => api.mutations.startups.updateOpportunity(startupId, data),
+    onSuccess: (updated, { startupId }) => {
+      queryClient.setQueryData(
+        queryKeys.startups.opportunities(startupId),
+        (previous: { data: StartupOpportunity[] } | undefined) => {
+          if (!previous) {
+            return previous;
+          }
+
+          return {
+            ...previous,
+            data: previous.data.map((item) =>
+              item.id === updated.id ? updated : item,
+            ),
+          };
+        },
+      );
+
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.startups.opportunities(startupId),
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to update opportunity");
+    },
+  });
+}
+
+export function useDeleteOpportunity() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      startupId,
+      opportunityId,
+    }: {
+      startupId: string;
+      opportunityId: string;
+    }) => api.mutations.startups.deleteOpportunity(startupId, opportunityId),
+    onSuccess: (_, { startupId }) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.startups.opportunities(startupId),
+      });
+      toast.success("Opportunity deleted");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to delete opportunity");
+    },
+  });
+}
+
+// ===========================================
+// Team Member Hooks
+// ===========================================
+
+export function useTeamMembers(startupId: string) {
+  return useQuery({
+    queryKey: [...queryKeys.startups.detail(startupId), "members"],
+    queryFn: () => api.queries.startups.getMembers(startupId),
+    enabled: !!startupId,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useSearchUsers(query: string, excludeStartup?: string) {
+  return useQuery({
+    queryKey: ["users", "search", query, excludeStartup],
+    queryFn: () => api.queries.startups.searchUsers(query, excludeStartup),
+    enabled: query.length >= 2,
+    staleTime: 60 * 1000,
+  });
+}
+
+export function useAddTeamMember() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      startupId,
+      userId,
+      role = "MEMBER",
+    }: {
+      startupId: string;
+      userId: string;
+      role?: "ADMIN" | "MEMBER" | "VIEWER";
+    }) => api.mutations.startups.addMember(startupId, { userId, role }),
+    onSuccess: (_, { startupId }) => {
+      queryClient.invalidateQueries({
+        queryKey: [...queryKeys.startups.detail(startupId), "members"],
+      });
+      toast.success("Team member added");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to add team member");
+    },
+  });
+}
+
+export function useUpdateTeamMember() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      startupId,
+      memberId,
+      role,
+    }: {
+      startupId: string;
+      memberId: string;
+      role: "ADMIN" | "MEMBER" | "VIEWER";
+    }) => api.mutations.startups.updateMember(startupId, memberId, { role }),
+    onSuccess: (_, { startupId }) => {
+      queryClient.invalidateQueries({
+        queryKey: [...queryKeys.startups.detail(startupId), "members"],
+      });
+      toast.success("Team member role updated");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to update team member role");
+    },
+  });
+}
+
+export function useRemoveTeamMember() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      startupId,
+      memberId,
+    }: {
+      startupId: string;
+      memberId: string;
+    }) => api.mutations.startups.removeMember(startupId, memberId),
+    onSuccess: (_, { startupId }) => {
+      queryClient.invalidateQueries({
+        queryKey: [...queryKeys.startups.detail(startupId), "members"],
+      });
+      toast.success("Team member removed");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to remove team member");
+    },
+  });
+}
+
+// ===========================================
+// Follower Hooks
+// ===========================================
+
+export function useFollowers(startupId: string) {
+  return useQuery({
+    queryKey: queryKeys.startups.followers(startupId),
+    queryFn: () => api.queries.startups.getFollowers(startupId),
+    enabled: !!startupId,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useAddFollower() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      startupId,
+      data,
+    }: {
+      startupId: string;
+      data: { email: string; name?: string };
+    }) => api.mutations.startups.addFollower(startupId, data),
+    onSuccess: (_, { startupId }) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.startups.followers(startupId),
+      });
+      toast.success("Follower added successfully");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to add follower");
+    },
+  });
+}
+
+export function useRemoveFollower() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      startupId,
+      followerId,
+    }: {
+      startupId: string;
+      followerId: string;
+    }) => api.mutations.startups.removeFollower(startupId, followerId),
+    onSuccess: (_, { startupId }) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.startups.followers(startupId),
+      });
+      toast.success("Follower removed");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to remove follower");
+    },
+  });
+}
+
+// ===========================================
+// Conversation Hooks
+// ===========================================
+
+export function useStartupConversations(startupId: string) {
+  return useQuery({
+    queryKey: queryKeys.startups.conversations(startupId),
+    queryFn: () => api.queries.startups.getConversations(startupId),
+    enabled: !!startupId,
+    staleTime: 30 * 1000, // 30 seconds
+  });
+}
+
+export function useStartupConversation(
+  startupId: string,
+  conversationId: string,
+) {
+  return useQuery({
+    queryKey: queryKeys.startups.conversation(startupId, conversationId),
+    queryFn: () =>
+      api.queries.startups.getConversation(startupId, conversationId),
+    enabled: !!startupId && !!conversationId && conversationId !== "new",
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useCreateStartupConversation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ startupId, title }: { startupId: string; title?: string }) =>
+      api.mutations.startups.createConversation(startupId, { title }),
+    onSuccess: (_, { startupId }) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.startups.conversations(startupId),
+      });
+    },
+  });
+}
+
+export function useDeleteStartupConversation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      startupId,
+      conversationId,
+    }: {
+      startupId: string;
+      conversationId: string;
+    }) => api.mutations.startups.deleteConversation(startupId, conversationId),
+    onSuccess: (_, { startupId }) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.startups.conversations(startupId),
+      });
+      toast.success("Conversation deleted");
+    },
+  });
+}
+
+// ===========================================
+// Accelerator Hooks
+// ===========================================
+
+export function useAccelerators(params?: { publicOnly?: boolean }) {
+  return useQuery({
+    queryKey: ["accelerators", params],
+    queryFn: () => api.queries.accelerators.getAll(params),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useAccelerator(slug: string) {
+  return useQuery({
+    queryKey: ["accelerators", slug],
+    queryFn: () => api.queries.accelerators.getBySlug(slug),
+    enabled: !!slug,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useCreateAccelerator() {
+  const queryClient = useQueryClient();
+  const router = useRouter();
+
+  return useMutation({
+    mutationFn: (data: {
+      name: string;
+      description?: string;
+      programType?: string;
+      logoUrl?: string;
+      website?: string;
+      contactEmail?: string;
+      durationWeeks?: number;
+      benefits?: string;
+      requirements?: string;
+      maxStartups?: number;
+      fundingAmount?: string;
+      isPublic?: boolean;
+    }) => api.mutations.accelerators.create(data),
+    onSuccess: (accelerator) => {
+      queryClient.invalidateQueries({ queryKey: ["accelerators"] });
+      toast.success("Accelerator created!");
+      router.push(`/accelerators/${accelerator.slug}`);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to create accelerator");
+    },
+  });
+}
+
+export function useUpdateAccelerator() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      slug,
+      data,
+    }: {
+      slug: string;
+      data: Partial<{
+        name: string;
+        description: string;
+        programType: string;
+        logoUrl: string;
+        website: string;
+        contactEmail: string;
+        durationWeeks: number;
+        benefits: string;
+        requirements: string;
+        maxStartups: number;
+        fundingAmount: string;
+        isPublic: boolean;
+        isActive: boolean;
+      }>;
+    }) => api.mutations.accelerators.update(slug, data),
+    onSuccess: (_, { slug }) => {
+      queryClient.invalidateQueries({ queryKey: ["accelerators"] });
+      queryClient.invalidateQueries({ queryKey: ["accelerators", slug] });
+      toast.success("Accelerator updated!");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to update accelerator");
+    },
+  });
+}
+
+export function useDeleteAccelerator() {
+  const queryClient = useQueryClient();
+  const router = useRouter();
+
+  return useMutation({
+    mutationFn: (slug: string) => api.mutations.accelerators.delete(slug),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["accelerators"] });
+      toast.success("Accelerator deleted");
+      router.push("/accelerators");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to delete accelerator");
+    },
+  });
+}
+
+export function useApplyToAccelerator(slug: string) {
+  const queryClient = useQueryClient();
+  const router = useRouter();
+
+  return useMutation({
+    mutationFn: (data: {
+      founderEmail: string;
+      founderName: string;
+      founderPhone?: string;
+      startupId?: string;
+      answers?: Record<string, string>;
+    }) => api.queries.accelerators.apply(slug, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["accelerators", slug] });
+      toast.success("Application submitted!");
+      router.push(`/accelerators/${slug}`);
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to submit application");
+    },
+  });
+}
+
+export function useAcceleratorApplications(slug: string) {
+  return useQuery({
+    queryKey: ["accelerators", slug, "applications"],
+    queryFn: () => api.queries.accelerators.getApplications(slug),
+    enabled: !!slug,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export type {
+  Accelerator,
+  AcceleratorApplication,
+  SearchedUser,
+  StartupMember,
+  StartupMemberRole,
+  TaskItem,
+  TaskList,
+  TaskStatus,
+} from "@/lib/api-client";
 export { useInfiniteIdeas } from "./useInfiniteIdeas";
 export { useInfiniteStartups } from "./useInfiniteStartups";

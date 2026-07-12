@@ -16,7 +16,7 @@ export default function LandingPage() {
       <section className="py-12 border-y bg-slate-50/30 dark:bg-transparent">
         <div className="container mx-auto px-4">
           <p className="text-center text-sm font-semibold text-muted-foreground uppercase tracking-widest mb-8">
-            Empowering entrepreneurs at
+            Trusted by founders at
           </p>
           <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-50 grayscale">
             <div className="text-xl font-bold">STARTUP HUB</div>
@@ -36,11 +36,11 @@ export default function LandingPage() {
       <section className="py-24 bg-primary text-primary-foreground">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold tracking-tight sm:text-5xl mb-6">
-            Ready to validate your next big idea?
+            Ready to build something that matters?
           </h2>
           <p className="text-xl opacity-90 mb-10 max-w-2xl mx-auto">
-            Join hundreds of founders who use IdeasVault to save months of
-            wasted effort and build with confidence.
+            From idea validation to execution tracking to accelerator programs -
+            Genesyz is the only platform you need.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link href="/sign-up">
@@ -64,7 +64,7 @@ export default function LandingPage() {
             </Link>
           </div>
           <p className="mt-6 text-sm opacity-70">
-            No credit card required. Start with 3 free idea validations.
+            No credit card required. Start with 3 free ideas.
           </p>
         </div>
       </section>

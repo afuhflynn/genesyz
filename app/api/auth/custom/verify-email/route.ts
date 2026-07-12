@@ -1,23 +1,17 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { inngest } from "@/lib/inngest/client";
+import { verifyEmailSchema } from "@/lib/validators/auth";
 
 export async function POST(req: NextRequest) {
-  const { code } = await req.json();
-
   try {
-    if (!code) {
-      return NextResponse.json(
-        { success: false, message: "Verification code is required" },
-        { status: 400 },
-      );
-    }
+    const body = await req.json();
+    const { code } = verifyEmailSchema.parse(body);
 
-    // Manual verification logic
     const user = await db.user.findFirst({
       where: {
         verificationCode: code,
-        // We could also check verificationExpiry here if we had it
+        verificationExpiry: { gte: new Date() },
       },
     });
 
@@ -37,6 +31,7 @@ export async function POST(req: NextRequest) {
       data: {
         emailVerified: true,
         verificationCode: null,
+        verificationExpiry: null,
       },
     });
 
@@ -46,7 +41,6 @@ export async function POST(req: NextRequest) {
       data: {
         email: updatedUser.email,
         name: updatedUser.name,
-        username: updatedUser.username || updatedUser.email.split("@")[0],
       },
     });
 

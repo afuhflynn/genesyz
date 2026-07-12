@@ -1,4 +1,4 @@
-import type { Realtime } from "@inngest/realtime";
+import type { Realtime } from "inngest";
 import type { ResearchAgentType } from "@prisma/client";
 import { v4 as uuid4 } from "uuid";
 import { db } from "@/lib/db";
@@ -8,6 +8,7 @@ import { runInterpreterAgent } from "./interpreter";
 import { runMarketResearchAgent } from "./market-research";
 import { runSynthesisAgent } from "./synthesis";
 import { runTrendAnalysisAgent } from "./trend-analysis";
+import { ideaChannel } from "@/lib/inngest/channels";
 import type {
   AgentInput,
   AgentOutput,
@@ -32,21 +33,21 @@ export interface PipelineResult {
  * @returns Pipeline result with all agent outputs and synthesis
  *
  * **AI Model Architecture**:
- * - Primary Model: Mistral `open-mixtral-8x7b` (cost-effective for high-volume)
- * - Fallback Model: Google Gemini 2.5 Flash (automatic failover on errors)
- * - Each agent logs which model was used via `researchLog.model` field
+ * - Model: Google Gemini 3.5 Flash (single model with text-only fallback)
+ * - If schema generation fails, falls back to generateText + JSON parsing
+ * - Each agent logs the model used via `researchLog.model` field
  *
  * **Agent Pipeline**:
- * 1. Interpreter Agent (understands idea from vague inputs)
- * 2. Market Research Agent (analyzes TAM, competitors, growth rates)
- * 3. Trend Analysis Agent (checks timing and technology readiness)
- * 4. Execution Friction Agent (identifies technical and operational risks)
- * 5. Deep Research Agent (uses web search for market validation)
+ * 1. Interpreter Agent (structures vague input into title/summary/problem/solution)
+ * 2. Market Research Agent (analyzes TAM/SAM/SOM, competitors, growth rates, barriers)
+ * 3. Trend Analysis Agent (timing verdict, technology readiness score)
+ * 4. Execution Friction Agent (technical complexity, resource estimates, risk factors)
+ * 5. Deep Research Agent (web search via Tavily for market gaps and validation)
  * 6. Synthesis Agent (combines all data into final score and verdict)
  */
 export async function runResearchPipeline(
   ideaId: string,
-  publish: Realtime.PublishFn,
+  publish: Realtime.TypedPublishFn,
 ): Promise<PipelineResult> {
   // Fetch the idea and its inputs
   const idea = await db.idea.findUnique({
@@ -59,8 +60,9 @@ export async function runResearchPipeline(
   }
 
   // Combine all inputs into a single object
+  const textInput = idea.inputs.find((i) => i.type === "TEXT")?.content;
   const rawInput: IdeaInputData = {
-    text: idea.inputs.find((i) => i.type === "TEXT")?.content || undefined,
+    text: idea.originalPrompt || textInput || undefined,
     transcription:
       idea.inputs.find((i) => i.type === "AUDIO")?.transcription || undefined,
     ocrText: idea.inputs.find((i) => i.type === "IMAGE")?.ocrText || undefined,
@@ -87,42 +89,32 @@ export async function runResearchPipeline(
   };
 
   try {
+    const ch = ideaChannel({ ideaId });
+
     // Step 1: Interpreter
     const interpreterStepId = uuid4();
-    publish({
-      channel: `idea:${ideaId}`,
-      topic: "research.progress",
-      data: {
-        status: "RUNNING",
-        message: "Interpreting your idea",
-        id: interpreterStepId,
-      },
+    publish(ch["research.progress"], {
+      status: "RUNNING",
+      message: "Interpreting your idea",
+      id: interpreterStepId,
     });
 
     console.log(`[Pipeline] Running InterpreterAgent for idea ${ideaId}`);
     outputs.INTERPRETER = await runInterpreterAgent(baseInput);
     await saveResearchPacket(ideaId, outputs.INTERPRETER);
 
-    publish({
-      channel: `idea:${ideaId}`,
-      topic: "research.progress",
-      data: {
-        status: "COMPLETED",
-        message: "Interpreted your idea",
-        id: interpreterStepId,
-      },
+    publish(ch["research.progress"], {
+      status: "COMPLETED",
+      message: "Interpreted your idea",
+      id: interpreterStepId,
     });
 
     // Step 2: Market Research (depends on Interpreter)
     const marketRsearchStepId = uuid4();
-    publish({
-      channel: `idea:${ideaId}`,
-      topic: "research.progress",
-      data: {
-        status: "RUNNING",
-        message: "Researching market size, competitors, and trends",
-        id: marketRsearchStepId,
-      },
+    publish(ch["research.progress"], {
+      status: "RUNNING",
+      message: "Researching market size, competitors, and trends",
+      id: marketRsearchStepId,
     });
     console.log(`[Pipeline] Running MarketResearchAgent for idea ${ideaId}`);
     outputs.MARKET_RESEARCH = await runMarketResearchAgent({
@@ -130,26 +122,18 @@ export async function runResearchPipeline(
       previousOutputs: outputs as Record<ResearchAgentType, AgentOutput>,
     });
     await saveResearchPacket(ideaId, outputs.MARKET_RESEARCH);
-    publish({
-      channel: `idea:${ideaId}`,
-      topic: "research.progress",
-      data: {
-        status: "COMPLETED",
-        message: "Researched market size, competitors, and trends",
-        marketRsearchStepId,
-      },
+    publish(ch["research.progress"], {
+      status: "COMPLETED",
+      message: "Researched market size, competitors, and trends",
+      id: marketRsearchStepId,
     });
 
     // Step 3: Trend Analysis (depends on Interpreter)
     const trendAnalysisStepId = uuid4();
-    publish({
-      channel: `idea:${ideaId}`,
-      topic: "research.progress",
-      data: {
-        status: "RUNNING",
-        message: "Analyzing trends and risks",
-        id: trendAnalysisStepId,
-      },
+    publish(ch["research.progress"], {
+      status: "RUNNING",
+      message: "Analyzing trends and risks",
+      id: trendAnalysisStepId,
     });
     console.log(`[Pipeline] Running TrendAnalysisAgent for idea ${ideaId}`);
     outputs.TREND_ANALYSIS = await runTrendAnalysisAgent({
@@ -157,26 +141,18 @@ export async function runResearchPipeline(
       previousOutputs: outputs as Record<ResearchAgentType, AgentOutput>,
     });
     await saveResearchPacket(ideaId, outputs.TREND_ANALYSIS);
-    publish({
-      channel: `idea:${ideaId}`,
-      topic: "research.progress",
-      data: {
-        status: "COMPLETED",
-        message: "Analyzed trends and risks",
-        id: trendAnalysisStepId,
-      },
+    publish(ch["research.progress"], {
+      status: "COMPLETED",
+      message: "Analyzed trends and risks",
+      id: trendAnalysisStepId,
     });
 
     // Step 4: Execution Friction (depends on Interpreter)
     const executionFrictionStepId = uuid4();
-    publish({
-      channel: `idea:${ideaId}`,
-      topic: "research.progress",
-      data: {
-        status: "RUNNING",
-        message: "Assessing execution risks",
-        id: executionFrictionStepId,
-      },
+    publish(ch["research.progress"], {
+      status: "RUNNING",
+      message: "Assessing execution risks",
+      id: executionFrictionStepId,
     });
     console.log(`[Pipeline] Running ExecutionFrictionAgent for idea ${ideaId}`);
     outputs.EXECUTION_FRICTION = await runExecutionFrictionAgent({
@@ -184,26 +160,18 @@ export async function runResearchPipeline(
       previousOutputs: outputs as Record<ResearchAgentType, AgentOutput>,
     });
     await saveResearchPacket(ideaId, outputs.EXECUTION_FRICTION);
-    publish({
-      channel: `idea:${ideaId}`,
-      topic: "research.progress",
-      data: {
-        status: "COMPLETED",
-        message: "Assessed execution risks",
-        id: executionFrictionStepId,
-      },
+    publish(ch["research.progress"], {
+      status: "COMPLETED",
+      message: "Assessed execution risks",
+      id: executionFrictionStepId,
     });
 
     // Step 5: Deep Research (depends on Interpreter)
     const deepResearchStepId = uuid4();
-    publish({
-      channel: `idea:${ideaId}`,
-      topic: "research.progress",
-      data: {
-        status: "RUNNING",
-        message: "Analyzing deep research",
-        id: deepResearchStepId,
-      },
+    publish(ch["research.progress"], {
+      status: "RUNNING",
+      message: "Analyzing deep research",
+      id: deepResearchStepId,
     });
     console.log(`[Pipeline] Running DeepResearchAgent for idea ${ideaId}`);
     const deepResearchOutput: DeepResearchOutput = await runDeepResearchAgent({
@@ -212,26 +180,18 @@ export async function runResearchPipeline(
     });
     outputs.DEEP_RESEARCH = deepResearchOutput;
     await saveResearchPacket(ideaId, deepResearchOutput);
-    publish({
-      channel: `idea:${ideaId}`,
-      topic: "research.progress",
-      data: {
-        status: "COMPLETED",
-        message: "Analyzed deep research",
-        id: deepResearchStepId,
-      },
+    publish(ch["research.progress"], {
+      status: "COMPLETED",
+      message: "Analyzed deep research",
+      id: deepResearchStepId,
     });
 
     // Step 6: Synthesis (depends on all previous)
     const synthesisStepId = uuid4();
-    publish({
-      channel: `idea:${ideaId}`,
-      topic: "research.progress",
-      data: {
-        status: "RUNNING",
-        message: "Synthesizing your idea",
-        id: synthesisStepId,
-      },
+    publish(ch["research.progress"], {
+      status: "RUNNING",
+      message: "Synthesizing your idea",
+      id: synthesisStepId,
     });
     console.log(`[Pipeline] Running SynthesisAgent for idea ${ideaId}`);
     outputs.SYNTHESIS = await runSynthesisAgent({
@@ -239,29 +199,45 @@ export async function runResearchPipeline(
       previousOutputs: outputs as Record<ResearchAgentType, AgentOutput>,
     });
     await saveResearchPacket(ideaId, outputs.SYNTHESIS);
-    publish({
-      channel: `idea:${ideaId}`,
-      topic: "research.progress",
-      data: {
-        status: "COMPLETED",
-        message: "Synthesized your idea",
-        id: synthesisStepId,
-      },
+    publish(ch["research.progress"], {
+      status: "COMPLETED",
+      message: "Synthesized your idea",
+      id: synthesisStepId,
     });
 
-    // Save scores
-    const synthesis = outputs.SYNTHESIS.content as Synthesis;
+    // Save scores - handle both old (nested) and new (flat) schema formats
+    const synthesis = outputs.SYNTHESIS.content as any;
     await db.ideaScore.create({
       data: {
         ideaId,
-        clarityScore: synthesis.scores.clarity.score,
-        clarityExplanation: synthesis.scores.clarity.explanation,
-        marketScore: synthesis.scores.marketReadiness.score,
-        marketExplanation: synthesis.scores.marketReadiness.explanation,
-        executionScore: synthesis.scores.executionFeasibility.score,
-        executionExplanation: synthesis.scores.executionFeasibility.explanation,
-        overallScore: synthesis.scores.overall.score,
-        overallExplanation: synthesis.scores.overall.explanation,
+        clarityScore:
+          synthesis.clarityScore ?? synthesis.scores?.clarity?.score ?? 0,
+        clarityExplanation:
+          synthesis.clarityExplanation ??
+          synthesis.scores?.clarity?.explanation ??
+          "",
+        marketScore:
+          synthesis.marketScore ??
+          synthesis.scores?.marketReadiness?.score ??
+          0,
+        marketExplanation:
+          synthesis.marketExplanation ??
+          synthesis.scores?.marketReadiness?.explanation ??
+          "",
+        executionScore:
+          synthesis.executionScore ??
+          synthesis.scores?.executionFeasibility?.score ??
+          0,
+        executionExplanation:
+          synthesis.executionExplanation ??
+          synthesis.scores?.executionFeasibility?.explanation ??
+          "",
+        overallScore:
+          synthesis.overallScore ?? synthesis.scores?.overall?.score ?? 0,
+        overallExplanation:
+          synthesis.overallExplanation ??
+          synthesis.scores?.overall?.explanation ??
+          "",
       },
     });
 
@@ -273,8 +249,8 @@ export async function runResearchPipeline(
     await db.idea.update({
       where: { id: ideaId },
       data: {
-        title: interpretedIdea.title,
-        summary: interpretedIdea.summary,
+        title: interpretedIdea?.title || "Untitled",
+        summary: interpretedIdea?.summary || "",
         status: "RESEARCHED",
         researchedAt: new Date(),
       },

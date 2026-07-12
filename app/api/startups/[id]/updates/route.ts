@@ -3,6 +3,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { inngest } from "@/lib/inngest/client";
+import { checkStartupAccess } from "@/lib/startup-permissions";
 import {
   getWeekEndForDate,
   getWeekStartForDate,
@@ -22,8 +23,14 @@ export async function GET(
 
   const { id } = await params;
 
-  const startup = await db.startup.findFirst({
-    where: { OR: [{ id }, { slug: id }], userId: session.user.id },
+  const access = await checkStartupAccess(id, "view_startup");
+
+  if (!access.hasAccess || !access.startupId) {
+    return NextResponse.json({ error: "Access denied" }, { status: 403 });
+  }
+
+  const startup = await db.startup.findUnique({
+    where: { id: access.startupId },
   });
 
   if (!startup) {
@@ -31,8 +38,8 @@ export async function GET(
   }
 
   const { searchParams } = new URL(_request.url);
-  const page = parseInt(searchParams.get("page") || "1");
-  const limit = parseInt(searchParams.get("limit") || "10");
+  const page = parseInt(searchParams.get("page") || "1", 10);
+  const limit = parseInt(searchParams.get("limit") || "10", 10);
   const skip = (page - 1) * limit;
 
   const [updates, total] = await Promise.all([
@@ -78,8 +85,14 @@ export async function POST(
     );
   }
 
-  const startup = await db.startup.findFirst({
-    where: { OR: [{ id }, { slug: id }], userId: session.user.id },
+  const access = await checkStartupAccess(id, "submit_weekly_update");
+
+  if (!access.hasAccess || !access.startupId) {
+    return NextResponse.json({ error: "Access denied" }, { status: 403 });
+  }
+
+  const startup = await db.startup.findUnique({
+    where: { id: access.startupId },
   });
 
   if (!startup) {
@@ -131,6 +144,12 @@ export async function POST(
   if (lastUpdate) {
     previousMetricValue = lastUpdate.primaryMetricValue;
   }
+
+  // Fetch latest update BEFORE creating new one (for streak logic)
+  const latestUpdate = await db.weeklyUpdate.findFirst({
+    where: { startupId: startup.id },
+    orderBy: { weekStart: "desc" },
+  });
 
   const metricDelta =
     previousMetricValue !== null
@@ -196,12 +215,86 @@ export async function POST(
     },
   });
 
+  // Update streak directly via DB (avoiding auth issues with fetch)
+  try {
+    const now = new Date();
+
+    // Get current streak
+    const streak = await db.startupStreak.findUnique({
+      where: { startupId: startup.id },
+    });
+
+    // Use the latestUpdate fetched BEFORE create (for proper idempotency)
+    // If no previous update exists, this is the first streak
+    if (!latestUpdate) {
+      // First streak ever
+      await db.startupStreak.create({
+        data: {
+          startupId: startup.id,
+          currentStreak: 1,
+          longestStreak: 1,
+          lastUpdateWeek: now,
+          streakStartDate: now,
+        },
+      });
+    } else if (!streak) {
+      // Streak record doesn't exist but updates do - create it
+      await db.startupStreak.create({
+        data: {
+          startupId: startup.id,
+          currentStreak: 1,
+          longestStreak: 1,
+          lastUpdateWeek: now,
+          streakStartDate: now,
+        },
+      });
+    } else {
+      // Check if this is a consecutive week based on startup creation date
+      const submittedWeekNumber = getWeeksSinceCreation(startup.createdAt);
+      const lastWeekNumber = latestUpdate.weekNumber;
+
+      if (submittedWeekNumber === lastWeekNumber + 1) {
+        // Consecutive week - increment streak
+        const newStreak = streak.currentStreak + 1;
+        await db.startupStreak.update({
+          where: { startupId: startup.id },
+          data: {
+            currentStreak: newStreak,
+            longestStreak: Math.max(streak.longestStreak, newStreak),
+            lastUpdateWeek: now,
+          },
+        });
+      } else if (submittedWeekNumber > lastWeekNumber + 1) {
+        // Missed week(s) - streak broken, start fresh
+        await db.startupStreak.update({
+          where: { startupId: startup.id },
+          data: {
+            currentStreak: 1,
+            lastUpdateWeek: now,
+            streakStartDate: now,
+          },
+        });
+      }
+      // If submittedWeekNumber <= lastWeekNumber, it's a duplicate - skip streak update
+    }
+  } catch (streakError) {
+    console.error("Failed to update streak:", streakError);
+  }
+
   await inngest.send({
     name: "weeklyUpdate.created",
     data: {
       updateId: update.id,
       startupId: startup.id,
       userId: session.user.id,
+    },
+  });
+
+  await inngest.send({
+    name: "startup.weeklyUpdate.followerNotification",
+    data: {
+      updateId: update.id,
+      startupId: startup.id,
     },
   });
 
@@ -230,11 +323,17 @@ export async function PATCH(
     );
   }
 
-  const startup = await db.startup.findFirst({
-    where: {
-      OR: [{ id: startupIdOrSlug }, { slug: startupIdOrSlug }],
-      userId: session.user.id,
-    },
+  const access = await checkStartupAccess(
+    startupIdOrSlug,
+    "submit_weekly_update",
+  );
+
+  if (!access.hasAccess || !access.startupId) {
+    return NextResponse.json({ error: "Access denied" }, { status: 403 });
+  }
+
+  const startup = await db.startup.findUnique({
+    where: { id: access.startupId },
   });
 
   if (!startup) {
@@ -293,9 +392,27 @@ export async function PATCH(
   const updated = await db.weeklyUpdate.update({
     where: { id: updateId },
     data: {
+      ...(updateData.isLaunched !== undefined && {
+        isLaunched: updateData.isLaunched,
+      }),
+      ...(updateData.weeksToLaunch !== undefined && {
+        weeksToLaunch: updateData.weeksToLaunch,
+      }),
+      ...(updateData.primaryMetricType !== undefined && {
+        primaryMetricType: updateData.primaryMetricType,
+      }),
       ...(updateData.primaryMetricValue !== undefined && {
         primaryMetricValue: updateData.primaryMetricValue,
         primaryMetricDelta: metricDelta,
+      }),
+      ...(updateData.metricPeriod !== undefined && {
+        metricPeriod: updateData.metricPeriod,
+      }),
+      ...(updateData.metricFormat !== undefined && {
+        metricFormat: updateData.metricFormat,
+      }),
+      ...(updateData.customMetricName !== undefined && {
+        customMetricName: updateData.customMetricName,
       }),
       ...(updateData.usersTalkedTo !== undefined && {
         usersTalkedTo: updateData.usersTalkedTo,
@@ -314,6 +431,12 @@ export async function PATCH(
       }),
       ...(updateData.additionalMetrics !== undefined && {
         additionalMetrics: updateData.additionalMetrics,
+      }),
+      ...(updateData.previousGoalsReview !== undefined && {
+        previousGoalsReview: updateData.previousGoalsReview,
+      }),
+      ...(updateData.goalsCompletionRate !== undefined && {
+        goalsCompletionRate: updateData.goalsCompletionRate,
       }),
       ...(updateData.goals !== undefined && {
         goals: {
@@ -334,6 +457,27 @@ export async function PATCH(
     },
     include: { goals: true },
   });
+
+  // Sync startup-level metric state if primary metric changed
+  if (
+    updateData.primaryMetricType !== undefined ||
+    updateData.primaryMetricValue !== undefined
+  ) {
+    await db.startup.update({
+      where: { id: startup.id },
+      data: {
+        ...(updateData.isLaunched !== undefined && {
+          isLaunched: updateData.isLaunched,
+        }),
+        ...(updateData.primaryMetricType !== undefined && {
+          primaryMetricType: updateData.primaryMetricType,
+        }),
+        ...(updateData.primaryMetricValue !== undefined && {
+          primaryMetricValue: updateData.primaryMetricValue,
+        }),
+      },
+    });
+  }
 
   return NextResponse.json(updated);
 }

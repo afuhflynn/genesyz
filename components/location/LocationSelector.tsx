@@ -9,7 +9,7 @@ import {
   type IState,
 } from "country-state-city";
 import { ChevronLeft, Globe, MapPin, Search } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -36,6 +36,7 @@ interface LocationSelectorProps {
   onChange: (location: LocationContext | null) => void;
   disabled?: boolean;
   id?: string;
+  canEdit?: boolean;
 }
 
 type PickerStep = "country" | "region" | "city";
@@ -49,6 +50,10 @@ const CONTINENTS = [
   { code: "OC", name: "Oceania" },
   { code: "SA", name: "South America" },
 ] as const;
+
+const POPULAR_COUNTRIES = [
+  "US", "GB", "DE", "CA", "AU", "IN", "SG", "AE", "BR", "NL", "FR", "JP",
+];
 
 function isoToFlag(isoCode?: string): string {
   if (!isoCode || isoCode.length !== 2) return "";
@@ -64,9 +69,12 @@ function formatLocationDisplay(value?: LocationContext | null): string {
   if (!value) return "Select location...";
   if (value.isGlobal) return "Global";
 
-  const parts = [value.city, value.region, value.country, value.continent].filter(
-    Boolean,
-  );
+  const parts = [
+    value.city,
+    value.region,
+    value.country,
+    value.continent,
+  ].filter(Boolean);
   return parts.length > 0 ? parts.join(", ") : "Select location...";
 }
 
@@ -90,12 +98,18 @@ export function LocationSelector({
   onChange,
   disabled = false,
   id,
+  canEdit = true,
 }: LocationSelectorProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [step, setStep] = useState<PickerStep>("country");
   const [selectedCountry, setSelectedCountry] = useState<ICountry | null>(null);
   const [selectedRegion, setSelectedRegion] = useState<IState | null>(null);
+  const [freeform, setFreeform] = useState("");
+  const [showFreeform, setShowFreeform] = useState(false);
+
+  const listRef = useRef<HTMLDivElement>(null);
+  const [focusedIndex, setFocusedIndex] = useState(-1);
 
   const allCountries = useMemo(
     () =>
@@ -105,7 +119,7 @@ export function LocationSelector({
     [],
   );
 
-  const countries = useMemo(() => {
+  const matchedCountries = useMemo(() => {
     const query = search.trim().toLowerCase();
     if (!query) return allCountries;
 
@@ -115,6 +129,30 @@ export function LocationSelector({
         country.isoCode.toLowerCase().includes(query),
     );
   }, [allCountries, search]);
+
+  const sortedCountries = useMemo(() => {
+    const query = search.trim().toLowerCase();
+
+    if (!query) {
+      const popular = allCountries.filter((c) =>
+        POPULAR_COUNTRIES.includes(c.isoCode),
+      );
+      const rest = allCountries.filter(
+        (c) => !POPULAR_COUNTRIES.includes(c.isoCode),
+      );
+      return { popular, rest };
+    }
+
+    const startsWith = matchedCountries.filter((c) =>
+      c.name.toLowerCase().startsWith(query),
+    );
+    const includes = matchedCountries.filter(
+      (c) =>
+        !c.name.toLowerCase().startsWith(query) &&
+        c.name.toLowerCase().includes(query),
+    );
+    return { popular: [], rest: [...startsWith, ...includes] };
+  }, [allCountries, matchedCountries, search]);
 
   const regions = useMemo(() => {
     if (!selectedCountry) return [];
@@ -140,14 +178,23 @@ export function LocationSelector({
     const query = search.trim().toLowerCase();
     if (!query) return list;
 
-    return list.filter((city) => city.name.toLowerCase().includes(query));
+    return list?.filter((city) => city.name.toLowerCase().includes(query));
   }, [search, selectedCountry, selectedRegion]);
+
+  const currentItems = useMemo(() => {
+    if (step === "country") return sortedCountries.rest.length > 0 ? sortedCountries.rest : sortedCountries.popular;
+    if (step === "region") return regions;
+    return cities || [];
+  }, [step, sortedCountries, regions, cities]);
 
   const resetPicker = () => {
     setStep("country");
     setSearch("");
     setSelectedCountry(null);
     setSelectedRegion(null);
+    setFreeform("");
+    setShowFreeform(false);
+    setFocusedIndex(-1);
   };
 
   const closePicker = () => {
@@ -173,6 +220,7 @@ export function LocationSelector({
     setSelectedCountry(country);
     setSelectedRegion(null);
     setSearch("");
+    setFocusedIndex(-1);
 
     const countryRegions = State.getStatesOfCountry(country.isoCode);
     if (countryRegions.length > 0) {
@@ -181,7 +229,7 @@ export function LocationSelector({
     }
 
     const countryCities = City.getCitiesOfCountry(country.isoCode);
-    if (countryCities.length > 0) {
+    if (countryCities?.length! > 0) {
       setStep("city");
       return;
     }
@@ -195,6 +243,7 @@ export function LocationSelector({
 
     setSelectedRegion(region);
     setSearch("");
+    setFocusedIndex(-1);
 
     const stateCities = City.getCitiesOfState(
       selectedCountry.isoCode,
@@ -238,6 +287,7 @@ export function LocationSelector({
 
   const handleBack = () => {
     setSearch("");
+    setFocusedIndex(-1);
 
     if (step === "city") {
       if (selectedRegion) {
@@ -256,7 +306,49 @@ export function LocationSelector({
     }
   };
 
+  const handleFreeformSubmit = () => {
+    if (!freeform.trim()) return;
+    onChange({
+      country: freeform.trim(),
+      countryCode: "OTHER",
+      isGlobal: false,
+    });
+    closePicker();
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    const totalItems = currentItems.length;
+    if (totalItems === 0) return;
+
+    switch (e.key) {
+      case "ArrowDown":
+        e.preventDefault();
+        setFocusedIndex((prev) => (prev < totalItems - 1 ? prev + 1 : 0));
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        setFocusedIndex((prev) => (prev > 0 ? prev - 1 : totalItems - 1));
+        break;
+      case "Enter":
+        e.preventDefault();
+        if (focusedIndex >= 0 && focusedIndex < totalItems) {
+          const item = currentItems[focusedIndex];
+          if (step === "country") handleSelectCountry(item as ICountry);
+          else if (step === "region") handleSelectRegion(item as IState);
+          else if (step === "city") handleSelectCity(item as ICity);
+        }
+        break;
+    }
+  };
+
   const displayValue = formatLocationDisplay(value);
+
+  const breadcrumb = (() => {
+    if (step === "country" || !selectedCountry) return null;
+    const parts = [selectedCountry.name];
+    if (step === "city" && selectedRegion) parts.push(selectedRegion.name);
+    return parts.join(" › ");
+  })();
 
   return (
     <Popover
@@ -275,7 +367,7 @@ export function LocationSelector({
           role="combobox"
           aria-expanded={open}
           className="w-full justify-between"
-          disabled={disabled}
+          disabled={disabled || !canEdit}
         >
           <span className="flex items-center gap-2 truncate">
             {value?.isGlobal ? (
@@ -291,7 +383,7 @@ export function LocationSelector({
           </span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[340px] p-0" align="start">
+      <PopoverContent className="w-[min(340px,calc(100vw-2rem))] p-0" align="start">
         <div className="p-2 border-b space-y-2">
           {step !== "country" && (
             <button
@@ -304,26 +396,59 @@ export function LocationSelector({
             </button>
           )}
 
-          <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder={
-                step === "country"
-                  ? "Search countries..."
-                  : step === "region"
-                    ? "Search regions/states..."
-                    : "Search cities..."
-              }
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="h-9 pl-8"
-            />
-          </div>
+          {breadcrumb && (
+            <div className="text-xs text-muted-foreground px-1">
+              {breadcrumb}
+            </div>
+          )}
+
+          {showFreeform ? (
+            <div className="flex gap-2">
+              <Input
+                placeholder="Type your location..."
+                value={freeform}
+                onChange={(e) => setFreeform(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleFreeformSubmit();
+                }}
+                className="h-9"
+                autoFocus
+              />
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleFreeformSubmit}
+                disabled={!freeform.trim()}
+              >
+                Set
+              </Button>
+            </div>
+          ) : (
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder={
+                  step === "country"
+                    ? "Search countries..."
+                    : step === "region"
+                      ? "Search regions/states..."
+                      : "Search cities..."
+                }
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setFocusedIndex(-1);
+                }}
+                onKeyDown={handleKeyDown}
+                className="h-9 pl-8"
+              />
+            </div>
+          )}
         </div>
 
-        <ScrollArea className="h-[320px]">
+        <ScrollArea className="h-[320px]" ref={listRef}>
           <div className="p-1">
-            {step === "country" && (
+            {step === "country" && !showFreeform && (
               <>
                 <button
                   type="button"
@@ -336,50 +461,75 @@ export function LocationSelector({
                   <Globe className="h-4 w-4 shrink-0 text-muted-foreground" />
                   <span className="flex-1 text-left">Global</span>
                   {value?.isGlobal && (
-                    <span className="text-xs text-primary font-medium">Selected</span>
+                    <span className="text-xs text-primary font-medium">
+                      Selected
+                    </span>
                   )}
                 </button>
 
                 <div className="my-1 h-px bg-border" />
 
-                <p className="px-2 py-1 text-xs text-muted-foreground uppercase tracking-wide">
-                  Continents
-                </p>
-                {CONTINENTS.map((continent) => (
-                  <button
-                    type="button"
-                    key={continent.code}
-                    onClick={() => handleSelectContinent(continent)}
-                    className={cn(
-                      "w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground transition-colors",
-                      value?.continentCode === continent.code &&
-                        !value?.country &&
-                        "bg-accent",
-                    )}
-                  >
-                    <span className="flex-1 text-left">{continent.name}</span>
-                    {value?.continentCode === continent.code && !value?.country && (
-                      <span className="text-xs text-primary font-medium">Selected</span>
-                    )}
-                  </button>
-                ))}
+                <button
+                  type="button"
+                  onClick={() => setShowFreeform(true)}
+                  className="w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                >
+                  <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <span className="flex-1 text-left">Can&apos;t find your location?</span>
+                </button>
 
                 <div className="my-1 h-px bg-border" />
+
+                {sortedCountries.popular.length > 0 && !search && (
+                  <>
+                    <p className="px-2 py-1 text-xs text-muted-foreground uppercase tracking-wide">
+                      Popular
+                    </p>
+                    {sortedCountries.popular.map((country) => (
+                      <button
+                        type="button"
+                        key={country.isoCode}
+                        onClick={() => handleSelectCountry(country)}
+                        className={cn(
+                          "w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground transition-colors",
+                          value?.countryCode === country.isoCode && "bg-accent",
+                        )}
+                      >
+                        <span className="text-base leading-none">
+                          {country.flag || isoToFlag(country.isoCode)}
+                        </span>
+                        <span className="flex-1 text-left">{country.name}</span>
+                        {value?.countryCode === country.isoCode &&
+                          !value?.region &&
+                          !value?.city && (
+                            <span className="text-xs text-primary font-medium">
+                              Selected
+                            </span>
+                          )}
+                      </button>
+                    ))}
+                    <div className="my-1 h-px bg-border" />
+                  </>
+                )}
+
                 <p className="px-2 py-1 text-xs text-muted-foreground uppercase tracking-wide">
-                  Countries
+                  {search ? "Search Results" : "All Countries"}
                 </p>
-                {countries.length === 0 ? (
+                {sortedCountries.rest.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-4">
                     No countries found
                   </p>
                 ) : (
-                  countries.map((country) => (
+                  sortedCountries.rest.map((country, idx) => (
                     <button
                       type="button"
                       key={country.isoCode}
                       onClick={() => handleSelectCountry(country)}
                       className={cn(
-                        "w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground transition-colors",
+                        "w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-sm transition-colors",
+                        focusedIndex === idx
+                          ? "bg-accent text-accent-foreground"
+                          : "hover:bg-accent hover:text-accent-foreground",
                         value?.countryCode === country.isoCode && "bg-accent",
                       )}
                     >
@@ -387,21 +537,21 @@ export function LocationSelector({
                         {country.flag || isoToFlag(country.isoCode)}
                       </span>
                       <span className="flex-1 text-left">{country.name}</span>
-                      {value?.countryCode === country.isoCode && !value?.region && !value?.city && (
-                        <span className="text-xs text-primary font-medium">Selected</span>
-                      )}
+                      {value?.countryCode === country.isoCode &&
+                        !value?.region &&
+                        !value?.city && (
+                          <span className="text-xs text-primary font-medium">
+                            Selected
+                          </span>
+                        )}
                     </button>
                   ))
                 )}
               </>
             )}
 
-            {step === "region" && selectedCountry && (
+            {step === "region" && selectedCountry && !showFreeform && (
               <>
-                <div className="px-2 py-2 text-xs text-muted-foreground">
-                  {selectedCountry.name}
-                </div>
-
                 <button
                   type="button"
                   onClick={handleUseCountryOnly}
@@ -417,12 +567,17 @@ export function LocationSelector({
                     No regions or states found
                   </p>
                 ) : (
-                  regions.map((region) => (
+                  regions.map((region, idx) => (
                     <button
                       type="button"
                       key={region.isoCode}
                       onClick={() => handleSelectRegion(region)}
-                      className="w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                      className={cn(
+                        "w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-sm transition-colors",
+                        focusedIndex === idx
+                          ? "bg-accent text-accent-foreground"
+                          : "hover:bg-accent hover:text-accent-foreground",
+                      )}
                     >
                       <span className="flex-1 text-left">{region.name}</span>
                     </button>
@@ -431,17 +586,13 @@ export function LocationSelector({
               </>
             )}
 
-            {step === "city" && selectedCountry && (
+            {step === "city" && selectedCountry && !showFreeform && (
               <>
-                <div className="px-2 py-2 text-xs text-muted-foreground">
-                  {selectedRegion
-                    ? `${selectedRegion.name}, ${selectedCountry.name}`
-                    : selectedCountry.name}
-                </div>
-
                 <button
                   type="button"
-                  onClick={selectedRegion ? handleUseRegionOnly : handleUseCountryOnly}
+                  onClick={
+                    selectedRegion ? handleUseRegionOnly : handleUseCountryOnly
+                  }
                   className="w-full text-left px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground"
                 >
                   {selectedRegion ? "Use region only" : "Use country only"}
@@ -449,23 +600,34 @@ export function LocationSelector({
 
                 <div className="my-1 h-px bg-border" />
 
-                {cities.length === 0 ? (
+                {cities?.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-4">
                     No cities found
                   </p>
                 ) : (
-                  cities.map((city) => (
+                  cities?.map((city, idx) => (
                     <button
                       type="button"
                       key={`${city.name}-${city.latitude}-${city.longitude}`}
                       onClick={() => handleSelectCity(city)}
-                      className="w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                      className={cn(
+                        "w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-sm transition-colors",
+                        focusedIndex === idx
+                          ? "bg-accent text-accent-foreground"
+                          : "hover:bg-accent hover:text-accent-foreground",
+                      )}
                     >
                       <span className="flex-1 text-left">{city.name}</span>
                     </button>
                   ))
                 )}
               </>
+            )}
+
+            {showFreeform && (
+              <p className="text-sm text-muted-foreground text-center py-4">
+                Type your location above and click Set
+              </p>
             )}
           </div>
         </ScrollArea>

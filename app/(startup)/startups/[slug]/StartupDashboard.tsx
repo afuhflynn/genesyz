@@ -3,9 +3,11 @@
 import { format } from "date-fns";
 import {
   ArrowRight,
+  Bot,
   Calendar,
   Edit3,
   HeartHandshake,
+  MessageSquare,
   Plus,
   School,
   Target,
