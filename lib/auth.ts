@@ -41,6 +41,29 @@ export const auth = betterAuth({
       });
     },
   },
+  emailVerification: {
+    sendOnSignUp: true,
+    expiresIn: 60 * 60 * 24,
+    async sendVerificationEmail({ user, url, token }) {
+      await db.user.update({
+        where: { id: user.id },
+        data: {
+          verificationCode: token,
+          verificationExpiry: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        },
+      });
+
+      await inngest.send({
+        name: "email.send.verification",
+        data: {
+          email: user.email,
+          name: user.name || user.email,
+          code: token,
+          url,
+        },
+      });
+    },
+  },
   socialProviders: {
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -79,17 +102,13 @@ export const auth = betterAuth({
             .replace(/\s+/g, "-")
             .replace(/[^a-z0-9-]/g, "")
             .slice(0, 60);
-          const slug =
-            baseSlug ||
-            `user-${user.id.slice(0, 8)}`;
+          const slug = baseSlug || `user-${user.id.slice(0, 8)}`;
 
           const existing = await db.organization.findUnique({
             where: { slug },
           });
 
-          const finalSlug = existing
-            ? `${slug}-${user.id.slice(0, 6)}`
-            : slug;
+          const finalSlug = existing ? `${slug}-${user.id.slice(0, 6)}` : slug;
 
           await db.organization.create({
             data: {

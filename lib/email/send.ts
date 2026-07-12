@@ -18,6 +18,22 @@ function applyEmailTheme(html: string): string {
     .replace(/rgba\(15, 23, 42, 0\.2\)/gi, "rgba(15, 23, 42, 0.2)");
 }
 
+export function resolveVerificationCodeDisplay(
+  code?: string,
+  fallback?: string,
+): string {
+  const normalizedCode = code?.trim();
+  if (normalizedCode && normalizedCode.length >= 4) {
+    return normalizedCode;
+  }
+
+  if (fallback?.trim()) {
+    return fallback.trim();
+  }
+
+  return "Use the verify button below";
+}
+
 // ===========================================
 // Shared Premium Layout
 // ===========================================
@@ -747,11 +763,12 @@ export async function sendResearchCompleteEmail(options: {
 export async function sendVerificationEmail(options: {
   to: string;
   userName: string;
-  code: string;
+  code?: string;
   url: string;
 }): Promise<boolean> {
   const { to, userName, code, url } = options;
   const branding = getEmailBranding();
+  const displayCode = resolveVerificationCodeDisplay(code, url);
 
   const contentHtml = `
     <h2 style="font-size: 22px; font-weight: 800; color: ${branding.secondaryColor}; margin-bottom: 16px; text-align: center;">
@@ -764,7 +781,7 @@ export async function sendVerificationEmail(options: {
 
     <div style="background: ${branding.backgroundColor}; border-radius: 16px; padding: 32px; margin-bottom: 24px; text-align: center; border: 1px solid ${branding.borderColor};">
       <div style="font-size: 36px; font-weight: 800; letter-spacing: 8px; color: ${branding.primaryColor}; margin-bottom: 8px;">
-        ${code}
+        ${displayCode}
       </div>
       <p style="font-size: 12px; color: #94a3b8; margin: 0; text-transform: uppercase; font-weight: 700;">
         Verification Code
@@ -791,7 +808,7 @@ export async function sendVerificationEmail(options: {
     to,
     subject: "Verify your Genesyz account",
     html,
-    text: `Hi ${userName}, your verification code is: ${code}. Or verify here: ${url}`,
+    text: `Hi ${userName}, your verification code is: ${displayCode}. Or verify here: ${url}`,
   });
 }
 

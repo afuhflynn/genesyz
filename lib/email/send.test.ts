@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { getEmailBranding, renderPremiumEmail } from "./send";
+import {
+  getEmailBranding,
+  renderPremiumEmail,
+  resolveVerificationCodeDisplay,
+} from "./send";
 
 describe("email branding", () => {
   it("uses a consistent branded logo identifier", () => {
@@ -19,5 +23,11 @@ describe("email branding", () => {
     expect(html).toContain("Genesyz");
     expect(html).toContain("cid:genesyz-logo");
     expect(html).toContain("#f59e0b");
+  });
+
+  it("falls back to the token when an explicit verification code is missing", () => {
+    expect(resolveVerificationCodeDisplay(undefined, "abc123token")).toBe(
+      "abc123token",
+    );
   });
 });
