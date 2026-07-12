@@ -49,6 +49,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
       targetMarket: true,
       website: true,
       location: true,
+      locationContext: true,
       createdAt: true,
       idea: {
         select: {
@@ -122,9 +123,9 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
 
         <TabsContent value="profile">
           <StartupProfileForm
-            ideaId={startup.idea.id}
-            ideaTitle={startup.idea.title || undefined}
-            ideaSummary={startup.idea.summary || undefined}
+            ideaId={startup.idea?.id}
+            ideaTitle={startup.idea?.title || undefined}
+            ideaSummary={startup.idea?.summary || undefined}
             existingStartup={{
               id: startup.id,
               name: startup.name,
@@ -136,6 +137,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
               targetMarket: startup.targetMarket,
               website: startup.website,
               location: startup.location,
+              locationContext: startup.locationContext as Record<string, unknown> | null,
             }}
             canEdit={canEditProfile}
           />

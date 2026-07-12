@@ -16,12 +16,9 @@ import {
   UserIcon,
   ZapIcon,
 } from "lucide-react";
-import { useEffect, useState } from "react";
-import {
-  Conversation,
-  ConversationContent,
-  ConversationScrollButton,
-} from "../ai-elements/conversation";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { Conversation, ConversationContent, ConversationScrollButton } from "../ai-elements/conversation";
 import {
   Message,
   MessageAction,
@@ -42,63 +39,171 @@ import {
   ReasoningContent,
   ReasoningTrigger,
 } from "../ai-elements/reasoning";
-import {
-  Tool,
-  ToolContent,
-  ToolHeader,
-  ToolInput,
-  ToolOutput,
-} from "../ai-elements/tool";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarRail,
+  SidebarTrigger,
+  SidebarInset,
+} from "@/components/ui/sidebar";
 import {
   useStartupConversations,
   useStartupConversation,
   useDeleteStartupConversation,
+  useCreateStartupConversation,
 } from "@/hooks";
-import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { useQueryStates } from "nuqs";
-import { searchParamsSchema } from "@/nuqs";
 
 interface VCCoachProps {
   startupId: string;
   startupName: string;
+  conversationId?: string;
 }
 
-export function VCCoach({ startupId, startupName }: VCCoachProps) {
-  // const [selectedConversationId, setSelectedConversationId] = useState<
-  //   string | null
-  // >(null);
-  const [params, setParams] = useQueryStates(searchParamsSchema);
+export function VCCoach({ startupId, startupName, conversationId }: VCCoachProps) {
   const [input, setInput] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [activeConvId, setActiveConvId] = useState<string | null>(conversationId ?? null);
+  const router = useRouter();
+  const params = useParams();
+  const searchParams = useSearchParams();
+  const slug = params.slug as string;
+  const hasAutoSent = useRef(false);
 
-  const { data: conversations, refetch: refetchList } =
-    useStartupConversations(startupId);
-  const { data: conversationData, isLoading: isLoadingConversation } =
-    useStartupConversation(startupId, params.conversationId || "");
+  const { data: conversations, refetch: refetchList } = useStartupConversations(startupId);
+  const { data: conversationData } = useStartupConversation(
+    startupId,
+    activeConvId || "",
+  );
   const deleteConversation = useDeleteStartupConversation();
+  const createConversation = useCreateStartupConversation();
 
   const { messages, sendMessage, status, setMessages } = useChat({
-    id: params.conversationId || undefined,
+    id: activeConvId || undefined,
     transport: new DefaultChatTransport({
       api: `/api/startups/${startupId}/chat`,
       body: {
-        conversationId: params.conversationId,
+        conversationId: activeConvId,
       },
       fetch: async (url: RequestInfo | URL, init: RequestInit | undefined) => {
         const response = await fetch(url, init);
         const convId = response.headers.get("x-conversation-id");
-        if (convId && !params.conversationId) {
-          setParams({ conversationId: convId });
+        if (convId && activeConvId !== convId) {
+          setActiveConvId(convId);
           refetchList();
         }
         return response;
       },
     }),
   });
+
+  const isLoading = status === "streaming";
+
+  const loadMessagesFromDb = useCallback((msgs: any[]) => {
+    const mappedMessages = msgs.map((m: any) => {
+      const parts: any[] = [{ type: "text", text: m.content }];
+
+      if (m.toolCalls && Array.isArray(m.toolCalls)) {
+        for (const tc of m.toolCalls) {
+          parts.push({
+            type: "tool-call",
+            toolCallId: tc.toolCallId || tc.id,
+            toolName: tc.toolName || tc.function?.name,
+            args: tc.args || JSON.parse(tc.function?.arguments || "{}"),
+            state: "call-completed",
+          });
+        }
+      }
+
+      if (m.toolResults && Array.isArray(m.toolResults)) {
+        for (const tr of m.toolResults) {
+          parts.push({
+            type: "tool-result",
+            toolCallId: tr.toolCallId,
+            toolName: tr.toolName,
+            result: tr.result,
+            isError: false,
+          });
+        }
+      }
+
+      return {
+        id: m.id,
+        role: m.role as any,
+        parts,
+        createdAt: new Date(m.createdAt),
+      };
+    });
+    setMessages(mappedMessages as any);
+  }, [setMessages]);
+
+  useEffect(() => {
+    if (conversationData?.data?.messages) {
+      loadMessagesFromDb(conversationData.data.messages);
+    } else if (!activeConvId) {
+      setMessages([]);
+    }
+  }, [conversationData, activeConvId, loadMessagesFromDb, setMessages]);
+
+  useEffect(() => {
+    setActiveConvId(conversationId ?? null);
+  }, [conversationId]);
+
+  useEffect(() => {
+    const initialQuestion = searchParams.get("q");
+    if (initialQuestion && activeConvId && !hasAutoSent.current) {
+      hasAutoSent.current = true;
+      const timer = setTimeout(() => sendMessage({ text: initialQuestion }), 100);
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams, activeConvId, sendMessage]);
+
+  const handleNewChat = () => {
+    router.push(`/startups/${slug}/chat`);
+  };
+
+  const handleSelectConversation = (id: string) => {
+    if (activeConvId !== id) {
+      router.push(`/startups/${slug}/chat/${id}`);
+    }
+  };
+
+  const handleDelete = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    if (confirm("Delete this conversation?")) {
+      await deleteConversation.mutateAsync({ startupId, conversationId: id });
+      if (activeConvId === id) {
+        handleNewChat();
+      }
+    }
+  };
+
+  const handleSendMessage = async (text: string) => {
+    if (!activeConvId) {
+      try {
+        const result = await createConversation.mutateAsync({
+          startupId,
+          title: text.substring(0, 50) + (text.length > 50 ? "..." : ""),
+        });
+        const newId = result?.data?.id;
+        if (newId) {
+          router.replace(`/startups/${slug}/chat/${newId}?q=${encodeURIComponent(text)}`);
+        }
+      } catch {
+        toast.error("Failed to create conversation");
+      }
+      return;
+    }
+    sendMessage({ text });
+  };
 
   const handleCopy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -107,155 +212,89 @@ export function VCCoach({ startupId, startupName }: VCCoachProps) {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  // Load conversation history when switching sessions
-  useEffect(() => {
-    if (conversationData?.data?.messages) {
-      const mappedMessages = conversationData.data.messages.map((m: any) => {
-        const parts: any[] = [{ type: "text", text: m.content }];
-
-        // If message has tool calls/results, we should ideally map them back
-        // For now, simple text mapping is used, but we can extend for full tool support
-        if (m.toolCalls && Array.isArray(m.toolCalls)) {
-          for (const tc of m.toolCalls) {
-            parts.push({
-              type: "tool-call",
-              toolCallId: tc.toolCallId || tc.id,
-              toolName: tc.toolName || tc.function?.name,
-              args: tc.args || JSON.parse(tc.function?.arguments || "{}"),
-              state: "call-completed",
-            });
-          }
-        }
-
-        if (m.toolResults && Array.isArray(m.toolResults)) {
-          for (const tr of m.toolResults) {
-            parts.push({
-              type: "tool-result",
-              toolCallId: tr.toolCallId,
-              toolName: tr.toolName,
-              result: tr.result,
-              isError: false,
-            });
-          }
-        }
-
-        return {
-          id: m.id,
-          role: m.role as any,
-          parts,
-          createdAt: new Date(m.createdAt),
-        };
-      });
-      setMessages(mappedMessages as any);
-    } else if (!params.conversationId) {
-      setMessages([]);
-    }
-  }, [conversationData, params.conversationId, setMessages]);
-
-  const handleNewChat = () => {
-    setParams({ conversationId: null });
-    setMessages([]);
-  };
-
-  const handleDelete = async (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
-    if (confirm("Delete this conversation?")) {
-      await deleteConversation.mutateAsync({ startupId, conversationId: id });
-      if (params.conversationId === id) {
-        handleNewChat();
-      }
-    }
-  };
-
-  const isLoading = status === "streaming";
-
   const suggestedQuestions = [
     {
       label: "Review Latest Update",
       icon: TrendingUpIcon,
-      prompt:
-        "Review my latest weekly update and give me investor-level feedback.",
+      prompt: "Review my latest weekly update and give me investor-level feedback.",
     },
     {
       label: "Refine My Pitch",
       icon: SparklesIcon,
-      prompt:
-        "I'm preparing for a pitch. Help me refine my narrative and identify potential red flags.",
+      prompt: "I'm preparing for a pitch. Help me refine my narrative and identify potential red flags.",
     },
     {
       label: "Competitor Analysis",
       icon: SearchIcon,
-      prompt:
-        "Analyze our current competitors and suggest how we can build a stronger moat.",
+      prompt: "Analyze our current competitors and suggest how we can build a stronger moat.",
     },
     {
       label: "Growth Strategy",
       icon: ZapIcon,
-      prompt:
-        "Based on our current stage and metrics, what should be our top 3 growth priorities?",
+      prompt: "Based on our current stage and metrics, what should be our top 3 growth priorities?",
     },
   ];
 
   return (
-    <div className="flex h-full mx-auto w-full border rounded-xl bg-background shadow-sm overflow-hidden">
-      {/* Sidebar - Sessions List */}
-      <div className="w-64 border-r bg-muted/10 flex flex-col overflow-hidden">
-        <div className="p-4 border-b">
+    <>
+      <Sidebar collapsible="icon">
+        <SidebarHeader>
           <Button
             className="w-full justify-start gap-2"
             variant="outline"
             onClick={handleNewChat}
           >
             <PlusIcon className="w-4 h-4" />
-            New Session
+            <span>New Session</span>
           </Button>
-        </div>
-        <ScrollArea className="w-full! overflow-x-hidden">
-          <div className="p-2 space-y-1 w-full">
-            {conversations?.data?.map((conv) => (
-              <div
-                key={conv.id}
-                onClick={() => setParams({ conversationId: conv.id })}
-                className={cn(
-                  "group flex items-center justify-between p-2 rounded-lg cursor-pointer text-sm transition-colors relative max-w-full",
-                  params.conversationId === conv.id
-                    ? "bg-primary/10 text-primary font-medium"
-                    : "hover:bg-muted",
-                )}
-              >
-                <div className="flex items-center gap-2 overflow-hidden line-clamp-1">
-                  <MessageSquareIcon className="w-4 h-4 shrink-0 opacity-60" />
-                  <span className="line-clamp-1">
-                    {conv.title || "Untitled Session"}
+        </SidebarHeader>
+        <SidebarContent>
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {conversations?.data?.map((conv) => (
+                  <SidebarMenuItem key={conv.id}>
+                    <SidebarMenuButton
+                      onClick={() => handleSelectConversation(conv.id)}
+                      isActive={activeConvId === conv.id}
+                      className="group relative"
+                    >
+                      <MessageSquareIcon className="w-4 h-4 shrink-0" />
+                      <span className="truncate flex-1 text-left">
+                        {conv.title || "Untitled Session"}
+                      </span>
+                      <button
+                        onClick={(e) => handleDelete(e, conv.id)}
+                        className="opacity-0 group-hover:opacity-100 p-0.5 hover:text-destructive transition-opacity absolute right-1"
+                      >
+                        <Trash2Icon className="w-3 h-3" />
+                      </button>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </SidebarContent>
+        <SidebarRail />
+      </Sidebar>
+
+      <SidebarInset className="flex flex-col min-w-0">
+        <header className="flex items-center justify-between px-4 py-3 border-b bg-muted/30 shrink-0">
+          <div className="flex items-center gap-3">
+            <SidebarTrigger />
+            <div className="flex items-center gap-3 ml-2">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <BotIcon className="w-5 h-5 text-primary" />
+              </div>
+              <div>
+                <h2 className="font-semibold text-sm">VC Coach</h2>
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                  <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
+                    Online & Strategic
                   </span>
                 </div>
-                <button
-                  onClick={(e) => handleDelete(e, conv.id)}
-                  className="opacity-0 group-hover:opacity-100 p-1 hover:text-destructive transition-alls rounded-full absolute right-1 self-center"
-                >
-                  <Trash2Icon className="w-3 h-3" />
-                </button>
-              </div>
-            ))}
-          </div>
-        </ScrollArea>
-      </div>
-
-      {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b bg-muted/30">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <BotIcon className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <h2 className="font-semibold text-sm">VC Coach</h2>
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
-                  Online & Strategic
-                </span>
               </div>
             </div>
           </div>
@@ -265,24 +304,19 @@ export function VCCoach({ startupId, startupName }: VCCoachProps) {
               Startup: {startupName}
             </Badge>
           </div>
-        </div>
+        </header>
 
-        {/* Messages */}
         <Conversation className="flex-1">
           <ConversationContent>
-            {messages.length === 0 && !isLoadingConversation && (
+            {messages.length === 0 && status === "ready" && (
               <div className="space-y-8 py-8">
                 <div className="flex flex-col items-center justify-center text-center px-4">
                   <div className="p-4 bg-primary/5 rounded-full mb-4">
                     <BotIcon className="w-12 h-12 text-primary/40" />
                   </div>
-                  <h3 className="text-xl font-bold">
-                    Your Personal VC Strategic Advisor
-                  </h3>
+                  <h3 className="text-xl font-bold">Your Personal VC Strategic Advisor</h3>
                   <p className="text-muted-foreground max-w-sm mt-2">
-                    I have complete access to your startup's data, metrics, and
-                    research. Ask me anything about your strategy, growth, or
-                    fundraising.
+                    I have complete access to your startup's data, metrics, and research. Ask me anything about your strategy, growth, or fundraising.
                   </p>
                 </div>
 
@@ -291,7 +325,7 @@ export function VCCoach({ startupId, startupName }: VCCoachProps) {
                     <button
                       key={q.label}
                       type="button"
-                      onClick={() => sendMessage({ text: q.prompt })}
+                      onClick={() => handleSendMessage(q.prompt)}
                       className="flex items-start gap-3 p-4 text-left rounded-xl border bg-card hover:bg-accent hover:border-primary/50 transition-all group"
                     >
                       <div className="p-2 bg-muted rounded-lg group-hover:bg-primary/10 transition-colors">
@@ -299,22 +333,11 @@ export function VCCoach({ startupId, startupName }: VCCoachProps) {
                       </div>
                       <div>
                         <div className="text-sm font-medium">{q.label}</div>
-                        <div className="text-xs text-muted-foreground line-clamp-1">
-                          {q.prompt}
-                        </div>
+                        <div className="text-xs text-muted-foreground line-clamp-1">{q.prompt}</div>
                       </div>
                     </button>
                   ))}
                 </div>
-              </div>
-            )}
-
-            {isLoadingConversation && (
-              <div className="flex flex-col items-center justify-center py-12 space-y-4">
-                <RefreshCwIcon className="w-8 h-8 animate-spin text-primary/40" />
-                <p className="text-sm text-muted-foreground">
-                  Restoring session history...
-                </p>
               </div>
             )}
 
@@ -336,47 +359,30 @@ export function VCCoach({ startupId, startupName }: VCCoachProps) {
                     <div className="flex flex-col gap-2 flex-1">
                       {message.parts.map((part, i) => {
                         if (part.type === "text") {
-                          const thinkingMatch = part.text.match(
-                            /<thinking>([\s\S]*?)<\/thinking>/,
-                          );
-                          const textWithoutThinking = part.text
-                            .replace(/<thinking>[\s\S]*?<\/thinking>/, "")
-                            .trim();
+                          const thinkingMatch = part.text.match(/<thinking>([\s\S]*?)<\/thinking>/);
+                          const textWithoutThinking = part.text.replace(/<thinking>[\s\S]*?<\/thinking>/, "").trim();
 
                           return (
                             <div key={i} className="space-y-2">
                               {thinkingMatch && (
                                 <Reasoning defaultOpen={false}>
                                   <ReasoningTrigger />
-                                  <ReasoningContent>
-                                    {thinkingMatch[1]}
-                                  </ReasoningContent>
+                                  <ReasoningContent>{thinkingMatch[1]}</ReasoningContent>
                                 </Reasoning>
                               )}
                               {textWithoutThinking && (
                                 <>
                                   <MessageContent
-                                    className={
-                                      message.role === "user"
-                                        ? "bg-primary text-primary-foreground"
-                                        : ""
-                                    }
+                                    className={message.role === "user" ? "bg-primary text-primary-foreground" : ""}
                                   >
-                                    <MessageResponse>
-                                      {textWithoutThinking}
-                                    </MessageResponse>
+                                    <MessageResponse>{textWithoutThinking}</MessageResponse>
                                   </MessageContent>
 
                                   {message.role === "assistant" && (
                                     <MessageActions className="opacity-0 group-hover:opacity-100 transition-opacity">
                                       <MessageAction
                                         tooltip="Copy response"
-                                        onClick={() =>
-                                          handleCopy(
-                                            textWithoutThinking,
-                                            message.id,
-                                          )
-                                        }
+                                        onClick={() => handleCopy(textWithoutThinking, message.id)}
                                       >
                                         {copiedId === message.id ? (
                                           <CheckIcon className="w-3.5 h-3.5 text-green-500" />
@@ -411,12 +417,11 @@ export function VCCoach({ startupId, startupName }: VCCoachProps) {
           </ConversationContent>
         </Conversation>
 
-        {/* Input */}
         <div className="p-6 border-t bg-muted/10">
           <PromptInput
             onSubmit={(msg) => {
               if (msg.text.trim()) {
-                sendMessage({ text: msg.text });
+                handleSendMessage(msg.text);
                 setInput("");
               }
             }}
@@ -440,7 +445,7 @@ export function VCCoach({ startupId, startupName }: VCCoachProps) {
             </PromptInputFooter>
           </PromptInput>
         </div>
-      </div>
-    </div>
+      </SidebarInset>
+    </>
   );
 }

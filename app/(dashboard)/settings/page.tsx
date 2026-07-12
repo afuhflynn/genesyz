@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
+import { Loader2, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,7 +12,11 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useProfile, useUpdateProfile } from "@/hooks";
+import { AuditLog } from "@/components/settings/AuditLog";
+import { SecuritySettings } from "@/components/settings/SecuritySettings";
+import { SessionsList } from "@/components/settings/SessionsList";
 
 export default function SettingsPage() {
   const { data: user, isLoading } = useProfile();
@@ -32,7 +36,7 @@ export default function SettingsPage() {
   };
 
   if (isLoading) {
-    return <div>Loading...</div>; // TODO: Add skeleton
+    return <div>Loading...</div>;
   }
 
   return (
@@ -44,57 +48,70 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Profile</CardTitle>
-          <CardDescription>Update your personal information.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* <div className="flex items-center gap-6">
-              <Avatar className="h-20 w-20">
-                <AvatarImage src={user?.image || ""} />
-                <AvatarFallback className="text-lg">
-                  {user?.name?.charAt(0) || "U"}
-                </AvatarFallback>
-              </Avatar>
-              <div className="space-y-1">
-                <h3 className="font-medium">Profile Picture</h3>
-                <p className="text-sm text-muted-foreground">
-                  Your profile picture is managed via your Google account.
-                </p>
-              </div>
-            </div> */}
+      <Tabs defaultValue="profile" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="profile" className="gap-2">
+            <User className="h-4 w-4" />
+            Profile
+          </TabsTrigger>
+          <TabsTrigger value="security">Security</TabsTrigger>
+          <TabsTrigger value="sessions">Sessions</TabsTrigger>
+          <TabsTrigger value="audit">Audit Log</TabsTrigger>
+        </TabsList>
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" value={user?.email || ""} disabled />
-              <p className="text-xs text-muted-foreground">
-                Email editing not allowed at the momment.
-              </p>
-            </div>
+        <TabsContent value="profile">
+          <Card>
+            <CardHeader>
+              <CardTitle>Profile</CardTitle>
+              <CardDescription>
+                Update your personal information.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input id="email" value={user?.email || ""} disabled />
+                  <p className="text-xs text-muted-foreground">
+                    Email editing not allowed at the moment.
+                  </p>
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="name">Display Name</Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Your name"
-              />
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="name">Display Name</Label>
+                  <Input
+                    id="name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Your name"
+                  />
+                </div>
 
-            <div className="flex justify-end">
-              <Button type="submit" disabled={updateProfile.isPending}>
-                {updateProfile.isPending && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
-                Save Changes
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+                <div className="flex justify-end">
+                  <Button type="submit" disabled={updateProfile.isPending}>
+                    {updateProfile.isPending && (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
+                    Save Changes
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="security">
+          <SecuritySettings />
+        </TabsContent>
+
+        <TabsContent value="sessions">
+          <SessionsList />
+        </TabsContent>
+
+        <TabsContent value="audit">
+          <AuditLog />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

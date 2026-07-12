@@ -55,6 +55,12 @@ export function Sidebar({ className }: SidebarProps) {
       href: "/startups",
       active: pathname === "/startups",
     },
+    {
+      label: "New Startup",
+      icon: PlusCircle,
+      href: "/startups/new",
+      active: pathname === "/startups/new",
+    },
     // {
     //   label: "Accelerators",
     //   icon: GraduationCap,

@@ -98,25 +98,27 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { ideaId, ...startupData } = parsed.data;
+  const { ideaId, locationContext, ...startupData } = parsed.data;
 
-  const existingIdea = await db.idea.findFirst({
-    where: { id: ideaId, userId: session.user.id },
-  });
+  if (ideaId) {
+    const existingIdea = await db.idea.findFirst({
+      where: { id: ideaId, userId: session.user.id },
+    });
 
-  if (!existingIdea) {
-    return NextResponse.json({ error: "Idea not found" }, { status: 404 });
-  }
+    if (!existingIdea) {
+      return NextResponse.json({ error: "Idea not found" }, { status: 404 });
+    }
 
-  const existingStartup = await db.startup.findUnique({
-    where: { ideaId },
-  });
+    const existingStartup = await db.startup.findUnique({
+      where: { ideaId },
+    });
 
-  if (existingStartup) {
-    return NextResponse.json(
-      { error: "This idea already has a startup profile" },
-      { status: 400 },
-    );
+    if (existingStartup) {
+      return NextResponse.json(
+        { error: "This idea already has a startup profile" },
+        { status: 400 },
+      );
+    }
   }
 
   const slugExists = await db.startup.findUnique({
@@ -133,12 +135,46 @@ export async function POST(request: NextRequest) {
   const startup = await db.startup.create({
     data: {
       ...startupData,
-      ideaId,
+      locationContext: locationContext ?? undefined,
+      ideaId: ideaId ?? undefined,
       userId: session.user.id,
     },
     include: {
       idea: true,
     },
+  });
+
+  if (ideaId) {
+    await db.idea.update({
+      where: { id: ideaId },
+      data: { status: "CONVERTED" },
+    });
+  }
+
+  const orgBaseSlug = `${startupData.slug}-org`;
+  const orgSlugExists = await db.organization.findUnique({
+    where: { slug: orgBaseSlug },
+  });
+  const orgSlug = orgSlugExists
+    ? `${orgBaseSlug}-${startup.id.slice(0, 6)}`
+    : orgBaseSlug;
+
+  const org = await db.organization.create({
+    data: {
+      name: `${startupData.name}`,
+      slug: orgSlug,
+      members: {
+        create: {
+          userId: session.user.id,
+          role: "owner",
+        },
+      },
+    },
+  });
+
+  await db.startup.update({
+    where: { id: startup.id },
+    data: { organizationId: org.id },
   });
 
   await db.auditLog.create({
@@ -147,7 +183,7 @@ export async function POST(request: NextRequest) {
       action: "startup.created",
       resource: "startup",
       resourceId: startup.id,
-      metadata: { name: startup.name, slug: startup.slug },
+      metadata: { name: startup.name, slug: startup.slug, organizationId: org.id },
     },
   });
 

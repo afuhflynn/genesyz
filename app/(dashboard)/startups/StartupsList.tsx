@@ -4,10 +4,12 @@ import {
   ArrowRight,
   Building2,
   Loader2,
+  Plus,
   Target,
   TrendingUp,
 } from "lucide-react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { InfiniteScroll } from "@/components/ui/InfiniteScroll";
@@ -66,15 +68,22 @@ export function StartupsList() {
           <Building2 className="h-12 w-12 text-muted-foreground/50" />
           <h3 className="mt-4 text-lg font-medium">No startups yet</h3>
           <p className="mt-2 text-center text-sm text-muted-foreground">
-            Convert one of your validated ideas into a startup to start tracking
-            weekly progress
+            Start tracking your progress by creating a startup profile
           </p>
-          <Badge asChild className="mt-4">
-            <Link href="/ideas">
-              View Ideas
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
-          </Badge>
+          <div className="mt-4 flex gap-3">
+            <Button asChild>
+              <Link href="/startups/new">
+                <Plus className="mr-2 h-4 w-4" />
+                New Startup
+              </Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href="/ideas">
+                From an Idea
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </div>
         </CardContent>
       </Card>
     );

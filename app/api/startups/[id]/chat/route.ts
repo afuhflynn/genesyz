@@ -6,6 +6,12 @@ import { tools } from "@/lib/ai/tools";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { checkStartupAccess } from "@/lib/startup-permissions";
+import {
+  searchMemories,
+  addMemories,
+  formatMemoriesForPrompt,
+  isMemoryEnabled,
+} from "@/lib/memory/client";
 
 export const runtime = "nodejs";
 
@@ -95,7 +101,27 @@ export async function POST(
       return NextResponse.json({ error: "Startup not found" }, { status: 404 });
     }
 
-    const systemPrompt = `You are a world-class Venture Capital (VC) Coach and Strategic Advisor. Your mission is to help founders scale their startups from idea to series A and beyond.
+    // Retrieve relevant memories from past conversations
+    const lastUserQuery = coreMessages
+      .filter((m: any) => m.role === "user")
+      .pop()?.content || "";
+    const [userMemories, startupMemories] = await Promise.all([
+      searchMemories(lastUserQuery, {
+        userId: session.user.id,
+        startupId: access.startupId,
+      }),
+      searchMemories(lastUserQuery, {
+        startupId: access.startupId,
+      }),
+    ]);
+    const memoryContext = formatMemoriesForPrompt([
+      ...userMemories.filter(
+        (m) => !startupMemories.some((sm) => sm.id === m.id),
+      ),
+      ...startupMemories,
+    ]);
+
+    const systemPrompt = `You are a world-class Venture Capital (VC) Coach and Strategic Advisor. Your mission is to help founders scale their startups from idea to series A and beyond.${memoryContext}
 
 STARTUP CONTEXT:
 - Name: ${startup.name}
@@ -187,6 +213,22 @@ If the user asks for a pitch review or market analysis, use your tools to get th
                 },
               },
             });
+
+            // Store memories from this exchange
+            const userMsg = coreMessages[coreMessages.length - 1];
+            if (userMsg && userMsg.role === "user" && text) {
+              await addMemories(
+                [
+                  { role: "user", content: userMsg.content },
+                  { role: "assistant", content: text },
+                ],
+                {
+                  userId: session.user.id,
+                  startupId: access.startupId,
+                  conversationId: conversationId ?? undefined,
+                },
+              );
+            }
           }
         } catch (e) {
           console.error("Failed to save message to DB:", e);

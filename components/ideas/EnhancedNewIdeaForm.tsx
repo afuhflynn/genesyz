@@ -5,6 +5,7 @@ import {
   Globe,
   Image,
   Loader2,
+  MapPin,
   Mic,
   Sparkles,
 } from "lucide-react";
@@ -22,6 +23,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { IdeaSubmittedSuccess } from "./IdeaSubmittedSuccess";
 
@@ -48,6 +50,9 @@ export function EnhancedNewIdeaForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { data: session } = useSession();
+  const userLocation = (session?.user as Record<string, unknown> | undefined)?.location as string | undefined;
 
   const isVoiceEnabled = enabledModes.includes("voice");
   const isImageEnabled = enabledModes.includes("image");
@@ -386,8 +391,8 @@ export function EnhancedNewIdeaForm({
             htmlFor="location-selector"
             className="text-sm font-medium flex items-center gap-2"
           >
-            <Globe className="h-4 w-4" />
-            Target Location (Optional)
+            <MapPin className="h-4 w-4" />
+            Target Location
           </label>
           <LocationSelector
             id="location-selector"
@@ -395,8 +400,23 @@ export function EnhancedNewIdeaForm({
             onChange={setTargetLocation}
           />
           <p className="text-xs text-muted-foreground">
-            Where do you plan to launch this idea? Leave blank for global
-            research.
+            Where will this idea operate? Location context helps our AI research
+            local market conditions, competitors, and regulations.
+            {userLocation && !targetLocation && (
+              <button
+                type="button"
+                onClick={() =>
+                  setTargetLocation({
+                    country: userLocation,
+                    countryCode: "OTHER",
+                    isGlobal: false,
+                  })
+                }
+                className="ml-1 text-primary underline underline-offset-2 hover:no-underline"
+              >
+                Use saved location ({userLocation})
+              </button>
+            )}
           </p>
         </div>
 
