@@ -61,6 +61,9 @@ export const auth = betterAuth({
     },
   },
   trustedOrigins: [process.env.NEXT_PUBLIC_APP_URL! || "http://localhost:3000"],
+  onAPIError: {
+    errorURL: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/sign-in`,
+  },
   databaseHooks: {
     user: {
       create: {
