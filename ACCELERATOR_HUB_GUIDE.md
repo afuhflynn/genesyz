@@ -214,7 +214,7 @@ model Accelerator {
   isActive     Boolean  @default(true)
   ownerId       String
   createdAt     DateTime @default(now())
-  
+
   cohorts       Cohort[]
   events        AcceleratorEvent[]
   applications  AcceleratorApplication[]
@@ -255,7 +255,7 @@ model Cohort {
   startDate       DateTime
   endDate         DateTime
   isActive        Boolean  @default(true)
-  
+
   accelerator     Accelerator @relation(fields: [acceleratorId], references: [id], onDelete: Cascade)
   startups        CohortStartup[]
   events          AcceleratorEvent[]
@@ -265,12 +265,13 @@ model CohortStartup {
   cohortId      String
   startupId     String
   joinedAt      DateTime @default(now())
-  
+
   cohort        Cohort   @relation(fields: [cohortId], references: [id], onDelete: Cascade)
   startup       Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
 
   @@id([cohortId, startupId])
 }
+
 ```
 
 ---
@@ -306,7 +307,7 @@ All routes are protected by the Accelerator RBAC system and scoped to the specif
 
 #### **Team & Access**
 - `GET/POST /api/accelerators/[slug]/team`: Manage admin staff and send secure role-based invitations.
-- `PATCH/DELETE /api/accelerators/[slug]`: Update program settings or deactivate the accelerator.
+- `PATCH/DELETE /api/accelerators/[slug]`: Update program settings or deactivate the accelerator
 
 ---
 
@@ -376,6 +377,7 @@ pnpm db:studio
 ## 12. Future Enhancements
 
 Planned features:
+
 - Multi-accelerator support (vertical-specific accelerators)
 - Advanced analytics dashboard
 - Integration with external CRM tools
