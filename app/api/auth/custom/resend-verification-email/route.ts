@@ -2,17 +2,12 @@ import { type NextRequest, NextResponse } from "next/server";
 import { generateToken, generateVerificationCode } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { inngest } from "@/lib/inngest/client";
+import { resendVerificationSchema } from "@/lib/validators/auth";
 
 export async function PUT(req: NextRequest) {
-  const { email } = await req.json();
-
   try {
-    if (!email) {
-      return NextResponse.json(
-        { success: false, message: "Email is required" },
-        { status: 400 },
-      );
-    }
+    const body = await req.json();
+    const { email } = resendVerificationSchema.parse(body);
 
     const user = await db.user.findUnique({
       where: { email },
@@ -40,6 +35,7 @@ export async function PUT(req: NextRequest) {
       where: { email },
       data: {
         verificationCode,
+        verificationExpiry: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
       },
     });
 

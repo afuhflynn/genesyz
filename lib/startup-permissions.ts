@@ -37,6 +37,8 @@ const ROLE_PERMISSIONS: Record<StartupMemberRole, StartupPermission[]> = {
 
 export type { StartupMemberRole };
 
+export { ROLE_PERMISSIONS };
+
 export function hasPermission(
   role: StartupMemberRole,
   permission: StartupPermission,
@@ -90,13 +92,71 @@ export async function checkStartupAccess(
       OR: [{ slug: startupSlugOrId }, { id: startupSlugOrId }],
       isActive: true,
     },
-    select: { id: true, userId: true },
+    select: { id: true, userId: true, organizationId: true },
   });
 
   if (!startup) {
     return { hasAccess: false, role: null, startupId: null, userId: null };
   }
 
+  // Try Better Auth org path first
+  if (startup.organizationId) {
+    const orgMember = await db.member.findUnique({
+      where: {
+        organizationId_userId: {
+          organizationId: startup.organizationId,
+          userId: session.user.id,
+        },
+      },
+      select: { role: true },
+    });
+
+    if (orgMember) {
+      const legacyRole = baRoleToLegacyRole(orgMember.role);
+      if (legacyRole) {
+        if (requiredPermission && !hasPermission(legacyRole, requiredPermission)) {
+          return {
+            hasAccess: false,
+            role: legacyRole,
+            startupId: startup.id,
+            userId: session.user.id,
+          };
+        }
+        return {
+          hasAccess: true,
+          role: legacyRole,
+          startupId: startup.id,
+          userId: session.user.id,
+        };
+      }
+    }
+
+    // Owner is not a member yet — add them
+    if (!orgMember && startup.userId === session.user.id) {
+      const org = await db.organization.findUnique({
+        where: { id: startup.organizationId },
+        select: { id: true },
+      });
+
+      if (org) {
+        await db.member.create({
+          data: {
+            organizationId: org.id,
+            userId: session.user.id,
+            role: "owner",
+          },
+        });
+        return {
+          hasAccess: true,
+          role: "OWNER" as StartupMemberRole,
+          startupId: startup.id,
+          userId: session.user.id,
+        };
+      }
+    }
+  }
+
+  // Fallback: legacy StartupMember check
   const role = await getUserStartupRole(session.user.id, startup.id);
 
   if (!role) {
@@ -123,6 +183,16 @@ export async function checkStartupAccess(
     startupId: startup.id,
     userId: session.user.id,
   };
+}
+
+function baRoleToLegacyRole(baRole: string): StartupMemberRole | null {
+  const map: Record<string, StartupMemberRole> = {
+    owner: "OWNER",
+    admin: "ADMIN",
+    member: "MEMBER",
+    viewer: "VIEWER",
+  };
+  return map[baRole] ?? null;
 }
 
 export const ROLE_LABELS: Record<StartupMemberRole, string> = {

@@ -13,10 +13,11 @@ import type { WebhookSubscriptionRevokedPayload } from "@polar-sh/sdk/models/com
 import type { WebhookSubscriptionUpdatedPayload } from "@polar-sh/sdk/models/components/webhooksubscriptionupdatedpayload.js";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { magicLink } from "better-auth/plugins";
+import { magicLink, organization, twoFactor } from "better-auth/plugins";
 import { syncEntitlement } from "@/lib/polar/entitlements";
 import { db } from "./db";
 import { inngest } from "./inngest/client";
+import { ac, owner, admin, member, viewer } from "./auth/access";
 
 export const auth = betterAuth({
   database: prismaAdapter(db, {
@@ -26,7 +27,7 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     autoSignIn: false,
-    requireEmailVerification: false,
+    requireEmailVerification: true,
     minPasswordLength: 8,
     maxPasswordLength: 30,
     async sendResetPassword({ user, url }, request) {
@@ -53,16 +54,50 @@ export const auth = betterAuth({
       enabled: true,
       maxAge: 5 * 60, // Cache session for 5 minutes
     },
+    additionalFields: {
+      name: { type: "string" },
+      emailNotifications: { type: "boolean" },
+      location: { type: "string" },
+    },
   },
   trustedOrigins: [process.env.NEXT_PUBLIC_APP_URL! || "http://localhost:3000"],
   databaseHooks: {
     user: {
       create: {
         after: async (user) => {
-          // Create default user entitlement
           await db.entitlement.create({
             data: {
               userId: user.id,
+            },
+          });
+
+          const baseSlug = (user.name || user.email || "user")
+            .toLowerCase()
+            .replace(/\s+/g, "-")
+            .replace(/[^a-z0-9-]/g, "")
+            .slice(0, 60);
+          const slug =
+            baseSlug ||
+            `user-${user.id.slice(0, 8)}`;
+
+          const existing = await db.organization.findUnique({
+            where: { slug },
+          });
+
+          const finalSlug = existing
+            ? `${slug}-${user.id.slice(0, 6)}`
+            : slug;
+
+          await db.organization.create({
+            data: {
+              name: `${user.name || user.email || "User"}'s Organization`,
+              slug: finalSlug,
+              members: {
+                create: {
+                  userId: user.id,
+                  role: "owner",
+                },
+              },
             },
           });
         },
@@ -127,6 +162,21 @@ export const auth = betterAuth({
             url,
           },
         });
+      },
+    }),
+    organization({
+      ac,
+      roles: {
+        owner,
+        admin,
+        member,
+        viewer,
+      },
+      allowUserToCreateOrganization: true,
+    }),
+    twoFactor({
+      totpOptions: {
+        period: 30,
       },
     }),
   ],

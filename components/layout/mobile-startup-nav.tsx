@@ -114,7 +114,7 @@ export function MobileStartupNav({
 
           <DropdownMenuSeparator />
           <DropdownMenuItem asChild>
-            <Link href="/ideas">
+            <Link href="/startups/new">
               <Plus className="mr-2 h-4 w-4" />
               Create New Startup
             </Link>

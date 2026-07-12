@@ -1,5 +1,12 @@
+"use client";
+
 import { Header } from "@/components/layout/header";
-import { Sidebar } from "@/components/layout/sidebar";
+import { Sidebar as AppSidebar } from "@/components/layout/sidebar";
+import {
+  SidebarProvider,
+  Sidebar,
+  SidebarInset,
+} from "@/components/ui/sidebar";
 
 export default function DashboardLayout({
   children,
@@ -7,17 +14,21 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="relative flex h-screen flex-col overflow-hidden">
-      <Header />
-      <div className="flex-1 h-full overflow-hidden items-start md:grid md:grid-cols-[220px_minmax(0,1fr)] lg:grid-cols-[240px_minmax(0,1fr)]">
-        <div className="h-full hidden md:flex">
-          <Sidebar className=" h-full" />
-        </div>
-
-        <main className="flex w-full h-full overflow-auto flex-col pt-8 px-6 items-center">
-          <div className=" h-full w-full">{children}</div>
-        </main>
+    <SidebarProvider
+      defaultOpen={true}
+      className="flex h-screen flex-col overflow-hidden"
+    >
+      <div className="flex flex-1 overflow-hidden">
+        <Sidebar collapsible="icon">
+          <AppSidebar />
+        </Sidebar>
+        <SidebarInset className="overflow-hidden flex flex-col">
+          <Header />
+          <main className="flex w-full h-full overflow-auto flex-col pt-8 px-6 items-center">
+            <div className="h-full w-full">{children}</div>
+          </main>
+        </SidebarInset>
       </div>
-    </div>
+    </SidebarProvider>
   );
 }

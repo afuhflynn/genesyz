@@ -70,7 +70,7 @@ export const previousGoalReviewSchema = z.object({
 });
 
 export const createStartupSchema = z.object({
-  ideaId: z.string().cuid(),
+  ideaId: z.string().cuid().optional(),
   name: z.string().min(2, "Name must be at least 2 characters").max(100),
   slug: z
     .string()
@@ -87,7 +87,19 @@ export const createStartupSchema = z.object({
   targetMarket: targetMarketSchema.optional(),
   logoUrl: z.string().url().optional().or(z.literal("")),
   website: z.string().url().optional().or(z.literal("")),
-  location: z.string().max(200).optional(),
+  location: z.string().min(1, "Location is required").max(200),
+  locationContext: z
+    .object({
+      continent: z.string().optional(),
+      continentCode: z.string().optional(),
+      country: z.string().optional(),
+      countryCode: z.string().optional(),
+      region: z.string().optional(),
+      regionCode: z.string().optional(),
+      city: z.string().optional(),
+      isGlobal: z.boolean().optional(),
+    })
+    .optional(),
 });
 
 export const updateStartupSchema = z.object({
@@ -109,6 +121,18 @@ export const updateStartupSchema = z.object({
   logoUrl: z.string().url().optional().or(z.literal("")),
   website: z.string().url().optional().or(z.literal("")),
   location: z.string().max(200).optional(),
+  locationContext: z
+    .object({
+      continent: z.string().optional(),
+      continentCode: z.string().optional(),
+      country: z.string().optional(),
+      countryCode: z.string().optional(),
+      region: z.string().optional(),
+      regionCode: z.string().optional(),
+      city: z.string().optional(),
+      isGlobal: z.boolean().optional(),
+    })
+    .optional(),
   isLaunched: z.boolean().optional(),
   launchDate: z.coerce.date().optional().nullable(),
   weeksToLaunch: z.number().int().min(0).optional().nullable(),

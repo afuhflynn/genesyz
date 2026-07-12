@@ -50,15 +50,17 @@ const startupFormSchema = z.object({
     .optional(),
   targetMarket: z.enum(["CONSUMER", "SMB", "ENTERPRISE"]).optional(),
   website: z.string().url("Must be a valid URL").optional().or(z.literal("")),
-  location: z.string().max(200).optional(),
+  location: z.string().min(1, "Location is required").max(200),
 });
 
 type StartupFormValues = z.infer<typeof startupFormSchema>;
 
 interface StartupProfileFormProps {
-  ideaId: string;
+  ideaId?: string;
   ideaTitle?: string;
   ideaSummary?: string;
+  initialLocation?: string;
+  initialLocationContext?: Record<string, unknown> | null;
   existingStartup?: {
     id: string;
     name: string;
@@ -70,6 +72,7 @@ interface StartupProfileFormProps {
     targetMarket: string | null;
     website: string | null;
     location: string | null;
+    locationContext?: Record<string, unknown> | null;
   };
   onSuccess?: () => void;
   canEdit?: boolean;
@@ -96,6 +99,8 @@ export function StartupProfileForm({
   ideaId,
   ideaTitle,
   ideaSummary,
+  initialLocation,
+  initialLocationContext,
   existingStartup,
   onSuccess,
   canEdit = true,
@@ -104,7 +109,10 @@ export function StartupProfileForm({
   const [slugChecking, setSlugChecking] = useState(false);
   const [slugAvailable, setSlugAvailable] = useState<boolean | null>(null);
   const [selectedLocation, setSelectedLocation] =
-    useState<LocationContext | null>(null);
+    useState<LocationContext | null>(
+      (existingStartup?.locationContext ||
+        initialLocationContext) as LocationContext | null,
+    );
 
   const createMutation = useCreateStartup();
   const updateMutation = useUpdateStartup();
@@ -119,7 +127,7 @@ export function StartupProfileForm({
       name: existingStartup?.name || ideaTitle || "",
       slug:
         existingStartup?.slug ||
-        ideaTitle?.toLowerCase().replaceAll(" ", "-") ||
+        generateSlug(ideaTitle || "") ||
         "",
       tagline: existingStartup?.tagline || "",
       description: existingStartup?.description || ideaSummary || "",
@@ -129,7 +137,7 @@ export function StartupProfileForm({
         (existingStartup?.targetMarket as StartupFormValues["targetMarket"]) ||
         undefined,
       website: existingStartup?.website || "",
-      location: existingStartup?.location || "",
+      location: existingStartup?.location || initialLocation || "",
     },
   });
 
@@ -168,6 +176,10 @@ export function StartupProfileForm({
       }
     }
 
+    const locationStr = selectedLocation
+      ? formatLocationValue(selectedLocation)
+      : data.location;
+
     const payload = {
       ...data,
       tagline: data.tagline || undefined,
@@ -176,9 +188,14 @@ export function StartupProfileForm({
       stage: data.stage,
       targetMarket: data.targetMarket,
       website: data.website || undefined,
-      location:
-        formatLocationValue(selectedLocation) || data.location || undefined,
+      location: locationStr || undefined,
+      locationContext: selectedLocation || undefined,
     };
+
+    if (!payload.location) {
+      form.setError("location", { message: "Location is required" });
+      return;
+    }
 
     if (isEditing) {
       updateMutation.mutate(
@@ -191,7 +208,7 @@ export function StartupProfileForm({
       );
     } else {
       createMutation.mutate(
-        { ...payload, ideaId },
+        ideaId ? { ...payload, ideaId } : payload,
         {
           onSuccess: () => {
             onSuccess?.();

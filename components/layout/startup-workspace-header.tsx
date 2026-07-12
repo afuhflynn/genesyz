@@ -1,11 +1,11 @@
 "use client";
 
-import { ArrowLeft, Rocket } from "lucide-react";
+import { Rocket } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useSession } from "@/lib/auth-client";
-import { UserNav } from "./user-nav";
 import { WorkspaceSwitcher } from "./workspace-switcher";
 
 interface StartupWorkspaceHeaderProps {
@@ -34,9 +34,21 @@ export function StartupWorkspaceHeader({
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur-md supports-backdrop-filter:bg-background/60">
       <div className="flex h-14 items-center px-4 gap-4">
+        <div className="hidden md:flex">
+          <SidebarTrigger className="[&_svg]:size-5" />
+        </div>
+
+        <div className="flex items-center gap-2 md:hidden">
+          <Link
+            href="/startups"
+            className="text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Rocket className="h-5 w-5" />
+          </Link>
+        </div>
+
         <Separator orientation="vertical" className="h-6" />
 
-        {/* Center: Startup Info */}
         <div className="flex items-center gap-2 flex-1">
           <div className="flex items-center gap-1.5">
             <Rocket className="h-5 w-5 text-primary" />
@@ -55,11 +67,8 @@ export function StartupWorkspaceHeader({
           </Badge>
         </div>
 
-        {/* Right: Workspace Switcher + User */}
         <div className="flex items-center gap-3">
           <WorkspaceSwitcher currentStartupId={startup.id} />
-          {/* <Separator orientation="vertical" className="h-6" /> */}
-          {/* <UserNav user={session?.user} /> */}
         </div>
       </div>
     </header>

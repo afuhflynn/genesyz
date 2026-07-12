@@ -2,20 +2,15 @@ import { type NextRequest, NextResponse } from "next/server";
 import { generateUniqueUsername } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { inngest } from "@/lib/inngest/client";
+import { signUpSocialSchema } from "@/lib/validators/auth";
 
 /**
  * @description Handles unique username generation after social auth signup or uses the available name, and sends a personalized welcome email.
  */
 export async function POST(req: NextRequest) {
-  const { email } = await req.json();
-
   try {
-    // Validate input
-    if (!email)
-      return NextResponse.json(
-        { success: false, message: "Email is required!" },
-        { status: 400 },
-      );
+    const body = await req.json();
+    const { email } = signUpSocialSchema.parse(body);
 
     // Ensure user record exists
     const existingUser = await db.user.findUnique({ where: { email } });

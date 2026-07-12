@@ -8,6 +8,20 @@ import {
   type StartupMemberRole,
 } from "@/lib/startup-permissions";
 
+const LEGACY_ROLE_TO_BA: Record<string, string> = {
+  OWNER: "owner",
+  ADMIN: "admin",
+  MEMBER: "member",
+  VIEWER: "viewer",
+};
+
+const BA_ROLE_TO_LEGACY: Record<string, StartupMemberRole> = {
+  owner: "OWNER",
+  admin: "ADMIN",
+  member: "MEMBER",
+  viewer: "VIEWER",
+};
+
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -33,6 +47,7 @@ export async function GET(
       name: true,
       userId: true,
       createdAt: true,
+      organizationId: true,
     },
   });
 
@@ -40,29 +55,9 @@ export async function GET(
     return NextResponse.json({ error: "Startup not found" }, { status: 404 });
   }
 
-  const members = await db.startupMember.findMany({
-    where: { startupId: startup.id },
-    include: {
-      user: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          image: true,
-        },
-      },
-    },
-    orderBy: { createdAt: "asc" },
-  });
-
   const owner = await db.user.findUnique({
     where: { id: startup.userId },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      image: true,
-    },
+    select: { id: true, name: true, email: true, image: true },
   });
 
   const allMembers: Array<{
@@ -77,20 +72,53 @@ export async function GET(
       image: string | null;
     } | null;
     isOwner: boolean;
-  }> = [
-    {
+  }> = [];
+
+  // Try Better Auth org path
+  if (startup.organizationId) {
+    const baMembers = await db.member.findMany({
+      where: { organizationId: startup.organizationId },
+      include: {
+        user: { select: { id: true, name: true, email: true, image: true } },
+      },
+      orderBy: { createdAt: "asc" },
+    });
+
+    for (const m of baMembers) {
+      const legacyRole = BA_ROLE_TO_LEGACY[m.role];
+      if (!legacyRole) continue;
+      allMembers.push({
+        id: m.id,
+        userId: m.userId,
+        role: legacyRole,
+        createdAt: m.createdAt,
+        user: m.user,
+        isOwner: m.role === "owner",
+      });
+    }
+  } else {
+    // Fallback: legacy StartupMember table
+    const legacyMembers = await db.startupMember.findMany({
+      where: { startupId: startup.id },
+      include: {
+        user: { select: { id: true, name: true, email: true, image: true } },
+      },
+      orderBy: { createdAt: "asc" },
+    });
+
+    allMembers.push({
       id: `owner-${startup.userId}`,
       userId: startup.userId,
       role: "OWNER",
       createdAt: startup.createdAt,
       user: owner,
       isOwner: true,
-    },
-    ...members.map((m) => ({
-      ...m,
-      isOwner: false,
-    })),
-  ];
+    });
+
+    for (const m of legacyMembers) {
+      allMembers.push({ ...m, isOwner: false });
+    }
+  }
 
   return NextResponse.json({ data: allMembers });
 }
@@ -120,6 +148,7 @@ export async function POST(
       name: true,
       slug: true,
       userId: true,
+      organizationId: true,
     },
   });
 
@@ -154,39 +183,75 @@ export async function POST(
     );
   }
 
-  const existingMember = await db.startupMember.findUnique({
-    where: {
-      startupId_userId: {
-        startupId: startup.id,
-        userId,
-      },
-    },
-  });
+  let member: Record<string, unknown>;
 
-  if (existingMember) {
-    return NextResponse.json(
-      { error: "User is already a team member" },
-      { status: 400 },
-    );
-  }
-
-  const member = await db.startupMember.create({
-    data: {
-      startupId: startup.id,
-      userId,
-      role: role as StartupMemberRole,
-    },
-    include: {
-      user: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          image: true,
+  if (startup.organizationId) {
+    const existingBaMember = await db.member.findUnique({
+      where: {
+        organizationId_userId: {
+          organizationId: startup.organizationId,
+          userId,
         },
       },
-    },
-  });
+    });
+
+    if (existingBaMember) {
+      return NextResponse.json(
+        { error: "User is already a team member" },
+        { status: 400 },
+      );
+    }
+
+    const baMember = await db.member.create({
+      data: {
+        organizationId: startup.organizationId,
+        userId,
+        role: LEGACY_ROLE_TO_BA[role],
+      },
+      include: {
+        user: { select: { id: true, name: true, email: true, image: true } },
+      },
+    });
+
+    // Sync backward to legacy table so we can migrate incrementally
+    await db.startupMember.upsert({
+      where: { startupId_userId: { startupId: startup.id, userId } },
+      update: { role: role as StartupMemberRole },
+      create: {
+        startupId: startup.id,
+        userId,
+        role: role as StartupMemberRole,
+      },
+    });
+
+    member = { ...baMember, isOwner: false };
+  } else {
+    const existingLegacy = await db.startupMember.findUnique({
+      where: {
+        startupId_userId: { startupId: startup.id, userId },
+      },
+    });
+
+    if (existingLegacy) {
+      return NextResponse.json(
+        { error: "User is already a team member" },
+        { status: 400 },
+      );
+    }
+
+    const legacyMember = await db.startupMember.create({
+      data: {
+        startupId: startup.id,
+        userId,
+        role: role as StartupMemberRole,
+      },
+      include: {
+        user: { select: { id: true, name: true, email: true, image: true } },
+      },
+    });
+
+    member = { ...legacyMember, isOwner: false };
+  }
 
   await db.auditLog.create({
     data: {
@@ -217,10 +282,5 @@ export async function POST(
     },
   });
 
-  return NextResponse.json({
-    data: {
-      ...member,
-      isOwner: false,
-    },
-  });
+  return NextResponse.json({ data: member });
 }

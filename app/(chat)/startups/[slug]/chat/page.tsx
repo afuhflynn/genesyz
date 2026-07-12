@@ -5,11 +5,13 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { checkStartupAccess } from "@/lib/startup-permissions";
 
-interface VCCoachPageProps {
+interface VCCoachNewPageProps {
   params: Promise<{ slug: string }>;
 }
 
-export default async function VCCoachPage({ params }: VCCoachPageProps) {
+export default async function VCCoachNewPage({
+  params,
+}: VCCoachNewPageProps) {
   const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session?.user) {
@@ -34,7 +36,7 @@ export default async function VCCoachPage({ params }: VCCoachPageProps) {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full w-full">
       <VCCoach startupId={startup.id} startupName={startup.name} />
     </div>
   );
