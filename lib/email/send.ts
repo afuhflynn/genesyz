@@ -1,7 +1,22 @@
 import type { StrategicAdvisory } from "../agents/types";
-import { sendEmail } from "./client";
+import { getEmailBranding, sendEmail } from "./client";
+
+export { getEmailBranding } from "./client";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+const BRAND = getEmailBranding();
+
+function applyEmailTheme(html: string): string {
+  const branding = getEmailBranding();
+
+  return html
+    .replace(/#F5A623/gi, branding.primaryColor)
+    .replace(/#f8fafc/gi, branding.backgroundColor)
+    .replace(/#0f172a/gi, branding.secondaryColor)
+    .replace(/#e2e8f0/gi, branding.borderColor)
+    .replace(/rgba\(245, 166, 35, 0\.2\)/gi, "rgba(245, 158, 11, 0.2)")
+    .replace(/rgba\(15, 23, 42, 0\.2\)/gi, "rgba(15, 23, 42, 0.2)");
+}
 
 // ===========================================
 // Shared Premium Layout
@@ -15,8 +30,9 @@ export function renderPremiumEmail(options: {
   badge?: string;
 }) {
   const { title, previewTextText, contentHtml, footerHtml, badge } = options;
+  const branding = getEmailBranding();
 
-  return `
+  const html = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -24,21 +40,21 @@ export function renderPremiumEmail(options: {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${title}</title>
 </head>
-<body style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1e293b; max-width: 500px; margin: 0 auto; padding: 20px; background-color: #f8fafc;">
+<body style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1e293b; max-width: 500px; margin: 0 auto; padding: 20px; background-color: ${branding.backgroundColor};">
   ${
     previewTextText
       ? `<div style="display: none; max-height: 0px; overflow: hidden;">${previewTextText}</div>`
       : ""
   }
-  <div style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);">
+  <div style="background-color: #ffffff; border: 1px solid ${branding.borderColor}; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);">
     <!-- Header -->
-    <div style="background: #0f172a; padding: 32px; text-align: center; color: #ffffff;">
-      <img src="cid:unique-app-logo" alt="Genesyz" width="120" style="margin-bottom: 16px;">
+    <div style="background: linear-gradient(135deg, ${branding.secondaryColor} 0%, #111827 100%); padding: 32px; text-align: center; color: #ffffff;">
+      <img src="cid:${branding.logoCid}" alt="${branding.appName}" width="120" style="margin-bottom: 16px;">
       ${
         badge
           ? `
-      <div style="display: inline-block; padding: 2px 10px; background: rgba(245, 166, 35, 0.2); border: 1px solid #F5A623; border-radius: 9999px; margin-bottom: 8px;">
-        <span style="font-size: 10px; font-weight: 800; color: #F5A623; text-transform: uppercase; letter-spacing: 0.05em;">${badge}</span>
+      <div style="display: inline-block; padding: 2px 10px; background: ${branding.accentColor}; border: 1px solid ${branding.primaryColor}; border-radius: 9999px; margin-bottom: 8px;">
+        <span style="font-size: 10px; font-weight: 800; color: ${branding.primaryColor}; text-transform: uppercase; letter-spacing: 0.05em;">${badge}</span>
       </div>`
           : ""
       }
@@ -52,15 +68,17 @@ export function renderPremiumEmail(options: {
 
   <div style="text-align: center; margin-top: 24px;">
     <p style="font-size: 11px; color: #94a3b8;">
-      © ${new Date().getFullYear()} Genesyz. ${
+      © ${new Date().getFullYear()} ${branding.appName}. ${
         footerHtml ||
-        `<a href="${APP_URL}/settings" style="color: #64748b; text-decoration: underline;">Manage Preferences</a>`
+        `<a href="${APP_URL}/settings" style="color: ${branding.subtleTextColor}; text-decoration: underline;">Manage Preferences</a>`
       }
     </p>
   </div>
 </body>
 </html>
   `;
+
+  return applyEmailTheme(html);
 }
 
 // ===========================================
@@ -72,9 +90,10 @@ export async function sendWelcomeEmail(options: {
   userName: string;
 }): Promise<boolean> {
   const { to, userName } = options;
+  const branding = getEmailBranding();
 
   const contentHtml = `
-    <h2 style="font-size: 24px; font-weight: 600; color: #0f172a; margin-bottom: 16px;">
+    <h2 style="font-size: 24px; font-weight: 600; color: ${branding.secondaryColor}; margin-bottom: 16px;">
       Welcome, ${userName}!
     </h2>
 
@@ -732,9 +751,10 @@ export async function sendVerificationEmail(options: {
   url: string;
 }): Promise<boolean> {
   const { to, userName, code, url } = options;
+  const branding = getEmailBranding();
 
   const contentHtml = `
-    <h2 style="font-size: 22px; font-weight: 800; color: #0f172a; margin-bottom: 16px; text-align: center;">
+    <h2 style="font-size: 22px; font-weight: 800; color: ${branding.secondaryColor}; margin-bottom: 16px; text-align: center;">
       Verify your email address
     </h2>
 
@@ -742,8 +762,8 @@ export async function sendVerificationEmail(options: {
       Hi ${userName}, please use the code below to verify your email address and complete your registration.
     </p>
 
-    <div style="background: #f8fafc; border-radius: 16px; padding: 32px; margin-bottom: 24px; text-align: center; border: 1px solid #e2e8f0;">
-      <div style="font-size: 36px; font-weight: 800; letter-spacing: 8px; color: #F5A623; margin-bottom: 8px;">
+    <div style="background: ${branding.backgroundColor}; border-radius: 16px; padding: 32px; margin-bottom: 24px; text-align: center; border: 1px solid ${branding.borderColor};">
+      <div style="font-size: 36px; font-weight: 800; letter-spacing: 8px; color: ${branding.primaryColor}; margin-bottom: 8px;">
         ${code}
       </div>
       <p style="font-size: 12px; color: #94a3b8; margin: 0; text-transform: uppercase; font-weight: 700;">
@@ -755,7 +775,7 @@ export async function sendVerificationEmail(options: {
       <p style="font-size: 14px; color: #64748b; margin-bottom: 16px;">
         Or click the button below to verify directly:
       </p>
-      <a href="${url}" style="display: inline-block; background: #F5A623; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 14px; box-shadow: 0 4px 6px -1px rgba(245, 166, 35, 0.2);">
+      <a href="${url}" style="display: inline-block; background: ${branding.primaryColor}; color: ${branding.buttonTextColor}; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 14px; box-shadow: 0 4px 6px -1px rgba(245, 158, 11, 0.2);">
         Verify Email
       </a>
     </div>
@@ -785,9 +805,10 @@ export async function sendPasswordResetEmail(options: {
   url: string;
 }): Promise<boolean> {
   const { to, userName, url } = options;
+  const branding = getEmailBranding();
 
   const contentHtml = `
-    <h2 style="font-size: 22px; font-weight: 800; color: #0f172a; margin-bottom: 16px; text-align: center;">
+    <h2 style="font-size: 22px; font-weight: 800; color: ${branding.secondaryColor}; margin-bottom: 16px; text-align: center;">
       Reset your password
     </h2>
 
@@ -829,9 +850,10 @@ export async function sendMagicLinkEmail(options: {
   url: string;
 }): Promise<boolean> {
   const { to, url } = options;
+  const branding = getEmailBranding();
 
   const contentHtml = `
-    <h2 style="font-size: 22px; font-weight: 800; color: #0f172a; margin-bottom: 16px; text-align: center;">
+    <h2 style="font-size: 22px; font-weight: 800; color: ${branding.secondaryColor}; margin-bottom: 16px; text-align: center;">
       Sign in to your account
     </h2>
 

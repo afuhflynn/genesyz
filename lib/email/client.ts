@@ -1,4 +1,38 @@
+import { resolve } from "node:path";
 import nodemailer from "nodemailer";
+
+export function getEmailBranding() {
+  const appName = process.env.NEXT_PUBLIC_APP_NAME || "Genesyz";
+
+  return {
+    appName,
+    logoCid: "genesyz-logo",
+    primaryColor: "#f59e0b",
+    primaryDarkColor: "#b45309",
+    secondaryColor: "#0f172a",
+    accentColor: "#fef3c7",
+    backgroundColor: "#f8fafc",
+    borderColor: "#e2e8f0",
+    mutedTextColor: "#475569",
+    subtleTextColor: "#64748b",
+    buttonTextColor: "#ffffff",
+  };
+}
+
+function getEmailFromAddress() {
+  const branding = getEmailBranding();
+  const fromEmail = process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER;
+
+  if (!fromEmail) {
+    return `${branding.appName} <noreply@genesyz.ai>`;
+  }
+
+  return `${branding.appName} <${fromEmail}>`;
+}
+
+function getReplyToAddress() {
+  return process.env.EMAIL_REPLY_TO || "Genesyz <noreply@genesyz.ai>";
+}
 
 // Create reusable transporter
 const transporter = nodemailer.createTransport({
@@ -25,19 +59,22 @@ export async function sendEmail(options: SendEmailOptions): Promise<boolean> {
   }
 
   try {
+    const branding = getEmailBranding();
+    const logoPath = resolve(process.cwd(), "public", "logo.png");
+
     await transporter.sendMail({
-      from: `Flynn at ${process.env.NEXT_PUBLIC_APP_NAME} <${process.env.SMTP_USER}>`,
-      replyTo: "Genesyz <noreply@genesyz.ai>",
+      from: getEmailFromAddress(),
+      replyTo: getReplyToAddress(),
       to: options.to,
       subject: options.subject,
       html: options.html,
       text: options.text,
       attachments: [
         {
-          filename: "Genesyz Logo",
-          path: "../../public/logo.png", // path to your image
-          cid: "genesyz-logo", // must match the src in HTML
-          contentDisposition: "inline", // helps prevent showing as a separate attachment
+          filename: `${branding.appName} Logo`,
+          path: logoPath,
+          cid: branding.logoCid,
+          contentDisposition: "inline",
         },
       ],
     });
