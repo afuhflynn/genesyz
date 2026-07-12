@@ -21,6 +21,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useProfile } from "@/hooks";
 import { signOut } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
 
@@ -109,7 +110,20 @@ export function Sidebar({ className }: SidebarProps) {
         className,
       )}
     >
-      <div className="space-y-4 py-4">
+      <div className="space-y-4">
+        <div className="flex items-center w-full pl-3 pt-2 border-b border-border md:pb-1.5 pb-2">
+          <Link href="/" className="flex items-center">
+            <Image
+              src="/icon.png"
+              alt="Genesyz Logo"
+              width={42}
+              height={42}
+              className="aspect-square object-contain"
+            />
+
+            <span className="text-xl font-semibold">Genesyz</span>
+          </Link>
+        </div>
         <div className="px-3 py-2">
           <div className="space-y-1">
             {routes.map((route) => (
@@ -161,7 +175,7 @@ export function MobileSidebar() {
         </Button>
       </SheetTrigger>
       <SheetContent side="left" className="p-0 w-72 ">
-        <Sidebar className="border-none mt-6" />
+        <Sidebar className="border-none" />
       </SheetContent>
     </Sheet>
   );
