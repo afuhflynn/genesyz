@@ -1,15 +1,26 @@
 import { type Memory, MemoryClient, type Message } from "mem0ai";
 
-const MEM0_API_KEY = process.env.MEM0_API_KEY;
+const MEM0_API_KEY = process.env.MEM0_API_KEY?.replace(/[^\x20-\x7E]/g, "");
 
 let client: MemoryClient | null = null;
+let clientInitError: unknown = null;
 
 function getClient(): MemoryClient | null {
   if (!MEM0_API_KEY) return null;
-  if (!client) {
-    client = new MemoryClient({ apiKey: MEM0_API_KEY });
+  if (!client && !clientInitError) {
+    try {
+      client = new MemoryClient({ apiKey: MEM0_API_KEY });
+    } catch (error) {
+      clientInitError = error;
+      const err = error as Error & { cause?: unknown };
+      console.warn("[MEM0] Client init error:", err.message, "stack:", err.stack?.split("\n").slice(0, 3).join(" | "));
+    }
   }
   return client;
+}
+
+export function isMemoryEnabled(): boolean {
+  return getClient() !== null;
 }
 
 export type MemoryFilters = {
@@ -60,8 +71,15 @@ function buildSearchFilters(filters: MemoryFilters): Record<string, string> {
   return result;
 }
 
-export function isMemoryEnabled(): boolean {
-  return getClient() !== null;
+function formatError(method: string, error: unknown): string {
+  const err = error as Error & { code?: string };
+  const parts = [
+    `[MEM0] ${method}:`,
+    err.message,
+    err.code ? `code=${err.code}` : null,
+    err.stack?.split("\n").slice(0, 2).join(" | "),
+  ];
+  return parts.filter(Boolean).join(" ");
 }
 
 export async function searchMemories(
@@ -78,7 +96,7 @@ export async function searchMemories(
     });
     return (result.results ?? []).map(memoryToResult);
   } catch (error) {
-    console.warn("[MEM0] Search error:", error);
+    console.warn(formatError("searchMemories", error));
     return [];
   }
 }
@@ -94,7 +112,11 @@ export async function addMemories(
     await c.add(messages as Message[], buildAddOptions(filters));
     return true;
   } catch (error) {
-    console.warn("[MEM0] Add error:", error);
+    console.warn(formatError("addMemories", error));
+    console.warn("[MEM0] addMemories context:", {
+      messageCount: messages.length,
+      filters,
+    });
     return false;
   }
 }
@@ -111,7 +133,7 @@ export async function updateMemories(
     await c.update(memoryId, { text, metadata });
     return true;
   } catch (error) {
-    console.warn("[MEM0] Update error:", error);
+    console.warn(formatError("updateMemories", error));
     return false;
   }
 }
@@ -127,7 +149,7 @@ export async function deleteMemories(
     await c.delete(memoryId, deleteLinked ? { deleteLinked } : undefined);
     return true;
   } catch (error) {
-    console.warn("[MEM0] Delete error:", error);
+    console.warn(formatError("deleteMemories", error));
     return false;
   }
 }
@@ -142,7 +164,7 @@ export async function deleteAllMemories(
     await c.deleteAll(buildAddOptions(filters));
     return true;
   } catch (error) {
-    console.warn("[MEM0] DeleteAll error:", error);
+    console.warn(formatError("deleteAllMemories", error));
     return false;
   }
 }
@@ -166,7 +188,7 @@ export async function getAllMemories(
       total: result.count,
     };
   } catch (error) {
-    console.warn("[MEM0] GetAll error:", error);
+    console.warn(formatError("getAllMemories", error));
     return { memories: [], total: 0 };
   }
 }
@@ -180,6 +202,4 @@ export function formatMemoriesForPrompt(memories: MemoryResult[]): string {
   );
 }
 
-export { getClient as getMemoryClient };
-export type { Memory };
-export { isMemoryEnabled as isEnabled };
+
