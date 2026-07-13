@@ -25,6 +25,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import { IdeaSubmittedSuccess } from "./IdeaSubmittedSuccess";
 
 interface EnhancedNewIdeaFormProps {
@@ -147,9 +148,13 @@ export function EnhancedNewIdeaForm({
       if (response.ok) {
         setSubmitted(true);
       } else {
-        throw new Error("Failed to create idea");
+        const body = await response.json().catch(() => null);
+        throw new Error(body?.error || `Failed to create idea (${response.status})`);
       }
     } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to create idea";
+      toast.error(message);
       console.error("Submit error:", error);
     } finally {
       setIsSubmitting(false);
@@ -232,11 +237,12 @@ export function EnhancedNewIdeaForm({
               placeholder="Describe your startup idea... What problem are you solving? Who is your target customer? What's your solution?"
               value={text}
               onChange={(e) => setText(e.target.value)}
+              maxLength={10000}
               className="min-h-[150px] resize-none"
             />
             <p className="text-xs text-muted-foreground">
               Tip: Be specific about the problem, your solution, and who
-              benefits most.
+              benefits most. (max 10,000 characters)
             </p>
           </TabsContent>
 
@@ -421,9 +427,19 @@ export function EnhancedNewIdeaForm({
         </div>
 
         {/* Character Count */}
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <span>{text.length} characters</span>
-          <span>~{Math.ceil(text.length / 200)} min read</span>
+        <div className="flex items-center justify-between text-sm">
+          <span
+            className={
+              text.length > 9000
+                ? "text-destructive font-medium"
+                : "text-muted-foreground"
+            }
+          >
+            {text.length}/10000 characters
+          </span>
+          <span className="text-muted-foreground">
+            ~{Math.ceil(text.length / 200)} min read
+          </span>
         </div>
 
         {/* Submit Actions */}

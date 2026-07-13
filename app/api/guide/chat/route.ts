@@ -1,7 +1,6 @@
-import { streamText } from "ai";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
-import { model } from "@/lib/ai/models";
+import { streamTextWithFallback } from "@/lib/ai/stream-fallback";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 
@@ -66,11 +65,13 @@ Your role:
 
 Be helpful, clear, and concise. Use the research data to inform your responses.`;
 
-    const result = streamText({
-      model,
-      instructions: systemPrompt,
-      messages,
-    });
+    const result = await streamTextWithFallback(
+      {
+        instructions: systemPrompt,
+        messages,
+      },
+      "GUIDE_CHAT",
+    );
 
     return result.toTextStreamResponse();
   } catch (error) {

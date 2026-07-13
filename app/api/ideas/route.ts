@@ -143,6 +143,17 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  const MAX_TEXT_LENGTH = 10000;
+
+  if (text && text.length > MAX_TEXT_LENGTH) {
+    return NextResponse.json(
+      {
+        error: `Text exceeds maximum length of ${MAX_TEXT_LENGTH} characters (${text.length} characters provided)`,
+      },
+      { status: 400 },
+    );
+  }
+
   // Validate at least one input is provided
   if (!text && !audioData && !imageData) {
     return NextResponse.json(

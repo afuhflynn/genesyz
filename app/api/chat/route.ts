@@ -1,7 +1,6 @@
-import { streamText } from "ai";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
-import { model } from "@/lib/ai/models";
+import { streamTextWithFallback } from "@/lib/ai/stream-fallback";
 import { tools } from "@/lib/ai/tools";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -86,12 +85,14 @@ Use the 'getIdeaContext' tool to fetch more details if needed.`;
       }
     }
 
-    const result = streamText({
-      model,
-      instructions: systemPrompt,
-      tools: tools,
-      messages,
-    });
+    const result = await streamTextWithFallback(
+      {
+        instructions: systemPrompt,
+        tools: tools,
+        messages,
+      },
+      "GENERAL_CHAT",
+    );
 
     return result.toTextStreamResponse();
   } catch (error) {

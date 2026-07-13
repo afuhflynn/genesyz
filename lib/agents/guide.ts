@@ -4,9 +4,9 @@
  */
 
 import type { ResearchPacket } from "@prisma/client";
-import { isStepCount, streamText } from "ai";
+import { isStepCount } from "ai";
 import { generateTextWithFallback } from "@/lib/ai/fallback";
-import { model } from "@/lib/ai/models";
+import { streamTextWithFallback } from "@/lib/ai/stream-fallback";
 import { tools } from "@/lib/ai/tools";
 import { db } from "@/lib/db";
 
@@ -375,12 +375,14 @@ export async function streamGuideMessage(
     content: message,
   });
 
-  const result = streamText({
-    model,
-    messages,
-    tools,
-    stopWhen: isStepCount(3),
-  });
+  const result = await streamTextWithFallback(
+    {
+      messages,
+      tools,
+      stopWhen: isStepCount(3),
+    },
+    "GUIDE_STREAM",
+  );
 
   return result.toTextStreamResponse();
 }

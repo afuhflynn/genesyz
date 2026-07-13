@@ -1,7 +1,7 @@
-import { isStepCount, streamText } from "ai";
-import { model } from "@/lib/ai/models";
+import { isStepCount } from "ai";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
+import { streamTextWithFallback } from "@/lib/ai/stream-fallback";
 import { tools } from "@/lib/ai/tools";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -170,15 +170,15 @@ NOTE:
 
 If the user asks for a pitch review or market analysis, use your tools to get the most up-to-date information.`;
 
-    const result = streamText({
-      model,
-      instructions: systemPrompt,
-      tools: {
-        ...tools,
-      },
-      stopWhen: isStepCount(20),
-      messages: coreMessages,
-      onFinish: async ({ text, toolCalls, toolResults, usage }) => {
+    const result = await streamTextWithFallback(
+      {
+        instructions: systemPrompt,
+        tools: {
+          ...tools,
+        },
+        stopWhen: isStepCount(20),
+        messages: coreMessages,
+        onFinish: async ({ text, toolCalls, toolResults, usage }) => {
         try {
           console.log(
             `[CHAT_FINISH] Conversation: ${conversationId}, Text length: ${text.length}`,
@@ -234,7 +234,9 @@ If the user asks for a pitch review or market analysis, use your tools to get th
           console.error("Failed to save message to DB:", e);
         }
       },
-    });
+    },
+      "STARTUP_COACH",
+    );
 
     return result.toTextStreamResponse({
       headers: {

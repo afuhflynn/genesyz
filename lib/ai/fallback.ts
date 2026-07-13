@@ -1,24 +1,11 @@
-/**
- * AI Generation Fallback Module
- *
- * Architecture: Single model (Gemini 3.5 Flash) with text-only fallback.
- * If generateObject fails due to schema constraints, we fall back to
- * generateText + manual JSON parsing with retries.
- *
- * This is NOT a multi-model fallback. For multi-model support,
- * the model provider in ./models.ts would need to be swapped.
- */
-
 import {
   type GenerateObjectResult,
   type GenerateTextResult,
   generateObject,
   generateText,
 } from "ai";
-import { model as geminiModel } from "./models";
-import { z } from "zod";
-
-const model = geminiModel;
+import type { z } from "zod";
+import { modelChain } from "./models";
 
 interface FallbackOptions {
   schema: z.ZodTypeAny;
@@ -51,10 +38,7 @@ async function safeJsonParse(
       }
       return parsed;
     } catch {
-      const patterns = [
-        /\{[\s\S]*\}/,
-        /\[[\s\S]*\]/,
-      ];
+      const patterns = [/\{[\s\S]*\}/, /\[[\s\S]*\]]/];
 
       for (const pattern of patterns) {
         const match = text.match(pattern);
@@ -97,30 +81,54 @@ export async function generateObjectWithFallback<T>(
   agentName: string,
 ): Promise<{ result: GenerateObjectResult<T>; modelUsed: string }> {
   const { schema, system, prompt } = options;
+  const errors: string[] = [];
 
-  try {
-    const result = await generateObject({
-      schema,
-      instructions: system,
-      prompt,
-      model,
-    });
-    return { result: result as unknown as GenerateObjectResult<T>, modelUsed: "gemini-3.5-flash" };
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.warn(`[${agentName}] generateObject failed:`, message);
+  for (const entry of modelChain) {
+    try {
+      const result = await generateObject({
+        schema,
+        instructions: system,
+        prompt,
+        model: entry.model as any,
+      });
+      return {
+        result: result as unknown as GenerateObjectResult<T>,
+        modelUsed: entry.name,
+      };
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(`[${agentName}] ${entry.name} failed:`, message);
+      errors.push(`${entry.name}: ${message}`);
 
-    const isSchemaError =
-      message.includes("too many states") ||
-      message.includes("constraint");
+      const isSchemaError =
+        message.includes("too many states") || message.includes("constraint");
 
-    if (isSchemaError) {
-      console.warn(`[${agentName}] Schema too complex, falling back to generateText`);
-      return generateTextFallbackWithSchema<T>(schema, system, prompt, agentName);
+      if (isSchemaError) {
+        try {
+          return await generateTextFallbackWithSchema<T>(
+            schema,
+            system,
+            prompt,
+            agentName,
+            entry.model,
+            entry.name,
+          );
+        } catch (fbError: unknown) {
+          const fbMessage =
+            fbError instanceof Error ? fbError.message : String(fbError);
+          console.warn(
+            `[${agentName}] Text fallback on ${entry.name} also failed:`,
+            fbMessage,
+          );
+          errors.push(`${entry.name}-text-fallback: ${fbMessage}`);
+        }
+      }
     }
-
-    throw error;
   }
+
+  throw new Error(
+    `All models failed for ${agentName}. Errors: ${errors.join(" | ")}`,
+  );
 }
 
 async function generateTextFallbackWithSchema<T>(
@@ -128,6 +136,8 @@ async function generateTextFallbackWithSchema<T>(
   instructions: string | undefined,
   prompt: string,
   agentName: string,
+  model: any,
+  modelName: string,
 ): Promise<{ result: GenerateObjectResult<T>; modelUsed: string }> {
   for (let i = 0; i < 2; i++) {
     try {
@@ -140,7 +150,9 @@ async function generateTextFallbackWithSchema<T>(
       const text = textResult.text;
       const parsed = await safeJsonParse(text, schema);
 
-      console.log(`[${agentName}] Successfully parsed using gemini-3.5-flash with text fallback`);
+      console.log(
+        `[${agentName}] Successfully parsed using ${modelName} with text fallback`,
+      );
 
       return {
         result: {
@@ -148,30 +160,44 @@ async function generateTextFallbackWithSchema<T>(
           usage: textResult.usage,
           finishReason: textResult.finishReason,
         } as unknown as GenerateObjectResult<T>,
-        modelUsed: "gemini-3.5-flash-text-fallback",
+        modelUsed: `${modelName}-text-fallback`,
       };
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
-      console.warn(`[${agentName}] Text fallback attempt ${i + 1} failed:`, message);
+      console.warn(
+        `[${agentName}] Text fallback attempt ${i + 1} on ${modelName} failed:`,
+        message,
+      );
     }
   }
 
-  throw new Error(`All AI generation strategies failed for ${agentName}`);
+  throw new Error(`Text fallback failed for ${agentName} on ${modelName}`);
 }
 
 export async function generateTextWithFallback(
   options: Record<string, unknown>,
   agentName: string,
-): Promise<{ result: GenerateTextResult<any, any, any>; modelUsed: string }> {
-  try {
-    const result = await generateText({
-      ...options,
-      model,
-    } as any);
-    return { result: result as any, modelUsed: "gemini-3.5-flash" };
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.warn(`[${agentName}] Gemini generation failed:`, message);
-    throw error;
+): Promise<{
+  result: GenerateTextResult<any, any, any>;
+  modelUsed: string;
+}> {
+  const errors: string[] = [];
+
+  for (const entry of modelChain) {
+    try {
+      const result = await generateText({
+        ...options,
+        model: entry.model as any,
+      } as any);
+      return { result: result as any, modelUsed: entry.name };
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.warn(`[${agentName}] ${entry.name} failed:`, message);
+      errors.push(`${entry.name}: ${message}`);
+    }
   }
+
+  throw new Error(
+    `All models failed for ${agentName}. Errors: ${errors.join(" | ")}`,
+  );
 }
