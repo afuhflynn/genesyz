@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildEmailButton,
+  buildEmailCard,
   getEmailBranding,
   renderPremiumEmail,
   resolveVerificationCodeDisplay,
@@ -23,6 +25,22 @@ describe("email branding", () => {
     expect(html).toContain("Genesyz");
     expect(html).toContain("cid:genesyz-logo");
     expect(html).toContain("#f59e0b");
+    expect(html).toContain("max-width: 640px");
+    expect(html).toContain("word-break: break-word");
+    expect(html).toContain("Manage Preferences");
+  });
+
+  it("builds reusable visual primitives for consistent email content", () => {
+    const button = buildEmailButton({
+      href: "https://example.com",
+      label: "Continue",
+    });
+    const card = buildEmailCard({ children: "<p>Body</p>" });
+
+    expect(button).toContain("background:");
+    expect(button).toContain("Continue");
+    expect(card).toContain("border-radius: 16px");
+    expect(card).toContain("<p>Body</p>");
   });
 
   it("falls back to the token when an explicit verification code is missing", () => {

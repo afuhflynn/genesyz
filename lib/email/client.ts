@@ -60,7 +60,8 @@ export async function sendEmail(options: SendEmailOptions): Promise<boolean> {
 
   try {
     const branding = getEmailBranding();
-    const logoPath = resolve(process.cwd(), "public", "logo.png");
+    const logoPath =
+      "https://res.cloudinary.com/duzg7l0eo/image/upload/v1783924293/icon_lbltlb.png";
 
     await transporter.sendMail({
       from: getEmailFromAddress(),

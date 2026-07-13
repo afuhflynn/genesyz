@@ -34,6 +34,61 @@ export function resolveVerificationCodeDisplay(
   return "Use the verify button below";
 }
 
+export function buildEmailSectionHeading(
+  text: string,
+  options: { align?: string; color?: string; marginBottom?: string } = {},
+): string {
+  const { align = "left", color = "#0f172a", marginBottom = "20px" } = options;
+
+  return `<h2 style="font-size: 22px; font-weight: 800; color: ${color}; margin: 0 0 ${marginBottom} 0; text-align: ${align};">${text}</h2>`;
+}
+
+export function buildEmailCard(options: {
+  children: string;
+  background?: string;
+  borderColor?: string;
+  padding?: string;
+  marginBottom?: string;
+  textColor?: string;
+  align?: string;
+  radius?: string;
+}): string {
+  const {
+    children,
+    background = "#f8fafc",
+    borderColor = "#e2e8f0",
+    padding = "24px",
+    marginBottom = "24px",
+    textColor = "#475569",
+    align = "left",
+    radius = "16px",
+  } = options;
+
+  return `<div style="background: ${background}; border: 1px solid ${borderColor}; border-radius: ${radius}; padding: ${padding}; margin-bottom: ${marginBottom}; text-align: ${align}; color: ${textColor};">${children}</div>`;
+}
+
+export function buildEmailButton(options: {
+  href: string;
+  label: string;
+  variant?: "primary" | "secondary";
+}): string {
+  const branding = getEmailBranding();
+  const { href, label, variant = "primary" } = options;
+  const background =
+    variant === "secondary" ? branding.secondaryColor : branding.primaryColor;
+  const textColor = branding.buttonTextColor || "#ffffff";
+
+  return `<a href="${href}" style="display: inline-block; background: ${background}; color: ${textColor}; text-decoration: none; padding: 14px 32px; border-radius: 9999px; font-weight: 800; font-size: 16px; box-shadow: 0 8px 20px -8px rgba(15, 23, 42, 0.24);">${label}</a>`;
+}
+
+export function buildEmailList(items: string[]): string {
+  const listItems = items
+    .map((item) => `<li style="margin-bottom: 8px;">${item}</li>`)
+    .join("");
+
+  return `<ul style="margin: 0; padding-left: 20px; color: #475569; font-size: 14px; line-height: 1.7;">${listItems}</ul>`;
+}
+
 // ===========================================
 // Shared Premium Layout
 // ===========================================
@@ -47,49 +102,78 @@ export function renderPremiumEmail(options: {
 }) {
   const { title, previewTextText, contentHtml, footerHtml, badge } = options;
   const branding = getEmailBranding();
+  const currentYear = new Date().getFullYear();
+  const footerContent =
+    footerHtml ||
+    `<a href="${APP_URL}/settings" style="color: ${branding.subtleTextColor}; text-decoration: underline;">Manage Preferences</a>`;
 
   const html = `
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="x-apple-disable-message-reformatting">
+  <meta name="format-detection" content="telephone=no, date=no, address=no, email=no">
   <title>${title}</title>
+  <style>
+    @media only screen and (max-width: 620px) {
+      body { padding: 12px !important; }
+      .email-shell { width: 100% !important; }
+      .email-header { padding: 24px 20px !important; }
+      .email-body { padding: 24px 20px !important; }
+      .email-title { font-size: 22px !important; }
+      .email-footer { padding: 0 20px 24px !important; }
+    }
+  </style>
 </head>
-<body style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1e293b; max-width: 500px; margin: 0 auto; padding: 20px; background-color: ${branding.backgroundColor};">
+<body style="margin: 0; padding: 24px; background-color: ${branding.backgroundColor}; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1e293b; word-break: break-word;">
   ${
     previewTextText
-      ? `<div style="display: none; max-height: 0px; overflow: hidden;">${previewTextText}</div>`
+      ? `<div style="display: none; max-height: 0px; overflow: hidden; opacity: 0; visibility: hidden;">${previewTextText}</div>`
       : ""
   }
-  <div style="background-color: #ffffff; border: 1px solid ${branding.borderColor}; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);">
-    <!-- Header -->
-    <div style="background: linear-gradient(135deg, ${branding.secondaryColor} 0%, #111827 100%); padding: 32px; text-align: center; color: #ffffff;">
-      <img src="cid:${branding.logoCid}" alt="${branding.appName}" width="120" style="margin-bottom: 16px;">
-      ${
-        badge
-          ? `
-      <div style="display: inline-block; padding: 2px 10px; background: ${branding.accentColor}; border: 1px solid ${branding.primaryColor}; border-radius: 9999px; margin-bottom: 8px;">
-        <span style="font-size: 10px; font-weight: 800; color: ${branding.primaryColor}; text-transform: uppercase; letter-spacing: 0.05em;">${badge}</span>
-      </div>`
-          : ""
-      }
-      <h1 style="font-size: 20px; font-weight: 800; margin: 0; color: #ffffff;">${title}</h1>
-    </div>
-
-    <div style="padding: 32px;">
-      ${contentHtml}
-    </div>
-  </div>
-
-  <div style="text-align: center; margin-top: 24px;">
-    <p style="font-size: 11px; color: #94a3b8;">
-      © ${new Date().getFullYear()} ${branding.appName}. ${
-        footerHtml ||
-        `<a href="${APP_URL}/settings" style="color: ${branding.subtleTextColor}; text-decoration: underline;">Manage Preferences</a>`
-      }
-    </p>
-  </div>
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; max-width: 640px; margin: 0 auto;">
+    <tr>
+      <td align="center">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="email-shell" style="border-collapse: collapse; width: 100%; max-width: 640px; background-color: #ffffff; border: 1px solid ${branding.borderColor}; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);">
+          <tr>
+            <td class="email-header" style="padding: 32px 24px; text-align: center; color: #ffffff; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, ${branding.secondaryColor} 0%, #111827 100%);">
+              <a href="${APP_URL}" style="display: flex; align-items: center; margin-right: 14px; text-decoration: none; color: #ffffff;" target="_blank">
+                <img src="cid:${branding.logoCid}" alt="${branding.appName} Logo" style="object-fit: contain; height: 66px; width: 66px; margin-right: 12px;" />
+                <span style="font-size: 30px; line-height: 1.4; font-weight: 600; color: #ffffff;">${branding.appName}</span>
+              </a>
+            </td>
+          </tr>
+          <tr>
+            <td class="email-header" style="padding: 0 24px 24px 24px; background: linear-gradient(135deg, ${branding.secondaryColor} 0%, #111827 100%); text-align: center;">
+              ${
+                badge
+                  ? `
+              <div style="display: inline-block; padding: 2px 10px; background: ${branding.accentColor}; border: 1px solid ${branding.primaryColor}; border-radius: 9999px; margin-bottom: 8px;">
+                <span style="font-size: 10px; font-weight: 800; color: ${branding.primaryColor}; text-transform: uppercase; letter-spacing: 0.05em;">${badge}</span>
+              </div>`
+                  : ""
+              }
+              <h1 class="email-title" style="font-size: 24px; font-weight: 800; margin: 0; color: #ffffff; line-height: 1.3;">${title}</h1>
+            </td>
+          </tr>
+          <tr>
+            <td class="email-body" style="padding: 32px 24px;">
+              ${contentHtml}
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <td class="email-footer" style="padding: 16px 12px 0; text-align: center;">
+        <p style="margin: 0; font-size: 11px; line-height: 1.6; color: #94a3b8;">
+          © ${currentYear} ${branding.appName}. ${footerContent}
+        </p>
+      </td>
+    </tr>
+  </table>
 </body>
 </html>
   `;
@@ -109,36 +193,39 @@ export async function sendWelcomeEmail(options: {
   const branding = getEmailBranding();
 
   const contentHtml = `
-    <h2 style="font-size: 24px; font-weight: 600; color: ${branding.secondaryColor}; margin-bottom: 16px;">
-      Welcome, ${userName}!
-    </h2>
+    ${buildEmailSectionHeading(`Welcome, ${userName}!`, { color: branding.secondaryColor, marginBottom: "16px" })}
 
-    <p style="font-size: 16px; color: #475569; margin-bottom: 24px;">
+    <p style="font-size: 16px; color: #475569; margin: 0 0 24px 0; line-height: 1.7;">
       You just joined the AI co-founder workspace built for serious founders. Turn raw ideas into validated opportunities with clear market signals, execution guidance, and investor-ready insights.
     </p>
 
-    <div style="background: #f8fafc; border-radius: 12px; padding: 24px; margin-bottom: 24px; border: 1px solid #e2e8f0;">
-      <h3 style="font-size: 18px; font-weight: 600; color: #0f172a; margin: 0 0 12px 0;">
-        Launch faster with Genesyz:
-      </h3>
-      <ul style="margin: 0; padding-left: 20px; color: #475569;">
-        <li style="margin-bottom: 8px;">Validate ideas with a multi-agent AI research pipeline</li>
-        <li style="margin-bottom: 8px;">Track weekly startup progress, goals, and momentum in one dashboard</li>
-        <li style="margin-bottom: 8px;">Discover grants, fellowships, competitions, and accelerator opportunities</li>
-        <li style="margin-bottom: 8px;">Export polished research reports to share with teammates and stakeholders</li>
-      </ul>
-    </div>
+    ${buildEmailCard({
+      children: `
+        <h3 style="font-size: 18px; font-weight: 700; color: #0f172a; margin: 0 0 12px 0;">Launch faster with Genesyz:</h3>
+        ${buildEmailList([
+          "Validate ideas with a multi-agent AI research pipeline",
+          "Track weekly startup progress, goals, and momentum in one dashboard",
+          "Discover grants, fellowships, competitions, and accelerator opportunities",
+          "Export polished research reports to share with teammates and stakeholders",
+        ])}
+      `,
+      marginBottom: "24px",
+    })}
 
-    <div style="background: #0f172a; border-radius: 12px; padding: 18px; margin-bottom: 24px;">
-      <p style="font-size: 14px; margin: 0; color: #e2e8f0;">
-        <strong style="color: #ffffff;">Pro tip:</strong> founders who validate their first idea in the first 24 hours build sharper products and waste less time. Start now and compound your edge.
-      </p>
-    </div>
+    ${buildEmailCard({
+      children: `<p style="font-size: 14px; margin: 0; color: #e2e8f0; line-height: 1.7;"><strong style="color: #ffffff;">Pro tip:</strong> founders who validate their first idea in the first 24 hours build sharper products and waste less time. Start now and compound your edge.</p>`,
+      background: "#0f172a",
+      borderColor: "#0f172a",
+      textColor: "#e2e8f0",
+      padding: "18px 20px",
+      marginBottom: "24px",
+    })}
 
     <div style="text-align: center;">
-      <a href="${APP_URL}/dashboard" style="display: inline-block; background: #F5A623; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(245, 166, 35, 0.2);">
-        Validate Your First Idea
-      </a>
+      ${buildEmailButton({
+        href: `${APP_URL}/dashboard`,
+        label: "Validate Your First Idea",
+      })}
     </div>
   `;
 
@@ -209,19 +296,25 @@ export async function sendDigestEmail(options: {
     .join("");
 
   const contentHtml = `
-    <h2 style="font-size: 22px; font-weight: 800; color: #0f172a; margin-bottom: 24px;">
-      Hi ${userName}, here's your weekly update
-    </h2>
+    ${buildEmailSectionHeading(`Hi ${userName}, here's your weekly update`, { color: "#0f172a", marginBottom: "24px" })}
 
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 32px;">
-      <div style="background: #f8fafc; border-radius: 12px; padding: 20px; text-align: center; border: 1px solid #e2e8f0;">
-        <p style="font-size: 32px; font-weight: 800; color: #F5A623; margin: 0;">${totalIdeas}</p>
-        <p style="font-size: 12px; color: #64748b; margin: 4px 0 0 0; text-transform: uppercase; font-weight: 700;">Active Ideas</p>
-      </div>
-      <div style="background: #f8fafc; border-radius: 12px; padding: 20px; text-align: center; border: 1px solid #e2e8f0;">
-        <p style="font-size: 32px; font-weight: 800; color: #F5A623; margin: 0;">${averageScore}</p>
-        <p style="font-size: 12px; color: #64748b; margin: 4px 0 0 0; text-transform: uppercase; font-weight: 700;">Avg Score</p>
-      </div>
+      ${buildEmailCard({
+        children: `<p style="font-size: 32px; font-weight: 800; color: #F5A623; margin: 0;">${totalIdeas}</p><p style="font-size: 12px; color: #64748b; margin: 6px 0 0 0; text-transform: uppercase; font-weight: 700;">Active Ideas</p>`,
+        background: "#f8fafc",
+        padding: "20px",
+        marginBottom: "0",
+        align: "center",
+        radius: "12px",
+      })}
+      ${buildEmailCard({
+        children: `<p style="font-size: 32px; font-weight: 800; color: #F5A623; margin: 0;">${averageScore}</p><p style="font-size: 12px; color: #64748b; margin: 6px 0 0 0; text-transform: uppercase; font-weight: 700;">Avg Score</p>`,
+        background: "#f8fafc",
+        padding: "20px",
+        marginBottom: "0",
+        align: "center",
+        radius: "12px",
+      })}
     </div>
 
     ${
@@ -246,9 +339,7 @@ export async function sendDigestEmail(options: {
     }
 
     <div style="text-align: center; margin-top: 32px;">
-      <a href="${APP_URL}/dashboard" style="display: inline-block; background: #F5A623; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(245, 166, 35, 0.2);">
-        View Dashboard
-      </a>
+      ${buildEmailButton({ href: `${APP_URL}/dashboard`, label: "View Dashboard" })}
     </div>
   `;
 
@@ -771,30 +862,30 @@ export async function sendVerificationEmail(options: {
   const displayCode = resolveVerificationCodeDisplay(code, url);
 
   const contentHtml = `
-    <h2 style="font-size: 22px; font-weight: 800; color: ${branding.secondaryColor}; margin-bottom: 16px; text-align: center;">
-      Verify your email address
-    </h2>
+    ${buildEmailSectionHeading("Verify your email address", { color: branding.secondaryColor, align: "center", marginBottom: "16px" })}
 
-    <p style="font-size: 16px; color: #475569; margin-bottom: 24px; text-align: center;">
+    <p style="font-size: 16px; color: #475569; margin: 0 0 24px 0; text-align: center; line-height: 1.7;">
       Hi ${userName}, please use the code below to verify your email address and complete your registration.
     </p>
 
-    <div style="background: ${branding.backgroundColor}; border-radius: 16px; padding: 32px; margin-bottom: 24px; text-align: center; border: 1px solid ${branding.borderColor};">
-      <div style="font-size: 36px; font-weight: 800; letter-spacing: 8px; color: ${branding.primaryColor}; margin-bottom: 8px;">
-        ${displayCode}
-      </div>
-      <p style="font-size: 12px; color: #94a3b8; margin: 0; text-transform: uppercase; font-weight: 700;">
-        Verification Code
-      </p>
-    </div>
+    ${buildEmailCard({
+      children: `
+        <div style="font-size: 36px; font-weight: 800; letter-spacing: 8px; color: ${branding.primaryColor}; margin-bottom: 8px;">${displayCode}</div>
+        <p style="font-size: 12px; color: #94a3b8; margin: 0; text-transform: uppercase; font-weight: 700;">Verification Code</p>
+      `,
+      background: branding.backgroundColor,
+      borderColor: branding.borderColor,
+      padding: "32px",
+      marginBottom: "24px",
+      align: "center",
+      radius: "16px",
+    })}
 
     <div style="text-align: center;">
-      <p style="font-size: 14px; color: #64748b; margin-bottom: 16px;">
+      <p style="font-size: 14px; color: #64748b; margin: 0 0 16px 0;">
         Or click the button below to verify directly:
       </p>
-      <a href="${url}" style="display: inline-block; background: ${branding.primaryColor}; color: ${branding.buttonTextColor}; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 14px; box-shadow: 0 4px 6px -1px rgba(245, 158, 11, 0.2);">
-        Verify Email
-      </a>
+      ${buildEmailButton({ href: url, label: "Verify Email" })}
     </div>
   `;
 
@@ -825,21 +916,17 @@ export async function sendPasswordResetEmail(options: {
   const branding = getEmailBranding();
 
   const contentHtml = `
-    <h2 style="font-size: 22px; font-weight: 800; color: ${branding.secondaryColor}; margin-bottom: 16px; text-align: center;">
-      Reset your password
-    </h2>
+    ${buildEmailSectionHeading("Reset your password", { color: branding.secondaryColor, align: "center", marginBottom: "16px" })}
 
-    <p style="font-size: 16px; color: #475569; margin-bottom: 24px; text-align: center;">
+    <p style="font-size: 16px; color: #475569; margin: 0 0 24px 0; text-align: center; line-height: 1.7;">
       Hi ${userName}, we received a request to reset your password. Click the button below to choose a new one.
     </p>
 
     <div style="text-align: center; margin-bottom: 24px;">
-      <a href="${url}" style="display: inline-block; background: #F5A623; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(245, 166, 35, 0.2);">
-        Reset Password
-      </a>
+      ${buildEmailButton({ href: url, label: "Reset Password" })}
     </div>
 
-    <p style="font-size: 13px; color: #94a3b8; text-align: center; margin: 0;">
+    <p style="font-size: 13px; color: #94a3b8; text-align: center; margin: 0; line-height: 1.6;">
       This link will expire in 1 hour. If you didn't request this, you can safely ignore this email.
     </p>
   `;
@@ -870,21 +957,17 @@ export async function sendMagicLinkEmail(options: {
   const branding = getEmailBranding();
 
   const contentHtml = `
-    <h2 style="font-size: 22px; font-weight: 800; color: ${branding.secondaryColor}; margin-bottom: 16px; text-align: center;">
-      Sign in to your account
-    </h2>
+    ${buildEmailSectionHeading("Sign in to your account", { color: branding.secondaryColor, align: "center", marginBottom: "16px" })}
 
-    <p style="font-size: 16px; color: #475569; margin-bottom: 24px; text-align: center;">
+    <p style="font-size: 16px; color: #475569; margin: 0 0 24px 0; text-align: center; line-height: 1.7;">
       Click the button below to sign in to your Genesyz account. This link will expire in 10 minutes.
     </p>
 
     <div style="text-align: center; margin-bottom: 24px;">
-      <a href="${url}" style="display: inline-block; background: #F5A623; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(245, 166, 35, 0.2);">
-        Sign In to Genesyz
-      </a>
+      ${buildEmailButton({ href: url, label: "Sign In to Genesyz" })}
     </div>
 
-    <p style="font-size: 13px; color: #94a3b8; text-align: center; margin: 0;">
+    <p style="font-size: 13px; color: #94a3b8; text-align: center; margin: 0; line-height: 1.6;">
       If you didn't request this link, you can safely ignore this email.
     </p>
   `;
