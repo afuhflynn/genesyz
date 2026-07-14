@@ -125,7 +125,7 @@ export function GuideChat({ ideaId }: GuideChatProps) {
   }
 
   return (
-    <Card className="fixed bottom-6 right-6 w-100 h-150 shadow-2xl flex flex-col z-50 overflow-auto">
+    <Card className="fixed bottom-6 right-6 w-[calc(100vw-2rem)] max-w-[400px] h-150 shadow-2xl flex flex-col z-50 overflow-auto sm:w-100">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4 border-b">
         <div className="flex items-center gap-2">
           <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">

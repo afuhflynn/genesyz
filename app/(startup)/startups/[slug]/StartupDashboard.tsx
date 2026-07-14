@@ -11,9 +11,7 @@ import {
   Plus,
   School,
   Target,
-  TrendingDown,
   TrendingUp,
-  Zap,
 } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +20,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useStartup } from "@/hooks";
 import { getWeeksSinceCreation } from "@/lib/utils/date";
+import { VERDICT_CONFIG } from "@/lib/constants/verdicts";
 
 const STAGE_COLORS: Record<string, string> = {
   IDEA: "bg-gray-100 text-gray-800",
@@ -29,27 +28,6 @@ const STAGE_COLORS: Record<string, string> = {
   BUILDING: "bg-yellow-100 text-yellow-800",
   LAUNCHED: "bg-green-100 text-green-800",
   SCALING: "bg-purple-100 text-purple-800",
-};
-
-const VERDICT_CONFIG: Record<
-  string,
-  { color: string; icon: typeof TrendingUp; label: string }
-> = {
-  ON_TRACK: {
-    color: "text-green-600 bg-green-50 border-green-200",
-    icon: TrendingUp,
-    label: "On Track",
-  },
-  NEEDS_ATTENTION: {
-    color: "text-yellow-600 bg-yellow-50 border-yellow-200",
-    icon: Zap,
-    label: "Needs Attention",
-  },
-  AT_RISK: {
-    color: "text-red-600 bg-red-50 border-red-200",
-    icon: TrendingDown,
-    label: "At Risk",
-  },
 };
 
 export function StartupDashboard({ slug }: { slug: string }) {

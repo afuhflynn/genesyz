@@ -34,9 +34,19 @@
   --sidebar-accent-foreground: oklch(0.1450 0.0100 260);
   --sidebar-border: oklch(0.9100 0.0080 60);
   --sidebar-ring: oklch(0.6800 0.1950 41.5);
-  --font-sans: Geist Mono, ui-monospace, monospace;
+  --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
+  --font-display: Space Grotesk, ui-sans-serif, system-ui, sans-serif;
   --font-serif: serif;
-  --font-mono: JetBrains Mono, monospace;
+  --font-mono: JetBrains Mono, ui-monospace, monospace;
+  --text-hero: clamp(2.5rem, 5vw, 4rem);
+  --text-h1: clamp(1.75rem, 3.5vw, 2.5rem);
+  --text-h2: clamp(1.375rem, 2.5vw, 1.75rem);
+  --text-h3: clamp(1.125rem, 1.75vw, 1.375rem);
+  --text-h4: clamp(1rem, 1.25vw, 1.125rem);
+  --text-body: 0.9375rem;
+  --text-sm: 0.8125rem;
+  --text-xs: 0.75rem;
+  --text-caption: 0.6875rem;
   --radius: 0.5rem;
   --shadow-x: 0px;
   --shadow-y: 1px;
@@ -94,9 +104,19 @@
   --sidebar-accent-foreground: oklch(0.9300 0.0050 60);
   --sidebar-border: oklch(0.2600 0.0080 260);
   --sidebar-ring: oklch(0.7200 0.1900 40);
-  --font-sans: Geist Mono, ui-monospace, monospace;
+  --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
+  --font-display: Space Grotesk, ui-sans-serif, system-ui, sans-serif;
   --font-serif: serif;
-  --font-mono: JetBrains Mono, monospace;
+  --font-mono: JetBrains Mono, ui-monospace, monospace;
+  --text-hero: clamp(2.5rem, 5vw, 4rem);
+  --text-h1: clamp(1.75rem, 3.5vw, 2.5rem);
+  --text-h2: clamp(1.375rem, 2.5vw, 1.75rem);
+  --text-h3: clamp(1.125rem, 1.75vw, 1.375rem);
+  --text-h4: clamp(1rem, 1.25vw, 1.125rem);
+  --text-body: 0.9375rem;
+  --text-sm: 0.8125rem;
+  --text-xs: 0.75rem;
+  --text-caption: 0.6875rem;
   --radius: 0.5rem;
   --shadow-x: 0px;
   --shadow-y: 1px;
@@ -154,6 +174,7 @@
   --color-sidebar-ring: var(--sidebar-ring);
 
   --font-sans: var(--font-sans);
+  --font-display: var(--font-display);
   --font-mono: var(--font-mono);
   --font-serif: var(--font-serif);
 
@@ -254,3 +275,17 @@ body {
     @apply border-border outline-ring/50;
   }
 }
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+h1 { font-size: var(--text-h1); }
+h2 { font-size: var(--text-h2); }
+h3 { font-size: var(--text-h3); }
+h4 { font-size: var(--text-h4); }
+h5 { font-size: var(--text-h4); }
+h6 { font-size: var(--text-body); }

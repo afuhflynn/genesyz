@@ -40,7 +40,7 @@ export function StartupLayoutShell({
           <StartupSidebar startup={startup} permissions={permissions} />
         </Sidebar>
         <SidebarInset className="overflow-hidden flex flex-col">
-          <main className="flex-1 overflow-auto pt-6 px-6 items-center flex">
+          <main className="flex-1 overflow-auto pt-6 px-4 sm:px-6 lg:px-8 items-center flex">
             <div className="h-full w-full">{children}</div>
           </main>
         </SidebarInset>

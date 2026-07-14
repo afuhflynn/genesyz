@@ -63,7 +63,7 @@ export default function StreaksPage({
       {/* Milestones Guide */}
       <div className="rounded-lg border p-6">
         <h3 className="font-semibold mb-4">Milestones</h3>
-        <div className="grid grid-cols-4 gap-4 text-center text-sm">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center text-sm">
           <div className="p-3 rounded-lg bg-blue-50">
             <div className="text-lg mb-1">🔥</div>
             <div className="font-medium">4 weeks</div>

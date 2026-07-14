@@ -50,6 +50,7 @@ export function EnhancedNewIdeaForm({
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [submittedIdeaId, setSubmittedIdeaId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: session } = useSession();
@@ -146,6 +147,8 @@ export function EnhancedNewIdeaForm({
       });
 
       if (response.ok) {
+        const createdIdea = await response.json();
+        setSubmittedIdeaId(createdIdea?.id ?? null);
         setSubmitted(true);
       } else {
         const body = await response.json().catch(() => null);
@@ -163,6 +166,7 @@ export function EnhancedNewIdeaForm({
 
   const handleReset = () => {
     setSubmitted(false);
+    setSubmittedIdeaId(null);
     setText("");
     setTargetLocation(null);
     setAudioUrl(null);
@@ -173,7 +177,7 @@ export function EnhancedNewIdeaForm({
   };
 
   if (submitted) {
-    return <IdeaSubmittedSuccess onReset={handleReset} />;
+    return <IdeaSubmittedSuccess onReset={handleReset} ideaId={submittedIdeaId ?? undefined} />;
   }
 
   return (

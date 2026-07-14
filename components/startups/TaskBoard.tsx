@@ -50,6 +50,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
   type TaskItem,
@@ -533,19 +540,18 @@ export function TaskBoard({ startupId }: { startupId: string }) {
               </DialogHeader>
               <div className="space-y-3">
                 <Label htmlFor="task-list">List</Label>
-                <select
-                  id="task-list"
-                  value={taskListId}
-                  onChange={(e) => setTaskListId(e.target.value)}
-                  className="w-full border rounded-md p-2 text-sm"
-                >
-                  <option value="">Select a list</option>
-                  {lists.map((list) => (
-                    <option key={list.id} value={list.id}>
-                      {list.name}
-                    </option>
-                  ))}
-                </select>
+                <Select value={taskListId} onValueChange={setTaskListId}>
+                  <SelectTrigger id="task-list">
+                    <SelectValue placeholder="Select a list" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {lists.map((list) => (
+                      <SelectItem key={list.id} value={list.id}>
+                        {list.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
                 <Label htmlFor="task-title">Title</Label>
                 <Input

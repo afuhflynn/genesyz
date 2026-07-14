@@ -427,7 +427,7 @@ export default function IdeaDetailPage() {
                     <CardTitle>Market Size</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <div>
                         <p className="text-sm font-medium text-muted-foreground">
                           TAM
@@ -517,7 +517,7 @@ export default function IdeaDetailPage() {
                       <CardTitle>Market Capitalization</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <div className="grid grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div>
                           <p className="text-sm font-medium text-muted-foreground">
                             Industry
@@ -632,7 +632,7 @@ export default function IdeaDetailPage() {
                         <p className="text-sm text-muted-foreground mb-2">
                           {comp.description}
                         </p>
-                        <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
                           <div>
                             <span className="text-green-600 font-medium">
                               Strengths:
@@ -663,7 +663,7 @@ export default function IdeaDetailPage() {
                   <CardTitle>Implementation Plan</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">
                         Time to MVP

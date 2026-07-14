@@ -110,7 +110,7 @@ export function StartupSidebar({
       label: "Metrics",
       icon: TrendingUp,
       href: `${basePath}/metrics`,
-      active: pathname === `${basePath}/metrics`,
+      active: pathname === `${basePath}/metrics` || pathname.startsWith(`${basePath}/metrics/`),
       visible: permissions.canViewStartup,
     },
     // {
@@ -151,22 +151,53 @@ export function StartupSidebar({
       )}
     >
       <div className="space-y-4 py-4">
-        {/* Navigation */}
         <div className="px-3">
-          <div className="space-y-1">
-            {routes.map((route) => (
-              <Button
-                key={route.href}
-                variant={route.active ? "secondary" : "ghost"}
-                className="w-full justify-start"
-                asChild
-              >
-                <Link href={route.href}>
-                  <route.icon className="mr-2 h-4 w-4" />
-                  {route.label}
-                </Link>
-              </Button>
-            ))}
+          <div className="space-y-4">
+            <div>
+              <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                Track
+              </p>
+              <div className="space-y-1">
+                {routes
+                  .filter((r) => !["Profile", "Settings"].includes(r.label))
+                  .map((route) => (
+                    <Button
+                      key={route.href}
+                      variant={route.active ? "secondary" : "ghost"}
+                      className="w-full justify-start"
+                      asChild
+                    >
+                      <Link href={route.href}>
+                        <route.icon className="mr-2 h-4 w-4" />
+                        {route.label}
+                      </Link>
+                    </Button>
+                  ))}
+              </div>
+            </div>
+
+            <div>
+              <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                Setup
+              </p>
+              <div className="space-y-1">
+                {routes
+                  .filter((r) => ["Profile", "Settings"].includes(r.label))
+                  .map((route) => (
+                    <Button
+                      key={route.href}
+                      variant={route.active ? "secondary" : "ghost"}
+                      className="w-full justify-start"
+                      asChild
+                    >
+                      <Link href={route.href}>
+                        <route.icon className="mr-2 h-4 w-4" />
+                        {route.label}
+                      </Link>
+                    </Button>
+                  ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>

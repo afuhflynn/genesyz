@@ -10,22 +10,9 @@ import {
   Pencil,
   Plus,
   Target,
-  TrendingDown,
   TrendingUp,
-  Zap,
 } from "lucide-react";
 import Link from "next/link";
-import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
 import {
   Accordion,
   AccordionContent,
@@ -38,27 +25,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useStartup, useToggleGoalCompletion, useWeeklyUpdates } from "@/hooks";
 import { formatMetricValue, getMetricFormat } from "@/lib/constants/metrics";
-
-const VERDICT_CONFIG: Record<
-  string,
-  { color: string; icon: typeof TrendingUp; label: string }
-> = {
-  ON_TRACK: {
-    color: "text-green-600 bg-green-50 border-green-200",
-    icon: TrendingUp,
-    label: "On Track",
-  },
-  NEEDS_ATTENTION: {
-    color: "text-yellow-600 bg-yellow-50 border-yellow-200",
-    icon: Zap,
-    label: "Needs Attention",
-  },
-  AT_RISK: {
-    color: "text-red-600 bg-red-50 border-red-200",
-    icon: TrendingDown,
-    label: "At Risk",
-  },
-};
+import { VERDICT_CONFIG } from "@/lib/constants/verdicts";
 
 interface WeeklyUpdatesListProps {
   slug: string;

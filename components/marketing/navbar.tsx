@@ -1,10 +1,13 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { Menu, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
 const navLinks = [
@@ -18,6 +21,7 @@ const navLinks = [
 
 export function Navbar() {
   const pathname = usePathname();
+  const [open, setOpen] = useState(false);
 
   return (
     <motion.header
@@ -35,7 +39,6 @@ export function Navbar() {
               height={46}
               className="aspect-square object-contain"
             />
-
             <span className="text-xl font-semibold">Genesyz</span>
           </Link>
           <nav className="hidden md:flex items-center gap-6">
@@ -66,6 +69,47 @@ export function Navbar() {
               Get Started
             </Button>
           </Link>
+          <Sheet open={open} onOpenChange={setOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="md:hidden">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-72">
+              <div className="flex flex-col gap-6 mt-8">
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setOpen(false)}
+                    className={cn(
+                      "text-lg font-medium transition-colors hover:text-primary",
+                      pathname === link.href
+                        ? "text-primary"
+                        : "text-muted-foreground",
+                    )}
+                  >
+                    {link.name}
+                  </Link>
+                ))}
+                <hr className="my-2" />
+                <Link
+                  href="/sign-in"
+                  onClick={() => setOpen(false)}
+                  className="text-lg font-medium text-muted-foreground hover:text-primary"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/sign-up"
+                  onClick={() => setOpen(false)}
+                  className="text-lg font-medium text-primary hover:text-primary/80"
+                >
+                  Get Started
+                </Link>
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
     </motion.header>

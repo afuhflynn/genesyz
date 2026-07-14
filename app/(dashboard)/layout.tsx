@@ -24,7 +24,7 @@ export default function DashboardLayout({
         </Sidebar>
         <SidebarInset className="overflow-hidden flex flex-col">
           <Header />
-          <main className="flex w-full h-full overflow-auto flex-col pt-8 px-6 items-center">
+          <main className="flex w-full h-full overflow-auto flex-col pt-6 px-4 sm:px-6 lg:px-8 items-center">
             <div className="h-full w-full">{children}</div>
           </main>
         </SidebarInset>

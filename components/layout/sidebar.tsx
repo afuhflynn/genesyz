@@ -41,7 +41,7 @@ export function Sidebar({ className }: SidebarProps) {
       label: "My Ideas",
       icon: Lightbulb,
       href: "/ideas",
-      active: pathname === "/ideas",
+      active: pathname === "/ideas" || (pathname.startsWith("/ideas") && !pathname.startsWith("/ideas/archived")),
     },
 
     {
@@ -125,20 +125,52 @@ export function Sidebar({ className }: SidebarProps) {
           </Link>
         </div>
         <div className="px-3 py-2">
-          <div className="space-y-1">
-            {routes.map((route) => (
-              <Button
-                key={route.href}
-                variant={route.active ? "secondary" : "ghost"}
-                className="w-full justify-start"
-                asChild
-              >
-                <Link href={route.href}>
-                  <route.icon className="mr-2 h-4 w-4" />
-                  {route.label}
-                </Link>
-              </Button>
-            ))}
+          <div className="space-y-4">
+            <div>
+              <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                Main
+              </p>
+              <div className="space-y-1">
+                {routes
+                  .filter((r) => ["/dashboard", "/ideas", "/ideas/new", "/startups", "/startups/new"].includes(r.href))
+                  .map((route) => (
+                    <Button
+                      key={route.href}
+                      variant={route.active ? "secondary" : "ghost"}
+                      className="w-full justify-start"
+                      asChild
+                    >
+                      <Link href={route.href}>
+                        <route.icon className="mr-2 h-4 w-4" />
+                        {route.label}
+                      </Link>
+                    </Button>
+                  ))}
+              </div>
+            </div>
+
+            <div>
+              <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                Account
+              </p>
+              <div className="space-y-1">
+                {routes
+                  .filter((r) => ["/billing", "/settings", "/ideas/archived", "/admin"].includes(r.href))
+                  .map((route) => (
+                    <Button
+                      key={route.href}
+                      variant={route.active ? "secondary" : "ghost"}
+                      className="w-full justify-start"
+                      asChild
+                    >
+                      <Link href={route.href}>
+                        <route.icon className="mr-2 h-4 w-4" />
+                        {route.label}
+                      </Link>
+                    </Button>
+                  ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>

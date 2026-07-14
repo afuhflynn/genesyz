@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { PipelineVisualization } from "./pipeline-viz";
 
 export function Hero() {
   return (
@@ -100,95 +101,17 @@ export function Hero() {
           </motion.div>
         </div>
 
-        {/* Visual Preview */}
+        {/* Pipeline Visualization */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.4 }}
-          className="mt-20 relative max-w-6xl mx-auto"
+          className="mt-20 max-w-lg mx-auto"
         >
-          <div className="relative rounded-3xl border bg-white/50 backdrop-blur-sm p-4 shadow-2xl overflow-hidden">
+          <div className="relative rounded-3xl border bg-white/50 backdrop-blur-sm p-6 shadow-2xl overflow-hidden">
             <div className="absolute inset-0 bg-linear-to-tr from-primary/5 to-violet-500/5 -z-10" />
-            <div className="rounded-2xl border bg-white shadow-sm overflow-hidden aspect-video flex flex-col">
-              {/* Browser Header */}
-              <div className="h-12 border-b bg-slate-50 flex items-center px-6 gap-4">
-                <div className="flex gap-2">
-                  <div className="w-3 h-3 rounded-full bg-slate-200" />
-                  <div className="w-3 h-3 rounded-full bg-slate-200" />
-                  <div className="w-3 h-3 rounded-full bg-slate-200" />
-                </div>
-                <div className="flex-1 max-w-md h-7 bg-white border rounded-md mx-auto flex items-center px-3 text-[10px] text-slate-400">
-                  genesyz.ai/dashboard
-                </div>
-              </div>
-              {/* Content Placeholder */}
-              <div className="flex-1 p-8 flex gap-8">
-                <div className="w-1/3 space-y-4">
-                  <div className="h-8 w-3/4 bg-slate-100 rounded-lg animate-pulse" />
-                  <div className="h-32 w-full bg-slate-50 rounded-xl border-2 border-dashed border-slate-200 flex items-center justify-center">
-                    <span className="text-[10px] text-slate-400 font-mono">
-                      INPUT: "Uber for Dog Walkers"
-                    </span>
-                  </div>
-                  <div className="h-10 w-full bg-primary/10 rounded-lg" />
-                </div>
-                <div className="flex-1 bg-slate-50 rounded-2xl border p-6 flex flex-col gap-4">
-                  <div className="flex justify-between items-center">
-                    <div className="h-6 w-32 bg-slate-200 rounded-md" />
-                    <div className="h-6 w-16 bg-green-100 rounded-full" />
-                  </div>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="h-20 bg-white rounded-xl border shadow-sm" />
-                    <div className="h-20 bg-white rounded-xl border shadow-sm" />
-                    <div className="h-20 bg-white rounded-xl border shadow-sm" />
-                  </div>
-                  <div className="flex-1 bg-white rounded-xl border p-4 space-y-2">
-                    <div className="h-3 w-full bg-slate-100 rounded" />
-                    <div className="h-3 w-5/6 bg-slate-100 rounded" />
-                    <div className="h-3 w-4/6 bg-slate-100 rounded" />
-                  </div>
-                </div>
-              </div>
-            </div>
+            <PipelineVisualization />
           </div>
-
-          {/* Floating Badges */}
-          <motion.div
-            animate={{ y: [0, -10, 0] }}
-            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute -top-6 -left-6 bg-white border shadow-xl p-4 rounded-2xl hidden lg:block"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600">
-                <Sparkles className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-xs font-bold">Market Fit Score</p>
-                <p className="text-lg font-black text-green-600">87/100</p>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            animate={{ y: [0, 10, 0] }}
-            transition={{
-              duration: 5,
-              repeat: Infinity,
-              ease: "easeInOut",
-              delay: 0.5,
-            }}
-            className="absolute -bottom-6 -right-6 bg-white border shadow-xl p-4 rounded-2xl hidden lg:block"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
-                <Sparkles className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-xs font-bold">Competitors Found</p>
-                <p className="text-lg font-black text-blue-600">12 Direct</p>
-              </div>
-            </div>
-          </motion.div>
         </motion.div>
       </div>
     </section>

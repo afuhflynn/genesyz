@@ -166,6 +166,12 @@ export default function OpportunitiesPage({
   const [updatingOpportunityId, setUpdatingOpportunityId] = useState<
     string | null
   >(null);
+  const [addTitle, setAddTitle] = useState("");
+  const [addCategory, setAddCategory] = useState("");
+  const [addUrl, setAddUrl] = useState("");
+  const [addDescription, setAddDescription] = useState("");
+  const [addDeadline, setAddDeadline] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const generateMutation = useGenerateOpportunities(slug);
 
@@ -238,6 +244,47 @@ export default function OpportunitiesPage({
       toast.error(parseApiError("Failed to update opportunity status", error));
     } finally {
       setUpdatingOpportunityId(null);
+    }
+  };
+
+  const handleAddOpportunity = async () => {
+    if (!slug || !addTitle || !addCategory || !addUrl || !addDeadline) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const response = await fetch(`/api/startups/${slug}/opportunities`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: addTitle,
+          description: addDescription || "No description provided",
+          url: addUrl,
+          category: addCategory,
+          deadline: addDeadline,
+        }),
+      });
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        throw new Error(body?.error || "Failed to create opportunity");
+      }
+
+      const newOpportunity = await response.json();
+      setOpportunities((prev) => [newOpportunity, ...prev]);
+      toast.success("Opportunity added");
+      setIsAddOpen(false);
+      setAddTitle("");
+      setAddCategory("");
+      setAddUrl("");
+      setAddDescription("");
+      setAddDeadline("");
+    } catch (error) {
+      toast.error(parseApiError("Failed to create opportunity", error));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -408,12 +455,17 @@ export default function OpportunitiesPage({
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="title">Title</Label>
-                  <Input id="title" placeholder="Y Combinator W26" />
+                  <Label htmlFor="title">Title *</Label>
+                  <Input
+                    id="title"
+                    placeholder="Y Combinator W26"
+                    value={addTitle}
+                    onChange={(e) => setAddTitle(e.target.value)}
+                  />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="category">Category</Label>
-                  <Select>
+                  <Label htmlFor="category">Category *</Label>
+                  <Select value={addCategory} onValueChange={setAddCategory}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
@@ -429,23 +481,39 @@ export default function OpportunitiesPage({
                   </Select>
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="url">URL</Label>
-                  <Input id="url" placeholder="https://..." />
+                  <Label htmlFor="url">URL *</Label>
+                  <Input
+                    id="url"
+                    placeholder="https://..."
+                    value={addUrl}
+                    onChange={(e) => setAddUrl(e.target.value)}
+                  />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="description">Description</Label>
-                  <Input id="description" placeholder="Brief description..." />
+                  <Input
+                    id="description"
+                    placeholder="Brief description..."
+                    value={addDescription}
+                    onChange={(e) => setAddDescription(e.target.value)}
+                  />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="deadline">Deadline</Label>
-                  <Input id="deadline" type="date" />
+                  <Label htmlFor="deadline">Deadline *</Label>
+                  <Input
+                    id="deadline"
+                    type="date"
+                    value={addDeadline}
+                    onChange={(e) => setAddDeadline(e.target.value)}
+                  />
                 </div>
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setIsAddOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={() => setIsAddOpen(false)}>
+                <Button onClick={handleAddOpportunity} disabled={isSubmitting}>
+                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Add Opportunity
                 </Button>
               </DialogFooter>
