@@ -8,7 +8,6 @@ import {
   Lightbulb,
   LogOut,
   Menu,
-  PlusCircle,
   Settings,
   Shield,
 } from "lucide-react";
@@ -45,22 +44,10 @@ export function Sidebar({ className }: SidebarProps) {
     },
 
     {
-      label: "New Idea",
-      icon: PlusCircle,
-      href: "/ideas/new",
-      active: pathname === "/ideas/new",
-    },
-    {
       label: "Startups",
       icon: Building2,
       href: "/startups",
       active: pathname === "/startups",
-    },
-    {
-      label: "New Startup",
-      icon: PlusCircle,
-      href: "/startups/new",
-      active: pathname === "/startups/new",
     },
     // {
     //   label: "Accelerators",
@@ -132,7 +119,7 @@ export function Sidebar({ className }: SidebarProps) {
               </p>
               <div className="space-y-1">
                 {routes
-                  .filter((r) => ["/dashboard", "/ideas", "/ideas/new", "/startups", "/startups/new"].includes(r.href))
+                  .filter((r) => ["/dashboard", "/ideas", "/startups"].includes(r.href))
                   .map((route) => (
                     <Button
                       key={route.href}
