@@ -16,16 +16,28 @@ export const modelChain: ModelEntry[] = [
   ...(openrouter
     ? [
         {
-          name: "openrouter:google/gemini-2.0-flash-exp:free",
-          model: openrouter("google/gemini-2.0-flash-exp:free"),
+          name: "openrouter:qwen/qwen3-coder:free",
+          model: openrouter("qwen/qwen3-coder:free"),
         },
         {
-          name: "openrouter:mistralai/mistral-small-3.1-24b-instruct:free",
-          model: openrouter("mistralai/mistral-small-3.1-24b-instruct:free"),
+          name: "openrouter:nvidia/nemotron-3-super-120b-a12b:free",
+          model: openrouter("nvidia/nemotron-3-super-120b-a12b:free"),
         },
         {
           name: "openrouter:meta-llama/llama-3.3-70b-instruct:free",
           model: openrouter("meta-llama/llama-3.3-70b-instruct:free"),
+        },
+        {
+          name: "openrouter:openai/gpt-oss-20b:free",
+          model: openrouter("openai/gpt-oss-20b:free"),
+        },
+        {
+          name: "openrouter:google/gemma-4-31b-it:free",
+          model: openrouter("google/gemma-4-31b-it:free"),
+        },
+        {
+          name: "openrouter:openrouter/free",
+          model: openrouter("openrouter/free"),
         },
       ]
     : []),
