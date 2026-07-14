@@ -1,4 +1,5 @@
 import { google } from "@ai-sdk/google";
+import { mistral } from "@ai-sdk/mistral";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 
 type ModelEntry = {
@@ -13,12 +14,25 @@ const openrouter = openRouterApiKey
   : null;
 
 export const modelChain: ModelEntry[] = [
+  // Primary: Google Gemini 2.5 Flash (60 RPM free, ~$0.075/M input paid)
+  { name: "google:gemini-2.5-flash", model: google("gemini-2.5-flash") },
+  // Fallback: lighter Gemini (even higher rate limits, ~$0.04/M)
+  { name: "google:gemini-2.5-flash-lite", model: google("gemini-2.5-flash-lite") },
+  // Different quota bucket
   { name: "google:gemini-3.5-flash", model: google("gemini-3.5-flash") },
+  // Secondary: Mistral (API key available, cheap $0.10/M input, reliable)
+  { name: "mistral:mistral-small-latest", model: mistral("mistral-small-latest") },
+  { name: "mistral:mistral-medium-latest", model: mistral("mistral-medium-latest") },
+  // Tertiary: OpenRouter free models
   ...(openrouter
     ? [
         {
           name: "openrouter:qwen/qwen3-coder:free",
           model: openrouter("qwen/qwen3-coder:free"),
+        },
+        {
+          name: "openrouter:nvidia/nemotron-3-super-120b-a12b:free",
+          model: openrouter("nvidia/nemotron-3-super-120b-a12b:free"),
         },
         {
           name: "openrouter:openrouter/free",
