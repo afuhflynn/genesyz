@@ -90,6 +90,7 @@ export async function generateObjectWithFallback<T>(
         instructions: system,
         prompt,
         model: entry.model as any,
+        abortSignal: AbortSignal.timeout(25000),
       });
       return {
         result: result as unknown as GenerateObjectResult<T>,
@@ -145,6 +146,7 @@ async function generateTextFallbackWithSchema<T>(
         instructions: `${instructions}\n\nIMPORTANT: Respond with valid JSON only. No markdown, no explanations.`,
         prompt: `${prompt}\n\nRespond as a JSON object matching this schema: ${JSON.stringify(schema.description ? { type: (schema._def as { typeName?: string }).typeName } : {}).slice(0, 500)}...`,
         model,
+        abortSignal: AbortSignal.timeout(25000),
       });
 
       const text = textResult.text;
@@ -188,6 +190,7 @@ export async function generateTextWithFallback(
       const result = await generateText({
         ...options,
         model: entry.model as any,
+        abortSignal: AbortSignal.timeout(25000),
       } as any);
       return { result: result as any, modelUsed: entry.name };
     } catch (error: unknown) {

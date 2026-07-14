@@ -13,6 +13,7 @@ const openrouter = openRouterApiKey
   : null;
 
 export const modelChain: ModelEntry[] = [
+  { name: "google:gemini-3.5-flash", model: google("gemini-3.5-flash") },
   ...(openrouter
     ? [
         {
@@ -20,16 +21,11 @@ export const modelChain: ModelEntry[] = [
           model: openrouter("qwen/qwen3-coder:free"),
         },
         {
-          name: "openrouter:nvidia/nemotron-3-super-120b-a12b:free",
-          model: openrouter("nvidia/nemotron-3-super-120b-a12b:free"),
-        },
-        {
           name: "openrouter:openrouter/free",
           model: openrouter("openrouter/free"),
         },
       ]
     : []),
-  { name: "google:gemini-3.5-flash", model: google("gemini-3.5-flash") },
 ];
 
 export const model = modelChain[0].model;
