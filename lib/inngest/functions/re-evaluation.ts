@@ -1,4 +1,3 @@
-import { runResearchPipeline } from "@/lib/agents/pipeline";
 import { db } from "@/lib/db";
 import { inngest } from "../client";
 

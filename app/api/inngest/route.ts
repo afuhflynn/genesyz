@@ -1,5 +1,7 @@
 import { serve } from "inngest/next";
 import { inngest } from "@/lib/inngest/client";
+
+export const maxDuration = 300;
 import {
   sendMagicLinkEmailFunction,
   sendPasswordResetEmailFunction,

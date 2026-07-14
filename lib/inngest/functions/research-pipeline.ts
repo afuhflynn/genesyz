@@ -1,37 +1,21 @@
 import { v4 as uuid4 } from "uuid";
-import { runResearchPipeline } from "@/lib/agents/pipeline";
+import {
+  runInterpreterPhase,
+  runParallelPhase,
+  runSynthesisPhase,
+} from "@/lib/agents/pipeline";
 import { db } from "@/lib/db";
 import { sendResearchCompleteEmail } from "@/lib/email/send";
 import { ideaChannel } from "@/lib/inngest/channels";
 import { inngest } from "../client";
 
-/**
- * Research Pipeline Function
- * Triggered when a new idea is submitted
- * Runs multi-agent AI research pipeline
- *
- * **Agent Pipeline**:
- * 1. Interpreter Agent (understands idea from vague inputs)
- * 2. Market Research Agent (analyzes TAM, competitors, growth rates)
- * 3. Trend Analysis Agent (checks timing and technology readiness)
- * 4. Execution Friction Agent (identifies technical and operational risks)
- * 5. Deep Research Agent (uses web search for market validation)
- * 6. Synthesis Agent (combines all data into final score and verdict)
- *
- * **Inngest Versioning**:
- * - Step IDs must be deterministic strings, never random values
- * - Transient progress updates use non-durable `publish()` (no step ID)
- * - Durable state transitions use `step.realtime.publish` with stable IDs
- * - Changing step structure (add/remove/reorder) affects in-progress runs
- * - See RULES.md "Inngest Function Versioning" for details
- */
 export const researchPipelineFunction = inngest.createFunction(
   {
     id: "research-pipeline",
     name: "AI Research Pipeline",
     retries: 3,
     concurrency: {
-      limit: 5, // Limit concurrent research jobs
+      limit: 5,
     },
     triggers: { event: "idea.submitted" },
   },
@@ -39,14 +23,12 @@ export const researchPipelineFunction = inngest.createFunction(
     const { ideaId, userId } = event.data;
     const ch = ideaChannel({ ideaId });
 
-    // Transient: non-durable publish - no step ID needed
     await inngest.realtime.publish(ch["parse.idea"], {
       status: "INITIATE",
       message: "AI research pipeline initiated",
       id: uuid4(),
     });
 
-    // Step 1: Create research job record
     const job = await step.run("create-research-job", async () => {
       return await db.researchJob.create({
         data: {
@@ -57,7 +39,6 @@ export const researchPipelineFunction = inngest.createFunction(
       });
     });
 
-    // Step 2: Update idea status to processing
     await step.run("update-idea-status", async () => {
       await db.idea.update({
         where: { id: ideaId },
@@ -65,22 +46,53 @@ export const researchPipelineFunction = inngest.createFunction(
       });
     });
 
-    // Transient: non-durable publish
     await inngest.realtime.publish(ch["research.started"], {
       status: "PROCESSING",
       message: "AI research pipeline started",
       id: uuid4(),
     });
 
-    // Step 3: Run the research pipeline
-    const result = await step.run("run-research-pipeline", async () => {
-      return await runResearchPipeline(
-        ideaId,
-        inngest.realtime.publish.bind(inngest.realtime),
-      );
+    // Phase 1: Interpreter
+    const interpreterStep = await step.run("run-interpreter", async () => {
+      return await runInterpreterPhase(ideaId);
     });
 
-    // Transient: non-durable publish
+    await inngest.realtime.publish(ch["research.progress"], {
+      status: "COMPLETED",
+      message: "Interpreted your idea",
+      id: uuid4(),
+    });
+
+    // Phase 2: Parallel agents (Market, Trend, Friction, Deep)
+    const parallelStep = await step.run("run-parallel-agents", async () => {
+      return await runParallelPhase(ideaId, interpreterStep.output);
+    });
+
+    await inngest.realtime.publish(ch["research.progress"], {
+      status: "COMPLETED",
+      message: "Completed market research, trend analysis, and risk assessment",
+      id: uuid4(),
+    });
+
+    // Phase 3: Synthesis
+    const allOutputs = {
+      INTERPRETER: interpreterStep.output,
+      MARKET_RESEARCH: parallelStep.marketResearch,
+      TREND_ANALYSIS: parallelStep.trendAnalysis,
+      EXECUTION_FRICTION: parallelStep.executionFriction,
+      DEEP_RESEARCH: parallelStep.deepResearch,
+    } as unknown as Record<import("@prisma/client").ResearchAgentType, import("@/lib/agents/types").AgentOutput>;
+
+    const synthesisStep = await step.run("run-synthesis", async () => {
+      return await runSynthesisPhase(ideaId, allOutputs);
+    });
+
+    const result = {
+      success: true,
+      synthesis: synthesisStep.synthesis,
+      outputs: allOutputs,
+    };
+
     await inngest.realtime.publish(ch["research.progress"], {
       status: result.success ? "COMPLETED" : "FAILED",
       message: result.success
@@ -89,19 +101,16 @@ export const researchPipelineFunction = inngest.createFunction(
       id: uuid4(),
     });
 
-    // Step 4: Update research job status
     await step.run("complete-research-job", async () => {
       await db.researchJob.update({
         where: { id: job.id },
         data: {
           status: result.success ? "COMPLETED" : "FAILED",
           completedAt: new Date(),
-          error: result.error,
         },
       });
     });
 
-    // Step 5: Create audit log
     await step.run("create-audit-log", async () => {
       const synthesisAny = result.synthesis as any;
       const overallScore =
@@ -123,7 +132,6 @@ export const researchPipelineFunction = inngest.createFunction(
       });
     });
 
-    // Step 6: Send email notification
     if (result.success && result.synthesis) {
       await step.run("send-email-notification", async () => {
         const user = await db.user.findUnique({ where: { id: userId } });
@@ -146,7 +154,6 @@ export const researchPipelineFunction = inngest.createFunction(
       });
     }
 
-    // Step 7: Create Research Feed Item if Startup exists
     if (result.success && result.synthesis) {
       await step.run("create-research-feed-item", async () => {
         const startup = await db.startup.findUnique({
@@ -192,7 +199,6 @@ export const researchPipelineFunction = inngest.createFunction(
       });
     }
 
-    // Step 8: Send completion event for other listeners
     if (result.success) {
       const synthesisAny = result.synthesis as any;
       const overallScore =
@@ -207,7 +213,6 @@ export const researchPipelineFunction = inngest.createFunction(
       });
     }
 
-    // Durable publish for final state - deterministic step ID for memoization
     const synthesisAny = result.synthesis as any;
     const overallScore =
       synthesisAny?.overallScore ?? synthesisAny?.scores?.overall?.score ?? 0;

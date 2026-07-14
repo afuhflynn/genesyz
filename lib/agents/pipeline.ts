@@ -23,42 +23,17 @@ export interface PipelineResult {
   error?: string;
 }
 
-/**
- * Run the complete research pipeline for an idea
- * This is called by Inngest for background processing
- *
- * @param ideaId - The ID of the idea to research
- * @param publish - Inngest publish function for realtime updates
- * @returns Pipeline result with all agent outputs and synthesis
- *
- * **AI Model Architecture**:
- * - Model: Google Gemini 3.5 Flash (single model with text-only fallback)
- * - If schema generation fails, falls back to generateText + JSON parsing
- * - Each agent logs the model used via `researchLog.model` field
- *
- * **Agent Pipeline**:
- * 1. Interpreter Agent (structures vague input into title/summary/problem/solution)
- * 2. Market Research Agent (analyzes TAM/SAM/SOM, competitors, growth rates, barriers)
- * 3. Trend Analysis Agent (timing verdict, technology readiness score)
- * 4. Execution Friction Agent (technical complexity, resource estimates, risk factors)
- * 5. Deep Research Agent (web search via Tavily for market gaps and validation)
- * 6. Synthesis Agent (combines all data into final score and verdict)
- */
-export async function runResearchPipeline(
-  ideaId: string,
-  publish: Realtime.TypedPublishFn,
-): Promise<PipelineResult> {
-  // Fetch the idea and its inputs
-  const idea = await db.idea.findUnique({
+async function fetchIdea(ideaId: string) {
+  return await db.idea.findUnique({
     where: { id: ideaId },
     include: { inputs: true },
   });
+}
 
-  if (!idea) {
-    throw new Error(`Idea not found: ${ideaId}`);
-  }
-
-  // Combine all inputs into a single object
+function buildBaseInput(
+  idea: NonNullable<Awaited<ReturnType<typeof fetchIdea>>>,
+  previousOutputs: Record<ResearchAgentType, AgentOutput>,
+): AgentInput {
   const textInput = idea.inputs.find((i) => i.type === "TEXT")?.content;
   const rawInput: IdeaInputData = {
     text: idea.originalPrompt || textInput || undefined,
@@ -66,10 +41,6 @@ export async function runResearchPipeline(
       idea.inputs.find((i) => i.type === "AUDIO")?.transcription || undefined,
     ocrText: idea.inputs.find((i) => i.type === "IMAGE")?.ocrText || undefined,
   };
-
-  const outputs: Partial<Record<ResearchAgentType, AgentOutput>> = {};
-
-  // Parse location context if available
   const locationContext = idea.locationContext as {
     country?: string;
     countryCode?: string;
@@ -79,212 +50,238 @@ export async function runResearchPipeline(
     currency?: string;
     isGlobal?: boolean;
   } | null;
-
-  const baseInput: AgentInput = {
-    ideaId,
+  return {
+    ideaId: idea.id,
     rawInput,
-    previousOutputs: outputs as Record<ResearchAgentType, AgentOutput>,
+    previousOutputs,
     locationContext: locationContext || undefined,
   };
+}
 
-  try {
-    const ch = ideaChannel({ ideaId });
+export async function runInterpreterPhase(
+  ideaId: string,
+): Promise<{ output: AgentOutput }> {
+  const idea = await fetchIdea(ideaId);
+  if (!idea) throw new Error(`Idea not found: ${ideaId}`);
 
-    // Step 1: Interpreter
-    const interpreterStepId = uuid4();
-    publish(ch["research.progress"], {
-      status: "RUNNING",
-      message: "Interpreting your idea",
-      id: interpreterStepId,
-    });
+  const baseInput = buildBaseInput(
+    idea,
+    {} as Record<ResearchAgentType, AgentOutput>,
+  );
 
-    console.log(`[Pipeline] Running InterpreterAgent for idea ${ideaId}`);
-    outputs.INTERPRETER = await runInterpreterAgent(baseInput);
-    await saveResearchPacket(ideaId, outputs.INTERPRETER);
+  console.log(`[Pipeline] Running InterpreterAgent for idea ${ideaId}`);
+  const output = await runInterpreterAgent(baseInput);
+  await saveResearchPacket(ideaId, output);
 
-    publish(ch["research.progress"], {
-      status: "COMPLETED",
-      message: "Interpreted your idea",
-      id: interpreterStepId,
-    });
+  return { output };
+}
 
-    // Steps 2-5: Run in parallel (all depend only on Interpreter)
-    const marketRsearchStepId = uuid4();
-    const trendAnalysisStepId = uuid4();
-    const executionFrictionStepId = uuid4();
-    const deepResearchStepId = uuid4();
+export async function runParallelPhase(
+  ideaId: string,
+  interpreterOutput: AgentOutput,
+): Promise<{
+  marketResearch: AgentOutput;
+  trendAnalysis: AgentOutput;
+  executionFriction: AgentOutput;
+  deepResearch: AgentOutput;
+}> {
+  const idea = await fetchIdea(ideaId);
+  if (!idea) throw new Error(`Idea not found: ${ideaId}`);
 
-    const previousOnlyInterpreter = outputs as Record<
-      ResearchAgentType,
-      AgentOutput
-    >;
+  const previousOutputs = {
+    INTERPRETER: interpreterOutput,
+  } as Record<ResearchAgentType, AgentOutput>;
+  const baseInput = buildBaseInput(idea, previousOutputs);
 
-    publish(ch["research.progress"], {
-      status: "RUNNING",
-      message: "Researching market size, competitors, and trends",
-      id: marketRsearchStepId,
-    });
-    publish(ch["research.progress"], {
-      status: "RUNNING",
-      message: "Analyzing trends and risks",
-      id: trendAnalysisStepId,
-    });
-    publish(ch["research.progress"], {
-      status: "RUNNING",
-      message: "Assessing execution risks",
-      id: executionFrictionStepId,
-    });
-    publish(ch["research.progress"], {
-      status: "RUNNING",
-      message: "Analyzing deep research",
-      id: deepResearchStepId,
-    });
+  console.log(
+    `[Pipeline] Running MarketResearch, TrendAnalysis, ExecutionFriction, DeepResearch in parallel for idea ${ideaId}`,
+  );
 
-    console.log(
-      `[Pipeline] Running MarketResearch, TrendAnalysis, ExecutionFriction, DeepResearch in parallel for idea ${ideaId}`,
-    );
-
-    const [marketResult, trendResult, frictionResult, deepResult] =
-      await Promise.all([
-        runMarketResearchAgent({
-          ...baseInput,
-          previousOutputs: previousOnlyInterpreter,
-        }),
-        runTrendAnalysisAgent({
-          ...baseInput,
-          previousOutputs: previousOnlyInterpreter,
-        }),
-        runExecutionFrictionAgent({
-          ...baseInput,
-          previousOutputs: previousOnlyInterpreter,
-        }),
-        runDeepResearchAgent({
-          ...baseInput,
-          previousOutputs: previousOnlyInterpreter,
-        }),
-      ]);
-
-    outputs.MARKET_RESEARCH = marketResult;
-    outputs.TREND_ANALYSIS = trendResult;
-    outputs.EXECUTION_FRICTION = frictionResult;
-    outputs.DEEP_RESEARCH = deepResult;
-
+  const [marketResearch, trendAnalysis, executionFriction, deepResearch] =
     await Promise.all([
-      saveResearchPacket(ideaId, marketResult),
-      saveResearchPacket(ideaId, trendResult),
-      saveResearchPacket(ideaId, frictionResult),
-      saveResearchPacket(ideaId, deepResult),
+      runMarketResearchAgent(baseInput),
+      runTrendAnalysisAgent(baseInput),
+      runExecutionFrictionAgent(baseInput),
+      runDeepResearchAgent(baseInput),
     ]);
 
-    publish(ch["research.progress"], {
-      status: "COMPLETED",
-      message: "Researched market size, competitors, and trends",
-      id: marketRsearchStepId,
-    });
-    publish(ch["research.progress"], {
-      status: "COMPLETED",
-      message: "Analyzed trends and risks",
-      id: trendAnalysisStepId,
-    });
-    publish(ch["research.progress"], {
-      status: "COMPLETED",
-      message: "Assessed execution risks",
-      id: executionFrictionStepId,
-    });
-    publish(ch["research.progress"], {
-      status: "COMPLETED",
-      message: "Analyzed deep research",
-      id: deepResearchStepId,
-    });
+  await Promise.all([
+    saveResearchPacket(ideaId, marketResearch),
+    saveResearchPacket(ideaId, trendAnalysis),
+    saveResearchPacket(ideaId, executionFriction),
+    saveResearchPacket(ideaId, deepResearch),
+  ]);
 
-    // Step 6: Synthesis (depends on all previous)
-    const synthesisStepId = uuid4();
-    publish(ch["research.progress"], {
-      status: "RUNNING",
-      message: "Synthesizing your idea",
-      id: synthesisStepId,
-    });
-    console.log(`[Pipeline] Running SynthesisAgent for idea ${ideaId}`);
-    outputs.SYNTHESIS = await runSynthesisAgent({
-      ...baseInput,
-      previousOutputs: outputs as Record<ResearchAgentType, AgentOutput>,
-    });
-    await saveResearchPacket(ideaId, outputs.SYNTHESIS);
-    publish(ch["research.progress"], {
-      status: "COMPLETED",
-      message: "Synthesized your idea",
-      id: synthesisStepId,
-    });
+  return { marketResearch, trendAnalysis, executionFriction, deepResearch };
+}
 
-    // Save scores - handle both old (nested) and new (flat) schema formats
-    const synthesis = outputs.SYNTHESIS.content as any;
-    await db.ideaScore.create({
-      data: {
-        ideaId,
-        clarityScore:
-          synthesis.clarityScore ?? synthesis.scores?.clarity?.score ?? 0,
-        clarityExplanation:
-          synthesis.clarityExplanation ??
-          synthesis.scores?.clarity?.explanation ??
-          "",
-        marketScore:
-          synthesis.marketScore ??
-          synthesis.scores?.marketReadiness?.score ??
-          0,
-        marketExplanation:
-          synthesis.marketExplanation ??
-          synthesis.scores?.marketReadiness?.explanation ??
-          "",
-        executionScore:
-          synthesis.executionScore ??
-          synthesis.scores?.executionFeasibility?.score ??
-          0,
-        executionExplanation:
-          synthesis.executionExplanation ??
-          synthesis.scores?.executionFeasibility?.explanation ??
-          "",
-        overallScore:
-          synthesis.overallScore ?? synthesis.scores?.overall?.score ?? 0,
-        overallExplanation:
-          synthesis.overallExplanation ??
-          synthesis.scores?.overall?.explanation ??
-          "",
-      },
-    });
+export async function runSynthesisPhase(
+  ideaId: string,
+  allOutputs: Record<ResearchAgentType, AgentOutput>,
+): Promise<{ synthesis: Synthesis }> {
+  const idea = await fetchIdea(ideaId);
+  if (!idea) throw new Error(`Idea not found: ${ideaId}`);
 
-    // Update idea with title and summary
-    const interpretedIdea = outputs.INTERPRETER.content as {
-      title: string;
-      summary: string;
-    };
-    await db.idea.update({
-      where: { id: ideaId },
-      data: {
-        title: interpretedIdea?.title || "Untitled",
-        summary: interpretedIdea?.summary || "",
-        status: "RESEARCHED",
-        researchedAt: new Date(),
-      },
-    });
+  const baseInput = buildBaseInput(idea, allOutputs);
 
-    console.log(`[Pipeline] Completed research for idea ${ideaId}`);
+  console.log(`[Pipeline] Running SynthesisAgent for idea ${ideaId}`);
+  const output = await runSynthesisAgent(baseInput);
+  await saveResearchPacket(ideaId, output);
 
-    return {
-      success: true,
-      outputs: outputs as Record<ResearchAgentType, AgentOutput>,
-      synthesis,
-    };
-  } catch (error) {
-    console.error(`[Pipeline] Error researching idea ${ideaId}:`, error);
+  const synthesis = output.content as any;
 
-    // Update idea status to failed
-    await db.idea.update({
-      where: { id: ideaId },
-      data: { status: "FAILED" },
-    });
+  await db.ideaScore.create({
+    data: {
+      ideaId,
+      clarityScore:
+        synthesis.clarityScore ?? synthesis.scores?.clarity?.score ?? 0,
+      clarityExplanation:
+        synthesis.clarityExplanation ??
+        synthesis.scores?.clarity?.explanation ??
+        "",
+      marketScore:
+        synthesis.marketScore ??
+        synthesis.scores?.marketReadiness?.score ??
+        0,
+      marketExplanation:
+        synthesis.marketExplanation ??
+        synthesis.scores?.marketReadiness?.explanation ??
+        "",
+      executionScore:
+        synthesis.executionScore ??
+        synthesis.scores?.executionFeasibility?.score ??
+        0,
+      executionExplanation:
+        synthesis.executionExplanation ??
+        synthesis.scores?.executionFeasibility?.explanation ??
+        "",
+      overallScore:
+        synthesis.overallScore ?? synthesis.scores?.overall?.score ?? 0,
+      overallExplanation:
+        synthesis.overallExplanation ??
+        synthesis.scores?.overall?.explanation ??
+        "",
+    },
+  });
 
-    throw error;
-  }
+  const interpretedIdea = allOutputs.INTERPRETER.content as {
+    title: string;
+    summary: string;
+  };
+  await db.idea.update({
+    where: { id: ideaId },
+    data: {
+      title: interpretedIdea?.title || "Untitled",
+      summary: interpretedIdea?.summary || "",
+      status: "RESEARCHED",
+      researchedAt: new Date(),
+    },
+  });
+
+  return { synthesis: synthesis as Synthesis };
+}
+
+export async function runResearchPipeline(
+  ideaId: string,
+  publish: Realtime.TypedPublishFn,
+): Promise<PipelineResult> {
+  const ch = ideaChannel({ ideaId });
+
+  const interpreterStepId = uuid4();
+  publish(ch["research.progress"], {
+    status: "RUNNING",
+    message: "Interpreting your idea",
+    id: interpreterStepId,
+  });
+
+  const { output: interpreterOutput } = await runInterpreterPhase(ideaId);
+
+  publish(ch["research.progress"], {
+    status: "COMPLETED",
+    message: "Interpreted your idea",
+    id: interpreterStepId,
+  });
+
+  const marketRsearchStepId = uuid4();
+  const trendAnalysisStepId = uuid4();
+  const executionFrictionStepId = uuid4();
+  const deepResearchStepId = uuid4();
+
+  publish(ch["research.progress"], {
+    status: "RUNNING",
+    message: "Researching market size, competitors, and trends",
+    id: marketRsearchStepId,
+  });
+  publish(ch["research.progress"], {
+    status: "RUNNING",
+    message: "Analyzing trends and risks",
+    id: trendAnalysisStepId,
+  });
+  publish(ch["research.progress"], {
+    status: "RUNNING",
+    message: "Assessing execution risks",
+    id: executionFrictionStepId,
+  });
+  publish(ch["research.progress"], {
+    status: "RUNNING",
+    message: "Analyzing deep research",
+    id: deepResearchStepId,
+  });
+
+  const { marketResearch, trendAnalysis, executionFriction, deepResearch } =
+    await runParallelPhase(ideaId, interpreterOutput);
+
+  publish(ch["research.progress"], {
+    status: "COMPLETED",
+    message: "Researched market size, competitors, and trends",
+    id: marketRsearchStepId,
+  });
+  publish(ch["research.progress"], {
+    status: "COMPLETED",
+    message: "Analyzed trends and risks",
+    id: trendAnalysisStepId,
+  });
+  publish(ch["research.progress"], {
+    status: "COMPLETED",
+    message: "Assessed execution risks",
+    id: executionFrictionStepId,
+  });
+  publish(ch["research.progress"], {
+    status: "COMPLETED",
+    message: "Analyzed deep research",
+    id: deepResearchStepId,
+  });
+
+  const synthesisStepId = uuid4();
+  publish(ch["research.progress"], {
+    status: "RUNNING",
+    message: "Synthesizing your idea",
+    id: synthesisStepId,
+  });
+
+  const allOutputs = {
+    INTERPRETER: interpreterOutput,
+    MARKET_RESEARCH: marketResearch,
+    TREND_ANALYSIS: trendAnalysis,
+    EXECUTION_FRICTION: executionFriction,
+    DEEP_RESEARCH: deepResearch,
+  } as Record<ResearchAgentType, AgentOutput>;
+
+  const { synthesis } = await runSynthesisPhase(ideaId, allOutputs);
+
+  publish(ch["research.progress"], {
+    status: "COMPLETED",
+    message: "Synthesized your idea",
+    id: synthesisStepId,
+  });
+
+  console.log(`[Pipeline] Completed research for idea ${ideaId}`);
+
+  return {
+    success: true,
+    outputs: allOutputs,
+    synthesis,
+  };
 }
 
 async function saveResearchPacket(ideaId: string, output: AgentOutput) {

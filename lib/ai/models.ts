@@ -24,18 +24,6 @@ export const modelChain: ModelEntry[] = [
           model: openrouter("nvidia/nemotron-3-super-120b-a12b:free"),
         },
         {
-          name: "openrouter:meta-llama/llama-3.3-70b-instruct:free",
-          model: openrouter("meta-llama/llama-3.3-70b-instruct:free"),
-        },
-        {
-          name: "openrouter:openai/gpt-oss-20b:free",
-          model: openrouter("openai/gpt-oss-20b:free"),
-        },
-        {
-          name: "openrouter:google/gemma-4-31b-it:free",
-          model: openrouter("google/gemma-4-31b-it:free"),
-        },
-        {
           name: "openrouter:openrouter/free",
           model: openrouter("openrouter/free"),
         },
