@@ -12,7 +12,6 @@ import { ideaChannel } from "@/lib/inngest/channels";
 import type {
   AgentInput,
   AgentOutput,
-  DeepResearchOutput,
   IdeaInputData,
   Synthesis,
 } from "./types";
@@ -109,77 +108,89 @@ export async function runResearchPipeline(
       id: interpreterStepId,
     });
 
-    // Step 2: Market Research (depends on Interpreter)
+    // Steps 2-5: Run in parallel (all depend only on Interpreter)
     const marketRsearchStepId = uuid4();
+    const trendAnalysisStepId = uuid4();
+    const executionFrictionStepId = uuid4();
+    const deepResearchStepId = uuid4();
+
+    const previousOnlyInterpreter = outputs as Record<
+      ResearchAgentType,
+      AgentOutput
+    >;
+
     publish(ch["research.progress"], {
       status: "RUNNING",
       message: "Researching market size, competitors, and trends",
       id: marketRsearchStepId,
     });
-    console.log(`[Pipeline] Running MarketResearchAgent for idea ${ideaId}`);
-    outputs.MARKET_RESEARCH = await runMarketResearchAgent({
-      ...baseInput,
-      previousOutputs: outputs as Record<ResearchAgentType, AgentOutput>,
-    });
-    await saveResearchPacket(ideaId, outputs.MARKET_RESEARCH);
-    publish(ch["research.progress"], {
-      status: "COMPLETED",
-      message: "Researched market size, competitors, and trends",
-      id: marketRsearchStepId,
-    });
-
-    // Step 3: Trend Analysis (depends on Interpreter)
-    const trendAnalysisStepId = uuid4();
     publish(ch["research.progress"], {
       status: "RUNNING",
       message: "Analyzing trends and risks",
       id: trendAnalysisStepId,
     });
-    console.log(`[Pipeline] Running TrendAnalysisAgent for idea ${ideaId}`);
-    outputs.TREND_ANALYSIS = await runTrendAnalysisAgent({
-      ...baseInput,
-      previousOutputs: outputs as Record<ResearchAgentType, AgentOutput>,
-    });
-    await saveResearchPacket(ideaId, outputs.TREND_ANALYSIS);
-    publish(ch["research.progress"], {
-      status: "COMPLETED",
-      message: "Analyzed trends and risks",
-      id: trendAnalysisStepId,
-    });
-
-    // Step 4: Execution Friction (depends on Interpreter)
-    const executionFrictionStepId = uuid4();
     publish(ch["research.progress"], {
       status: "RUNNING",
       message: "Assessing execution risks",
       id: executionFrictionStepId,
     });
-    console.log(`[Pipeline] Running ExecutionFrictionAgent for idea ${ideaId}`);
-    outputs.EXECUTION_FRICTION = await runExecutionFrictionAgent({
-      ...baseInput,
-      previousOutputs: outputs as Record<ResearchAgentType, AgentOutput>,
-    });
-    await saveResearchPacket(ideaId, outputs.EXECUTION_FRICTION);
-    publish(ch["research.progress"], {
-      status: "COMPLETED",
-      message: "Assessed execution risks",
-      id: executionFrictionStepId,
-    });
-
-    // Step 5: Deep Research (depends on Interpreter)
-    const deepResearchStepId = uuid4();
     publish(ch["research.progress"], {
       status: "RUNNING",
       message: "Analyzing deep research",
       id: deepResearchStepId,
     });
-    console.log(`[Pipeline] Running DeepResearchAgent for idea ${ideaId}`);
-    const deepResearchOutput: DeepResearchOutput = await runDeepResearchAgent({
-      ...baseInput,
-      previousOutputs: outputs as Record<ResearchAgentType, AgentOutput>,
+
+    console.log(
+      `[Pipeline] Running MarketResearch, TrendAnalysis, ExecutionFriction, DeepResearch in parallel for idea ${ideaId}`,
+    );
+
+    const [marketResult, trendResult, frictionResult, deepResult] =
+      await Promise.all([
+        runMarketResearchAgent({
+          ...baseInput,
+          previousOutputs: previousOnlyInterpreter,
+        }),
+        runTrendAnalysisAgent({
+          ...baseInput,
+          previousOutputs: previousOnlyInterpreter,
+        }),
+        runExecutionFrictionAgent({
+          ...baseInput,
+          previousOutputs: previousOnlyInterpreter,
+        }),
+        runDeepResearchAgent({
+          ...baseInput,
+          previousOutputs: previousOnlyInterpreter,
+        }),
+      ]);
+
+    outputs.MARKET_RESEARCH = marketResult;
+    outputs.TREND_ANALYSIS = trendResult;
+    outputs.EXECUTION_FRICTION = frictionResult;
+    outputs.DEEP_RESEARCH = deepResult;
+
+    await Promise.all([
+      saveResearchPacket(ideaId, marketResult),
+      saveResearchPacket(ideaId, trendResult),
+      saveResearchPacket(ideaId, frictionResult),
+      saveResearchPacket(ideaId, deepResult),
+    ]);
+
+    publish(ch["research.progress"], {
+      status: "COMPLETED",
+      message: "Researched market size, competitors, and trends",
+      id: marketRsearchStepId,
     });
-    outputs.DEEP_RESEARCH = deepResearchOutput;
-    await saveResearchPacket(ideaId, deepResearchOutput);
+    publish(ch["research.progress"], {
+      status: "COMPLETED",
+      message: "Analyzed trends and risks",
+      id: trendAnalysisStepId,
+    });
+    publish(ch["research.progress"], {
+      status: "COMPLETED",
+      message: "Assessed execution risks",
+      id: executionFrictionStepId,
+    });
     publish(ch["research.progress"], {
       status: "COMPLETED",
       message: "Analyzed deep research",
