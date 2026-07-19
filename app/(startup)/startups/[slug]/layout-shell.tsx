@@ -30,21 +30,16 @@ export function StartupLayoutShell({
   children,
 }: StartupLayoutShellProps) {
   return (
-    <SidebarProvider
-      defaultOpen={true}
-      className="flex h-screen flex-col overflow-hidden"
-    >
-      <StartupWorkspaceHeader startup={startup} />
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar collapsible="icon">
-          <StartupSidebar startup={startup} permissions={permissions} />
-        </Sidebar>
-        <SidebarInset className="overflow-hidden flex flex-col">
-          <main className="flex-1 overflow-auto pt-6 px-4 sm:px-6 lg:px-8 items-center flex">
-            <div className="h-full w-full">{children}</div>
-          </main>
-        </SidebarInset>
-      </div>
+    <SidebarProvider defaultOpen={true}>
+      <Sidebar collapsible="icon">
+        <StartupSidebar startup={startup} permissions={permissions} />
+      </Sidebar>
+      <SidebarInset className="overflow-hidden flex flex-col">
+        <StartupWorkspaceHeader startup={startup} permissions={permissions} />
+        <main className="flex-1 overflow-auto pt-6 px-4 sm:px-6 lg:px-8">
+          <div className="h-full w-full">{children}</div>
+        </main>
+      </SidebarInset>
     </SidebarProvider>
   );
 }

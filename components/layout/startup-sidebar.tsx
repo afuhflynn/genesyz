@@ -7,21 +7,25 @@ import {
   Calendar,
   FileText,
   Flame,
-  GraduationCap,
   LayoutDashboard,
   MessageSquareIcon,
   Settings,
   TrendingUp,
   User,
-  Users,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import {
+  SidebarContent,
+  SidebarHeader,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from "@/components/ui/sidebar";
 
 interface StartupSidebarProps extends React.HTMLAttributes<HTMLDivElement> {
   startup: {
@@ -37,14 +41,6 @@ interface StartupSidebarProps extends React.HTMLAttributes<HTMLDivElement> {
     canViewSettings: boolean;
   };
 }
-
-const STAGE_COLORS: Record<string, string> = {
-  IDEA: "bg-gray-100 text-gray-800",
-  VALIDATION: "bg-blue-100 text-blue-800",
-  BUILDING: "bg-yellow-100 text-yellow-800",
-  LAUNCHED: "bg-green-100 text-green-800",
-  SCALING: "bg-purple-100 text-purple-800",
-};
 
 export function StartupSidebar({
   startup,
@@ -66,7 +62,7 @@ export function StartupSidebar({
       label: "VC Coach",
       icon: MessageSquareIcon,
       href: `${basePath}/chat`,
-      active: pathname === `${basePath}/chat`,
+      active: pathname === `${basePath}/chat` || pathname.startsWith(`${basePath}/chat/`),
       visible: permissions.canViewStartup,
     },
     {
@@ -113,20 +109,6 @@ export function StartupSidebar({
       active: pathname === `${basePath}/metrics` || pathname.startsWith(`${basePath}/metrics/`),
       visible: permissions.canViewStartup,
     },
-    // {
-    //   label: "Startup School",
-    //   icon: GraduationCap,
-    //   href: `${basePath}/school`,
-    //   active: pathname === `${basePath}/school`,
-    //   visible: permissions.canViewStartup,
-    // },
-    // {
-    //   label: "Co-Founder Match",
-    //   icon: Users,
-    //   href: `${basePath}/cofounders`,
-    //   active: pathname === `${basePath}/cofounders`,
-    //   visible: permissions.canViewStartup,
-    // },
     {
       label: "Profile",
       icon: User,
@@ -144,63 +126,79 @@ export function StartupSidebar({
   ].filter((route) => route.visible);
 
   return (
-    <ScrollArea
-      className={cn(
-        "h-full! overflow-auto flex-col border-r bg-background",
-        className,
-      )}
-    >
-      <div className="space-y-4 py-4">
-        <div className="px-3">
-          <div className="space-y-4">
-            <div>
-              <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                Track
-              </p>
-              <div className="space-y-1">
-                {routes
-                  .filter((r) => !["Profile", "Settings"].includes(r.label))
-                  .map((route) => (
-                    <Button
-                      key={route.href}
-                      variant={route.active ? "secondary" : "ghost"}
-                      className="w-full justify-start"
-                      asChild
-                    >
-                      <Link href={route.href}>
-                        <route.icon className="mr-2 h-4 w-4" />
-                        {route.label}
-                      </Link>
-                    </Button>
-                  ))}
-              </div>
-            </div>
+    <>
+      <SidebarHeader className="border-b border-sidebar-border p-3">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton tooltip="Back to Dashboard" asChild>
+              <Link href="/dashboard" className="flex items-center gap-2">
+                <ArrowLeft className="h-4 w-4 shrink-0" />
+                <span className="group-data-[collapsible=icon]:hidden font-medium">
+                  Back to Dashboard
+                </span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarHeader>
 
-            <div>
-              <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                Setup
-              </p>
-              <div className="space-y-1">
-                {routes
-                  .filter((r) => ["Profile", "Settings"].includes(r.label))
-                  .map((route) => (
-                    <Button
-                      key={route.href}
-                      variant={route.active ? "secondary" : "ghost"}
-                      className="w-full justify-start"
+      <SidebarContent className={cn("p-1", className)}>
+        <SidebarGroup>
+          <SidebarGroupLabel className="group-data-[collapsible=icon]:hidden px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+            Track
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {routes
+                .filter((r) => !["Profile", "Settings"].includes(r.label))
+                .map((route) => (
+                  <SidebarMenuItem key={route.href}>
+                    <SidebarMenuButton
+                      tooltip={route.label}
+                      isActive={route.active}
                       asChild
                     >
                       <Link href={route.href}>
-                        <route.icon className="mr-2 h-4 w-4" />
-                        {route.label}
+                        <route.icon className="h-4 w-4 shrink-0" />
+                        <span className="group-data-[collapsible=icon]:hidden">
+                          {route.label}
+                        </span>
                       </Link>
-                    </Button>
-                  ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </ScrollArea>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel className="group-data-[collapsible=icon]:hidden px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+            Setup
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {routes
+                .filter((r) => ["Profile", "Settings"].includes(r.label))
+                .map((route) => (
+                  <SidebarMenuItem key={route.href}>
+                    <SidebarMenuButton
+                      tooltip={route.label}
+                      isActive={route.active}
+                      asChild
+                    >
+                      <Link href={route.href}>
+                        <route.icon className="h-4 w-4 shrink-0" />
+                        <span className="group-data-[collapsible=icon]:hidden">
+                          {route.label}
+                        </span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+    </>
   );
 }

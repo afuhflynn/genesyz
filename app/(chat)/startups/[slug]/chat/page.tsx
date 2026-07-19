@@ -36,8 +36,6 @@ export default async function VCCoachNewPage({
   }
 
   return (
-    <div className="flex flex-col h-full w-full">
-      <VCCoach startupId={startup.id} startupName={startup.name} />
-    </div>
+    <VCCoach startupId={startup.id} startupName={startup.name} />
   );
 }

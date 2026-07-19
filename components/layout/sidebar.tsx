@@ -7,24 +7,27 @@ import {
   LayoutDashboard,
   Lightbulb,
   LogOut,
-  Menu,
   Settings,
   Shield,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import {
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from "@/components/ui/sidebar";
 import { useProfile } from "@/hooks";
 import { signOut } from "@/lib/auth-client";
-import { cn } from "@/lib/utils";
 import Image from "next/image";
 
-interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {}
-
-export function Sidebar({ className }: SidebarProps) {
+export function Sidebar() {
   const pathname = usePathname();
   const { data: user } = useProfile();
   const router = useRouter();
@@ -42,19 +45,12 @@ export function Sidebar({ className }: SidebarProps) {
       href: "/ideas",
       active: pathname === "/ideas" || (pathname.startsWith("/ideas") && !pathname.startsWith("/ideas/archived")),
     },
-
     {
       label: "Startups",
       icon: Building2,
       href: "/startups",
       active: pathname === "/startups",
     },
-    // {
-    //   label: "Accelerators",
-    //   icon: GraduationCap,
-    //   href: "/accelerators",
-    //   active: pathname === "/accelerators",
-    // },
     {
       label: "Billing",
       icon: CreditCard,
@@ -73,12 +69,6 @@ export function Sidebar({ className }: SidebarProps) {
       href: "/ideas/archived",
       active: pathname === "/ideas/archived",
     },
-    // {
-    //   label: "Chat with Vault",
-    //   icon: BotIcon,
-    //   href: "/chat",
-    //   active: pathname === "/chat",
-    // },
   ];
 
   if (user?.role === "ADMIN") {
@@ -91,111 +81,104 @@ export function Sidebar({ className }: SidebarProps) {
   }
 
   return (
-    <ScrollArea
-      className={cn(
-        "h-full! overflow-auto flex-col justify-between border-r bg-background relative",
-        className,
-      )}
-    >
-      <div className="space-y-4">
-        <div className="flex items-center w-full pl-3 pt-2 border-b border-border md:pb-1.5 pb-2">
-          <Link href="/" className="flex items-center">
-            <Image
-              src="/icon.png"
-              alt="Genesyz Logo"
-              width={42}
-              height={42}
-              className="aspect-square object-contain"
-            />
+    <>
+      <SidebarHeader className="border-b border-sidebar-border p-3">
+        <Link href="/" className="flex items-center gap-2">
+          <Image
+            src="/icon.png"
+            alt="Genesyz Logo"
+            width={32}
+            height={32}
+            className="aspect-square object-contain shrink-0"
+          />
+          <span className="text-lg font-bold group-data-[collapsible=icon]:hidden truncate">
+            Genesyz
+          </span>
+        </Link>
+      </SidebarHeader>
 
-            <span className="text-xl font-semibold">Genesyz</span>
-          </Link>
-        </div>
-        <div className="px-3 py-2">
-          <div className="space-y-4">
-            <div>
-              <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                Main
-              </p>
-              <div className="space-y-1">
-                {routes
-                  .filter((r) => ["/dashboard", "/ideas", "/startups"].includes(r.href))
-                  .map((route) => (
-                    <Button
-                      key={route.href}
-                      variant={route.active ? "secondary" : "ghost"}
-                      className="w-full justify-start"
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel className="group-data-[collapsible=icon]:hidden px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+            Main
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {routes
+                .filter((r) => ["Dashboard", "My Ideas", "Startups"].includes(r.label))
+                .map((route) => (
+                  <SidebarMenuItem key={route.href}>
+                    <SidebarMenuButton
+                      tooltip={route.label}
+                      isActive={route.active}
                       asChild
                     >
                       <Link href={route.href}>
-                        <route.icon className="mr-2 h-4 w-4" />
-                        {route.label}
+                        <route.icon className="h-4 w-4 shrink-0" />
+                        <span className="group-data-[collapsible=icon]:hidden">
+                          {route.label}
+                        </span>
                       </Link>
-                    </Button>
-                  ))}
-              </div>
-            </div>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
 
-            <div>
-              <p className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-                Account
-              </p>
-              <div className="space-y-1">
-                {routes
-                  .filter((r) => ["/billing", "/settings", "/ideas/archived", "/admin"].includes(r.href))
-                  .map((route) => (
-                    <Button
-                      key={route.href}
-                      variant={route.active ? "secondary" : "ghost"}
-                      className="w-full justify-start"
+        <SidebarGroup>
+          <SidebarGroupLabel className="group-data-[collapsible=icon]:hidden px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+            Account
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {routes
+                .filter((r) => ["Billing", "Settings", "Archived Ideas", "Admin"].includes(r.label))
+                .map((route) => (
+                  <SidebarMenuItem key={route.href}>
+                    <SidebarMenuButton
+                      tooltip={route.label}
+                      isActive={route.active}
                       asChild
                     >
                       <Link href={route.href}>
-                        <route.icon className="mr-2 h-4 w-4" />
-                        {route.label}
+                        <route.icon className="h-4 w-4 shrink-0" />
+                        <span className="group-data-[collapsible=icon]:hidden">
+                          {route.label}
+                        </span>
                       </Link>
-                    </Button>
-                  ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className="w-full px-3 absolute bottom-4">
-        <Button
-          variant="ghost"
-          className="w-full justify-start text-muted-foreground hover:text-destructive"
-          onClick={() =>
-            signOut({
-              fetchOptions: {
-                onSuccess() {
-                  router.push("/sign-in");
-                },
-              },
-            })
-          }
-        >
-          <LogOut className="mr-2 h-4 w-4" />
-          Sign Out
-        </Button>
-      </div>
-    </ScrollArea>
-  );
-}
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
 
-export function MobileSidebar() {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        <Button variant="ghost" className="md:hidden">
-          <Menu className="h-6 w-6" />
-        </Button>
-      </SheetTrigger>
-      <SheetContent side="left" className="p-0 w-72 ">
-        <Sidebar className="border-none" />
-      </SheetContent>
-    </Sheet>
+      <SidebarFooter className="p-3 border-t border-sidebar-border">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              tooltip="Sign Out"
+              className="text-muted-foreground hover:text-destructive w-full justify-start"
+              onClick={() =>
+                signOut({
+                  fetchOptions: {
+                    onSuccess() {
+                      router.push("/sign-in");
+                    },
+                  },
+                })
+              }
+            >
+              <LogOut className="h-4 w-4 shrink-0" />
+              <span className="group-data-[collapsible=icon]:hidden">
+                Sign Out
+              </span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
+    </>
   );
 }

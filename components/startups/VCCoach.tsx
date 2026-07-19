@@ -3,6 +3,7 @@
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import {
+  ArrowLeft,
   BotIcon,
   CheckIcon,
   CopyIcon,
@@ -53,7 +54,10 @@ import {
   SidebarRail,
   SidebarTrigger,
   SidebarInset,
+  SidebarFooter,
+  SidebarMenuAction,
 } from "@/components/ui/sidebar";
+import Link from "next/link";
 import {
   useStartupConversations,
   useStartupConversation,
@@ -77,6 +81,7 @@ export function VCCoach({ startupId, startupName, conversationId }: VCCoachProps
   const searchParams = useSearchParams();
   const slug = params.slug as string;
   const hasAutoSent = useRef(false);
+  const pendingConvIdRef = useRef<string | null>(null);
 
   const { data: conversations, refetch: refetchList } = useStartupConversations(startupId);
   const { data: conversationData } = useStartupConversation(
@@ -86,24 +91,42 @@ export function VCCoach({ startupId, startupName, conversationId }: VCCoachProps
   const deleteConversation = useDeleteStartupConversation();
   const createConversation = useCreateStartupConversation();
 
+  const activeConvIdRef = useRef(activeConvId);
+  useEffect(() => {
+    activeConvIdRef.current = activeConvId;
+  }, [activeConvId]);
+
   const { messages, sendMessage, status, setMessages } = useChat({
     id: activeConvId || undefined,
     transport: new DefaultChatTransport({
       api: `/api/startups/${startupId}/chat`,
-      body: {
-        conversationId: activeConvId,
-      },
+      body: () => ({
+        conversationId: activeConvIdRef.current,
+      }),
       fetch: async (url: RequestInfo | URL, init: RequestInit | undefined) => {
+        console.log("[FETCH_INTERCEPTOR] Initiated request to:", url);
         const response = await fetch(url, init);
+        console.log("[FETCH_INTERCEPTOR] Response status:", response.status);
+        console.log("[FETCH_INTERCEPTOR] Response headers:", Array.from(response.headers.entries()));
         const convId = response.headers.get("x-conversation-id");
+        console.log("[FETCH_INTERCEPTOR] Found x-conversation-id:", convId);
         if (convId && activeConvId !== convId) {
-          setActiveConvId(convId);
+          pendingConvIdRef.current = convId;
+          console.log("[FETCH_INTERCEPTOR] Updating browser URL to:", `/startups/${slug}/chat/${convId}`);
+          window.history.replaceState(null, "", `/startups/${slug}/chat/${convId}`);
           refetchList();
         }
         return response;
       },
     }),
   });
+
+  useEffect(() => {
+    if (status === "ready" && pendingConvIdRef.current) {
+      setActiveConvId(pendingConvIdRef.current);
+      pendingConvIdRef.current = null;
+    }
+  }, [status]);
 
   const isLoading = status === "streaming";
 
@@ -187,21 +210,6 @@ export function VCCoach({ startupId, startupName, conversationId }: VCCoachProps
   };
 
   const handleSendMessage = async (text: string) => {
-    if (!activeConvId) {
-      try {
-        const result = await createConversation.mutateAsync({
-          startupId,
-          title: text.substring(0, 50) + (text.length > 50 ? "..." : ""),
-        });
-        const newId = result?.data?.id;
-        if (newId) {
-          router.replace(`/startups/${slug}/chat/${newId}?q=${encodeURIComponent(text)}`);
-        }
-      } catch {
-        toast.error("Failed to create conversation");
-      }
-      return;
-    }
     sendMessage({ text });
   };
 
@@ -257,25 +265,36 @@ export function VCCoach({ startupId, startupName, conversationId }: VCCoachProps
                     <SidebarMenuButton
                       onClick={() => handleSelectConversation(conv.id)}
                       isActive={activeConvId === conv.id}
-                      className="group relative"
                     >
                       <MessageSquareIcon className="w-4 h-4 shrink-0" />
                       <span className="truncate flex-1 text-left">
                         {conv.title || "Untitled Session"}
                       </span>
-                      <button
-                        onClick={(e) => handleDelete(e, conv.id)}
-                        className="opacity-0 group-hover:opacity-100 p-0.5 hover:text-destructive transition-opacity absolute right-1"
-                      >
-                        <Trash2Icon className="w-3 h-3" />
-                      </button>
                     </SidebarMenuButton>
+                    <SidebarMenuAction
+                      onClick={(e) => handleDelete(e, conv.id)}
+                      className="opacity-0 group-hover:opacity-100 hover:text-destructive transition-opacity"
+                    >
+                      <Trash2Icon className="w-3 h-3" />
+                    </SidebarMenuAction>
                   </SidebarMenuItem>
                 ))}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>
+        <SidebarFooter className="border-t p-3">
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild tooltip="Back to Startup Dashboard">
+                <Link href={`/startups/${slug}`} className="flex items-center gap-2">
+                  <ArrowLeft className="h-4 w-4 shrink-0" />
+                  <span>Back to Startup</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarFooter>
         <SidebarRail />
       </Sidebar>
 
@@ -300,7 +319,7 @@ export function VCCoach({ startupId, startupName, conversationId }: VCCoachProps
           </div>
 
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-xs font-normal">
+            <Badge variant="outline" className="text-xs font-normal hidden sm:inline-flex">
               Startup: {startupName}
             </Badge>
           </div>
@@ -373,7 +392,7 @@ export function VCCoach({ startupId, startupName, conversationId }: VCCoachProps
                               {textWithoutThinking && (
                                 <>
                                   <MessageContent
-                                    className={message.role === "user" ? "bg-primary text-primary-foreground" : ""}
+                                    className={message.role === "user" ? "group-[.is-user]:bg-primary group-[.is-user]:text-primary-foreground" : ""}
                                   >
                                     <MessageResponse>{textWithoutThinking}</MessageResponse>
                                   </MessageContent>

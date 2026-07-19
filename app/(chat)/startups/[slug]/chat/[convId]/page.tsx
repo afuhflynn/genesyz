@@ -45,12 +45,10 @@ export default async function VCCoachSessionPage({
   }
 
   return (
-    <div className="flex flex-col h-full w-full">
-      <VCCoach
-        startupId={startup.id}
-        startupName={startup.name}
-        conversationId={convId}
-      />
-    </div>
+    <VCCoach
+      startupId={startup.id}
+      startupName={startup.name}
+      conversationId={convId}
+    />
   );
 }

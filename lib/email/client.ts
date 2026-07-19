@@ -7,10 +7,10 @@ export function getEmailBranding() {
   return {
     appName,
     logoCid: "genesyz-logo",
-    primaryColor: "#f59e0b",
-    primaryDarkColor: "#b45309",
+    primaryColor: "#ea580c",
+    primaryDarkColor: "#c2410c",
     secondaryColor: "#0f172a",
-    accentColor: "#fef3c7",
+    accentColor: "#fff7ed",
     backgroundColor: "#f8fafc",
     borderColor: "#e2e8f0",
     mutedTextColor: "#475569",
@@ -53,16 +53,31 @@ export interface SendEmailOptions {
 }
 
 export async function sendEmail(options: SendEmailOptions): Promise<boolean> {
+  // Preview mode: write HTML to disk instead of sending via SMTP.
+  // Set PREVIEW_EMAILS_DIR env var to activate (never set in production).
+  const previewDir = process.env.PREVIEW_EMAILS_DIR;
+  if (previewDir) {
+    const fs = await import("node:fs");
+    const path = await import("node:path");
+    if (!fs.existsSync(previewDir)) fs.mkdirSync(previewDir, { recursive: true });
+    const existing = fs.readdirSync(previewDir).length + 1;
+    const safe = options.subject
+      .replace(/[^a-zA-Z0-9 ]/g, "")
+      .trim()
+      .replace(/\s+/g, "_")
+      .slice(0, 60);
+    const file = path.join(previewDir, `${String(existing).padStart(2, "0")}_${safe}.html`);
+    fs.writeFileSync(file, options.html, "utf-8");
+    console.log(`[Preview] Saved: ${path.basename(file)}`);
+    return true;
+  }
+
   if (!process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
     console.warn("[Email] SMTP not configured, skipping email send");
     return false;
   }
 
   try {
-    const branding = getEmailBranding();
-    const logoPath =
-      "https://res.cloudinary.com/duzg7l0eo/image/upload/v1783924293/icon_lbltlb.png";
-
     await transporter.sendMail({
       from: getEmailFromAddress(),
       replyTo: getReplyToAddress(),
@@ -70,14 +85,6 @@ export async function sendEmail(options: SendEmailOptions): Promise<boolean> {
       subject: options.subject,
       html: options.html,
       text: options.text,
-      attachments: [
-        {
-          filename: `${branding.appName} Logo`,
-          path: logoPath,
-          cid: branding.logoCid,
-          contentDisposition: "inline",
-        },
-      ],
     });
     console.log(`[Email] Sent to ${options.to}: ${options.subject}`);
     return true;

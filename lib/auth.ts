@@ -14,6 +14,7 @@ import type { WebhookSubscriptionUpdatedPayload } from "@polar-sh/sdk/models/com
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { magicLink, organization, twoFactor } from "better-auth/plugins";
+import { generateVerificationCode } from "@/lib/auth-utils";
 import { sendVerificationEmail } from "@/lib/email/send";
 import { syncEntitlement } from "@/lib/polar/entitlements";
 import { db } from "./db";
@@ -28,7 +29,7 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     autoSignIn: false,
-    requireEmailVerification: true,
+    requireEmailVerification: process.env.NODE_ENV !== "development",
     minPasswordLength: 8,
     maxPasswordLength: 30,
     async sendResetPassword({ user, url }, request) {
@@ -45,11 +46,15 @@ export const auth = betterAuth({
   emailVerification: {
     sendOnSignUp: true,
     expiresIn: 60 * 60 * 24,
-    async sendVerificationEmail({ user, url, token }) {
+    async sendVerificationEmail({ user, url }) {
+      // Generate a clean 6-digit code so users see a readable code,
+      // not the raw long Better Auth token string.
+      const code = generateVerificationCode();
+
       await db.user.update({
         where: { id: user.id },
         data: {
-          verificationCode: token,
+          verificationCode: code,
           verificationExpiry: new Date(Date.now() + 24 * 60 * 60 * 1000),
         },
       });
@@ -57,8 +62,8 @@ export const auth = betterAuth({
       await sendVerificationEmail({
         to: user.email,
         userName: user.name || user.email,
-        code: token,
-        url,
+        code,
+        url: `${process.env.NEXT_PUBLIC_APP_URL}/verify-email`,
       });
     },
   },
@@ -132,7 +137,7 @@ export const auth = betterAuth({
           process.env.NODE_ENV === "development" ? "sandbox" : "production",
       }),
 
-      createCustomerOnSignUp: true,
+      createCustomerOnSignUp: process.env.NODE_ENV !== "development",
       use: [
         checkout({
           products: [

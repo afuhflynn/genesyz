@@ -30,15 +30,43 @@ export async function POST(
     const { messages, conversationId: requestedConversationId } =
       await req.json();
 
-    // Map UI messages to CoreMessages if they are in the parts format
+    // Map UI messages to CoreMessages and sanitize formats (e.g. tool results and calls)
     const coreMessages = Array.isArray(messages)
-      ? messages.map((m: any) => {
+      ? (messages as Record<string, unknown>[]).map((m) => {
+          if (Array.isArray(m.content)) {
+            const sanitizedContent = (m.content as Record<string, unknown>[]).map((part) => {
+              if (part && typeof part === "object") {
+                if (part.type === "tool-result") {
+                  return {
+                    type: "tool-result",
+                    toolCallId: part.toolCallId as string,
+                    toolName: part.toolName as string,
+                    result: part.result !== undefined ? part.result : part.output,
+                    isError: part.isError as boolean | undefined,
+                  };
+                }
+                if (part.type === "tool-call") {
+                  const args = part.args !== undefined ? part.args : part.arguments;
+                  const func = part.function as { name?: string } | undefined;
+                  return {
+                    type: "tool-call",
+                    toolCallId: (part.toolCallId || part.id) as string,
+                    toolName: (part.toolName || func?.name) as string,
+                    args: typeof args === "string" ? JSON.parse(args) : args,
+                  };
+                }
+              }
+              return part;
+            });
+            return { ...m, content: sanitizedContent };
+          }
+
           if (m.parts && Array.isArray(m.parts)) {
             return {
-              role: m.role,
-              content: m.parts
-                .map((p: any) => {
-                  if (p.type === "text") return p.text;
+              role: m.role as string,
+              content: (m.parts as Record<string, unknown>[])
+                .map((p) => {
+                  if (p.type === "text") return p.text as string;
                   return "";
                 })
                 .join("\n"),
@@ -170,6 +198,8 @@ NOTE:
 
 If the user asks for a pitch review or market analysis, use your tools to get the most up-to-date information.`;
 
+    console.log("[CHAT_API] Sanitized coreMessages:", JSON.stringify(coreMessages, null, 2));
+
     const result = await streamTextWithFallback(
       {
         instructions: systemPrompt,
@@ -238,9 +268,14 @@ If the user asks for a pitch review or market analysis, use your tools to get th
       "STARTUP_COACH",
     );
 
-    return result.toTextStreamResponse({
+    const textStreamResponse = result.toTextStreamResponse();
+    return new Response(textStreamResponse.body, {
+      status: textStreamResponse.status,
+      statusText: textStreamResponse.statusText,
       headers: {
+        ...Object.fromEntries(textStreamResponse.headers.entries()),
         "x-conversation-id": conversationId || "",
+        "Access-Control-Expose-Headers": "x-conversation-id",
       },
     });
   } catch (error) {

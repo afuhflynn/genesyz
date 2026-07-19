@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { generateToken, generateVerificationCode } from "@/lib/auth-utils";
+import { generateVerificationCode } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
 import { sendVerificationEmail } from "@/lib/email/send";
 import { resendVerificationSchema } from "@/lib/validators/auth";
@@ -28,9 +28,7 @@ export async function PUT(req: NextRequest) {
     }
 
     const verificationCode = generateVerificationCode();
-    const verificationToken = generateToken();
 
-    // Update user with new verification code
     await db.user.update({
       where: { email },
       data: {
@@ -39,11 +37,13 @@ export async function PUT(req: NextRequest) {
       },
     });
 
+    // URL points to the code-entry page — users type the 6-digit code there.
+    // No token is embedded in the URL because the code itself is the credential.
     await sendVerificationEmail({
       to: email,
       userName: user.name,
       code: verificationCode,
-      url: `${process.env.NEXT_PUBLIC_APP_URL}/verify-email?token=${verificationToken}`,
+      url: `${process.env.NEXT_PUBLIC_APP_URL}/verify-email`,
     });
 
     return NextResponse.json(

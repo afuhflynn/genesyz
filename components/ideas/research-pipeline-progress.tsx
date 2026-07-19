@@ -54,6 +54,38 @@ export function ResearchPipelineProgress({ ideaId }: ResearchPipelineProgressPro
   });
 
   useEffect(() => {
+    let intervalId: any;
+    if (!finished && ideaId) {
+      intervalId = setInterval(async () => {
+        try {
+          const res = await fetch(`/api/ideas/${ideaId}`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data?.status === "RESEARCHED") {
+              setFinished(true);
+              // Also mark all steps as complete for visual consistency
+              setProgress({
+                "parse.idea": "COMPLETED",
+                "research.started": "COMPLETED",
+                "research.progress": "COMPLETED",
+                "execution.friction": "COMPLETED",
+                "deep.research": "COMPLETED",
+                "synthesis": "COMPLETED"
+              });
+              clearInterval(intervalId);
+            }
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }, 3000);
+    }
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [ideaId, finished]);
+
+  useEffect(() => {
     for (const msg of messages.delta) {
       if (msg.kind !== "data") continue;
       const data = msg.data as any;

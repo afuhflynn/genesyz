@@ -1,55 +1,34 @@
 import { type NextRequest, NextResponse } from "next/server";
-import {
-  generateToken,
-  generateUniqueUsername,
-  generateVerificationCode,
-} from "@/lib/auth-utils";
+import { generateUniqueUsername } from "@/lib/auth-utils";
 import { db } from "@/lib/db";
-import { sendVerificationEmail } from "@/lib/email/send";
 import { signUpSchema } from "@/lib/validators/auth";
 
 /**
- * @description Handles user signup, ensures a unique username is auto-generated,
- * and sends a verification email.
+ * @description Post-signup hook to set a unique username on the user record.
+ * Email verification is handled entirely by Better Auth's emailVerification
+ * plugin (sendOnSignUp: true), which sends a clean 6-digit code via the
+ * sendVerificationEmail hook in lib/auth.ts. This route must NOT re-send
+ * the email or overwrite the verificationCode set by the hook.
  */
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const { email } = signUpSchema.parse(body);
 
-    // Ensure user record exists
     const existingUser = await db.user.findUnique({ where: { email } });
 
     if (!existingUser)
       return NextResponse.json(
-        {
-          success: false,
-          message: "User not found.",
-        },
+        { success: false, message: "User not found." },
         { status: 404 },
       );
 
-    // Generate a guaranteed unique username
+    // Generate and persist a unique username — the only job of this route.
     const uniqueUsername = generateUniqueUsername(existingUser.name);
 
-    const verificationCode = generateVerificationCode();
-    const verificationToken = generateToken();
-
-    // Update user with username and verification info
     await db.user.update({
       where: { email },
-      data: {
-        username: uniqueUsername,
-        verificationCode,
-        verificationExpiry: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
-      },
-    });
-
-    await sendVerificationEmail({
-      to: email,
-      userName: existingUser.name,
-      code: verificationCode,
-      url: `${process.env.NEXT_PUBLIC_APP_URL}/verify-email?token=${verificationToken}`,
+      data: { username: uniqueUsername },
     });
 
     return NextResponse.json(
@@ -59,10 +38,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("Signup error:", error);
     return NextResponse.json(
-      {
-        success: false,
-        message: "An error occurred during signup processing.",
-      },
+      { success: false, message: "An error occurred during signup processing." },
       { status: 500 },
     );
   }

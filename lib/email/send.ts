@@ -14,7 +14,7 @@ function applyEmailTheme(html: string): string {
     .replace(/#f8fafc/gi, branding.backgroundColor)
     .replace(/#0f172a/gi, branding.secondaryColor)
     .replace(/#e2e8f0/gi, branding.borderColor)
-    .replace(/rgba\(245, 166, 35, 0\.2\)/gi, "rgba(245, 158, 11, 0.2)")
+    .replace(/rgba\(245, 166, 35, 0\.2\)/gi, "rgba(234, 88, 12, 0.2)")
     .replace(/rgba\(15, 23, 42, 0\.2\)/gi, "rgba(15, 23, 42, 0.2)");
 }
 
@@ -127,7 +127,7 @@ export function renderPremiumEmail(options: {
     }
   </style>
 </head>
-<body style="margin: 0; padding: 24px; background-color: ${branding.backgroundColor}; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #1e293b; word-break: break-word;">
+<body style="margin: 0; padding: 24px; background-color: ${branding.backgroundColor}; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #334155; word-break: break-word;">
   ${
     previewTextText
       ? `<div style="display: none; max-height: 0px; overflow: hidden; opacity: 0; visibility: hidden;">${previewTextText}</div>`
@@ -136,30 +136,30 @@ export function renderPremiumEmail(options: {
   <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse; max-width: 640px; margin: 0 auto;">
     <tr>
       <td align="center">
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="email-shell" style="border-collapse: collapse; width: 100%; max-width: 640px; background-color: #ffffff; border: 1px solid ${branding.borderColor}; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" class="email-shell" style="border-collapse: collapse; width: 100%; max-width: 640px; background-color: #ffffff; border: 1px solid ${branding.borderColor}; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);">
           <tr>
-            <td class="email-header" style="padding: 32px 24px; text-align: center; color: #ffffff; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, ${branding.secondaryColor} 0%, #111827 100%);">
-              <a href="${APP_URL}" style="display: flex; align-items: center; margin-right: 14px; text-decoration: none; color: #ffffff;" target="_blank">
-                <img src="cid:${branding.logoCid}" alt="${branding.appName} Logo" style="object-fit: contain; height: 66px; width: 66px; margin-right: 12px;" />
-                <span style="font-size: 30px; line-height: 1.4; font-weight: 600; color: #ffffff;">${branding.appName}</span>
+            <td class="email-header" style="padding: 32px 24px 20px 24px; text-align: center; border-bottom: 1px solid ${branding.borderColor};">
+              <a href="${APP_URL}" style="display: inline-flex; align-items: center; text-decoration: none;" target="_blank">
+                <img src="https://res.cloudinary.com/duzg7l0eo/image/upload/v1783924293/icon_lbltlb.png" alt="${branding.appName} Logo" style="object-fit: contain; height: 52px; width: 52px; margin-right: 12px; vertical-align: middle;" />
+                <span style="font-size: 26px; line-height: 52px; font-weight: 800; color: ${branding.secondaryColor}; font-family: 'Inter', sans-serif; vertical-align: middle; letter-spacing: -0.02em;">${branding.appName}</span>
               </a>
             </td>
           </tr>
           <tr>
-            <td class="email-header" style="padding: 0 24px 24px 24px; background: linear-gradient(135deg, ${branding.secondaryColor} 0%, #111827 100%); text-align: center;">
+            <td class="email-header" style="padding: 32px 24px 16px 24px; background-color: #ffffff; text-align: center;">
               ${
                 badge
                   ? `
-              <div style="display: inline-block; padding: 2px 10px; background: ${branding.accentColor}; border: 1px solid ${branding.primaryColor}; border-radius: 9999px; margin-bottom: 8px;">
-                <span style="font-size: 10px; font-weight: 800; color: ${branding.primaryColor}; text-transform: uppercase; letter-spacing: 0.05em;">${badge}</span>
+              <div style="display: inline-block; padding: 4px 12px; background: ${branding.accentColor}; border: 1px solid #ffedd5; border-radius: 9999px; margin-bottom: 12px;">
+                <span style="font-size: 11px; font-weight: 700; color: ${branding.primaryColor}; text-transform: uppercase; letter-spacing: 0.05em;">${badge}</span>
               </div>`
                   : ""
               }
-              <h1 class="email-title" style="font-size: 24px; font-weight: 800; margin: 0; color: #ffffff; line-height: 1.3;">${title}</h1>
+              <h1 class="email-title" style="font-size: 26px; font-weight: 800; margin: 0; color: ${branding.secondaryColor}; line-height: 1.3; letter-spacing: -0.01em;">${title}</h1>
             </td>
           </tr>
           <tr>
-            <td class="email-body" style="padding: 32px 24px;">
+            <td class="email-body" style="padding: 16px 24px 32px 24px;">
               ${contentHtml}
             </td>
           </tr>
@@ -213,10 +213,10 @@ export async function sendWelcomeEmail(options: {
     })}
 
     ${buildEmailCard({
-      children: `<p style="font-size: 14px; margin: 0; color: #e2e8f0; line-height: 1.7;"><strong style="color: #ffffff;">Pro tip:</strong> founders who validate their first idea in the first 24 hours build sharper products and waste less time. Start now and compound your edge.</p>`,
-      background: "#0f172a",
-      borderColor: "#0f172a",
-      textColor: "#e2e8f0",
+      children: `<p style="font-size: 14px; margin: 0; color: #7c2d12; line-height: 1.7;"><strong style="color: #ea580c;">Pro tip:</strong> founders who validate their first idea in the first 24 hours build sharper products and waste less time. Start now and compound your edge.</p>`,
+      background: "#fff7ed",
+      borderColor: "#ffedd5",
+      textColor: "#7c2d12",
       padding: "18px 20px",
       marginBottom: "24px",
     })}
@@ -583,36 +583,36 @@ ${formatRiskCliffs()}
   // Generate HTML version
   const contentHtml = `
     <!-- Portfolio Snapshot -->
-    <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; padding: 20px; border-radius: 12px; margin-bottom: 24px;">
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 12px; margin-bottom: 24px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-direction: row;">
-        <h2 style="font-size: 18px; font-weight: 800; margin: 0; color: #fbbf24;">Portfolio Snapshot</h2>
-        <span style="font-size: 12px; color: #94a3b8;">Week ${weekNumber}, ${now.getFullYear()}</span>
+        <h2 style="font-size: 18px; font-weight: 800; margin: 0; color: #0f172a;">Portfolio Snapshot</h2>
+        <span style="font-size: 12px; color: #64748b;">Week ${weekNumber}, ${now.getFullYear()}</span>
       </div>
       <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; text-align: center;">
         <div>
-          <p style="font-size: 28px; font-weight: 800; color: #fbbf24; margin: 0;">${totalIdeas}</p>
-          <p style="font-size: 11px; color: #94a3b8; margin: 4px 0 0 0; text-transform: uppercase; font-weight: 700;">Total Ideas</p>
+          <p style="font-size: 28px; font-weight: 800; color: #ea580c; margin: 0;">${totalIdeas}</p>
+          <p style="font-size: 11px; color: #64748b; margin: 4px 0 0 0; text-transform: uppercase; font-weight: 700;">Total Ideas</p>
         </div>
         <div>
-          <p style="font-size: 28px; font-weight: 800; color: #fbbf24; margin: 0;">${primaryFocus.allocation}%</p>
-          <p style="font-size: 11px; color: #94a3b8; margin: 4px 0 0 0; text-transform: uppercase; font-weight: 700;">Focus Allocation</p>
+          <p style="font-size: 28px; font-weight: 800; color: #ea580c; margin: 0;">${primaryFocus.allocation}%</p>
+          <p style="font-size: 11px; color: #64748b; margin: 4px 0 0 0; text-transform: uppercase; font-weight: 700;">Focus Allocation</p>
         </div>
         <div>
-          <p style="font-size: 28px; font-weight: 800; color: #fbbf24; margin: 0;">${actionPlan.filter((a: any) => a.priority === "High").length}</p>
-          <p style="font-size: 11px; color: #94a3b8; margin: 4px 0 0 0; text-transform: uppercase; font-weight: 700;">High Priority</p>
+          <p style="font-size: 28px; font-weight: 800; color: #ea580c; margin: 0;">${actionPlan.filter((a: any) => a.priority === "High").length}</p>
+          <p style="font-size: 11px; color: #64748b; margin: 4px 0 0 0; text-transform: uppercase; font-weight: 700;">High Priority</p>
         </div>
       </div>
     </div>
 
     <!-- Primary Focus -->
-    <div style="background: #F5A623; color: white; padding: 16px; border-radius: 12px 12px 0 0; text-align: center; font-weight: 800;">
+    <div style="background: #ea580c; color: white; padding: 16px; border-radius: 12px 12px 0 0; text-align: center; font-weight: 800;">
       This Week's Focus
     </div>
-    <div style="background: #fef3c7; padding: 16px; border-radius: 0 0 12px 12px; margin-bottom: 24px;">
-      <h2 style="font-size: 20px; font-weight: 800; color: #a16207; margin: 0 0 8px 0;">
+    <div style="background: #fff7ed; border: 1px solid #ffedd5; border-top: none; padding: 20px; border-radius: 0 0 12px 12px; margin-bottom: 24px;">
+      <h2 style="font-size: 20px; font-weight: 800; color: #7c2d12; margin: 0 0 8px 0;">
         ${primaryFocus.ideaTitle}
       </h2>
-      <p style="font-size: 14px; color: #a16207; margin: 0; font-weight: 600;">${primaryFocus.allocation}% time allocation</p>
+      <p style="font-size: 14px; color: #ea580c; margin: 0; font-weight: 700;">${primaryFocus.allocation}% time allocation</p>
     </div>
 
     <h3 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0 0 12px 0;">Executive Summary</h3>
@@ -643,63 +643,49 @@ ${formatRiskCliffs()}
       </tbody>
     </table>
 
-    <!-- VC Corner Section with Dark Background -->
-    <div style="background-color: #0f172a; border-radius: 12px; padding: 24px; margin-bottom: 24px; color: #f8fafc;">
+    <!-- VC Corner Section in Light Mode -->
+    <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; margin-bottom: 24px; color: #334155;">
       <!-- VC Corner Header -->
-      <h3 style="font-size: 14px; font-weight: 800; color: #fbbf24; margin: 0 0 16px 0; text-transform: uppercase; letter-spacing: 0.05em;">
+      <h3 style="font-size: 14px; font-weight: 800; color: #ea580c; margin: 0 0 16px 0; text-transform: uppercase; letter-spacing: 0.05em;">
         VC Corner
       </h3>
 
       <!-- Market Sentiment -->
       <div style="margin-bottom: 20px;">
-        <h4 style="font-size: 11px; font-weight: 700; color: #94a3b8; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.05em;">
+        <h4 style="font-size: 11px; font-weight: 700; color: #64748b; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.05em;">
           Market Sentiment
         </h4>
-        <p style="font-size: 14px; color: #f8fafc; margin: 0; line-height: 1.6; font-weight: 600;">
+        <p style="font-size: 14px; color: #0f172a; margin: 0; line-height: 1.6; font-weight: 600;">
           ${vcSentiment || vcCorner.sentiment || "No VC updates available"}
         </p>
       </div>
 
       <!-- Investment Potential -->
       <div style="margin-bottom: 20px;">
-        <h4 style="font-size: 11px; font-weight: 700; color: #94a3b8; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.05em;">
+        <h4 style="font-size: 11px; font-weight: 700; color: #64748b; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.05em;">
           Investment Potential
         </h4>
-        <p style="font-size: 14px; color: #f8fafc; margin: 0; line-height: 1.6; font-weight: 600; text-transform: capitalize;">
-          ${investmentPotential}
+        <p style="font-size: 14px; color: ${vcCorner.investmentPotential === "high" ? "#16a34a" : vcCorner.investmentPotential === "medium" ? "#d97706" : "#dc2626"}; margin: 0; line-height: 1.6; font-weight: 800; text-transform: uppercase;">
+          ${vcCorner.investmentPotential || investmentPotential}
         </p>
       </div>
 
       <!-- Why This Might Fail -->
       <div style="margin-bottom: 0;">
-        <h4 style="font-size: 11px; font-weight: 700; color: #94a3b8; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.05em;">
+        <h4 style="font-size: 11px; font-weight: 700; color: #64748b; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.05em;">
           Why This Might Fail
         </h4>
-        <p style="font-size: 14px; color: #cbd5e1; margin: 0; line-height: 1.6;">
+        <p style="font-size: 14px; color: #334155; margin: 0; line-height: 1.6;">
           ${formatHtmlRisks()}
         </p>
       </div>
     </div>
-      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
-        <span style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">
-          Investment Potential
-        </span>
-        <span style="font-size: 14px; font-weight: 800; color: ${vcCorner.investmentPotential === "high" ? "#34d399" : vcCorner.investmentPotential === "medium" ? "#fbbf24" : "#f87171"}; text-transform: uppercase;">
-          ${vcCorner.investmentPotential}
-        </span>
-      </div>
-    </div>
-
-    <h3 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 0 0 12px 0;">Why This Might Fail</h3>
-    <ul style="margin: 0 0 24px 0; padding: 0 0 0 20px;">
-      ${formatHtmlRisks()}
-    </ul>
 
     <div style="text-align: center; margin-top: 24px;">
-      <a href="${APP_URL}/dashboard" style="display: inline-block; background: #F5A623; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 14px; box-shadow: 0 4px 6px -1px rgba(245, 166, 35, 0.2); margin-right: 12px;">
+      <a href="${APP_URL}/dashboard" style="display: inline-block; background: #ea580c; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 14px; box-shadow: 0 4px 6px -1px rgba(234, 88, 12, 0.2); margin-right: 12px;">
         Approve Focus
       </a>
-      <a href="${APP_URL}/dashboard" style="display: inline-block; background: #0f172a; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 14px; box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.2);">
+      <a href="${APP_URL}/dashboard" style="display: inline-block; background: #334155; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 14px; box-shadow: 0 4px 6px -1px rgba(51, 65, 85, 0.2);">
         Assign Owners
       </a>
     </div>
@@ -1767,21 +1753,21 @@ export async function sendFollowerWeeklyUpdateEmail(options: {
 
   const aiAnalysisHtml = aiAnalysis
     ? `
-    <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border-radius: 12px; padding: 24px; margin-bottom: 24px; color: #ffffff;">
-      <h3 style="font-size: 14px; font-weight: 800; color: #fbbf24; margin: 0 0 16px 0; text-transform: uppercase; letter-spacing: 0.05em;">
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; margin-bottom: 24px; color: #334155;">
+      <h3 style="font-size: 14px; font-weight: 800; color: #ea580c; margin: 0 0 16px 0; text-transform: uppercase; letter-spacing: 0.05em;">
         AI Analysis
       </h3>
-      <p style="font-size: 14px; color: #e2e8f0; margin: 0 0 16px 0; line-height: 1.6;">
+      <p style="font-size: 14px; color: #334155; margin: 0 0 16px 0; line-height: 1.6;">
         ${aiAnalysis.summary}
       </p>
 
       ${
         aiAnalysis.comparisonWithPrevious.length > 0
           ? `
-        <h4 style="font-size: 12px; font-weight: 700; color: #94a3b8; margin: 0 0 8px 0; text-transform: uppercase;">
+        <h4 style="font-size: 11px; font-weight: 700; color: #64748b; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.05em;">
           Comparison with Previous Weeks
         </h4>
-        <ul style="margin: 0 0 16px 0; padding-left: 20px; color: #e2e8f0; font-size: 13px; line-height: 1.6;">
+        <ul style="margin: 0 0 16px 0; padding-left: 20px; color: #334155; font-size: 13px; line-height: 1.6;">
           ${aiAnalysis.comparisonWithPrevious.map((item) => `<li style="margin-bottom: 6px;">${item}</li>`).join("")}
         </ul>
       `
@@ -1791,11 +1777,11 @@ export async function sendFollowerWeeklyUpdateEmail(options: {
       ${
         aiAnalysis.immediateActions.length > 0
           ? `
-        <div style="background: rgba(245, 166, 35, 0.15); border-radius: 8px; padding: 16px; margin-top: 16px;">
-          <h4 style="font-size: 12px; font-weight: 700; color: #F5A623; margin: 0 0 8px 0; text-transform: uppercase;">
+        <div style="background: #fff7ed; border: 1px solid #ffedd5; border-radius: 8px; padding: 16px; margin-top: 16px;">
+          <h4 style="font-size: 11px; font-weight: 700; color: #ea580c; margin: 0 0 8px 0; text-transform: uppercase; letter-spacing: 0.05em;">
             Do This Now
           </h4>
-          <ul style="margin: 0; padding-left: 20px; color: #ffffff; font-size: 13px; line-height: 1.6;">
+          <ul style="margin: 0; padding-left: 20px; color: #431407; font-size: 13px; line-height: 1.6;">
             ${aiAnalysis.immediateActions
               .slice(0, 3)
               .map(

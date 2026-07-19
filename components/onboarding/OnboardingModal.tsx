@@ -18,20 +18,29 @@ export function OnboardingModal() {
 
   useEffect(() => {
     if (status?.showOnboarding && !isLoading) {
-      setIsOpen(true);
+      const isDismissed = localStorage.getItem("genesyz_onboarding_dismissed") === "true";
+      if (!isDismissed) {
+        setIsOpen(true);
+      }
     }
   }, [status, isLoading]);
 
   const handleStartOnboarding = () => {
+    localStorage.setItem("genesyz_onboarding_dismissed", "true");
+    completeOnboarding.mutate();
     setIsOpen(false);
     router.push("/onboarding");
   };
 
   const handleSkip = () => {
+    localStorage.setItem("genesyz_onboarding_dismissed", "true");
+    completeOnboarding.mutate();
     setIsOpen(false);
   };
 
   const handleToQuickEntry = () => {
+    localStorage.setItem("genesyz_onboarding_dismissed", "true");
+    completeOnboarding.mutate();
     setIsOpen(false);
     router.push("/ideas/new");
   };

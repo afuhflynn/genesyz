@@ -23,8 +23,8 @@ describe("email branding", () => {
     });
 
     expect(html).toContain("Genesyz");
-    expect(html).toContain("cid:genesyz-logo");
-    expect(html).toContain("#f59e0b");
+    expect(html).toContain("https://res.cloudinary.com/duzg7l0eo/image/upload");
+    expect(html).toContain("#ea580c");
     expect(html).toContain("max-width: 640px");
     expect(html).toContain("word-break: break-word");
     expect(html).toContain("Manage Preferences");
