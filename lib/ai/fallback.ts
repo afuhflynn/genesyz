@@ -201,6 +201,7 @@ export async function generateObjectWithFallback<T>(
     try {
       const result = await generateObject({
         schema,
+        system,
         instructions: system,
         prompt,
         model: entry.model,
