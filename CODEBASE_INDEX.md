@@ -711,9 +711,9 @@ Billing enforcement:
 
 | File | Lines | Exports | Description |
 |---|---|---|---|
-| `models.ts` | 70 | `model`, `getModel()`, `modelChain` | Defines provider chains for Mistral, OpenRouter (Gemini, Llama, Qwen, Nemotron), and Google. Dev priorities Mistral first, Prod priorities Gemini first. |
+| `models.ts` | 70 | `model`, `getModel()`, `modelChain` | Defines provider chains with a maximum of two models: a primary Gemini model and a secondary fallback model to optimize latency. |
 | `fallback.ts` | 392 | `generateObjectWithFallback<T>()`, `generateTextWithFallback()` | Implements multi-model try/catch loop with quota delay backoffs, truncated JSON repair (`repairTruncatedJson()`), and text-only JSON generation fallback. |
-| `stream-fallback.ts` | 77 | `streamTextWithFallback()` | Streaming text model routing that queries parallel fast probe health checks (`isModelHealthy`), filters down to online systems, and maps instructions parameter context. |
+| `stream-fallback.ts` | 77 | `streamTextWithFallback()` | Streaming text model routing with sequential try/catch fallback routing and mapping of instructions parameter context. |
 | `tools.ts` | 562 | `webSearch`, `getIndustryNews`, `getCompetitorUpdates`, `getIdeaContext`, `updateIdeaState`, `addStartupTask`, `trackOpportunity`, etc. (16 tools) | AI tools available to agents. Tavily search + DB CRUD. Lazy-imports db to avoid circular deps. |
 | `webfetch.ts` | 113 | `webfetch()`, `isUrlReachable()`, `getContentType()` | HTTP fetch via axios with configurable timeout, max length, redirect following. |
 
@@ -909,7 +909,7 @@ Comprehensive React Query hooks organized by domain:
 
 3. **Multi-Model Provider Fallbacks**: The AI architecture defines a tiered list of providers and models (`mistralModels`, `openRouterModels`, `geminiModels`) with robust client fallback behavior. If structured generation `generateObject` fails due to schema validation issues or rate limits, the library handles retry backoff delays, parses text fallbacks directly, and auto-repairs truncated JSON packets (`repairTruncatedJson()`).
 
-4. **Stream Fallbacks & Health Checks**: Streaming text generation (`streamTextWithFallback`) queries model health proactively via parallel probes, selecting only verified online models while normalising client instructions fields to the correct system prompt key.
+4. **Stream Fallbacks**: Streaming text generation (`streamTextWithFallback`) utilizes sequential try/catch fallback routing across a maximum 2-model chain, eliminating proactive health-check probe latency while normalising client instructions fields to the correct system prompt key.
 
 5. **Smooth VC Coach Transition**: The VC Coach component updates the browser's conversation path dynamically without a full-page reload. The custom `fetch` interceptor on the AI SDK's `DefaultChatTransport` captures the returned `x-conversation-id` header on the first request and seamlessly applies it via HTML5 history state updates.
 

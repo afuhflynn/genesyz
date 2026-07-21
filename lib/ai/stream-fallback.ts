@@ -1,31 +1,5 @@
-import { generateText, streamText } from "ai";
+import { streamText } from "ai";
 import { modelChain } from "./models";
-
-const modelStatusCache: Record<string, boolean> = {};
-
-async function isModelHealthy(entry: any): Promise<boolean> {
-  const cached = modelStatusCache[entry.name];
-  if (cached !== undefined) return cached;
-
-  try {
-    // Perform a very fast probe to verify the model and its API key are functional
-    await generateText({
-      model: entry.model,
-      prompt: "test",
-      maxOutputTokens: 1,
-      abortSignal: AbortSignal.timeout(5000), // 5s timeout for health check
-    });
-    modelStatusCache[entry.name] = true;
-    return true;
-  } catch (error: any) {
-    console.warn(
-      `[Model Health Check] Model ${entry.name} is unhealthy:`,
-      error.message || error,
-    );
-    modelStatusCache[entry.name] = false;
-    return false;
-  }
-}
 
 export async function streamTextWithFallback(
   params: Omit<Parameters<typeof streamText>[0], "model"> & {
@@ -42,21 +16,7 @@ export async function streamTextWithFallback(
 
   const errors: string[] = [];
 
-  // Filter modelChain to only include healthy models in parallel
-  const healthChecks = await Promise.all(
-    modelChain.map(async (entry) => {
-      const healthy = await isModelHealthy(entry);
-      return { entry, healthy };
-    }),
-  );
-  const healthyChain = healthChecks
-    .filter((res) => res.healthy)
-    .map((res) => res.entry);
-
-  // Fallback to the full model chain if all models are detected as unhealthy
-  const activeChain = healthyChain.length > 0 ? healthyChain : modelChain;
-
-  for (const entry of activeChain) {
+  for (const entry of modelChain) {
     try {
       console.log(`[${agentName}] Attempting stream with model: ${entry.name}`);
       const result = await streamText({
@@ -71,7 +31,7 @@ export async function streamTextWithFallback(
     }
   }
 
-  // Final fallback to the last model in the chain
+  // Final fallback to the last model in the chain if all else fails
   const fallbackEntry = modelChain[modelChain.length - 1];
   console.log(
     `[${agentName}] All models failed. Trying final fallback with: ${fallbackEntry.name}`,

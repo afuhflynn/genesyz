@@ -69,6 +69,7 @@ import {
   useCreateStartupConversation,
 } from "@/hooks";
 import { toast } from "sonner";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface VCCoachProps {
   startupId: string;
@@ -95,10 +96,8 @@ export function VCCoach({
 
   const { data: conversations, refetch: refetchList } =
     useStartupConversations(startupId);
-  const { data: conversationData } = useStartupConversation(
-    startupId,
-    activeConvId || "",
-  );
+  const { data: conversationData, isFetching: isFetchingConv } =
+    useStartupConversation(startupId, activeConvId || "");
   const deleteConversation = useDeleteStartupConversation();
   const createConversation = useCreateStartupConversation();
 
@@ -214,7 +213,8 @@ export function VCCoach({
 
   useEffect(() => {
     setActiveConvId(conversationId ?? null);
-  }, [conversationId]);
+    setMessages([]); // Clear messages immediately when switching sessions
+  }, [conversationId, setMessages]);
 
   useEffect(() => {
     const initialQuestion = searchParams.get("q");
@@ -293,10 +293,12 @@ export function VCCoach({
           <Button
             className="w-full justify-start gap-2"
             variant="outline"
-            onClick={handleNewChat}
+            asChild
           >
-            <PlusIcon className="w-4 h-4" />
-            <span>New Session</span>
+            <Link href={`/startups/${slug}/chat`}>
+              <PlusIcon className="w-4 h-4" />
+              <span>New Session</span>
+            </Link>
           </Button>
         </SidebarHeader>
         <SidebarContent>
@@ -306,13 +308,15 @@ export function VCCoach({
                 {conversations?.data?.map((conv) => (
                   <SidebarMenuItem key={conv.id}>
                     <SidebarMenuButton
-                      onClick={() => handleSelectConversation(conv.id)}
+                      asChild
                       isActive={activeConvId === conv.id}
                     >
-                      <MessageSquareIcon className="w-4 h-4 shrink-0" />
-                      <span className="truncate flex-1 text-left">
-                        {conv.title || "Untitled Session"}
-                      </span>
+                      <Link href={`/startups/${slug}/chat/${conv.id}`}>
+                        <MessageSquareIcon className="w-4 h-4 shrink-0" />
+                        <span className="truncate flex-1 text-left">
+                          {conv.title || "Untitled Session"}
+                        </span>
+                      </Link>
                     </SidebarMenuButton>
                     <SidebarMenuAction
                       onClick={(e) => handleDelete(e, conv.id)}
@@ -376,7 +380,9 @@ export function VCCoach({
 
         <Conversation className="flex-1">
           <ConversationContent>
-            {messages.length === 0 && status === "ready" && (
+            {isFetchingConv && messages.length === 0 ? (
+              <ChatMessagesSkeleton />
+            ) : messages.length === 0 && status === "ready" ? (
               <div className="space-y-8 py-8">
                 <div className="flex flex-col items-center justify-center text-center px-4">
                   <div className="p-4 bg-primary/5 rounded-full mb-4">
@@ -413,7 +419,7 @@ export function VCCoach({
                   ))}
                 </div>
               </div>
-            )}
+            ) : null}
 
             {messages.map((message, index) => (
               <div key={`${index}-${message.id}`} className="space-y-4">
@@ -538,5 +544,60 @@ export function VCCoach({
         </div>
       </SidebarInset>
     </>
+  );
+}
+
+function ChatMessagesSkeleton() {
+  return (
+    <div className="space-y-6 py-6 px-4">
+      {/* Assistant Message Skeleton */}
+      <div className="flex items-start gap-3 max-w-[80%]">
+        <div className="p-1.5 bg-primary/10 rounded-md shrink-0">
+          <div className="w-4 h-4 rounded-full bg-primary/20 animate-pulse" />
+        </div>
+        <div className="space-y-2 flex-1 animate-pulse">
+          <Skeleton className="h-4 w-24" />
+          <div className="p-3 bg-muted/30 rounded-xl space-y-2">
+            <Skeleton className="h-4 w-[90%]" />
+            <Skeleton className="h-4 w-[75%]" />
+            <Skeleton className="h-4 w-[60%]" />
+          </div>
+        </div>
+      </div>
+
+      {/* User Message Skeleton */}
+      <div className="flex items-start gap-3 max-w-[80%] ml-auto justify-end">
+        <div className="space-y-2 flex-1 items-end flex flex-col animate-pulse">
+          <Skeleton className="h-4 w-16" />
+          <div className="p-3 bg-primary/10 rounded-xl space-y-2 w-full max-w-[250px]">
+            <Skeleton className="h-4 w-[85%] bg-primary/20" />
+            <Skeleton className="h-4 w-[50%] bg-primary/20" />
+          </div>
+        </div>
+        <div className="p-1.5 bg-muted rounded-md shrink-0 order-last">
+          <div className="w-4 h-4 rounded-full bg-muted-foreground/20 animate-pulse" />
+        </div>
+      </div>
+
+      {/* Assistant Message Skeleton with Thinking block */}
+      <div className="flex items-start gap-3 max-w-[80%]">
+        <div className="p-1.5 bg-primary/10 rounded-md shrink-0">
+          <div className="w-4 h-4 rounded-full bg-primary/20 animate-pulse" />
+        </div>
+        <div className="space-y-3 flex-1 animate-pulse">
+          <Skeleton className="h-4 w-28" />
+          <div className="border border-l-2 border-l-primary/30 bg-muted/10 rounded-lg p-3 space-y-2">
+            <Skeleton className="h-3 w-32" />
+            <Skeleton className="h-3.5 w-[95%]" />
+            <Skeleton className="h-3.5 w-[80%]" />
+          </div>
+          <div className="p-3 bg-muted/30 rounded-xl space-y-2">
+            <Skeleton className="h-4 w-[95%]" />
+            <Skeleton className="h-4 w-[90%]" />
+            <Skeleton className="h-4 w-[40%]" />
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
