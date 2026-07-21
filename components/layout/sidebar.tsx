@@ -43,7 +43,10 @@ export function Sidebar() {
       label: "My Ideas",
       icon: Lightbulb,
       href: "/ideas",
-      active: pathname === "/ideas" || (pathname.startsWith("/ideas") && !pathname.startsWith("/ideas/archived")),
+      active:
+        pathname === "/ideas" ||
+        (pathname.startsWith("/ideas") &&
+          !pathname.startsWith("/ideas/archived")),
     },
     {
       label: "Startups",
@@ -105,7 +108,9 @@ export function Sidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {routes
-                .filter((r) => ["Dashboard", "My Ideas", "Startups"].includes(r.label))
+                .filter((r) =>
+                  ["Dashboard", "My Ideas", "Startups"].includes(r.label),
+                )
                 .map((route) => (
                   <SidebarMenuItem key={route.href}>
                     <SidebarMenuButton
@@ -133,7 +138,11 @@ export function Sidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {routes
-                .filter((r) => ["Billing", "Settings", "Archived Ideas", "Admin"].includes(r.label))
+                .filter((r) =>
+                  ["Billing", "Settings", "Archived Ideas", "Admin"].includes(
+                    r.label,
+                  ),
+                )
                 .map((route) => (
                   <SidebarMenuItem key={route.href}>
                     <SidebarMenuButton

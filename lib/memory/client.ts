@@ -13,7 +13,12 @@ function getClient(): MemoryClient | null {
     } catch (error) {
       clientInitError = error;
       const err = error as Error & { cause?: unknown };
-      console.warn("[MEM0] Client init error:", err.message, "stack:", err.stack?.split("\n").slice(0, 3).join(" | "));
+      console.warn(
+        "[MEM0] Client init error:",
+        err.message,
+        "stack:",
+        err.stack?.split("\n").slice(0, 3).join(" | "),
+      );
     }
   }
   return client;
@@ -201,5 +206,3 @@ export function formatMemoriesForPrompt(memories: MemoryResult[]): string {
     "\n",
   );
 }
-
-

@@ -11,7 +11,8 @@ async function main() {
       messages: [
         {
           role: "user",
-          content: "Based on our current stage and metrics, what should be our top 3 growth priorities?",
+          content:
+            "Based on our current stage and metrics, what should be our top 3 growth priorities?",
         },
       ],
     });

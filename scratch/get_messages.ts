@@ -6,9 +6,9 @@ async function main() {
     take: 1,
     include: {
       messages: {
-        orderBy: { createdAt: "asc" }
-      }
-    }
+        orderBy: { createdAt: "asc" },
+      },
+    },
   });
 
   if (convs.length === 0) {

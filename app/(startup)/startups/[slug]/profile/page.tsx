@@ -137,7 +137,10 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
               targetMarket: startup.targetMarket,
               website: startup.website,
               location: startup.location,
-              locationContext: startup.locationContext as Record<string, unknown> | null,
+              locationContext: startup.locationContext as Record<
+                string,
+                unknown
+              > | null,
             }}
             canEdit={canEditProfile}
           />

@@ -7,7 +7,10 @@ export async function GET(
   { params }: { params: Promise<{ slug: string; cohortId: string }> },
 ) {
   const { slug, cohortId } = await params;
-  const { hasAccess, acceleratorId } = await checkAcceleratorAccess(slug, "view_startups");
+  const { hasAccess, acceleratorId } = await checkAcceleratorAccess(
+    slug,
+    "view_startups",
+  );
 
   if (!hasAccess || !acceleratorId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -19,7 +22,10 @@ export async function GET(
   });
 
   if (!cohort) {
-    return NextResponse.json({ error: "Cohort not found in this accelerator" }, { status: 404 });
+    return NextResponse.json(
+      { error: "Cohort not found in this accelerator" },
+      { status: 404 },
+    );
   }
 
   const startups = await db.cohortStartup.findMany({
@@ -46,7 +52,10 @@ export async function POST(
   { params }: { params: Promise<{ slug: string; cohortId: string }> },
 ) {
   const { slug, cohortId } = await params;
-  const { hasAccess, acceleratorId } = await checkAcceleratorAccess(slug, "manage_startups");
+  const { hasAccess, acceleratorId } = await checkAcceleratorAccess(
+    slug,
+    "manage_startups",
+  );
 
   if (!hasAccess || !acceleratorId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -58,14 +67,20 @@ export async function POST(
   });
 
   if (!cohort) {
-    return NextResponse.json({ error: "Cohort not found in this accelerator" }, { status: 404 });
+    return NextResponse.json(
+      { error: "Cohort not found in this accelerator" },
+      { status: 404 },
+    );
   }
 
   const body = await request.json();
   const { startupId } = body;
 
   if (!startupId) {
-    return NextResponse.json({ error: "Startup ID is required" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Startup ID is required" },
+      { status: 400 },
+    );
   }
 
   // Check if already in cohort
@@ -79,7 +94,10 @@ export async function POST(
   });
 
   if (existing) {
-    return NextResponse.json({ error: "Startup already in cohort" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Startup already in cohort" },
+      { status: 400 },
+    );
   }
 
   const cohortStartup = await db.cohortStartup.create({

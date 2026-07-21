@@ -9,9 +9,7 @@ interface VCCoachPageProps {
   params: Promise<{ slug: string; convId?: string[] }>;
 }
 
-export default async function VCCoachPage({
-  params,
-}: VCCoachPageProps) {
+export default async function VCCoachPage({ params }: VCCoachPageProps) {
   const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session?.user) {

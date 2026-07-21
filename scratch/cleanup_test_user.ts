@@ -6,14 +6,14 @@ async function cleanup() {
   try {
     // Delete startup
     await db.startup.deleteMany({
-      where: { slug: "test-strategic-co" }
+      where: { slug: "test-strategic-co" },
     });
-    
+
     // Delete user
     await db.user.deleteMany({
-      where: { email: "test-coach-user-99@genesyz.ai" }
+      where: { email: "test-coach-user-99@genesyz.ai" },
     });
-    
+
     console.log("Test user and startup deleted.");
   } catch (error: any) {
     console.error("Cleanup failed:", error.message || error);

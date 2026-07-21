@@ -87,10 +87,7 @@ export const opportunityDiscoveryCron = inngest.createFunction(
         const deduped = dedupeOpportunities(
           existing,
           eligibleOpportunities,
-        ).slice(
-          0,
-          MAX_GENERATED_PER_STARTUP,
-        );
+        ).slice(0, MAX_GENERATED_PER_STARTUP);
 
         summary.dedupedOpportunities +=
           eligibleOpportunities.length - deduped.length;

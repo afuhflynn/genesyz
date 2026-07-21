@@ -24,7 +24,9 @@ export function PipelineVisualization({ className }: { className?: string }) {
   const radiusPct = 38;
 
   return (
-    <div className={`relative w-full aspect-square max-w-lg mx-auto ${className ?? ""}`}>
+    <div
+      className={`relative w-full aspect-square max-w-lg mx-auto ${className ?? ""}`}
+    >
       <div className="absolute inset-0 flex items-center justify-center">
         <motion.div
           animate={{ rotate: 360 }}
@@ -59,7 +61,11 @@ export function PipelineVisualization({ className }: { className?: string }) {
             key={agent.name}
             initial={{ opacity: 0, scale: 0 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.3 + i * 0.12, type: "spring", stiffness: 200 }}
+            transition={{
+              delay: 0.3 + i * 0.12,
+              type: "spring",
+              stiffness: 200,
+            }}
             className="absolute flex flex-col items-center -translate-x-1/2 -translate-y-1/2 z-10"
             style={{ left: `${left}%`, top: `${top}%` }}
           >

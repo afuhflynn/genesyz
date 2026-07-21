@@ -183,7 +183,11 @@ export async function POST(request: NextRequest) {
       action: "startup.created",
       resource: "startup",
       resourceId: startup.id,
-      metadata: { name: startup.name, slug: startup.slug, organizationId: org.id },
+      metadata: {
+        name: startup.name,
+        slug: startup.slug,
+        organizationId: org.id,
+      },
     },
   });
 

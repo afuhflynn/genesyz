@@ -7,7 +7,10 @@ export async function GET(
   { params }: { params: Promise<{ slug: string }> },
 ) {
   const { slug } = await params;
-  const { hasAccess, acceleratorId } = await checkAcceleratorAccess(slug, "view_metrics");
+  const { hasAccess, acceleratorId } = await checkAcceleratorAccess(
+    slug,
+    "view_metrics",
+  );
 
   if (!hasAccess || !acceleratorId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -26,7 +29,10 @@ export async function POST(
   { params }: { params: Promise<{ slug: string }> },
 ) {
   const { slug } = await params;
-  const { hasAccess, acceleratorId } = await checkAcceleratorAccess(slug, "submit_reports");
+  const { hasAccess, acceleratorId } = await checkAcceleratorAccess(
+    slug,
+    "submit_reports",
+  );
 
   if (!hasAccess || !acceleratorId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -36,7 +42,10 @@ export async function POST(
   const { weekNumber, content, metrics } = body;
 
   if (!weekNumber || !content) {
-    return NextResponse.json({ error: "Week number and content are required" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Week number and content are required" },
+      { status: 400 },
+    );
   }
 
   const report = await db.acceleratorWeeklyReport.create({
@@ -45,7 +54,8 @@ export async function POST(
       weekNumber: parseInt(weekNumber),
       content,
       metrics,
-      aiSummary: "AI-generated summary based on the report content would be synthesized here.",
+      aiSummary:
+        "AI-generated summary based on the report content would be synthesized here.",
     },
   });
 

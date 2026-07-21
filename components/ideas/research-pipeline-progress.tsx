@@ -21,9 +21,24 @@ import { ideaChannel } from "@/lib/inngest/channels";
 import { Button } from "@/components/ui/button";
 
 const agents = [
-  { key: "parse.idea", name: "Interpreter", icon: Brain, color: "text-violet-500" },
-  { key: "research.started", name: "Market Research", icon: Search, color: "text-blue-500" },
-  { key: "research.progress", name: "Trend Analysis", icon: TrendingUp, color: "text-orange-500" },
+  {
+    key: "parse.idea",
+    name: "Interpreter",
+    icon: Brain,
+    color: "text-violet-500",
+  },
+  {
+    key: "research.started",
+    name: "Market Research",
+    icon: Search,
+    color: "text-blue-500",
+  },
+  {
+    key: "research.progress",
+    name: "Trend Analysis",
+    icon: TrendingUp,
+    color: "text-orange-500",
+  },
   { name: "Execution Friction", icon: Radar, color: "text-rose-500" },
   { name: "Deep Research", icon: GitBranch, color: "text-cyan-500" },
   { name: "Synthesis", icon: BarChart3, color: "text-emerald-500" },
@@ -42,13 +57,20 @@ interface ResearchPipelineProgressProps {
   ideaId: string;
 }
 
-export function ResearchPipelineProgress({ ideaId }: ResearchPipelineProgressProps) {
+export function ResearchPipelineProgress({
+  ideaId,
+}: ResearchPipelineProgressProps) {
   const [progress, setProgress] = useState<Record<string, string>>({});
   const [finished, setFinished] = useState(false);
 
   const { messages } = useRealtime({
     channel: ideaChannel({ ideaId }),
-    topics: ["parse.idea", "research.started", "research.progress", "research.finished"],
+    topics: [
+      "parse.idea",
+      "research.started",
+      "research.progress",
+      "research.finished",
+    ],
     token: () => fetchRealtimeSubscriptionToken(ideaId),
     enabled: !finished,
   });
@@ -70,7 +92,7 @@ export function ResearchPipelineProgress({ ideaId }: ResearchPipelineProgressPro
                 "research.progress": "COMPLETED",
                 "execution.friction": "COMPLETED",
                 "deep.research": "COMPLETED",
-                "synthesis": "COMPLETED"
+                synthesis: "COMPLETED",
               });
               clearInterval(intervalId);
             }
@@ -101,10 +123,16 @@ export function ResearchPipelineProgress({ ideaId }: ResearchPipelineProgressPro
   }, [messages.delta]);
 
   const completedCount = Object.keys(progress).filter(
-    (k) => progress[k] === "COMPLETE" || progress[k] === "COMPLETED" || progress[k] === "INITIATE",
+    (k) =>
+      progress[k] === "COMPLETE" ||
+      progress[k] === "COMPLETED" ||
+      progress[k] === "INITIATE",
   ).length;
 
-  const progressPct = Math.min((completedCount / AGENT_STEPS.length) * 100, 100);
+  const progressPct = Math.min(
+    (completedCount / AGENT_STEPS.length) * 100,
+    100,
+  );
 
   return (
     <div className="w-full max-w-lg mx-auto space-y-6">
@@ -125,10 +153,18 @@ export function ResearchPipelineProgress({ ideaId }: ResearchPipelineProgressPro
 
       <div className="space-y-2">
         {agents.map((agent, i) => {
-          const stepKey = AGENT_STEPS[i] || agent.name.toLowerCase().replace(/\s+/g, ".");
+          const stepKey =
+            AGENT_STEPS[i] || agent.name.toLowerCase().replace(/\s+/g, ".");
           const status = progress[stepKey];
-          const isActive = status && status !== "COMPLETED" && status !== "COMPLETE" && status !== "INITIATE";
-          const isDone = status === "COMPLETED" || status === "COMPLETE" || status === "INITIATE";
+          const isActive =
+            status &&
+            status !== "COMPLETED" &&
+            status !== "COMPLETE" &&
+            status !== "INITIATE";
+          const isDone =
+            status === "COMPLETED" ||
+            status === "COMPLETE" ||
+            status === "INITIATE";
           const isFailed = status === "FAILED";
 
           return (
@@ -188,13 +224,11 @@ export function ResearchPipelineProgress({ ideaId }: ResearchPipelineProgressPro
       {!finished && (
         <div className="bg-muted/50 rounded-lg p-4 text-center">
           <p className="text-sm text-muted-foreground">
-            This takes about 2-3 minutes. You can leave this screen — we&apos;ll email you when
-            it&apos;s done.
+            This takes about 2-3 minutes. You can leave this screen — we&apos;ll
+            email you when it&apos;s done.
           </p>
           <Button asChild variant="link" size="sm" className="mt-1">
-            <Link href="/ideas">
-              Go to My Ideas
-            </Link>
+            <Link href="/ideas">Go to My Ideas</Link>
           </Button>
         </div>
       )}

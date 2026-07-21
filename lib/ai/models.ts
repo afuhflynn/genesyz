@@ -19,15 +19,24 @@ const geminiModels = [
   // Primary: Google Gemini 2.5 Flash (60 RPM free, ~$0.075/M input paid)
   { name: "google:gemini-2.5-flash", model: google("gemini-2.5-flash") },
   // Fallback: lighter Gemini (even higher rate limits, ~$0.04/M)
-  { name: "google:gemini-2.5-flash-lite", model: google("gemini-2.5-flash-lite") },
+  {
+    name: "google:gemini-2.5-flash-lite",
+    model: google("gemini-2.5-flash-lite"),
+  },
   // Different quota bucket
   { name: "google:gemini-3.5-flash", model: google("gemini-3.5-flash") },
 ];
 
 const mistralModels = [
   // Secondary: Mistral (API key available, cheap $0.10/M input, reliable)
-  { name: "mistral:mistral-small-latest", model: mistral("mistral-small-latest") },
-  { name: "mistral:mistral-medium-latest", model: mistral("mistral-medium-latest") },
+  {
+    name: "mistral:mistral-small-latest",
+    model: mistral("mistral-small-latest"),
+  },
+  {
+    name: "mistral:mistral-medium-latest",
+    model: mistral("mistral-medium-latest"),
+  },
 ];
 
 const openRouterModels = openrouter

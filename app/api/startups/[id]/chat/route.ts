@@ -34,19 +34,23 @@ export async function POST(
     const coreMessages = Array.isArray(messages)
       ? (messages as Record<string, unknown>[]).map((m) => {
           if (Array.isArray(m.content)) {
-            const sanitizedContent = (m.content as Record<string, unknown>[]).map((part) => {
+            const sanitizedContent = (
+              m.content as Record<string, unknown>[]
+            ).map((part) => {
               if (part && typeof part === "object") {
                 if (part.type === "tool-result") {
                   return {
                     type: "tool-result",
                     toolCallId: part.toolCallId as string,
                     toolName: part.toolName as string,
-                    result: part.result !== undefined ? part.result : part.output,
+                    result:
+                      part.result !== undefined ? part.result : part.output,
                     isError: part.isError as boolean | undefined,
                   };
                 }
                 if (part.type === "tool-call") {
-                  const args = part.args !== undefined ? part.args : part.arguments;
+                  const args =
+                    part.args !== undefined ? part.args : part.arguments;
                   const func = part.function as { name?: string } | undefined;
                   return {
                     type: "tool-call",
@@ -130,9 +134,8 @@ export async function POST(
     }
 
     // Retrieve relevant memories from past conversations
-    const lastUserQuery = coreMessages
-      .filter((m: any) => m.role === "user")
-      .pop()?.content || "";
+    const lastUserQuery =
+      coreMessages.filter((m: any) => m.role === "user").pop()?.content || "";
     const [userMemories, startupMemories] = await Promise.all([
       searchMemories(lastUserQuery, {
         userId: session.user.id,
@@ -198,7 +201,10 @@ NOTE:
 
 If the user asks for a pitch review or market analysis, use your tools to get the most up-to-date information.`;
 
-    console.log("[CHAT_API] Sanitized coreMessages:", JSON.stringify(coreMessages, null, 2));
+    console.log(
+      "[CHAT_API] Sanitized coreMessages:",
+      JSON.stringify(coreMessages, null, 2),
+    );
 
     const result = await streamTextWithFallback(
       {
@@ -209,62 +215,62 @@ If the user asks for a pitch review or market analysis, use your tools to get th
         stopWhen: isStepCount(20),
         messages: coreMessages,
         onFinish: async ({ text, toolCalls, toolResults, usage }) => {
-        try {
-          console.log(
-            `[CHAT_FINISH] Conversation: ${conversationId}, Text length: ${text.length}`,
-          );
-          if (conversationId) {
-            // Save assistant message and tool results
-            const assistantMessage = await db.startupMessage.create({
-              data: {
-                conversationId,
-                role: "assistant",
-                content: text || "",
-                toolCalls:
-                  toolCalls && toolCalls.length > 0
-                    ? (toolCalls as any)
-                    : undefined,
-                toolResults:
-                  toolResults && toolResults.length > 0
-                    ? (toolResults as any)
-                    : undefined,
-                tokensUsed: usage.totalTokens,
-              },
-            });
-            console.log(`[CHAT_SAVED] Message ID: ${assistantMessage.id}`);
-
-            // Update conversation stats
-            await db.startupConversation.update({
-              where: { id: conversationId },
-              data: {
-                updatedAt: new Date(),
-                messageCount: {
-                  increment: 2, // User + Assistant
+          try {
+            console.log(
+              `[CHAT_FINISH] Conversation: ${conversationId}, Text length: ${text.length}`,
+            );
+            if (conversationId) {
+              // Save assistant message and tool results
+              const assistantMessage = await db.startupMessage.create({
+                data: {
+                  conversationId,
+                  role: "assistant",
+                  content: text || "",
+                  toolCalls:
+                    toolCalls && toolCalls.length > 0
+                      ? (toolCalls as any)
+                      : undefined,
+                  toolResults:
+                    toolResults && toolResults.length > 0
+                      ? (toolResults as any)
+                      : undefined,
+                  tokensUsed: usage.totalTokens,
                 },
-              },
-            });
+              });
+              console.log(`[CHAT_SAVED] Message ID: ${assistantMessage.id}`);
 
-            // Store memories from this exchange
-            const userMsg = coreMessages[coreMessages.length - 1];
-            if (userMsg && userMsg.role === "user" && text) {
-              await addMemories(
-                [
-                  { role: "user", content: userMsg.content },
-                  { role: "assistant", content: text },
-                ],
-                {
-                  userId: session.user.id,
-                  startupId: access.startupId,
-                  conversationId: conversationId ?? undefined,
+              // Update conversation stats
+              await db.startupConversation.update({
+                where: { id: conversationId },
+                data: {
+                  updatedAt: new Date(),
+                  messageCount: {
+                    increment: 2, // User + Assistant
+                  },
                 },
-              );
+              });
+
+              // Store memories from this exchange
+              const userMsg = coreMessages[coreMessages.length - 1];
+              if (userMsg && userMsg.role === "user" && text) {
+                await addMemories(
+                  [
+                    { role: "user", content: userMsg.content },
+                    { role: "assistant", content: text },
+                  ],
+                  {
+                    userId: session.user.id,
+                    startupId: access.startupId,
+                    conversationId: conversationId ?? undefined,
+                  },
+                );
+              }
             }
+          } catch (e) {
+            console.error("Failed to save message to DB:", e);
           }
-        } catch (e) {
-          console.error("Failed to save message to DB:", e);
-        }
+        },
       },
-    },
       "STARTUP_COACH",
     );
 

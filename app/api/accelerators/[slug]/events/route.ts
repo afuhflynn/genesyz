@@ -20,7 +20,7 @@ export async function GET(
   const cohortId = searchParams.get("cohortId");
 
   const events = await db.acceleratorEvent.findMany({
-    where: { 
+    where: {
       acceleratorId,
       ...(cohortId && { cohortId }),
     },
@@ -49,7 +49,16 @@ export async function POST(
   }
 
   const body = await request.json();
-  const { title, description, eventType, scheduledAt, duration, location, meetingUrl, cohortId } = body;
+  const {
+    title,
+    description,
+    eventType,
+    scheduledAt,
+    duration,
+    location,
+    meetingUrl,
+    cohortId,
+  } = body;
 
   if (!title || !eventType || !scheduledAt || !duration) {
     return NextResponse.json(

@@ -513,7 +513,9 @@ export default function OpportunitiesPage({
                   Cancel
                 </Button>
                 <Button onClick={handleAddOpportunity} disabled={isSubmitting}>
-                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {isSubmitting && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
                   Add Opportunity
                 </Button>
               </DialogFooter>

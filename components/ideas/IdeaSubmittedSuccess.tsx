@@ -1,18 +1,9 @@
 "use client";
 
-import {
-  LayoutDashboard,
-  Lightbulb,
-  PlusCircle,
-  Sparkles,
-} from "lucide-react";
+import { LayoutDashboard, Lightbulb, PlusCircle, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { ResearchPipelineProgress } from "./research-pipeline-progress";
 
 interface IdeaSubmittedSuccessProps {
@@ -20,7 +11,10 @@ interface IdeaSubmittedSuccessProps {
   ideaId?: string;
 }
 
-export function IdeaSubmittedSuccess({ onReset, ideaId }: IdeaSubmittedSuccessProps) {
+export function IdeaSubmittedSuccess({
+  onReset,
+  ideaId,
+}: IdeaSubmittedSuccessProps) {
   return (
     <Card className="w-full max-w-lg mx-auto border-0 shadow-none">
       <CardHeader className="text-center pb-2">

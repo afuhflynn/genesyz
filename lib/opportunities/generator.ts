@@ -108,10 +108,13 @@ Rules:
 - Keep descriptions concise and practical for founders.
 - Return only valid JSON array.`;
 
-  const { result } = await generateObjectWithFallback<OpportunitiesResponse>({
-    schema: OpportunitiesResponseSchema,
-    prompt,
-  }, "OPPORTUNITY_GENERATOR");
+  const { result } = await generateObjectWithFallback<OpportunitiesResponse>(
+    {
+      schema: OpportunitiesResponseSchema,
+      prompt,
+    },
+    "OPPORTUNITY_GENERATOR",
+  );
 
   const modelOutput = result.object;
 

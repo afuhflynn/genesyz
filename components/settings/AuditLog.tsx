@@ -53,9 +53,7 @@ export function AuditLog() {
     <Card>
       <CardHeader>
         <CardTitle>Audit Log</CardTitle>
-        <CardDescription>
-          Recent activity on your account
-        </CardDescription>
+        <CardDescription>Recent activity on your account</CardDescription>
       </CardHeader>
       <CardContent>
         {loading ? (

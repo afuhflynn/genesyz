@@ -5,18 +5,28 @@ const hubCoachSchema = z.object({
   overview: z.object({
     sentiment: z.enum(["EXCELLENT", "STABLE", "CONCERNING", "CRITICAL"]),
     summary: z.string().describe("High-level summary of cohort health"),
-    topBottleneck: z.string().describe("The #1 issue facing the most startups right now"),
+    topBottleneck: z
+      .string()
+      .describe("The #1 issue facing the most startups right now"),
   }),
-  cohortPatterns: z.array(z.object({
-    observation: z.string(),
-    impact: z.string(),
-    recommendation: z.string().describe("What the hub manager should do (e.g., 'Organize a B2B sales workshop')"),
-  })),
-  atRiskStartups: z.array(z.object({
-    name: z.string(),
-    reason: z.string(),
-    suggestedIntervention: z.string(),
-  })),
+  cohortPatterns: z.array(
+    z.object({
+      observation: z.string(),
+      impact: z.string(),
+      recommendation: z
+        .string()
+        .describe(
+          "What the hub manager should do (e.g., 'Organize a B2B sales workshop')",
+        ),
+    }),
+  ),
+  atRiskStartups: z.array(
+    z.object({
+      name: z.string(),
+      reason: z.string(),
+      suggestedIntervention: z.string(),
+    }),
+  ),
   kpiForecast: z.object({
     onTrack: z.boolean(),
     analysis: z.string().describe("Assessment of program-level KPIs"),
@@ -37,7 +47,12 @@ interface StartupBrief {
 interface HubContext {
   name: string;
   programType: string;
-  kpis: Array<{ name: string; target: number; current: number; unit: string | null }>;
+  kpis: Array<{
+    name: string;
+    target: number;
+    current: number;
+    unit: string | null;
+  }>;
   totalStartups: number;
 }
 
@@ -52,16 +67,20 @@ export async function analyzeCohortHealth(
 - Type: ${hub.programType}
 - Active Startups: ${hub.totalStartups}
 - Program KPIs:
-${hub.kpis.map(k => `  - ${k.name}: ${k.current}/${k.target} ${k.unit || ""}`).join("\n")}
+${hub.kpis.map((k) => `  - ${k.name}: ${k.current}/${k.target} ${k.unit || ""}`).join("\n")}
 
 ## Cohort Data (Startup Briefs)
-${startups.map(s => `
+${startups
+  .map(
+    (s) => `
 - ${s.name} (${s.stage}):
   - Latest Morale: ${s.lastMorale}/10
   - Latest Metric Delta: ${s.lastMetricDelta !== null ? (s.lastMetricDelta >= 0 ? "+" : "") + s.lastMetricDelta : "N/A"}
   - Active Flags: ${s.flags.length > 0 ? s.flags.join(", ") : "None"}
   - Recent Obstacles: ${s.recentObstacles.join("; ") || "None"}
-`).join("\n")}
+`,
+  )
+  .join("\n")}
 
 ## Your Task
 1. **Identify Patterns**: Are multiple startups struggling with the same thing (e.g., "5 startups mentioned 'legal hurdles'")?

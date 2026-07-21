@@ -73,7 +73,10 @@ export default async function NewStartupPage({
   }
 
   const initialLocation = idea?.targetLocation || undefined;
-  const initialLocationContext = idea?.locationContext as Record<string, unknown> | null | undefined;
+  const initialLocationContext = idea?.locationContext as
+    | Record<string, unknown>
+    | null
+    | undefined;
 
   return (
     <div className="space-y-6">
@@ -98,7 +101,9 @@ export default async function NewStartupPage({
         ideaTitle={idea?.title || undefined}
         ideaSummary={idea?.summary || undefined}
         initialLocation={initialLocation}
-        initialLocationContext={initialLocationContext as Record<string, unknown> | null | undefined}
+        initialLocationContext={
+          initialLocationContext as Record<string, unknown> | null | undefined
+        }
       />
     </div>
   );

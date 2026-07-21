@@ -140,9 +140,7 @@ export async function runSynthesisPhase(
         synthesis.scores?.clarity?.explanation ??
         "",
       marketScore:
-        synthesis.marketScore ??
-        synthesis.scores?.marketReadiness?.score ??
-        0,
+        synthesis.marketScore ?? synthesis.scores?.marketReadiness?.score ?? 0,
       marketExplanation:
         synthesis.marketExplanation ??
         synthesis.scores?.marketReadiness?.explanation ??

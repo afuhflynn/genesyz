@@ -5,47 +5,47 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { toast } from "sonner";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
-import { 
-  Form, 
-  FormControl, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
 } from "@/components/ui/form";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, UserPlus, Mail, Shield, MoreVertical } from "lucide-react";
-import { 
-  ACCELERATOR_ROLE_LABELS, 
+import {
+  ACCELERATOR_ROLE_LABELS,
   ACCELERATOR_ROLE_DESCRIPTIONS,
-  type AcceleratorRole 
+  type AcceleratorRole,
 } from "@/lib/accelerator-permissions";
 
 const inviteSchema = z.object({
@@ -74,14 +74,21 @@ interface Owner {
   image: string | null;
 }
 
-export function TeamManagement({ slug, currentRole }: { slug: string, currentRole: string }) {
+export function TeamManagement({
+  slug,
+  currentRole,
+}: {
+  slug: string;
+  currentRole: string;
+}) {
   const [members, setMembers] = useState<Member[]>([]);
   const [owner, setOwner] = useState<Owner | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isInviting, setIsInviting] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const canManageTeam = currentRole === "OWNER" || currentRole === "PROGRAM_MANAGER";
+  const canManageTeam =
+    currentRole === "OWNER" || currentRole === "PROGRAM_MANAGER";
 
   const form = useForm<InviteFormValues>({
     resolver: zodResolver(inviteSchema),
@@ -161,14 +168,17 @@ export function TeamManagement({ slug, currentRole }: { slug: string, currentRol
             </DialogTrigger>
             <DialogContent>
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onInvite)} className="space-y-4">
+                <form
+                  onSubmit={form.handleSubmit(onInvite)}
+                  className="space-y-4"
+                >
                   <DialogHeader>
                     <DialogTitle>Invite Team Member</DialogTitle>
                     <DialogDescription>
                       Send an invitation to join the {slug} management team.
                     </DialogDescription>
                   </DialogHeader>
-                  
+
                   <FormField
                     control={form.control}
                     name="email"
@@ -178,7 +188,11 @@ export function TeamManagement({ slug, currentRole }: { slug: string, currentRol
                         <FormControl>
                           <div className="relative">
                             <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input placeholder="colleague@example.com" className="pl-10" {...field} />
+                            <Input
+                              placeholder="colleague@example.com"
+                              className="pl-10"
+                              {...field}
+                            />
                           </div>
                         </FormControl>
                         <FormMessage />
@@ -192,7 +206,10 @@ export function TeamManagement({ slug, currentRole }: { slug: string, currentRol
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Role</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select a role" />
@@ -206,7 +223,11 @@ export function TeamManagement({ slug, currentRole }: { slug: string, currentRol
                                   <div className="flex flex-col">
                                     <span>{label}</span>
                                     <span className="text-xs text-muted-foreground">
-                                      {ACCELERATOR_ROLE_DESCRIPTIONS[key as AcceleratorRole]}
+                                      {
+                                        ACCELERATOR_ROLE_DESCRIPTIONS[
+                                          key as AcceleratorRole
+                                        ]
+                                      }
                                     </span>
                                   </div>
                                 </SelectItem>
@@ -220,7 +241,9 @@ export function TeamManagement({ slug, currentRole }: { slug: string, currentRol
 
                   <DialogFooter>
                     <Button type="submit" disabled={isInviting}>
-                      {isInviting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      {isInviting && (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      )}
                       Send Invitation
                     </Button>
                   </DialogFooter>
@@ -253,17 +276,24 @@ export function TeamManagement({ slug, currentRole }: { slug: string, currentRol
                     </Avatar>
                     <div className="flex flex-col">
                       <span className="font-medium">{owner.name}</span>
-                      <span className="text-xs text-muted-foreground">{owner.email}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {owner.email}
+                      </span>
                     </div>
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Badge variant="secondary" className="bg-blue-50 text-blue-700 hover:bg-blue-50 border-blue-200">
+                  <Badge
+                    variant="secondary"
+                    className="bg-blue-50 text-blue-700 hover:bg-blue-50 border-blue-200"
+                  >
                     <Shield className="mr-1 h-3 w-3" />
                     Superior Admin
                   </Badge>
                 </TableCell>
-                <TableCell className="text-sm text-muted-foreground">Program Creator</TableCell>
+                <TableCell className="text-sm text-muted-foreground">
+                  Program Creator
+                </TableCell>
                 <TableCell></TableCell>
               </TableRow>
             )}
@@ -275,11 +305,15 @@ export function TeamManagement({ slug, currentRole }: { slug: string, currentRol
                   <div className="flex items-center gap-3">
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={member.user.image || ""} />
-                      <AvatarFallback>{member.user.name.charAt(0)}</AvatarFallback>
+                      <AvatarFallback>
+                        {member.user.name.charAt(0)}
+                      </AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col">
                       <span className="font-medium">{member.user.name}</span>
-                      <span className="text-xs text-muted-foreground">{member.user.email}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {member.user.email}
+                      </span>
                     </div>
                   </div>
                 </TableCell>
@@ -292,11 +326,11 @@ export function TeamManagement({ slug, currentRole }: { slug: string, currentRol
                   {new Date(member.joinedAt).toLocaleDateString()}
                 </TableCell>
                 <TableCell>
-                   {canManageTeam && (
-                      <Button variant="ghost" size="icon">
-                         <MoreVertical className="h-4 w-4" />
-                      </Button>
-                   )}
+                  {canManageTeam && (
+                    <Button variant="ghost" size="icon">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  )}
                 </TableCell>
               </TableRow>
             ))}

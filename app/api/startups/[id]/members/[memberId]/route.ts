@@ -21,9 +21,11 @@ const LEGACY_ROLE_TO_BA: Record<string, string> = {
   VIEWER: "viewer",
 };
 
-async function resolveStartup(
-  id: string,
-): Promise<{ id: string; userId: string; organizationId: string | null } | null> {
+async function resolveStartup(id: string): Promise<{
+  id: string;
+  userId: string;
+  organizationId: string | null;
+} | null> {
   return await db.startup.findUnique({
     where: { id },
     select: { id: true, userId: true, organizationId: true },

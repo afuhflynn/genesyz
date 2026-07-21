@@ -7,7 +7,10 @@ export async function POST(
   { params }: { params: Promise<{ slug: string; mentorId: string }> },
 ) {
   const { slug, mentorId } = await params;
-  const { hasAccess, acceleratorId } = await checkAcceleratorAccess(slug, "manage_team");
+  const { hasAccess, acceleratorId } = await checkAcceleratorAccess(
+    slug,
+    "manage_team",
+  );
 
   if (!hasAccess || !acceleratorId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -17,7 +20,10 @@ export async function POST(
   const { startupId, focus } = body;
 
   if (!startupId) {
-    return NextResponse.json({ error: "Startup ID is required" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Startup ID is required" },
+      { status: 400 },
+    );
   }
 
   // Verify mentor and startup belong to accelerator
@@ -32,7 +38,10 @@ export async function POST(
   ]);
 
   if (!mentor || !startupInAccelerator) {
-    return NextResponse.json({ error: "Mentor or Startup not found in this accelerator" }, { status: 404 });
+    return NextResponse.json(
+      { error: "Mentor or Startup not found in this accelerator" },
+      { status: 404 },
+    );
   }
 
   // Check if match exists
@@ -46,7 +55,10 @@ export async function POST(
   });
 
   if (existing) {
-    return NextResponse.json({ error: "Mentor is already matched with this startup" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Mentor is already matched with this startup" },
+      { status: 400 },
+    );
   }
 
   const match = await db.mentorMatch.create({
@@ -65,7 +77,10 @@ export async function DELETE(
   { params }: { params: Promise<{ slug: string; mentorId: string }> },
 ) {
   const { slug, mentorId } = await params;
-  const { hasAccess, acceleratorId } = await checkAcceleratorAccess(slug, "manage_team");
+  const { hasAccess, acceleratorId } = await checkAcceleratorAccess(
+    slug,
+    "manage_team",
+  );
 
   if (!hasAccess || !acceleratorId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -75,7 +90,10 @@ export async function DELETE(
   const startupId = searchParams.get("startupId");
 
   if (!startupId) {
-    return NextResponse.json({ error: "Startup ID is required" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Startup ID is required" },
+      { status: 400 },
+    );
   }
 
   // Verify mentor and startup belong to accelerator
@@ -90,7 +108,10 @@ export async function DELETE(
   ]);
 
   if (!mentor || !startupInAccelerator) {
-    return NextResponse.json({ error: "Mentor or Startup not found in this accelerator" }, { status: 404 });
+    return NextResponse.json(
+      { error: "Mentor or Startup not found in this accelerator" },
+      { status: 404 },
+    );
   }
 
   await db.mentorMatch.delete({

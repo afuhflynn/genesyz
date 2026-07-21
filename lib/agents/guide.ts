@@ -204,10 +204,13 @@ Start by offering to help the user explore their research results.`;
 
 Keep it friendly and encouraging (2-3 sentences).`;
 
-  const { result } = await generateTextWithFallback({
-    system: systemMessage,
-    prompt: initialPrompt,
-  }, "AI_GUIDE_INIT");
+  const { result } = await generateTextWithFallback(
+    {
+      system: systemMessage,
+      prompt: initialPrompt,
+    },
+    "AI_GUIDE_INIT",
+  );
 
   // Store initial assistant message
   await db.guideMessage.create({
@@ -288,10 +291,13 @@ export async function sendGuideMessage(
   });
 
   // Generate response with tools
-  const { result } = await generateTextWithFallback({
-    messages,
-    tools,
-  }, "AI_GUIDE_MESSAGE");
+  const { result } = await generateTextWithFallback(
+    {
+      messages,
+      tools,
+    },
+    "AI_GUIDE_MESSAGE",
+  );
 
   // Store assistant response
   const assistantMessage = await db.guideMessage.create({
@@ -491,11 +497,14 @@ Provide a JSON response with:
 Be constructive and helpful. Focus on substantive differences, not minor wording changes.`;
 
   try {
-    const { result } = await generateTextWithFallback({
-      system:
-        "You are an expert at analyzing communication and interpretation accuracy.",
-      prompt,
-    }, "AI_GUIDE_CONTEXTUALIZATION");
+    const { result } = await generateTextWithFallback(
+      {
+        system:
+          "You are an expert at analyzing communication and interpretation accuracy.",
+        prompt,
+      },
+      "AI_GUIDE_CONTEXTUALIZATION",
+    );
 
     // Try to parse as JSON, fallback to text analysis
     try {

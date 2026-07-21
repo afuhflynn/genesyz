@@ -114,7 +114,10 @@ export async function checkStartupAccess(
     if (orgMember) {
       const legacyRole = baRoleToLegacyRole(orgMember.role);
       if (legacyRole) {
-        if (requiredPermission && !hasPermission(legacyRole, requiredPermission)) {
+        if (
+          requiredPermission &&
+          !hasPermission(legacyRole, requiredPermission)
+        ) {
           return {
             hasAccess: false,
             role: legacyRole,

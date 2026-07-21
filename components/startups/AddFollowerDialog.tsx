@@ -79,7 +79,8 @@ export function AddFollowerDialog({
         <DialogHeader>
           <DialogTitle>Add Follower</DialogTitle>
           <DialogDescription>
-            Add an external follower who will receive weekly progress updates via email.
+            Add an external follower who will receive weekly progress updates
+            via email.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>

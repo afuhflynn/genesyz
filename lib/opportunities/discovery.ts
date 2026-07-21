@@ -92,7 +92,8 @@ export function isDeadlineOnOrAfterTodayUTC(
 ): boolean {
   if (!deadline) return false;
 
-  const parsedDeadline = deadline instanceof Date ? deadline : new Date(deadline);
+  const parsedDeadline =
+    deadline instanceof Date ? deadline : new Date(deadline);
   if (Number.isNaN(parsedDeadline.getTime())) {
     return false;
   }

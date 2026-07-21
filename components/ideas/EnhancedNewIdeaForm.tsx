@@ -54,7 +54,8 @@ export function EnhancedNewIdeaForm({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: session } = useSession();
-  const userLocation = (session?.user as Record<string, unknown> | undefined)?.location as string | undefined;
+  const userLocation = (session?.user as Record<string, unknown> | undefined)
+    ?.location as string | undefined;
 
   const isVoiceEnabled = enabledModes.includes("voice");
   const isImageEnabled = enabledModes.includes("image");
@@ -152,7 +153,9 @@ export function EnhancedNewIdeaForm({
         setSubmitted(true);
       } else {
         const body = await response.json().catch(() => null);
-        throw new Error(body?.error || `Failed to create idea (${response.status})`);
+        throw new Error(
+          body?.error || `Failed to create idea (${response.status})`,
+        );
       }
     } catch (error) {
       const message =
@@ -177,7 +180,12 @@ export function EnhancedNewIdeaForm({
   };
 
   if (submitted) {
-    return <IdeaSubmittedSuccess onReset={handleReset} ideaId={submittedIdeaId ?? undefined} />;
+    return (
+      <IdeaSubmittedSuccess
+        onReset={handleReset}
+        ideaId={submittedIdeaId ?? undefined}
+      />
+    );
   }
 
   return (

@@ -33,6 +33,10 @@ export async function GET(request: Request) {
   ]);
 
   return NextResponse.json({
-    token: { key, channel: `idea:${ideaId}`, topics: ["research.started", "research.progress", "research.finished"] },
+    token: {
+      key,
+      channel: `idea:${ideaId}`,
+      topics: ["research.started", "research.progress", "research.finished"],
+    },
   });
 }

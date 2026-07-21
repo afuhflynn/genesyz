@@ -225,7 +225,11 @@ export default async function AcceleratorDashboardPage({
                           </span>
                         </div>
                         <Progress
-                          value={kpi.targetValue > 0 ? (kpi.currentValue / kpi.targetValue) * 100 : 0}
+                          value={
+                            kpi.targetValue > 0
+                              ? (kpi.currentValue / kpi.targetValue) * 100
+                              : 0
+                          }
                         />
                       </div>
                     ))

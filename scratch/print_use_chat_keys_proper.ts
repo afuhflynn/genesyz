@@ -1,7 +1,7 @@
-const Module = require('module');
+const Module = require("module");
 const originalRequire = Module.prototype.require;
-Module.prototype.require = function(id) {
-  if (id === 'react') {
+Module.prototype.require = function (id) {
+  if (id === "react") {
     return {
       useRef: (init) => ({ current: init }),
       useState: (val) => [val, () => {}],
@@ -21,14 +21,14 @@ Module.prototype.require = function(id) {
       createElement: () => ({}),
       forwardRef: (fn) => fn,
       Component: class {},
-      Fragment: Symbol('Fragment'),
+      Fragment: Symbol("Fragment"),
     };
   }
   return originalRequire.apply(this, arguments);
 };
 
 // Now import the hook and run it!
-const { useChat } = require('@ai-sdk/react');
+const { useChat } = require("@ai-sdk/react");
 try {
   const result = useChat({
     transport: {

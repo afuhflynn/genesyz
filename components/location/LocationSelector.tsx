@@ -52,7 +52,18 @@ const CONTINENTS = [
 ] as const;
 
 const POPULAR_COUNTRIES = [
-  "US", "GB", "DE", "CA", "AU", "IN", "SG", "AE", "BR", "NL", "FR", "JP",
+  "US",
+  "GB",
+  "DE",
+  "CA",
+  "AU",
+  "IN",
+  "SG",
+  "AE",
+  "BR",
+  "NL",
+  "FR",
+  "JP",
 ];
 
 function isoToFlag(isoCode?: string): string {
@@ -182,7 +193,10 @@ export function LocationSelector({
   }, [search, selectedCountry, selectedRegion]);
 
   const currentItems = useMemo(() => {
-    if (step === "country") return sortedCountries.rest.length > 0 ? sortedCountries.rest : sortedCountries.popular;
+    if (step === "country")
+      return sortedCountries.rest.length > 0
+        ? sortedCountries.rest
+        : sortedCountries.popular;
     if (step === "region") return regions;
     return cities || [];
   }, [step, sortedCountries, regions, cities]);
@@ -383,7 +397,10 @@ export function LocationSelector({
           </span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[min(340px,calc(100vw-2rem))] p-0" align="start">
+      <PopoverContent
+        className="w-[min(340px,calc(100vw-2rem))] p-0"
+        align="start"
+      >
         <div className="p-2 border-b space-y-2">
           {step !== "country" && (
             <button
@@ -475,7 +492,9 @@ export function LocationSelector({
                   className="w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-sm hover:bg-accent hover:text-accent-foreground transition-colors"
                 >
                   <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  <span className="flex-1 text-left">Can&apos;t find your location?</span>
+                  <span className="flex-1 text-left">
+                    Can&apos;t find your location?
+                  </span>
                 </button>
 
                 <div className="my-1 h-px bg-border" />

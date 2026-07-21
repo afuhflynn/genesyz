@@ -23,10 +23,10 @@ export async function GET(request: Request) {
 
   const isGlobalAdmin = user?.role === "ADMIN";
   const acceleratorMember = await db.acceleratorMember.findFirst({
-    where: { userId: session.user.id }
+    where: { userId: session.user.id },
   });
   const acceleratorOwner = await db.accelerator.findFirst({
-    where: { ownerId: session.user.id }
+    where: { ownerId: session.user.id },
   });
 
   if (!isGlobalAdmin && !acceleratorMember && !acceleratorOwner) {

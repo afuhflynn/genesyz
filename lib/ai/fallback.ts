@@ -37,11 +37,11 @@ function extractRetryDelay(message: string): number | null {
 
 function repairTruncatedJson(text: string): string {
   let cleanText = text.trim();
-  
-  const firstBrace = cleanText.indexOf('{');
-  const firstBracket = cleanText.indexOf('[');
+
+  const firstBrace = cleanText.indexOf("{");
+  const firstBracket = cleanText.indexOf("[");
   let startIdx = 0;
-  
+
   if (firstBrace !== -1 && firstBracket !== -1) {
     startIdx = Math.min(firstBrace, firstBracket);
   } else if (firstBrace !== -1) {
@@ -49,7 +49,7 @@ function repairTruncatedJson(text: string): string {
   } else if (firstBracket !== -1) {
     startIdx = firstBracket;
   }
-  
+
   cleanText = cleanText.substring(startIdx);
 
   let inString = false;
@@ -62,7 +62,7 @@ function repairTruncatedJson(text: string): string {
       escaped = false;
       continue;
     }
-    if (char === '\\') {
+    if (char === "\\") {
       escaped = true;
       continue;
     }
@@ -71,16 +71,16 @@ function repairTruncatedJson(text: string): string {
       continue;
     }
     if (!inString) {
-      if (char === '{') {
-        stack.push('{');
-      } else if (char === '[') {
-        stack.push('[');
-      } else if (char === '}') {
-        if (stack[stack.length - 1] === '{') {
+      if (char === "{") {
+        stack.push("{");
+      } else if (char === "[") {
+        stack.push("[");
+      } else if (char === "}") {
+        if (stack[stack.length - 1] === "{") {
           stack.pop();
         }
-      } else if (char === ']') {
-        if (stack[stack.length - 1] === '[') {
+      } else if (char === "]") {
+        if (stack[stack.length - 1] === "[") {
           stack.pop();
         }
       }
@@ -88,22 +88,22 @@ function repairTruncatedJson(text: string): string {
   }
 
   let repaired = cleanText;
-  
+
   if (inString) {
     repaired += '"';
   }
 
   repaired = repaired.trim();
-  while (repaired.endsWith(',') || repaired.endsWith(':')) {
+  while (repaired.endsWith(",") || repaired.endsWith(":")) {
     repaired = repaired.substring(0, repaired.length - 1).trim();
   }
 
   while (stack.length > 0) {
     const last = stack.pop();
-    if (last === '{') {
-      repaired += '}';
-    } else if (last === '[') {
-      repaired += ']';
+    if (last === "{") {
+      repaired += "}";
+    } else if (last === "[") {
+      repaired += "]";
     }
   }
 
@@ -135,7 +135,10 @@ async function safeJsonParse(
       }
       return parsed;
     } catch (error: any) {
-      console.warn("JSON.parse primary attempt failed:", error?.message || String(error));
+      console.warn(
+        "JSON.parse primary attempt failed:",
+        error?.message || String(error),
+      );
 
       try {
         const repaired = repairTruncatedJson(text);
@@ -288,7 +291,10 @@ function describeSchema(schema: any): any {
   if (schema._def?.typeName === "ZodEnum") {
     return schema._def.values.join(" | ");
   }
-  if (schema._def?.typeName === "ZodOptional" || schema._def?.typeName === "ZodNullable") {
+  if (
+    schema._def?.typeName === "ZodOptional" ||
+    schema._def?.typeName === "ZodNullable"
+  ) {
     return `${describeSchema(schema._def.innerType)} (optional)`;
   }
   return "string";

@@ -7,7 +7,10 @@ export async function GET(
   { params }: { params: Promise<{ slug: string }> },
 ) {
   const { slug } = await params;
-  const { hasAccess, acceleratorId } = await checkAcceleratorAccess(slug, "view_metrics");
+  const { hasAccess, acceleratorId } = await checkAcceleratorAccess(
+    slug,
+    "view_metrics",
+  );
 
   if (!hasAccess || !acceleratorId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -26,7 +29,10 @@ export async function POST(
   { params }: { params: Promise<{ slug: string }> },
 ) {
   const { slug } = await params;
-  const { hasAccess, acceleratorId } = await checkAcceleratorAccess(slug, "manage_kpis");
+  const { hasAccess, acceleratorId } = await checkAcceleratorAccess(
+    slug,
+    "manage_kpis",
+  );
 
   if (!hasAccess || !acceleratorId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -36,7 +42,10 @@ export async function POST(
   const { name, targetValue, unit, deadline } = body;
 
   if (!name || !targetValue) {
-    return NextResponse.json({ error: "Name and target value are required" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Name and target value are required" },
+      { status: 400 },
+    );
   }
 
   const kpi = await db.acceleratorKPI.create({
@@ -57,7 +66,10 @@ export async function PATCH(
   { params }: { params: Promise<{ slug: string }> },
 ) {
   const { slug } = await params;
-  const { hasAccess, acceleratorId } = await checkAcceleratorAccess(slug, "manage_kpis");
+  const { hasAccess, acceleratorId } = await checkAcceleratorAccess(
+    slug,
+    "manage_kpis",
+  );
 
   if (!hasAccess || !acceleratorId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -68,7 +80,10 @@ export async function PATCH(
 
   const parsedValue = parseFloat(currentValue);
   if (isNaN(parsedValue)) {
-    return NextResponse.json({ error: "Invalid numeric value" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Invalid numeric value" },
+      { status: 400 },
+    );
   }
 
   const kpi = await db.acceleratorKPI.update({
@@ -78,4 +93,3 @@ export async function PATCH(
 
   return NextResponse.json({ data: kpi });
 }
-

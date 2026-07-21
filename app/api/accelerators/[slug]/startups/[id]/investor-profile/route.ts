@@ -6,14 +6,17 @@ export async function GET(
   { params }: { params: Promise<{ slug: string; id: string }> },
 ) {
   const { slug, id: startupId } = await params;
-  const { hasAccess, acceleratorId } = await checkAcceleratorAccess(slug, "view_startups");
+  const { hasAccess, acceleratorId } = await checkAcceleratorAccess(
+    slug,
+    "view_startups",
+  );
 
   if (!hasAccess || !acceleratorId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const startup = await db.startup.findUnique({
-    where: { 
+    where: {
       id: startupId,
       cohortStartups: {
         some: {
@@ -61,12 +64,12 @@ export async function GET(
     recentGrowth: {
       primaryMetric: startup.primaryMetricType,
       currentValue: startup.primaryMetricValue,
-      history: startup.weeklyUpdates.map(u => ({
+      history: startup.weeklyUpdates.map((u) => ({
         week: u.weekNumber,
         value: u.primaryMetricValue,
       })),
     },
-    achievements: startup.goals.map(g => g.content),
+    achievements: startup.goals.map((g) => g.content),
     aiInsights: latestUpdate?.aiAnalysis, // Feedback from VC AI Coach
     verdict: latestUpdate?.aiVerdict,
   };

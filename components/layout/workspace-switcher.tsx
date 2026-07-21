@@ -76,16 +76,16 @@ export function WorkspaceSwitcher({
           </>
         )}
 
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start text-muted-foreground"
-                  asChild
-                >
-                  <Link href="/startups/new">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create Startup
-                  </Link>
-                </Button>
+        <Button
+          variant="ghost"
+          className="w-full justify-start text-muted-foreground"
+          asChild
+        >
+          <Link href="/startups/new">
+            <Plus className="mr-2 h-4 w-4" />
+            Create Startup
+          </Link>
+        </Button>
       </div>
     );
   }

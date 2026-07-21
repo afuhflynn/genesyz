@@ -59,14 +59,18 @@ export async function sendEmail(options: SendEmailOptions): Promise<boolean> {
   if (previewDir) {
     const fs = await import("node:fs");
     const path = await import("node:path");
-    if (!fs.existsSync(previewDir)) fs.mkdirSync(previewDir, { recursive: true });
+    if (!fs.existsSync(previewDir))
+      fs.mkdirSync(previewDir, { recursive: true });
     const existing = fs.readdirSync(previewDir).length + 1;
     const safe = options.subject
       .replace(/[^a-zA-Z0-9 ]/g, "")
       .trim()
       .replace(/\s+/g, "_")
       .slice(0, 60);
-    const file = path.join(previewDir, `${String(existing).padStart(2, "0")}_${safe}.html`);
+    const file = path.join(
+      previewDir,
+      `${String(existing).padStart(2, "0")}_${safe}.html`,
+    );
     fs.writeFileSync(file, options.html, "utf-8");
     console.log(`[Preview] Saved: ${path.basename(file)}`);
     return true;

@@ -125,10 +125,7 @@ export function StartupProfileForm({
     resolver: zodResolver(startupFormSchema),
     defaultValues: {
       name: existingStartup?.name || ideaTitle || "",
-      slug:
-        existingStartup?.slug ||
-        generateSlug(ideaTitle || "") ||
-        "",
+      slug: existingStartup?.slug || generateSlug(ideaTitle || "") || "",
       tagline: existingStartup?.tagline || "",
       description: existingStartup?.description || ideaSummary || "",
       industry: existingStartup?.industry || "",
@@ -207,14 +204,11 @@ export function StartupProfileForm({
         },
       );
     } else {
-      createMutation.mutate(
-        ideaId ? { ...payload, ideaId } : payload,
-        {
-          onSuccess: () => {
-            onSuccess?.();
-          },
+      createMutation.mutate(ideaId ? { ...payload, ideaId } : payload, {
+        onSuccess: () => {
+          onSuccess?.();
         },
-      );
+      });
     }
   };
 

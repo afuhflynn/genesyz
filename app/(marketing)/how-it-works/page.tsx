@@ -89,7 +89,9 @@ export default function HowItWorksPage() {
             {agents.map((agent, index) => (
               <div key={agent.name} className="flex gap-6">
                 <div className="hidden md:flex flex-col items-center">
-                  <div className={`w-14 h-14 rounded-2xl ${agent.bg} flex items-center justify-center shrink-0`}>
+                  <div
+                    className={`w-14 h-14 rounded-2xl ${agent.bg} flex items-center justify-center shrink-0`}
+                  >
                     <agent.icon className={`w-7 h-7 ${agent.color}`} />
                   </div>
                   {index < agents.length - 1 && (
@@ -152,28 +154,47 @@ export default function HowItWorksPage() {
           </h2>
           <p className="text-lg text-muted-foreground text-center mb-12 max-w-2xl mx-auto">
             Validation is just the beginning. Genesyz also handles execution,
-            team collaboration, accelerator programs, and portfolio intelligence.
+            team collaboration, accelerator programs, and portfolio
+            intelligence.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               {
                 title: "Execution Tracker",
-                items: ["Weekly updates with AI coaching", "Kanban task boards", "Streak gamification", "34+ metric types"],
+                items: [
+                  "Weekly updates with AI coaching",
+                  "Kanban task boards",
+                  "Streak gamification",
+                  "34+ metric types",
+                ],
               },
               {
                 title: "Accelerator Hub",
-                items: ["Program & cohort management", "Event scheduling with RSVP", "Mentor matching", "KPI tracking & reports"],
+                items: [
+                  "Program & cohort management",
+                  "Event scheduling with RSVP",
+                  "Mentor matching",
+                  "KPI tracking & reports",
+                ],
               },
               {
                 title: "Opportunities",
-                items: ["AI-discovered funding", "7-stage pipeline", "Automated deduplication", "Daily web search cron"],
+                items: [
+                  "AI-discovered funding",
+                  "7-stage pipeline",
+                  "Automated deduplication",
+                  "Daily web search cron",
+                ],
               },
             ].map((col) => (
               <div key={col.title} className="p-6 rounded-2xl border bg-white">
                 <h3 className="font-bold mb-4">{col.title}</h3>
                 <ul className="space-y-2">
                   {col.items.map((item) => (
-                    <li key={item} className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <li
+                      key={item}
+                      className="flex items-center gap-2 text-sm text-muted-foreground"
+                    >
                       <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
                       {item}
                     </li>

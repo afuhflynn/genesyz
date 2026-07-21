@@ -65,7 +65,11 @@ export function SessionsList() {
 
   const deviceIcon = (ua: string) => {
     const lower = ua.toLowerCase();
-    if (lower.includes("mobile") || lower.includes("android") || lower.includes("iphone")) {
+    if (
+      lower.includes("mobile") ||
+      lower.includes("android") ||
+      lower.includes("iphone")
+    ) {
       return <Smartphone className="h-4 w-4" />;
     }
     return <Monitor className="h-4 w-4" />;
@@ -101,7 +105,8 @@ export function SessionsList() {
                   <div className="flex items-center gap-2">
                     <p className="text-sm font-medium">
                       {s.userAgent
-                        ? s.userAgent.slice(0, 60) + (s.userAgent.length > 60 ? "..." : "")
+                        ? s.userAgent.slice(0, 60) +
+                          (s.userAgent.length > 60 ? "..." : "")
                         : "Unknown device"}
                     </p>
                     {s.current && (

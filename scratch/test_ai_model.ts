@@ -17,7 +17,10 @@ async function isModelHealthy(entry: any): Promise<boolean> {
     modelStatusCache[entry.name] = true;
     return true;
   } catch (error: any) {
-    console.warn(`[Health Check] Model ${entry.name} is unhealthy:`, error.message || error);
+    console.warn(
+      `[Health Check] Model ${entry.name} is unhealthy:`,
+      error.message || error,
+    );
     modelStatusCache[entry.name] = false;
     return false;
   }
@@ -25,16 +28,19 @@ async function isModelHealthy(entry: any): Promise<boolean> {
 
 async function testHealthCheck() {
   console.log("Testing health check filtering...");
-  
+
   const healthyChain = [];
   for (const entry of modelChain) {
     if (await isModelHealthy(entry)) {
       healthyChain.push(entry);
     }
   }
-  
-  console.log("\nHealthy models:", healthyChain.map(m => m.name));
-  
+
+  console.log(
+    "\nHealthy models:",
+    healthyChain.map((m) => m.name),
+  );
+
   // Test second time to make sure cache works instantly
   const startTime = Date.now();
   const cachedHealthy = [];

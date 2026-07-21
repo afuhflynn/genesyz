@@ -1,7 +1,7 @@
 # Genesyz Codebase Index
 
-**Last indexed**: 2026-07-13
-**Git HEAD**: 418c78e
+**Last indexed**: 2026-07-21
+**Git HEAD**: 605dbdc
 
 ---
 
@@ -16,7 +16,7 @@
 | **Package manager** | pnpm (workspaces), pnpm-lock.yaml |
 | **Repo structure** | Single package (with `.opencode/` workspace plugin) |
 | **Line count** | ~75,000+ (TS/TSX/CSS/JS excluding node_modules/.next) |
-| **Source file count** | ~480+ source files |
+| **Source file count** | ~490+ source files |
 
 ---
 
@@ -35,9 +35,7 @@ genesyz/
 │   ├── (dashboard)/     # Dashboard, ideas, startups, billing, settings, admin, onboarding
 │   ├── (marketing)/     # Landing, about, pricing, FAQ, accelerators, legal, contact
 │   ├── (public)/        # Shared idea pages (public view)
-│   ├── (startup)/       # Startup-specific routes (updates, metrics, tasks, chat, etc.)
-│   ├── accelerator/     # Standalone accelerator admin page
-│   └── api/             # 35+ API route directories with 65+ handlers
+│   └── (startup)/       # Startup-specific routes (updates, metrics, tasks, chat, etc.)
 ├── components/          # React components - ~140+ files across 19 dirs (inspect)
 │   ├── accelerators/    # Accelerator Hub components (9 files)
 │   ├── ai-elements/     # AI SDK component primitives (28 files)
@@ -47,10 +45,10 @@ genesyz/
 │   ├── faqs/            # FAQ search bar (1 file)
 │   ├── guide/           # Guide agent chat widget (1 file)
 │   ├── idea/            # Idea detail server components (4 files)
-│   ├── ideas/           # Idea list/form/detail components (11 files)
+│   ├── ideas/           # Idea list/form/detail components (12 files)
 │   ├── layout/          # Navigation, sidebar, header, workspace (8 files)
 │   ├── location/        # Geographic location selector (2 files)
-│   ├── marketing/       # Landing page sections (7 files)
+│   ├── marketing/       # Landing page sections + pipeline viz (8 files)
 │   ├── onboarding/      # VC Onboarding wizard (2 files)
 │   ├── prompt/          # Prompt viewer with version history (1 file)
 │   ├── providers/       # Theme provider (1 file)
@@ -62,11 +60,11 @@ genesyz/
 ├── constants/           # FAQ data (1 file) (catalog)
 ├── docs/                # Domain documentation (6 files) (catalog)
 ├── hooks/               # Custom React Query hooks (5 files) (inspect)
-├── lib/                 # Core libraries - 63 source files, ~12,662 lines (inspect)
+├── lib/                 # Core libraries - 66 source files, ~13,100 lines (inspect)
 │   ├── agents/          # 12 files - 11 AI agents + types (inspect)
-│   ├── ai/              # 4 files - model, fallback, tools, webfetch (inspect)
+│   ├── ai/              # 5 files - model, fallback, tools, webfetch, stream-fallback (inspect)
 │   ├── auth/            # 2 files - access control, OAuth sign-in (inspect)
-│   ├── constants/       # 1 file - 35+ metric definitions (inspect)
+│   ├── constants/       # 2 files - 35+ metric definitions + verdicts (inspect)
 │   ├── email/           # 3 files - client, send templates, tests (inspect)
 │   ├── inngest/         # 13 files - client + channels + 11 functions (inspect)
 │   ├── location/        # 4 files - detection + research context (inspect)
@@ -78,11 +76,12 @@ genesyz/
 │   └── validators/      # 2 files - auth + startup form validation (inspect)
 ├── nuqs/                # URL search params schema (1 file) (catalog)
 ├── prisma/              # DB schema + migrations + seed (inspect)
-│   ├── schema.prisma    # 49 models, 21 enums, ~1291 lines
+│   ├── schema.prisma    # 49 models, 21 enums, ~1292 lines
 │   ├── seed.ts          # Accelerator program seed
-│   └── migrations/      # 13 migration files
+│   └── migrations/      # 14 migration files
 ├── providers/           # React Query provider (1 file) (inspect)
 ├── public/              # Static assets - 14 files (favicons, OG image, logo, fonts) (skip)
+├── scratch/             # Local developer scratch scripts (skip)
 ├── scripts/             # Utility scripts (4 files) (catalog)
 ├── .env                 # Gitignored (skip)
 ├── .env.example         # 43 env vars across 9 categories (inspect)
@@ -91,8 +90,7 @@ genesyz/
 ├── DUAL_MODEL_DOCUMENTATION_UPDATE.md  # Outdated dual-model docs (catalog)
 ├── README.md            # Project README (inspect)
 ├── RULES.md             # Coding standards & conventions (inspect)
-├── TECH_STACK.md        # Corrected tech stack reference (inspect)
-├── UNUSED_DEPENDENCIES.md  # Dependency audit (catalog)
+├── TECH_STACK.md        # Tech stack reference (inspect)
 ├── biome.json           # Linter/formatter v2.2 (inspect)
 ├── components.json      # shadcn/ui config (inspect)
 ├── docker-compose.yml   # PostgreSQL 15 on port 5446 (inspect)
@@ -100,12 +98,13 @@ genesyz/
 ├── mprocs.yaml          # Multi-process runner (next + inngest + ngrok) (inspect)
 ├── next-env.d.ts        # Next.js types (skip)
 ├── next.config.ts       # reactCompiler: true, serverExternalPackages: ["pdfkit"] (inspect)
-├── package.json         # 128 deps, 14 devDeps, 30 scripts (inspect)
+├── package.json         # 128 deps, 14 devDeps, 31 scripts (inspect)
 ├── pnpm-lock.yaml       # Lock file (skip)
-├── pnpm-workspace.yaml  # Allowed builds for prisma engines, sharp, etc. (inspect)
+├── pnpm-workspace.yaml  # Allowed builds configuration (inspect)
 ├── postcss.config.mjs   # @tailwindcss/postcss v4 (inspect)
 ├── prisma.config.ts     # Prisma ORM config (inspect)
 ├── proxy.ts             # Arcjet middleware + auth redirect (inspect)
+├── run_automation.py    # Playwright integration testing flow script (inspect)
 ├── tsconfig.json        # Strict mode, @/* alias, ES2017 target (inspect)
 ├── tsconfig.tsbuildinfo # Build info (skip)
 └── types.d.ts           # IResearchProgress global type (scan)
@@ -120,8 +119,8 @@ genesyz/
 **Root layout & global files** (`app/`):
 | File | Purpose |
 |---|---|
-| `layout.tsx` | Root layout with ThemeProvider, QueryProvider, NuqsAdapter, Toaster, UploadThing, Vercel Analytics, Inter + IBM Plex Mono fonts |
-| `globals.css` | Tailwind v4 directives + CSS variables (neutral palette, dark mode) |
+| `layout.tsx` | Root layout with ThemeProvider, QueryProvider, NuqsAdapter, Toaster, UploadThing, Vercel Analytics, Inter + Space Grotesk + JetBrains Mono fonts |
+| `globals.css` | Tailwind v4 directives + CSS variables (oklch colors, dark mode, typography system) |
 | `error.tsx` | Root error boundary (client component) |
 | `not-found.tsx` | 404 page (server component) |
 
@@ -136,6 +135,11 @@ genesyz/
 | `(public)` | None | Shared ideas (no layout) |
 | `accelerator` | None | Accelerator admin (no layout) |
 
+**Skeleton Loading States** (RSC loading boundaries):
+- `app/(dashboard)/loading.tsx` - Loading skeleton screen for main dashboard view
+- `app/(dashboard)/ideas/loading.tsx` - Loading skeleton screen for ideas feed
+- `app/(startup)/startups/[slug]/loading.tsx` - Loading skeleton screen for startup workspace pages
+
 **Non-page app components**: 8 startup workspace components co-located in `app/(startup)/startups/[slug]/` (`StartupDashboard.tsx`, `MetricsDashboard.tsx`, `StartupSettings.tsx`, `TasksPageContent.tsx`, `WeeklyUpdatesList.tsx`, `NewWeeklyUpdate.tsx`, `EditWeeklyUpdate.tsx`, `layout-shell.tsx`), plus `app/(dashboard)/startups/StartupsList.tsx`.
 
 **Non-route app support files**: `app/api/uploadthing/core.ts` (UploadThing file router config: image/audio/pdf uploaders), `app/api/inngest/token/_actions/fetchRealtimeSubscriptionToken.ts` (server action for Inngest realtime tokens).
@@ -148,10 +152,10 @@ genesyz/
 | **Auth** | `/sign-in`, `/sign-up`, `/forgot-password`, `/reset-password`, `/verify-email`, `/verify-email/[token]`, `/verify-email/resend`, `/magic-link` |
 | **Dashboard** | `/dashboard`, `/ideas`, `/ideas/new`, `/ideas/[id]`, `/ideas/archived`, `/startups`, `/startups/new`, `/chat`, `/billing`, `/settings`, `/onboarding`, `/my-accelerators`, `/admin`, `/admin/users`, `/admin/accelerators/[slug]` |
 | **Public** | `/ideas/shared/[token]` |
-| **Startup** | `/[slug]`, `/[slug]/updates`, `/[slug]/updates/new`, `/[slug]/updates/[id]/edit`, `/[slug]/metrics`, `/[slug]/tasks`, `/[slug]/chat`, `/[slug]/opportunities`, `/[slug]/profile`, `/[slug]/settings`, `/[slug]/research-feed`, `/[slug]/streaks`, `/[slug]/applications`, `/[slug]/cofounders`, `/[slug]/school` |
+| **Startup** | `/[slug]`, `/[slug]/updates`, `/[slug]/updates/new`, `/[slug]/updates/[id]/edit`, `/[slug]/metrics`, `/[slug]/tasks`, `/[slug]/chat/[[...convId]]` (VC Coach optional chat route), `/[slug]/opportunities`, `/[slug]/profile`, `/[slug]/settings`, `/[slug]/research-feed`, `/[slug]/streaks`, `/[slug]/applications`, `/[slug]/cofounders`, `/[slug]/school` |
 | **Standalone** | `/accelerator/admin` |
 
-**Error & loading states**: Only root `error.tsx` and `not-found.tsx` exist. No `loading.tsx` files anywhere. No root `middleware.ts` (Arcjet via `proxy.ts`).
+---
 
 ### API Routes (70 `route.ts` files, 69 unique endpoints)
 
@@ -229,23 +233,27 @@ genesyz/
 | `/api/user/entitlement` | GET | Get plan entitlement |
 | `/api/users/search` | GET | Search users (for team invites) |
 
-### Background Jobs (Inngest - 13 registered functions)
+---
 
-| Function | File | Trigger | Description |
+### Background Jobs (Inngest - 20 registered functions across 11 files)
+
+The Inngest background job system serves 20 distinct functions grouped in `lib/inngest/functions/`:
+
+| File | Registered Function(s) | Trigger / Cron | Description |
 |---|---|---|---|
-| research-pipeline | `lib/inngest/functions/research-pipeline.ts` | `idea.submitted` | 6-agent sequential research pipeline |
-| auth-emails | `lib/inngest/functions/auth-emails.ts` | `email.send.*` events | Verif/welcome/password-reset/magic-link emails |
-| startup-analysis | `lib/inngest/functions/startup-analysis.ts` | `weeklyUpdate.created` | AI coach analysis post-update |
-| startup-weekly-report | `lib/inngest/functions/startup-weekly-report.ts` | Event + Cron (Sun 9AM UTC) | Detailed weekly report email |
-| startup-weekly-reminder | `lib/inngest/functions/startup-weekly-reminder.ts` | Cron (Fri/Sat 5PM UTC) | Reminder emails to update |
-| weekly-digest | `lib/inngest/functions/weekly-digest.ts` | Cron (Mon 9AM UTC) | Portfolio strategic advisory report |
-| opportunity-discovery | `lib/inngest/functions/opportunity-discovery.ts` | Cron (Daily 6AM UTC) | Tavily-powered opportunity search |
-| re-evaluation | `lib/inngest/functions/re-evaluation.ts` | Cron (Monthly 1st) | Re-research stale ideas |
-| follower-notifications | `lib/inngest/functions/startup-follower-notifications.ts` | Event | Follower welcome + weekly digest |
-| feature-announcement | `lib/inngest/functions/startup-feature-announcement.ts` | Event | Feature announcement emails |
-| cleanup-unverified | `lib/inngest/functions/cleanup-unverified.ts` | Cron (Monthly 1st) | Clean unverified users > 90 days |
+| `research-pipeline.ts` | `researchPipelineFunction` | `idea.submitted` | 3-phase sequential multi-agent research pipeline (Interpreter Phase → Parallel Agents Phase → Synthesis Phase) |
+| `auth-emails.ts` | `sendVerificationEmailFunction`, `sendWelcomeEmailFunction`, `sendPasswordResetEmailFunction`, `sendMagicLinkEmailFunction` | `email.send.*` events | Sends auth emails and provisions default subscriptions |
+| `startup-analysis.ts` | `analyzeWeeklyUpdateFn` | `weeklyUpdate.created` | AI coach feedback analysis on founder's weekly check-in |
+| `startup-weekly-report.ts` | `weeklyStartupReportFn`, `weeklyStartupReportCron` | Event + Cron (Sun 9AM UTC) | Prepares and emails detailed weekly progress report |
+| `startup-weekly-reminder.ts` | `weeklyUpdateReminderFn`, `weeklyUpdateReminderCronFriday`, `weeklyUpdateReminderCronSaturday` | Event + Crons (Fri/Sat 5PM UTC) | Sends reminder notifications to update weekly startup logs |
+| `weekly-digest.ts` | `weeklyStrategicReportFunction` | Cron (Mon 9AM UTC) | Generates and sends portfolio strategic advisory report |
+| `opportunity-discovery.ts` | `opportunityDiscoveryCron` | Cron (Daily 6AM UTC) | Discovers localized startup opportunities via Tavily |
+| `re-evaluation.ts` | `reevaluationFunction` | Cron (Monthly 1st) | Automatically re-researches stale ideas older than 30 days |
+| `startup-follower-notifications.ts` | `followerAddedFn`, `teamMemberAddedFn`, `followerWeeklyUpdateFn` | Events | Handles welcome digests and alerts for team additions and followers |
+| `startup-feature-announcement.ts` | `sendStartupFeatureAnnouncement`, `broadcastStartupFeatureAnnouncement` | Events | Handles system announcements and targeted emails |
+| `cleanup-unverified.ts` | `cleanupUnverifiedUsers` | Cron (Monthly 1st) | Prunes unverified accounts older than 90 days |
 
-6 crons + 7 event-driven = 13 registered functions.
+---
 
 ### Middleware / Proxy
 
@@ -270,8 +278,8 @@ genesyz/
 | **Editor** | `.vscode/settings.json` | VBNetCompanion extension (irrelevant) |
 | **Deploy** | `docker-compose.yml` | PostgreSQL 15-alpine, port 5446 |
 | **Process** | `mprocs.yaml` | 3 processes: next dev, inngest:start, ngrok:dev |
-| **Package** | `package.json` | 128 deps, 14 devDeps, 30 scripts |
-| **Workspace** | `pnpm-workspace.yaml` | Allowed builds for prisma engines, sharp, esbuild |
+| **Package** | `package.json` | 128 deps, 14 devDeps, 34 scripts |
+| **Workspace** | `pnpm-workspace.yaml` | Allowed builds for prisma engines, sharp, better-sqlite3, @google/genai |
 | **Security** | `proxy.ts` | Arcjet Shield + bot detection + auth redirect logic |
 | **Git** | `.gitignore` | node_modules, .next, .env*, .vercel, *.tsbuildinfo |
 | **URL State** | `nuqs/index.ts` | Typed search params (page, limit, search, tab, archived, token, etc.) |
@@ -325,12 +333,16 @@ Module: lib/accelerator-permissions-server
 
 ```
 Module: lib/ai/models
-  Depends on: @ai-sdk/google, ai
-  Used by: lib/agents/*
+  Depends on: @ai-sdk/google, @ai-sdk/mistral, @openrouter/ai-sdk-provider, ai
+  Used by: lib/agents/*, lib/ai/fallback, lib/ai/stream-fallback
 
 Module: lib/ai/fallback
-  Depends on: ai (generateObject, generateText), lib/ai/models
+  Depends on: ai (generateObject, generateText), lib/ai/models, zod
   Used by: lib/agents/*
+
+Module: lib/ai/stream-fallback
+  Depends on: ai (streamText, generateText), lib/ai/models
+  Used by: lib/agents/guide
 
 Module: lib/ai/tools
   Depends on: @tavily/core, ai, lib/ai/webfetch, zod
@@ -381,7 +393,7 @@ Module: lib/agents/strategic-advisory
   Used by: lib/inngest/functions/weekly-digest
 
 Module: lib/agents/guide
-  Depends on: streamText, generateTextWithFallback, lib/ai/models, lib/ai/tools, lib/db
+  Depends on: streamTextWithFallback, generateTextWithFallback, lib/ai/models, lib/ai/tools, lib/db
   Used by: app/api/ideas/[id]/guide
 
 Module: lib/agents/startup-coach
@@ -438,7 +450,7 @@ Module: lib/polar/*
   Used by: lib/auth
 
 Module: lib/memory/client
-  Depends on: fetch (native)
+  Depends on: fetch (native), mem0ai
   Used by: app/api/startups/[id]/chat
 ```
 
@@ -470,27 +482,27 @@ components/* (client components)
 User:
   - CUID, name, email (unique), username? (unique)
   - role: USER | ADMIN, accountStatus: ACTIVE | FROZEN | DELETED
-  - emailVerified (Boolean), twoFactorEnabled, emailNotifications
+  - emailVerified (Boolean), twoFactorEnabled, emailNotifications, onboardingDismissed
   - relations: ideas[], sessions[], accounts[], entitlements[], auditLogs[],
                startups[], organizations[], twoFactor?, guideConversations[]
-  - source: schema.prisma:19-37
+  - source: schema.prisma:19-38
 
 TwoFactor:
   - userId (FK->User, unique), secret, backupCodes (Json)
-  - source: schema.prisma:39-43
+  - source: schema.prisma:40-44
 
 Session:
   - id, userId (FK->User), token, ipAddress, userAgent, activeOrganizationId?
-  - source: schema.prisma:45-51
+  - source: schema.prisma:46-52
 
 Organization:
   - id, name, slug (unique), logo?, metadata (Json)
   - relations: members[], invitations[]
-  - source: schema.prisma:53-60
+  - source: schema.prisma:54-61
 
 Member:
   - organizationId (FK->Organization), userId (FK->User), role (owner/admin/member)
-  - source: schema.prisma:62-67
+  - source: schema.prisma:63-68
 
 Idea:
   - CUID, userId (FK->User)
@@ -500,7 +512,7 @@ Idea:
   - relations: inputs[3], researchJobs[], researchPackets[], scores[],
                researchLogs[], urlContents[], promptVersions[],
                guideConversations[], startup?, snapshots[]
-  - source: schema.prisma:102-131
+  - source: schema.prisma:103-132
 
 Startup:
   - CUID, ideaId? (unique FK->Idea), userId (FK->User)
@@ -511,14 +523,14 @@ Startup:
   - relations: weeklyUpdates[], metrics[], goals[], opportunities[],
                taskLists[], tasks[], members[], followers[], conversations[],
                streak?, mentorMatches[], cohortStartups[], feedItems[]
-  - source: schema.prisma:265-300
+  - source: schema.prisma:266-301
 
 Accelerator:
   - CUID, name, slug (unique), ownerId (FK->User)
   - isPublic (default true), isActive (default true)
   - relations: cohorts[], events[], applications[], members[],
                invitations[], kpis[], reports[], mentors[]
-  - source: schema.prisma:428-450
+  - source: schema.prisma:429-451
 
 WeeklyUpdate:
   - CUID, startupId (FK->Startup), weekNumber, weekStart, weekEnd
@@ -527,7 +539,7 @@ WeeklyUpdate:
   - aiConfidence?, aiTrajectory?, aiRecommendations?[]
   - editedAt? (3-day edit window)
   - relations: goals[1-3], metricEntries[], user?
-  - source: schema.prisma:315-337
+  - source: schema.prisma:316-338
 ```
 
 ### Key Enums (21 enums)
@@ -562,10 +574,11 @@ WeeklyUpdate:
 User submits Idea (text/audio/image)
   -> IdeaInput created, status=PENDING
   -> Inngest event "idea.submitted" fires
-  -> research-pipeline runs 6 agents sequentially:
-      Interpreter -> MarketResearch -> TrendAnalysis ->
-      ExecutionFriction -> DeepResearch -> Synthesis
-  -> Each agent publishes realtime progress via Inngest channels
+  -> research-pipeline runs 3 phases:
+      1. Interpreter Phase -> runInterpreterPhase() (determines title/summary, edits significance)
+      2. Parallel Phase -> runParallelPhase() (MarketResearch + TrendAnalysis + ExecutionFriction + DeepResearch in parallel)
+      3. Synthesis Phase -> runSynthesisPhase() (combines inputs to output final scores & recommendation)
+  -> Real-time progress updates streamed through Inngest event channels (Interpreter, Market, Trend, Friction, Deep, Synthesis)
   -> ResearchPacket persisted for each agent
   -> IdeaScores stored: clarity, market, execution, overall (0-100)
   -> Verdict: pursue-immediately / needs-more-research / not-recommended
@@ -573,14 +586,14 @@ User submits Idea (text/audio/image)
   -> Email notification sent to user
 
 Idea -> conversion -> Startup profile
-  -> Weekly updates tracked via WeeklyUpdate (pre-launch: conversations only)
+  -> Weekly updates tracked via WeeklyUpdate (pre-launch: conversations only; post-launch: full metrics)
   -> Update submission triggers AI Coach analysis (ON_TRACK/NEEDS_ATTENTION/AT_RISK)
   -> Streak tracking via StartupStreak (milestones at 4/8/12/16/20/24/52)
   -> Task management via TaskList + Task (4-status Kanban)
   -> Team management via StartupMember (4 roles, 7 permissions)
   -> External followers receive weekly digest (AI-generated analysis)
   -> Opportunity discovery via daily Tavily cron (8 categories, 7-stage pipeline)
-  -> VC Coach: per-startup AI chat with memory, session management
+  -> VC Coach: per-startup AI chat (via x-conversation-id headers state-replaces url) with memory, session management
 
 Accelerator program creation
   -> Cohort lifecycle management (start/end dates)
@@ -620,13 +633,15 @@ Billing enforcement:
 | `better-auth` | ^1.4.10 | Authentication (email/password, Google OAuth, magic link, 2FA, orgs) |
 | `@polar-sh/better-auth` | ^1.6.3 | Billing integration plugin |
 | `@polar-sh/sdk` | ^0.47.1 | Polar billing SDK |
-| `@ai-sdk/google` | ^4.0.10 | Google Gemini AI SDK (single production model) |
+| `@openrouter/ai-sdk-provider` | ^3.0.0 | OpenRouter AI SDK provider wrapper |
+| `@ai-sdk/google` | ^4.0.10 | Google Gemini AI SDK provider |
+| `@ai-sdk/mistral` | ^4.0.7 | Mistral AI SDK provider |
 | `ai` | ^7.0.18 | Vercel AI SDK v7 (generateObject, generateText, streamText, useChat) |
 | `@tanstack/react-query` | ^5.90.16 | Server state management |
 | `inngest` | ^4.11.0 | Background jobs + realtime |
 | `@arcjet/next` | 1.0.0-beta.16 | Rate limiting / bot detection |
 | `@uploadthing/react` | ^7.3.3 | File uploads |
-| `nodemailer` | ^7.0.12 | Email (Gmail SMTP) |
+| `nodemailer` | ^7.0.12 | Email (Gmail SMTP with PREVIEW_EMAILS_DIR HTML write support) |
 | `zod` | ^4.3.5 | Schema validation |
 | `recharts` | 3.8.1 | Area/line charts |
 | `@dnd-kit/core` | ^6.3.1 | Kanban drag-and-drop |
@@ -636,26 +651,8 @@ Billing enforcement:
 | `pdfkit` | ^0.17.2 | PDF generation (server-side) |
 | `@tavily/core` | ^0.6.4 | Web search API |
 | `@xyflow/react` | ^12.10.0 | Flow graph visualization |
+| `mem0ai` | ^3.0.13 | Mem0 AI Memory SDK |
 | `biome` | 2.2.0 | Linter + formatter |
-
-### Dev Dependencies
-
-| Package | Version | Purpose |
-|---|---|---|
-| `@biomejs/biome` | 2.2.0 | Linter + formatter |
-| `typescript` | ^5 | Language |
-| `prisma` | ^7.2.0 | ORM CLI |
-| `@tailwindcss/postcss` | ^4 | PostCSS plugin |
-| `babel-plugin-react-compiler` | 1.0.0 | React compiler Babel plugin |
-| `vitest` | ^4.0.16 | Test runner (in deps, not devDeps) |
-
-### Unused / Questionable Packages
-
-See `UNUSED_DEPENDENCIES.md`. Notable:
-- `@ai-sdk/mistral`, `@ai-sdk/openai`, `@ai-sdk/xai`, `ai-sdk-ollama`, `@openrouter/ai-sdk-provider` — alternative AI providers, not integrated
-- `@pinecone-database/pinecone` — vector search not wired
-- `@react-pdf/renderer` — dual PDF lib; `pdfkit` is the active one
-- `mprocs`, `list`, `streamdown`, `tokenlens` — dev utilities in production deps
 
 ---
 
@@ -681,23 +678,24 @@ See `UNUSED_DEPENDENCIES.md`. Notable:
 | **Development** | Docker Compose (PostgreSQL 15, port 5446) + mprocs (next dev + inngest + ngrok) |
 | **Background Jobs** | Inngest Cloud (local dev via `inngest-cli dev`) |
 | **File Storage** | UploadThing (images, audio, video, PDF) |
-| **Email** | Nodemailer + Gmail SMTP (Postmark/SendGrid adapter-ready) |
+| **Email** | Nodemailer + Gmail SMTP (Postmark/SendGrid adapter-ready; disk storage preview enabled via `PREVIEW_EMAILS_DIR`) |
 | **Security** | Arcjet (Shield + bot detection + 3 rate limit tiers) |
 | **Analytics** | `@vercel/analytics` |
 | **Billing** | Polar.sh (Free: 3 ideas / Pro: $20/mo unlimited) |
-| **Fonts** | Inter + IBM Plex Mono (Google Fonts via next/font), Nunito (local TTF) |
+| **Fonts** | Inter (sans-serif), Space Grotesk (display), JetBrains Mono (mono) via Tailwind variables |
 | **Assets** | OG image, favicons, logo, apple-touch-icon in `public/` |
+| **Automation** | `run_automation.py` (Playwright flow simulating signup → onboarding skip → idea submit → research wait → startup convert → dashboard & VC coach screenshotting) |
 
 ---
 
-## 10. Lib Directory Deep Dive (63 files, ~12,662 lines)
+## 10. Lib Directory Deep Dive (66 files, ~13,100 lines)
 
 ### lib/agents/ (12 files, ~2,706 lines)
 
 | File | Lines | Exports | Description |
 |---|---|---|---|
 | `types.ts` | 358 | `IdeaInputData`, `AgentInput`, `PortfolioInput`, `AgentOutput`, `InterpretedIdea`, `MarketResearch`, `MarketSizeData`, `MarketCapitalization`, `LocationMarketSize`, `TrendAnalysis`, `ExecutionFriction`, `Synthesis`, `DeepResearch`, `DeepResearchOutput`, `StrategicAdvisory`, `IdeaState` interfaces + Zod schemas | Central type definitions for all agent I/O. Both nested and flat score formats for backward compat. |
-| `pipeline.ts` | 288 | `runResearchPipeline()` | Orchestrates 6-agent sequential pipeline with realtime progress. Saves research packets + scores to DB. |
+| `pipeline.ts` | 297 | `runInterpreterPhase()`, `runParallelPhase()`, `runSynthesisPhase()`, `runResearchPipeline()` | Orchestrates 6-agent pipeline. Split into phases to execute via Inngest steps (Market, Trend, Friction, Deep run in parallel). |
 | `interpreter.ts` | 185 | `runInterpreterAgent()`, `ChangeSignificanceSchema` | Structures raw input. Extracts URLs + locations. AI decides if prompt edit is "major" change. |
 | `market-research.ts` | 155 | `runMarketResearchAgent()` | TAM/SAM/SOM analysis with location-aware context. Dual-currency (USD + local). |
 | `trend-analysis.ts` | 100 | `runTrendAnalysisAgent()` | Timing verdict (too-early/right-time/late/too-late), tech readiness 1-10. |
@@ -709,12 +707,13 @@ See `UNUSED_DEPENDENCIES.md`. Notable:
 | `strategic-advisory.ts` | 112 | `runStrategicAdvisoryAgent()` | Portfolio-level Go/Pause/Kill with brain-drilling questions. |
 | `guide.ts` | 522 | `initializeGuideConversation()`, `streamGuideMessage()`, `sendGuideMessage()`, etc. | Largest agent. Multi-session conversational AI guide with streaming + full research context. |
 
-### lib/ai/ (4 files, ~859 lines)
+### lib/ai/ (5 files, ~1,300 lines)
 
 | File | Lines | Exports | Description |
 |---|---|---|---|
-| `models.ts` | 7 | `model`, `getModel()` | Google Gemini 3.5 Flash via `@ai-sdk/google`. Single model for all agents. |
-| `fallback.ts` | 177 | `generateObjectWithFallback<T>()`, `generateTextWithFallback()` | Single-model fallback: try `generateObject`, on schema error fall to `generateText` + JSON parse. |
+| `models.ts` | 70 | `model`, `getModel()`, `modelChain` | Defines provider chains for Mistral, OpenRouter (Gemini, Llama, Qwen, Nemotron), and Google. Dev priorities Mistral first, Prod priorities Gemini first. |
+| `fallback.ts` | 392 | `generateObjectWithFallback<T>()`, `generateTextWithFallback()` | Implements multi-model try/catch loop with quota delay backoffs, truncated JSON repair (`repairTruncatedJson()`), and text-only JSON generation fallback. |
+| `stream-fallback.ts` | 77 | `streamTextWithFallback()` | Streaming text model routing that queries parallel fast probe health checks (`isModelHealthy`), filters down to online systems, and maps instructions parameter context. |
 | `tools.ts` | 562 | `webSearch`, `getIndustryNews`, `getCompetitorUpdates`, `getIdeaContext`, `updateIdeaState`, `addStartupTask`, `trackOpportunity`, etc. (16 tools) | AI tools available to agents. Tavily search + DB CRUD. Lazy-imports db to avoid circular deps. |
 | `webfetch.ts` | 113 | `webfetch()`, `isUrlReachable()`, `getContentType()` | HTTP fetch via axios with configurable timeout, max length, redirect following. |
 
@@ -724,7 +723,7 @@ See `UNUSED_DEPENDENCIES.md`. Notable:
 |---|---|---|---|
 | `client.ts` | 128 | `inngest` instance, `InngestEvents` type | SDK init + type-safe event definitions |
 | `channels.ts` | 38 | `ideaChannel` realtime channel | Real-time progress topics for idea research |
-| `functions/research-pipeline.ts` | 232 | `researchPipelineFunction` | `idea.submitted` -> full pipeline -> email + feed item |
+| `functions/research-pipeline.ts` | 238 | `researchPipelineFunction` | `idea.submitted` -> runs 3 phase pipeline steps -> email + feed item |
 | `functions/startup-analysis.ts` | 176 | `analyzeWeeklyUpdateFn` | `weeklyUpdate.created` -> AI coach analysis |
 | `functions/startup-weekly-report.ts` | 167 | `weeklyStartupReportFn`, `weeklyStartupReportCron` | Sun 9AM UTC weekly report email |
 | `functions/startup-weekly-reminder.ts` | 241 | `weeklyUpdateReminderFn`, `FridayCron`, `SaturdayCron` | Fri/Sat 5PM UTC reminder emails |
@@ -736,13 +735,13 @@ See `UNUSED_DEPENDENCIES.md`. Notable:
 | `functions/startup-feature-announcement.ts` | 69 | `sendStartupFeatureAnnouncement`, `broadcastStartupFeatureAnnouncement` | Feature announcement emails |
 | `functions/cleanup-unverified.ts` | 92 | `cleanupUnverifiedUsers` | Monthly cleanup of unverified users > 90 days |
 
-### lib/email/ (3 files, ~2,068 lines)
+### lib/email/ (3 files, ~2,100 lines)
 
 | File | Lines | Exports | Description |
 |---|---|---|---|
-| `client.ts` | 98 | `getEmailBranding()`, `sendEmail()`, `verifyEmailConnection()` | Nodemailer transport. Logo via Cloudinary CID. |
-| `send.ts` | 1919 | `renderPremiumEmail()`, 14 email send functions | Largest file. Full HTML email templates with responsive design. |
-| `send.test.ts` | 51 | Tests for branding, layout, verification code display | Only test file in the project. |
+| `client.ts` | 106 | `getEmailBranding()`, `sendEmail()`, `verifyEmailConnection()` | Nodemailer transport. Logo via Cloudinary CID. Includes a directory-write preview mode. |
+| `send.ts` | 1919 | `renderPremiumEmail()`, 14 email send functions | Full HTML email templates with light-mode-only enforcement to prevent dark-mode CSS overrides. |
+| `send.test.ts` | 51 | Tests for branding, layout, verification code display | Vitest script validating logo, colors, and layout metrics. |
 
 ### Other lib modules:
 
@@ -753,8 +752,8 @@ See `UNUSED_DEPENDENCIES.md`. Notable:
 | `opportunities/` | 2 | `dedupeOpportunities()`, `generateStartupOpportunities()`, opportunity normalization |
 | `polar/` | 2 | `isAllowedToCreateIdea()`, `syncEntitlement()`, `PLANS` — billing enforcement |
 | `validators/` | 2 | Zod schemas for auth forms + startup forms (metric periods, slug regex, etc.) |
-| `constants/` | 1 | 35+ metric definitions with labels, formats, periods |
-| `memory/` | 1 | Mem0 AI memory client — persistent conversation context (gracefully disabled without API key) |
+| `constants/` | 2 | 35+ metric definitions with labels (`metrics.ts`) + weekly status updates configs (`verdicts.ts`) |
+| `memory/` | 1 | Mem0 AI memory client — persistent conversation context (sanitizes invisible key chars, log failures) |
 | `auth/` | 2 | `ac` (AccessControl), `signInWithOAuth()` — org-level permissions |
 | `utils/` | 1 | `getWeeksSinceCreation()`, `getWeekStartForDate()`, `getWeekEndForDate()` |
 | Top-level | 14 | `db.ts`, `auth.ts`, `auth-client.ts`, `arcjet.ts`, `api-client.ts`, `utils.ts`, `files.ts`, `auth-utils.ts`, `startup-permissions.ts`, `accelerator-permissions.ts`, `accelerator-permissions-server.ts`, `get-server-session.ts`, `uploadthing.ts`, `uploadthing-server.ts` |
@@ -774,15 +773,16 @@ All other components are `"use client"`. Key groupings:
 
 **AI Elements (28 files)**: Full set of AI SDK primitives — `PromptInput` (multi-modal), `Message` (chat bubbles), `CodeBlock` (Shiki syntax), `Suggestions`, `Artifact`, `ChainOfThought`, `Reasoning`, `Sources`, `InlineCitation`, `WebPreview`, `Loader`, `Shimmer`, `Tool`, `Confirmation`, `Context` (token usage), `Conversation`, `Queue`, `Plan`, `Checkpoint`, `Controls`, `Task`.
 
-**shadcn/ui primitives (55 files)**: All 35 Radix primitives mapped. Notable custom additions: `Empty`, `Field` (compound form field), `Item`, `Kbd`, `ButtonGroup`, `InputGroup`, `InfiniteScroll`, `FileUpload`, `Spinner`, `Sidebar` (725-line custom implementation).
+**shadcn/ui primitives (55 files)**: All 35 Radix primitives mapped. Notable custom additions: `Empty`, `Field` (compound form field), `Item`, `Kbd`, `ButtonGroup`, `InputGroup`, `InfiniteScroll`, `FileUpload`, `Spinner`, `Sidebar` (primitives integration matching shadcn conventions).
 
 **Business components**:
 - `accelerators/`: KPI reporting, investor one-pager, cohort/mentor/event/team management, hub coach, public view
-- `ideas/`: CRUD dialogs, market size display, asset management, enhanced form, idea submitted success
+- `ideas/`: CRUD dialogs, market size display, asset management, enhanced form, idea submitted success, research-pipeline-progress (realtime pipeline progress tracker utilizing `useRealtime` hook subscriptions)
 - `startups/`: Weekly update form, task board (Kanban), streak dashboard, VC coach, team/follower management
-- `onboarding/`: 10-step VC Onboarding wizard with LocationSelector
+- `marketing/`: Navbar, Hero, and `pipeline-viz.tsx` (Framer motion animated 6-agent display for marketing landing pages)
+- `onboarding/`: 10-step VC Onboarding wizard with LocationSelector and modal triggers
 - `settings/`: 2FA toggle, active sessions, audit log
-- `layout/`: Sidebar with collapsible panels, header, user nav, workspace switcher
+- `layout/`: Collapsible sidebar layout structure, header, user nav, workspace switcher
 
 ---
 
@@ -798,8 +798,6 @@ Comprehensive React Query hooks organized by domain:
 **Profile/Billing**: `useProfile`, `useEntitlement`, `useUpdateProfile`, `useSubscription`
 
 **Admin**: `useAdminStats`, `useAdminUsers`, `useAdminAuditLogs`
-
-**Auth**: `useSignIn`, `useSignUp`, `useForgotPassword`, `useResetPassword`, `useVerifyEmail`, `useMagicLink`, `useResendVerification`
 
 **Startups**: `useStartups`, `useStartup`, `useWeeklyUpdates`, `useStartupStreak`, `useCheckSlug`, `useCreateStartup`, `useUpdateStartup`, `useDeleteStartup`, `useCreateWeeklyUpdate`, `useUpdateWeeklyUpdate`, `useToggleGoalCompletion`, `useIdeaStartup`
 
@@ -832,7 +830,7 @@ Comprehensive React Query hooks organized by domain:
 
 ---
 
-## 13. Migration History (13 migrations)
+## 13. Migration History (14 migrations)
 
 | Date | Name | Purpose |
 |---|---|---|
@@ -848,6 +846,7 @@ Comprehensive React Query hooks organized by domain:
 | 2026-07-12 | `add_location_fields` | 10 tables + location fields on users/startups |
 | 2026-07-12 | `add_organization_tables` | organization, member, invitation (Better Auth orgs) |
 | 2026-07-12 | `add_org_setup_models` | two_factor, organizationId on startups, CONVERTED status |
+| 2026-07-20 | `fix_users_location_column` | Adjusts database mapping for location fields and adds `onboardingDismissed` to User |
 
 ---
 
@@ -902,28 +901,18 @@ Comprehensive React Query hooks organized by domain:
 
 ---
 
-## 16. Unknowns & Human Questions
+## 16. Structural Insights
 
-1. **No `loading.tsx` files**: The app has no loading states at any route level — all loading is handled client-side via React Query.
+1. **Skeleton Loading Boundaries**: The app incorporates server loading skeletons (`loading.tsx` files) at key routes: `app/(dashboard)/loading.tsx`, `app/(dashboard)/ideas/loading.tsx`, and `app/(startup)/startups/[slug]/loading.tsx`, improving the perception of load latency during route transitions.
 
-2. **No root `middleware.ts`**: Arcjet proxy in `proxy.ts` but not wired as Next.js middleware — it's imported by individual API routes instead.
+2. **No Root Next.js Middleware**: The Arcjet security rules are initialized in `proxy.ts`, but this is imported and run by individual API routes and components rather than registering as a root `middleware.ts`.
 
-3. **Pinecone**: SDK in deps, variables in `.env.example`, but listed as unused. No reference found in any source file.
+3. **Multi-Model Provider Fallbacks**: The AI architecture defines a tiered list of providers and models (`mistralModels`, `openRouterModels`, `geminiModels`) with robust client fallback behavior. If structured generation `generateObject` fails due to schema validation issues or rate limits, the library handles retry backoff delays, parses text fallbacks directly, and auto-repairs truncated JSON packets (`repairTruncatedJson()`).
 
-4. **`@ai-sdk/mistral`, `@ai-sdk/openai`, `@ai-sdk/xai`, `@openrouter/ai-sdk-provider`, `ai-sdk-ollama`**: All installed but only `@ai-sdk/google` is actively used. Single-model Gemini architecture.
+4. **Stream Fallbacks & Health Checks**: Streaming text generation (`streamTextWithFallback`) queries model health proactively via parallel probes, selecting only verified online models while normalising client instructions fields to the correct system prompt key.
 
-5. **`DUAL_MODEL_DOCUMENTATION_UPDATE.md`**: Documents a dual-model fallback (Mistral -> Gemini) that contradicts the current single-model code. This is outdated documentation — the code uses only Gemini.
+5. **Smooth VC Coach Transition**: The VC Coach component updates the browser's conversation path dynamically without a full-page reload. The custom `fetch` interceptor on the AI SDK's `DefaultChatTransport` captures the returned `x-conversation-id` header on the first request and seamlessly applies it via HTML5 history state updates.
 
-6. **`@react-pdf/renderer`**: Installed alongside `pdfkit` but `pdfkit` is the active PDF engine.
+6. **Vitest Production Deps**: `vitest` is declared in `dependencies` rather than `devDependencies` inside `package.json`.
 
-7. **`.nvii/` directory**: Contains `nvii.json` with a project ID — purpose unclear, possibly an NVII project tracking tool.
-
-8. **`feedback.txt`**: Unstructured user feedback about ads/competition — not actionable without context.
-
-9. **`constants/` vs `lib/constants/`**: Dual locations for constants — `constants/index.ts` has FAQ data, `lib/constants/metrics.ts` has metric definitions. Not unified.
-
-10. **`vitest` in production deps**: Listed in `dependencies` instead of `devDependencies` in `package.json`.
-
-11. **Test coverage near-zero**: Only `lib/email/send.test.ts` exists. Vitest is configured but no test runs in CI.
-
-12. **`babel-plugin-react-compiler`**: Listed as devDependency but no Babel config found in the project. Next.js uses the built-in SWC compiler. This plugin may be unused.
+7. **Babel Compiler Config**: `babel-plugin-react-compiler` is included in devDependencies, but the Next.js runtime is configured to use SWC natively.

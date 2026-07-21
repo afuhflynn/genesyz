@@ -18,14 +18,19 @@ async function isModelHealthy(entry: any): Promise<boolean> {
     modelStatusCache[entry.name] = true;
     return true;
   } catch (error: any) {
-    console.warn(`[Model Health Check] Model ${entry.name} is unhealthy:`, error.message || error);
+    console.warn(
+      `[Model Health Check] Model ${entry.name} is unhealthy:`,
+      error.message || error,
+    );
     modelStatusCache[entry.name] = false;
     return false;
   }
 }
 
 export async function streamTextWithFallback(
-  params: Omit<Parameters<typeof streamText>[0], "model"> & { instructions?: string },
+  params: Omit<Parameters<typeof streamText>[0], "model"> & {
+    instructions?: string;
+  },
   agentName: string,
 ): Promise<ReturnType<typeof streamText>> {
   // Normalize params: map "instructions" to "system" for streamText compatibility
@@ -42,7 +47,7 @@ export async function streamTextWithFallback(
     modelChain.map(async (entry) => {
       const healthy = await isModelHealthy(entry);
       return { entry, healthy };
-    })
+    }),
   );
   const healthyChain = healthChecks
     .filter((res) => res.healthy)
@@ -68,7 +73,9 @@ export async function streamTextWithFallback(
 
   // Final fallback to the last model in the chain
   const fallbackEntry = modelChain[modelChain.length - 1];
-  console.log(`[${agentName}] All models failed. Trying final fallback with: ${fallbackEntry.name}`);
+  console.log(
+    `[${agentName}] All models failed. Trying final fallback with: ${fallbackEntry.name}`,
+  );
   return streamText({
     ...normalizedParams,
     model: fallbackEntry.model as any,

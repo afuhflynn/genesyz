@@ -86,13 +86,26 @@ const mockFollowerReport = {
 };
 
 const mockFollowerPrevious = [
-  { ...mockFollowerReport, weekNumber: 2, primaryMetricValue: 8000, primaryMetricDelta: null },
-  { ...mockFollowerReport, weekNumber: 3, primaryMetricValue: 10500, primaryMetricDelta: 2500 },
+  {
+    ...mockFollowerReport,
+    weekNumber: 2,
+    primaryMetricValue: 8000,
+    primaryMetricDelta: null,
+  },
+  {
+    ...mockFollowerReport,
+    weekNumber: 3,
+    primaryMetricValue: 10500,
+    primaryMetricDelta: 2500,
+  },
 ];
 
 const mockAiAnalysis = {
   summary: "Consistent growth month over month. Excellent feedback loops.",
-  comparisonWithPrevious: ["Revenue up 14% since week 3.", "Morale stable at 9/10."],
+  comparisonWithPrevious: [
+    "Revenue up 14% since week 3.",
+    "Morale stable at 9/10.",
+  ],
   immediateActions: ["Follow up with 5 beta users.", "Polish checkout page."],
 };
 
@@ -100,62 +113,137 @@ async function run() {
   const dir = process.env.PREVIEW_EMAILS_DIR!;
   // Clear previous previews
   const fs = await import("node:fs");
-  if (fs.existsSync(dir)) fs.readdirSync(dir).forEach((f) => fs.unlinkSync(`${dir}/${f}`));
+  if (fs.existsSync(dir))
+    fs.readdirSync(dir).forEach((f) => fs.unlinkSync(`${dir}/${f}`));
 
   console.log(`\nGenerating email previews → ${dir}\n`);
 
   await sendWelcomeEmail({ to: TO, userName: NAME });
   await sendDigestEmail({
-    to: TO, userName: NAME, totalIdeas: 8, averageScore: 78,
+    to: TO,
+    userName: NAME,
+    totalIdeas: 8,
+    averageScore: 78,
     topIdeas: [
       { id: "1", title: "AI Fridge Scanner", score: 92 },
       { id: "2", title: "Automated Tax Planner", score: 81 },
     ],
   });
   await sendWeeklyStrategicReportEmail({
-    to: TO, userName: NAME,
+    to: TO,
+    userName: NAME,
     advisory: {
-      executiveSummary: "GrowthOS shows strong market validation signals this week.",
-      primaryFocus: { ideaTitle: "Co-Founder Sourcing Strategy", allocation: 60 },
+      executiveSummary:
+        "GrowthOS shows strong market validation signals this week.",
+      primaryFocus: {
+        ideaTitle: "Co-Founder Sourcing Strategy",
+        allocation: 60,
+      },
       actionPlan: [
-        { action: "Post co-founder listing", owner: "Alice", due: "2026-07-25", priority: "High" },
-        { action: "Schedule interviews", owner: "Bob", due: "2026-07-28", priority: "Medium" },
+        {
+          action: "Post co-founder listing",
+          owner: "Alice",
+          due: "2026-07-25",
+          priority: "High",
+        },
+        {
+          action: "Schedule interviews",
+          owner: "Bob",
+          due: "2026-07-28",
+          priority: "Medium",
+        },
       ],
-      vcCorner: { sentiment: "Investors want technical founding teams.", investmentPotential: "high" },
-      verdicts: [{ title: "Validation", verdict: "excellent", rationale: "Strong WTP signals." }],
-      riskCliffs: [{ title: "Team Risk", risk: "Dependent on single lead dev." }],
+      vcCorner: {
+        sentiment: "Investors want technical founding teams.",
+        investmentPotential: "high",
+      },
+      verdicts: [
+        {
+          title: "Validation",
+          verdict: "excellent",
+          rationale: "Strong WTP signals.",
+        },
+      ],
+      riskCliffs: [
+        { title: "Team Risk", risk: "Dependent on single lead dev." },
+      ],
     } as never,
   });
   await sendResearchCompleteEmail({
-    to: TO, userName: NAME, ideaTitle: "AI Recipe Planner",
-    ideaId: "recipe-planner-123", overallScore: 88, verdict: "pursue-immediately",
+    to: TO,
+    userName: NAME,
+    ideaTitle: "AI Recipe Planner",
+    ideaId: "recipe-planner-123",
+    overallScore: 88,
+    verdict: "pursue-immediately",
   });
-  await sendVerificationEmail({ to: TO, userName: NAME, code: "882103", url: `${APP}/verify-email` });
-  await sendPasswordResetEmail({ to: TO, userName: NAME, url: `${APP}/reset-password?token=abc123` });
-  await sendMagicLinkEmail({ to: TO, url: `${APP}/api/auth/magic-link?token=abc123` });
+  await sendVerificationEmail({
+    to: TO,
+    userName: NAME,
+    code: "882103",
+    url: `${APP}/verify-email`,
+  });
+  await sendPasswordResetEmail({
+    to: TO,
+    userName: NAME,
+    url: `${APP}/reset-password?token=abc123`,
+  });
+  await sendMagicLinkEmail({
+    to: TO,
+    url: `${APP}/api/auth/magic-link?token=abc123`,
+  });
   await sendWeeklyUpdateReminderEmail({
-    to: TO, userName: NAME, startupName: STARTUP, startupSlug: SLUG, weekNumber: 4, reminderDay: "friday",
+    to: TO,
+    userName: NAME,
+    startupName: STARTUP,
+    startupSlug: SLUG,
+    weekNumber: 4,
+    reminderDay: "friday",
   });
   await sendStartupFeatureAnnouncementEmail({ to: TO, userName: NAME });
   await sendStartupWeeklyReportEmail({
-    to: TO, userName: NAME, startupName: STARTUP, startupSlug: SLUG, report: mockReport,
+    to: TO,
+    userName: NAME,
+    startupName: STARTUP,
+    startupSlug: SLUG,
+    report: mockReport,
   });
   await sendStartupMemberInvitedEmail({
-    to: TO, userName: "Bob Cofounder", inviterName: NAME,
-    startupName: STARTUP, startupSlug: SLUG, role: "Co-Founder",
+    to: TO,
+    userName: "Bob Cofounder",
+    inviterName: NAME,
+    startupName: STARTUP,
+    startupSlug: SLUG,
+    role: "Co-Founder",
   });
   await sendStartupMemberRoleChangedEmail({
-    to: TO, userName: "Bob Cofounder", startupName: STARTUP, startupSlug: SLUG,
-    oldRole: "Member", newRole: "Lead Admin", changedByName: NAME,
+    to: TO,
+    userName: "Bob Cofounder",
+    startupName: STARTUP,
+    startupSlug: SLUG,
+    oldRole: "Member",
+    newRole: "Lead Admin",
+    changedByName: NAME,
   });
-  await sendNewFollowerAddedEmail({ to: TO, followerName: "Investor Jane", startupName: STARTUP, startupSlug: SLUG });
+  await sendNewFollowerAddedEmail({
+    to: TO,
+    followerName: "Investor Jane",
+    startupName: STARTUP,
+    startupSlug: SLUG,
+  });
   await sendTeamMemberAddedNotificationEmail({
-    to: TO, userName: NAME, startupName: STARTUP, startupSlug: SLUG,
-    newMemberName: "Bob Cofounder", newMemberRole: "Co-Founder",
+    to: TO,
+    userName: NAME,
+    startupName: STARTUP,
+    startupSlug: SLUG,
+    newMemberName: "Bob Cofounder",
+    newMemberRole: "Co-Founder",
   });
   await sendFollowerWeeklyUpdateEmail({
-    to: "investor@example.com", followerName: "Investor Jane",
-    startupName: STARTUP, startupSlug: SLUG,
+    to: "investor@example.com",
+    followerName: "Investor Jane",
+    startupName: STARTUP,
+    startupSlug: SLUG,
     currentReport: mockFollowerReport,
     previousReports: mockFollowerPrevious,
     aiAnalysis: mockAiAnalysis,

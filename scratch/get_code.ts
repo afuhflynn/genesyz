@@ -7,7 +7,7 @@ async function getCode() {
     console.error("Email parameter required");
     process.exit(1);
   }
-  
+
   try {
     const user = await db.user.findUnique({
       where: { email },

@@ -45,7 +45,10 @@ export async function GET(
     return NextResponse.json({ data: conversations });
   } catch (error) {
     console.error("[STARTUP_CONVERSATIONS_GET]", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }
 
@@ -83,6 +86,9 @@ export async function POST(
     return NextResponse.json({ data: conversation }, { status: 201 });
   } catch (error) {
     console.error("[STARTUP_CONVERSATIONS_POST]", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }

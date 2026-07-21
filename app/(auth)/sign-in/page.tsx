@@ -11,7 +11,10 @@ import { Label } from "@/components/ui/label";
 import { useSignIn } from "@/hooks";
 import { searchParamsSchema } from "@/nuqs";
 
-const OAUTH_ERROR_MESSAGES: Record<string, { title: string; description: string }> = {
+const OAUTH_ERROR_MESSAGES: Record<
+  string,
+  { title: string; description: string }
+> = {
   account_not_linked: {
     title: "Account not linked",
     description:
@@ -23,7 +26,8 @@ const OAUTH_ERROR_MESSAGES: Record<string, { title: string; description: string 
   },
   invalid_callback_request: {
     title: "Invalid request",
-    description: "Something went wrong with the sign-in request. Please try again.",
+    description:
+      "Something went wrong with the sign-in request. Please try again.",
   },
   email_not_found: {
     title: "Email required",

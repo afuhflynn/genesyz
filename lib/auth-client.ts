@@ -1,5 +1,9 @@
 import { polarClient } from "@polar-sh/better-auth/client";
-import { magicLinkClient, organizationClient, twoFactorClient } from "better-auth/client/plugins";
+import {
+  magicLinkClient,
+  organizationClient,
+  twoFactorClient,
+} from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
 import { ac, owner, admin, member, viewer } from "@/lib/auth/access";
 

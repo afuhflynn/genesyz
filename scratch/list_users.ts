@@ -9,7 +9,7 @@ async function listUsers() {
         email: true,
         name: true,
         emailVerified: true,
-      }
+      },
     });
     console.log(JSON.stringify(users, null, 2));
   } catch (error: any) {

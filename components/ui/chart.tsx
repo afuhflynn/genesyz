@@ -259,11 +259,11 @@ function ChartLegendContent({
   verticalAlign = "bottom",
   nameKey,
 }: React.ComponentProps<"div"> & {
-    payload?: LegendPayload[];
-    verticalAlign?: "bottom" | "top" | "middle";
-    hideIcon?: boolean;
-    nameKey?: string;
-  }) {
+  payload?: LegendPayload[];
+  verticalAlign?: "bottom" | "top" | "middle";
+  hideIcon?: boolean;
+  nameKey?: string;
+}) {
   const { config } = useChart();
 
   if (!payload?.length) {

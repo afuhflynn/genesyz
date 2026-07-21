@@ -81,7 +81,10 @@ export const researchPipelineFunction = inngest.createFunction(
       TREND_ANALYSIS: parallelStep.trendAnalysis,
       EXECUTION_FRICTION: parallelStep.executionFriction,
       DEEP_RESEARCH: parallelStep.deepResearch,
-    } as unknown as Record<import("@prisma/client").ResearchAgentType, import("@/lib/agents/types").AgentOutput>;
+    } as unknown as Record<
+      import("@prisma/client").ResearchAgentType,
+      import("@/lib/agents/types").AgentOutput
+    >;
 
     const synthesisStep = await step.run("run-synthesis", async () => {
       return await runSynthesisPhase(ideaId, allOutputs);

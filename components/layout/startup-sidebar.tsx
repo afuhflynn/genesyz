@@ -62,7 +62,9 @@ export function StartupSidebar({
       label: "VC Coach",
       icon: MessageSquareIcon,
       href: `${basePath}/chat`,
-      active: pathname === `${basePath}/chat` || pathname.startsWith(`${basePath}/chat/`),
+      active:
+        pathname === `${basePath}/chat` ||
+        pathname.startsWith(`${basePath}/chat/`),
       visible: permissions.canViewStartup,
     },
     {
@@ -106,7 +108,9 @@ export function StartupSidebar({
       label: "Metrics",
       icon: TrendingUp,
       href: `${basePath}/metrics`,
-      active: pathname === `${basePath}/metrics` || pathname.startsWith(`${basePath}/metrics/`),
+      active:
+        pathname === `${basePath}/metrics` ||
+        pathname.startsWith(`${basePath}/metrics/`),
       visible: permissions.canViewStartup,
     },
     {

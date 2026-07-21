@@ -20,10 +20,7 @@ export async function GET(request: NextRequest) {
     select: { role: true },
   });
 
-  const where =
-    user?.role === "ADMIN"
-      ? {}
-      : { userId: session.user.id };
+  const where = user?.role === "ADMIN" ? {} : { userId: session.user.id };
 
   const [logs, total] = await Promise.all([
     db.auditLog.findMany({

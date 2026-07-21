@@ -8,7 +8,10 @@ export async function POST(
   { params }: { params: Promise<{ slug: string }> },
 ) {
   const { slug } = await params;
-  const { hasAccess, acceleratorId } = await checkAcceleratorAccess(slug, "view_metrics");
+  const { hasAccess, acceleratorId } = await checkAcceleratorAccess(
+    slug,
+    "view_metrics",
+  );
 
   if (!hasAccess || !acceleratorId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -37,15 +40,21 @@ export async function POST(
   });
 
   if (!accelerator) {
-    return NextResponse.json({ error: "Accelerator not found" }, { status: 404 });
+    return NextResponse.json(
+      { error: "Accelerator not found" },
+      { status: 404 },
+    );
   }
 
   // 2. Prepare Data for AI Coach
   const hubContext = {
     name: accelerator.name,
     programType: accelerator.programType,
-    totalStartups: accelerator.cohorts.reduce((acc, c) => acc + c.startups.length, 0),
-    kpis: accelerator.kpis.map(k => ({
+    totalStartups: accelerator.cohorts.reduce(
+      (acc, c) => acc + c.startups.length,
+      0,
+    ),
+    kpis: accelerator.kpis.map((k) => ({
       name: k.name,
       target: k.targetValue,
       current: k.currentValue,
@@ -53,8 +62,8 @@ export async function POST(
     })),
   };
 
-  const startupBriefs = accelerator.cohorts.flatMap(c => 
-    c.startups.map(cs => {
+  const startupBriefs = accelerator.cohorts.flatMap((c) =>
+    c.startups.map((cs) => {
       const s = cs.startup;
       const latestUpdate = s.weeklyUpdates[0];
       return {
@@ -62,10 +71,12 @@ export async function POST(
         stage: s.stage,
         lastMorale: latestUpdate?.moraleScore ?? 5,
         lastMetricDelta: latestUpdate?.primaryMetricDelta ?? null,
-        flags: s.flags.map(f => f.reason),
-        recentObstacles: [latestUpdate?.biggestObstacle].filter(Boolean) as string[],
+        flags: s.flags.map((f) => f.reason),
+        recentObstacles: [latestUpdate?.biggestObstacle].filter(
+          Boolean,
+        ) as string[],
       };
-    })
+    }),
   );
 
   // 3. Run AI Analysis

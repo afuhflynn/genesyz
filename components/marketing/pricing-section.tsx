@@ -50,7 +50,8 @@ export function PricingSection() {
                 {PLANS.FREE.name}
               </h3>
               <p className="text-slate-500 text-sm mb-6">
-                Everything you need to get started. 3 active ideas, all core features included.
+                Everything you need to get started. 3 active ideas, all core
+                features included.
               </p>
               <div className="flex items-baseline">
                 <span className="text-5xl font-black tracking-tight text-slate-900">

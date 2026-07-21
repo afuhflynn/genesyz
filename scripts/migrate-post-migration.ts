@@ -22,11 +22,12 @@ async function migrate() {
       continue;
     }
 
-    const slug = (user.name || user.email || "user")
-      .toLowerCase()
-      .replace(/\s+/g, "-")
-      .replace(/[^a-z0-9-]/g, "")
-      .slice(0, 60) || `user-${user.id.slice(0, 8)}`;
+    const slug =
+      (user.name || user.email || "user")
+        .toLowerCase()
+        .replace(/\s+/g, "-")
+        .replace(/[^a-z0-9-]/g, "")
+        .slice(0, 60) || `user-${user.id.slice(0, 8)}`;
 
     const existing = await db.organization.findUnique({ where: { slug } });
     const finalSlug = existing ? `${slug}-${user.id.slice(0, 6)}` : slug;

@@ -56,7 +56,9 @@ export function SecuritySettings() {
             onClick={async () => {
               setDisabling(true);
               try {
-                const { error } = await (await import("@/lib/auth-client")).authClient.twoFactor.disable({
+                const { error } = await (
+                  await import("@/lib/auth-client")
+                ).authClient.twoFactor.disable({
                   password: "",
                   // In practice, prompt for password
                 });
@@ -76,7 +78,9 @@ export function SecuritySettings() {
             onClick={async () => {
               setEnabling(true);
               try {
-                const { data } = await (await import("@/lib/auth-client")).authClient.twoFactor.enable({
+                const { data } = await (
+                  await import("@/lib/auth-client")
+                ).authClient.twoFactor.enable({
                   password: "",
                 });
                 if (data?.totpURI) {
@@ -87,8 +91,8 @@ export function SecuritySettings() {
                         <text x="50%" y="50%" text-anchor="middle" font-family="sans-serif" font-size="12">
                           Scan with authenticator app
                         </text>
-                      </svg>`
-                    )}`
+                      </svg>`,
+                    )}`,
                   );
                 }
                 window.location.reload();

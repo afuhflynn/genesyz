@@ -18,7 +18,8 @@ export function OnboardingModal() {
 
   useEffect(() => {
     if (status?.showOnboarding && !isLoading) {
-      const isDismissed = localStorage.getItem("genesyz_onboarding_dismissed") === "true";
+      const isDismissed =
+        localStorage.getItem("genesyz_onboarding_dismissed") === "true";
       if (!isDismissed) {
         setIsOpen(true);
       }

@@ -1,4 +1,7 @@
-import type { AcceleratorRole, AcceleratorPermission } from "./accelerator-permissions";
+import type {
+  AcceleratorRole,
+  AcceleratorPermission,
+} from "./accelerator-permissions";
 import { hasAcceleratorPermission } from "./accelerator-permissions";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
@@ -68,7 +71,10 @@ export async function checkAcceleratorAccess(
     };
   }
 
-  if (requiredPermission && !hasAcceleratorPermission(role, requiredPermission)) {
+  if (
+    requiredPermission &&
+    !hasAcceleratorPermission(role, requiredPermission)
+  ) {
     return {
       hasAccess: false,
       role,

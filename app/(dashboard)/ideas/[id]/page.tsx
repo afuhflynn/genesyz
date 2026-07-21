@@ -94,7 +94,12 @@ export default function IdeaDetailPage() {
   // Subscribe to real-time updates
   const { messages } = useRealtime({
     channel: ideaChannel({ ideaId: id }),
-    topics: ["research.started", "research.progress", "research.finished", "parse.idea"],
+    topics: [
+      "research.started",
+      "research.progress",
+      "research.finished",
+      "parse.idea",
+    ],
     token: () => fetchRealtimeSubscriptionToken(id as string),
     enabled: idea?.status === "PROCESSING" || idea?.status === "PENDING",
   });

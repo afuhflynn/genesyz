@@ -12,10 +12,7 @@ interface FollowersTabProps {
   canManage: boolean;
 }
 
-export function FollowersTab({
-  startupId,
-  canManage,
-}: FollowersTabProps) {
+export function FollowersTab({ startupId, canManage }: FollowersTabProps) {
   const { data: followers, isLoading, refetch } = useFollowers(startupId);
   const removeFollower = useRemoveFollower();
 

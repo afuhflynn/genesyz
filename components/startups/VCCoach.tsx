@@ -19,7 +19,11 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { Conversation, ConversationContent, ConversationScrollButton } from "../ai-elements/conversation";
+import {
+  Conversation,
+  ConversationContent,
+  ConversationScrollButton,
+} from "../ai-elements/conversation";
 import {
   Message,
   MessageAction,
@@ -72,10 +76,16 @@ interface VCCoachProps {
   conversationId?: string;
 }
 
-export function VCCoach({ startupId, startupName, conversationId }: VCCoachProps) {
+export function VCCoach({
+  startupId,
+  startupName,
+  conversationId,
+}: VCCoachProps) {
   const [input, setInput] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [activeConvId, setActiveConvId] = useState<string | null>(conversationId ?? null);
+  const [activeConvId, setActiveConvId] = useState<string | null>(
+    conversationId ?? null,
+  );
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
@@ -83,7 +93,8 @@ export function VCCoach({ startupId, startupName, conversationId }: VCCoachProps
   const hasAutoSent = useRef(false);
   const pendingConvIdRef = useRef<string | null>(null);
 
-  const { data: conversations, refetch: refetchList } = useStartupConversations(startupId);
+  const { data: conversations, refetch: refetchList } =
+    useStartupConversations(startupId);
   const { data: conversationData } = useStartupConversation(
     startupId,
     activeConvId || "",
@@ -107,12 +118,18 @@ export function VCCoach({ startupId, startupName, conversationId }: VCCoachProps
         console.log("[FETCH_INTERCEPTOR] Initiated request to:", url);
         const response = await fetch(url, init);
         console.log("[FETCH_INTERCEPTOR] Response status:", response.status);
-        console.log("[FETCH_INTERCEPTOR] Response headers:", Array.from(response.headers.entries()));
+        console.log(
+          "[FETCH_INTERCEPTOR] Response headers:",
+          Array.from(response.headers.entries()),
+        );
         const convId = response.headers.get("x-conversation-id");
         console.log("[FETCH_INTERCEPTOR] Found x-conversation-id:", convId);
         if (convId && activeConvId !== convId) {
           pendingConvIdRef.current = convId;
-          console.log("[FETCH_INTERCEPTOR] Set pendingConvIdRef.current:", convId);
+          console.log(
+            "[FETCH_INTERCEPTOR] Set pendingConvIdRef.current:",
+            convId,
+          );
         }
         return response;
       },
@@ -129,8 +146,15 @@ export function VCCoach({ startupId, startupName, conversationId }: VCCoachProps
   useEffect(() => {
     if (status === "ready" && pendingConvIdRef.current) {
       const newConvId = pendingConvIdRef.current;
-      console.log("[STATUS_READY] Updating browser URL to:", `/startups/${slug}/chat/${newConvId}`);
-      window.history.replaceState(null, "", `/startups/${slug}/chat/${newConvId}`);
+      console.log(
+        "[STATUS_READY] Updating browser URL to:",
+        `/startups/${slug}/chat/${newConvId}`,
+      );
+      window.history.replaceState(
+        null,
+        "",
+        `/startups/${slug}/chat/${newConvId}`,
+      );
       setActiveConvId(newConvId);
       pendingConvIdRef.current = null;
       refetchList();
@@ -139,43 +163,46 @@ export function VCCoach({ startupId, startupName, conversationId }: VCCoachProps
 
   const isLoading = status === "streaming";
 
-  const loadMessagesFromDb = useCallback((msgs: any[]) => {
-    const mappedMessages = msgs.map((m: any) => {
-      const parts: any[] = [{ type: "text", text: m.content }];
+  const loadMessagesFromDb = useCallback(
+    (msgs: any[]) => {
+      const mappedMessages = msgs.map((m: any) => {
+        const parts: any[] = [{ type: "text", text: m.content }];
 
-      if (m.toolCalls && Array.isArray(m.toolCalls)) {
-        for (const tc of m.toolCalls) {
-          parts.push({
-            type: "tool-call",
-            toolCallId: tc.toolCallId || tc.id,
-            toolName: tc.toolName || tc.function?.name,
-            args: tc.args || JSON.parse(tc.function?.arguments || "{}"),
-            state: "call-completed",
-          });
+        if (m.toolCalls && Array.isArray(m.toolCalls)) {
+          for (const tc of m.toolCalls) {
+            parts.push({
+              type: "tool-call",
+              toolCallId: tc.toolCallId || tc.id,
+              toolName: tc.toolName || tc.function?.name,
+              args: tc.args || JSON.parse(tc.function?.arguments || "{}"),
+              state: "call-completed",
+            });
+          }
         }
-      }
 
-      if (m.toolResults && Array.isArray(m.toolResults)) {
-        for (const tr of m.toolResults) {
-          parts.push({
-            type: "tool-result",
-            toolCallId: tr.toolCallId,
-            toolName: tr.toolName,
-            result: tr.result,
-            isError: false,
-          });
+        if (m.toolResults && Array.isArray(m.toolResults)) {
+          for (const tr of m.toolResults) {
+            parts.push({
+              type: "tool-result",
+              toolCallId: tr.toolCallId,
+              toolName: tr.toolName,
+              result: tr.result,
+              isError: false,
+            });
+          }
         }
-      }
 
-      return {
-        id: m.id,
-        role: m.role as any,
-        parts,
-        createdAt: new Date(m.createdAt),
-      };
-    });
-    setMessages(mappedMessages as any);
-  }, [setMessages]);
+        return {
+          id: m.id,
+          role: m.role as any,
+          parts,
+          createdAt: new Date(m.createdAt),
+        };
+      });
+      setMessages(mappedMessages as any);
+    },
+    [setMessages],
+  );
 
   useEffect(() => {
     if (conversationData?.data?.messages) {
@@ -193,7 +220,10 @@ export function VCCoach({ startupId, startupName, conversationId }: VCCoachProps
     const initialQuestion = searchParams.get("q");
     if (initialQuestion && activeConvId && !hasAutoSent.current) {
       hasAutoSent.current = true;
-      const timer = setTimeout(() => sendMessage({ text: initialQuestion }), 100);
+      const timer = setTimeout(
+        () => sendMessage({ text: initialQuestion }),
+        100,
+      );
       return () => clearTimeout(timer);
     }
   }, [searchParams, activeConvId, sendMessage]);
@@ -233,22 +263,26 @@ export function VCCoach({ startupId, startupName, conversationId }: VCCoachProps
     {
       label: "Review Latest Update",
       icon: TrendingUpIcon,
-      prompt: "Review my latest weekly update and give me investor-level feedback.",
+      prompt:
+        "Review my latest weekly update and give me investor-level feedback.",
     },
     {
       label: "Refine My Pitch",
       icon: SparklesIcon,
-      prompt: "I'm preparing for a pitch. Help me refine my narrative and identify potential red flags.",
+      prompt:
+        "I'm preparing for a pitch. Help me refine my narrative and identify potential red flags.",
     },
     {
       label: "Competitor Analysis",
       icon: SearchIcon,
-      prompt: "Analyze our current competitors and suggest how we can build a stronger moat.",
+      prompt:
+        "Analyze our current competitors and suggest how we can build a stronger moat.",
     },
     {
       label: "Growth Strategy",
       icon: ZapIcon,
-      prompt: "Based on our current stage and metrics, what should be our top 3 growth priorities?",
+      prompt:
+        "Based on our current stage and metrics, what should be our top 3 growth priorities?",
     },
   ];
 
@@ -296,7 +330,10 @@ export function VCCoach({ startupId, startupName, conversationId }: VCCoachProps
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton asChild tooltip="Back to Startup Dashboard">
-                <Link href={`/startups/${slug}`} className="flex items-center gap-2">
+                <Link
+                  href={`/startups/${slug}`}
+                  className="flex items-center gap-2"
+                >
                   <ArrowLeft className="h-4 w-4 shrink-0" />
                   <span>Back to Startup</span>
                 </Link>
@@ -328,7 +365,10 @@ export function VCCoach({ startupId, startupName, conversationId }: VCCoachProps
           </div>
 
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="text-xs font-normal hidden sm:inline-flex">
+            <Badge
+              variant="outline"
+              className="text-xs font-normal hidden sm:inline-flex"
+            >
               Startup: {startupName}
             </Badge>
           </div>
@@ -342,9 +382,13 @@ export function VCCoach({ startupId, startupName, conversationId }: VCCoachProps
                   <div className="p-4 bg-primary/5 rounded-full mb-4">
                     <BotIcon className="w-12 h-12 text-primary/40" />
                   </div>
-                  <h3 className="text-xl font-bold">Your Personal VC Strategic Advisor</h3>
+                  <h3 className="text-xl font-bold">
+                    Your Personal VC Strategic Advisor
+                  </h3>
                   <p className="text-muted-foreground max-w-sm mt-2">
-                    I have complete access to your startup's data, metrics, and research. Ask me anything about your strategy, growth, or fundraising.
+                    I have complete access to your startup's data, metrics, and
+                    research. Ask me anything about your strategy, growth, or
+                    fundraising.
                   </p>
                 </div>
 
@@ -361,7 +405,9 @@ export function VCCoach({ startupId, startupName, conversationId }: VCCoachProps
                       </div>
                       <div>
                         <div className="text-sm font-medium">{q.label}</div>
-                        <div className="text-xs text-muted-foreground line-clamp-1">{q.prompt}</div>
+                        <div className="text-xs text-muted-foreground line-clamp-1">
+                          {q.prompt}
+                        </div>
                       </div>
                     </button>
                   ))}
@@ -387,30 +433,47 @@ export function VCCoach({ startupId, startupName, conversationId }: VCCoachProps
                     <div className="flex flex-col gap-2 flex-1">
                       {message.parts.map((part, i) => {
                         if (part.type === "text") {
-                          const thinkingMatch = part.text.match(/<thinking>([\s\S]*?)<\/thinking>/);
-                          const textWithoutThinking = part.text.replace(/<thinking>[\s\S]*?<\/thinking>/, "").trim();
+                          const thinkingMatch = part.text.match(
+                            /<thinking>([\s\S]*?)<\/thinking>/,
+                          );
+                          const textWithoutThinking = part.text
+                            .replace(/<thinking>[\s\S]*?<\/thinking>/, "")
+                            .trim();
 
                           return (
                             <div key={i} className="space-y-2">
                               {thinkingMatch && (
                                 <Reasoning defaultOpen={false}>
                                   <ReasoningTrigger />
-                                  <ReasoningContent>{thinkingMatch[1]}</ReasoningContent>
+                                  <ReasoningContent>
+                                    {thinkingMatch[1]}
+                                  </ReasoningContent>
                                 </Reasoning>
                               )}
                               {textWithoutThinking && (
                                 <>
                                   <MessageContent
-                                    className={message.role === "user" ? "group-[.is-user]:bg-primary group-[.is-user]:text-primary-foreground" : ""}
+                                    className={
+                                      message.role === "user"
+                                        ? "group-[.is-user]:bg-primary group-[.is-user]:text-primary-foreground"
+                                        : ""
+                                    }
                                   >
-                                    <MessageResponse>{textWithoutThinking}</MessageResponse>
+                                    <MessageResponse>
+                                      {textWithoutThinking}
+                                    </MessageResponse>
                                   </MessageContent>
 
                                   {message.role === "assistant" && (
                                     <MessageActions className="opacity-0 group-hover:opacity-100 transition-opacity">
                                       <MessageAction
                                         tooltip="Copy response"
-                                        onClick={() => handleCopy(textWithoutThinking, message.id)}
+                                        onClick={() =>
+                                          handleCopy(
+                                            textWithoutThinking,
+                                            message.id,
+                                          )
+                                        }
                                       >
                                         {copiedId === message.id ? (
                                           <CheckIcon className="w-3.5 h-3.5 text-green-500" />

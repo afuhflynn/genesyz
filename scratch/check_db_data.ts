@@ -5,10 +5,10 @@ async function checkData() {
   try {
     const userCount = await db.user.count();
     console.log(`Users: ${userCount}`);
-    
+
     const startupCount = await db.startup.count();
     console.log(`Startups: ${startupCount}`);
-    
+
     const ideaCount = await db.idea.count();
     console.log(`Ideas: ${ideaCount}`);
   } catch (error: any) {

@@ -73,7 +73,9 @@ export function StartupWorkspaceHeader({
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <div className="flex items-center gap-1.5 min-w-0">
             <Rocket className="h-5 w-5 text-primary shrink-0" />
-            <span className="font-semibold text-lg truncate">{startup.name}</span>
+            <span className="font-semibold text-lg truncate">
+              {startup.name}
+            </span>
           </div>
           {startup.isLaunched && (
             <Badge variant="default" className="bg-green-600 text-xs shrink-0">
