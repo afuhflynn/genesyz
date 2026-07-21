@@ -112,9 +112,7 @@ export function VCCoach({ startupId, startupName, conversationId }: VCCoachProps
         console.log("[FETCH_INTERCEPTOR] Found x-conversation-id:", convId);
         if (convId && activeConvId !== convId) {
           pendingConvIdRef.current = convId;
-          console.log("[FETCH_INTERCEPTOR] Updating browser URL to:", `/startups/${slug}/chat/${convId}`);
-          window.history.replaceState(null, "", `/startups/${slug}/chat/${convId}`);
-          refetchList();
+          console.log("[FETCH_INTERCEPTOR] Set pendingConvIdRef.current:", convId);
         }
         return response;
       },
@@ -122,11 +120,22 @@ export function VCCoach({ startupId, startupName, conversationId }: VCCoachProps
   });
 
   useEffect(() => {
-    if (status === "ready" && pendingConvIdRef.current) {
-      setActiveConvId(pendingConvIdRef.current);
-      pendingConvIdRef.current = null;
+    if (typeof window !== "undefined") {
+      (window as any).__chatStatus = status;
     }
+    console.log("[VC_COACH_STATUS_CHANGE] Current status:", status);
   }, [status]);
+
+  useEffect(() => {
+    if (status === "ready" && pendingConvIdRef.current) {
+      const newConvId = pendingConvIdRef.current;
+      console.log("[STATUS_READY] Updating browser URL to:", `/startups/${slug}/chat/${newConvId}`);
+      window.history.replaceState(null, "", `/startups/${slug}/chat/${newConvId}`);
+      setActiveConvId(newConvId);
+      pendingConvIdRef.current = null;
+      refetchList();
+    }
+  }, [status, slug, refetchList]);
 
   const isLoading = status === "streaming";
 

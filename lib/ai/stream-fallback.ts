@@ -37,13 +37,16 @@ export async function streamTextWithFallback(
 
   const errors: string[] = [];
 
-  // Filter modelChain to only include healthy models
-  const healthyChain: any[] = [];
-  for (const entry of modelChain) {
-    if (await isModelHealthy(entry)) {
-      healthyChain.push(entry);
-    }
-  }
+  // Filter modelChain to only include healthy models in parallel
+  const healthChecks = await Promise.all(
+    modelChain.map(async (entry) => {
+      const healthy = await isModelHealthy(entry);
+      return { entry, healthy };
+    })
+  );
+  const healthyChain = healthChecks
+    .filter((res) => res.healthy)
+    .map((res) => res.entry);
 
   // Fallback to the full model chain if all models are detected as unhealthy
   const activeChain = healthyChain.length > 0 ? healthyChain : modelChain;

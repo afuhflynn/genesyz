@@ -10,7 +10,7 @@ function applyEmailTheme(html: string): string {
   const branding = getEmailBranding();
 
   return html
-    .replace(/#F5A623/gi, branding.primaryColor)
+    .replace(/#ea580c/gi, branding.primaryColor)
     .replace(/#f8fafc/gi, branding.backgroundColor)
     .replace(/#0f172a/gi, branding.secondaryColor)
     .replace(/#e2e8f0/gi, branding.borderColor)
@@ -113,10 +113,55 @@ export function renderPremiumEmail(options: {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <meta name="supported-color-schemes" content="light">
   <meta name="x-apple-disable-message-reformatting">
   <meta name="format-detection" content="telephone=no, date=no, address=no, email=no">
   <title>${title}</title>
   <style>
+    :root {
+      color-scheme: light;
+      supported-color-schemes: light;
+    }
+    
+    /* Force light mode background & text color in email clients */
+    body, .email-body-wrapper {
+      background-color: #f8fafc !important;
+      color: #334155 !important;
+    }
+    .email-shell {
+      background-color: #ffffff !important;
+      border: 1px solid #e2e8f0 !important;
+    }
+    
+    /* Force light mode in Gmail */
+    u + .body {
+      background-color: #f8fafc !important;
+      color: #334155 !important;
+    }
+    u + .body .email-shell {
+      background-color: #ffffff !important;
+      border: 1px solid #e2e8f0 !important;
+    }
+    
+    /* Force light mode in Outlook */
+    [data-ogsc] body, [data-ogsc] .email-body-wrapper {
+      background-color: #f8fafc !important;
+      color: #334155 !important;
+    }
+    [data-ogsc] .email-shell {
+      background-color: #ffffff !important;
+      border: 1px solid #e2e8f0 !important;
+    }
+    [data-ogsb] body, [data-ogsb] .email-body-wrapper {
+      background-color: #f8fafc !important;
+      color: #334155 !important;
+    }
+    [data-ogsb] .email-shell {
+      background-color: #ffffff !important;
+      border: 1px solid #e2e8f0 !important;
+    }
+
     @media only screen and (max-width: 620px) {
       body { padding: 12px !important; }
       .email-shell { width: 100% !important; }
@@ -127,7 +172,7 @@ export function renderPremiumEmail(options: {
     }
   </style>
 </head>
-<body style="margin: 0; padding: 24px; background-color: ${branding.backgroundColor}; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #334155; word-break: break-word;">
+<body class="body" style="margin: 0; padding: 24px; background-color: ${branding.backgroundColor}; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #334155; word-break: break-word;">
   ${
     previewTextText
       ? `<div style="display: none; max-height: 0px; overflow: hidden; opacity: 0; visibility: hidden;">${previewTextText}</div>`
@@ -300,7 +345,7 @@ export async function sendDigestEmail(options: {
 
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 32px;">
       ${buildEmailCard({
-        children: `<p style="font-size: 32px; font-weight: 800; color: #F5A623; margin: 0;">${totalIdeas}</p><p style="font-size: 12px; color: #64748b; margin: 6px 0 0 0; text-transform: uppercase; font-weight: 700;">Active Ideas</p>`,
+        children: `<p style="font-size: 32px; font-weight: 800; color: #ea580c; margin: 0;">${totalIdeas}</p><p style="font-size: 12px; color: #64748b; margin: 6px 0 0 0; text-transform: uppercase; font-weight: 700;">Active Ideas</p>`,
         background: "#f8fafc",
         padding: "20px",
         marginBottom: "0",
@@ -308,7 +353,7 @@ export async function sendDigestEmail(options: {
         radius: "12px",
       })}
       ${buildEmailCard({
-        children: `<p style="font-size: 32px; font-weight: 800; color: #F5A623; margin: 0;">${averageScore}</p><p style="font-size: 12px; color: #64748b; margin: 6px 0 0 0; text-transform: uppercase; font-weight: 700;">Avg Score</p>`,
+        children: `<p style="font-size: 32px; font-weight: 800; color: #ea580c; margin: 0;">${averageScore}</p><p style="font-size: 12px; color: #64748b; margin: 6px 0 0 0; text-transform: uppercase; font-weight: 700;">Avg Score</p>`,
         background: "#f8fafc",
         padding: "20px",
         marginBottom: "0",
@@ -332,7 +377,7 @@ export async function sendDigestEmail(options: {
         : `
       <div style="background: #f8fafc; border-radius: 12px; padding: 32px; text-align: center; border: 1px dashed #cbd5e1;">
         <p style="font-size: 16px; color: #64748b; margin: 0;">
-          No ideas yet. <a href="${APP_URL}/ideas/new" style="color: #F5A623; font-weight: 700;">Capture your first idea</a>
+          No ideas yet. <a href="${APP_URL}/ideas/new" style="color: #ea580c; font-weight: 700;">Capture your first idea</a>
         </p>
       </div>
     `
@@ -813,7 +858,7 @@ export async function sendResearchCompleteEmail(options: {
     </div>
 
     <div style="text-align: center;">
-      <a href="${APP_URL}/ideas/${ideaId}" style="display: inline-block; background: #F5A623; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(245, 166, 35, 0.2);">
+      <a href="${APP_URL}/ideas/${ideaId}" style="display: inline-block; background: #ea580c; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(245, 166, 35, 0.2);">
         View Full Research
       </a>
     </div>
@@ -1007,7 +1052,7 @@ export async function sendWeeklyUpdateReminderEmail(options: {
     </p>
 
     <div style="text-align: center; margin-bottom: 24px;">
-      <a href="${APP_URL}/startups/${startupSlug}" style="display: inline-block; background: #F5A623; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(245, 166, 35, 0.2);">
+      <a href="${APP_URL}/startups/${startupSlug}" style="display: inline-block; background: #ea580c; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(245, 166, 35, 0.2);">
         Submit Weekly Update
       </a>
     </div>
@@ -1114,7 +1159,7 @@ export async function sendStartupFeatureAnnouncementEmail(options: {
     </div>
 
     <div style="text-align: center;">
-      <a href="${APP_URL}/startups" style="display: inline-block; background: #F5A623; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(245, 166, 35, 0.2);">
+      <a href="${APP_URL}/startups" style="display: inline-block; background: #ea580c; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(245, 166, 35, 0.2);">
         View Your Startups
       </a>
     </div>
@@ -1382,7 +1427,7 @@ export async function sendStartupWeeklyReportEmail(options: {
     ${recommendationsHtml}
 
     <div style="text-align: center;">
-      <a href="${APP_URL}/startups/${startupSlug}" style="display: inline-block; background: #F5A623; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(245, 166, 35, 0.2);">
+      <a href="${APP_URL}/startups/${startupSlug}" style="display: inline-block; background: #ea580c; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(245, 166, 35, 0.2);">
         View Full Dashboard
       </a>
     </div>
@@ -1467,7 +1512,7 @@ export async function sendStartupMemberInvitedEmail(options: {
     }
 
     <div style="text-align: center;">
-      <a href="${APP_URL}/startups/${startupSlug}" style="display: inline-block; background: #F5A623; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(245, 166, 35, 0.2);">
+      <a href="${APP_URL}/startups/${startupSlug}" style="display: inline-block; background: #ea580c; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(245, 166, 35, 0.2);">
         View Startup
       </a>
     </div>
@@ -1540,7 +1585,7 @@ export async function sendStartupMemberRoleChangedEmail(options: {
     </div>
 
     <div style="text-align: center;">
-      <a href="${APP_URL}/startups/${startupSlug}" style="display: inline-block; background: #F5A623; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(245, 166, 35, 0.2);">
+      <a href="${APP_URL}/startups/${startupSlug}" style="display: inline-block; background: #ea580c; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(245, 166, 35, 0.2);">
         View Startup
       </a>
     </div>
@@ -1591,7 +1636,7 @@ export async function sendNewFollowerAddedEmail(options: {
     </div>
 
     <div style="text-align: center;">
-      <a href="${APP_URL}/startups/${startupSlug}" style="display: inline-block; background: #F5A623; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(245, 166, 35, 0.2);">
+      <a href="${APP_URL}/startups/${startupSlug}" style="display: inline-block; background: #ea580c; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(245, 166, 35, 0.2);">
         View Startup
       </a>
     </div>
@@ -1650,7 +1695,7 @@ export async function sendTeamMemberAddedNotificationEmail(options: {
     </div>
 
     <div style="text-align: center;">
-      <a href="${APP_URL}/startups/${startupSlug}" style="display: inline-block; background: #F5A623; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(245, 166, 35, 0.2);">
+      <a href="${APP_URL}/startups/${startupSlug}" style="display: inline-block; background: #ea580c; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(245, 166, 35, 0.2);">
         View Startup
       </a>
     </div>
@@ -1740,7 +1785,7 @@ export async function sendFollowerWeeklyUpdateEmail(options: {
         .concat(currentReport)
         .map(
           (report, idx) => `
-        <div style="background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid ${idx === previousReports.length ? "#F5A623" : "#e2e8f0"};">
+        <div style="background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid ${idx === previousReports.length ? "#ea580c" : "#e2e8f0"};">
           <div style="font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 700;">Week ${report.weekNumber}</div>
           <div style="font-size: 16px; font-weight: 800; color: #0f172a;">${formatMetricValue(report.primaryMetricValue, report.metricFormat || "NUMBER")}</div>
         </div>
@@ -1872,7 +1917,7 @@ export async function sendFollowerWeeklyUpdateEmail(options: {
     ${goalsHtml}
 
     <div style="text-align: center;">
-      <a href="${APP_URL}/startups/${startupSlug}" style="display: inline-block; background: #F5A623; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(245, 166, 35, 0.2);">
+      <a href="${APP_URL}/startups/${startupSlug}" style="display: inline-block; background: #ea580c; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 16px; box-shadow: 0 4px 6px -1px rgba(245, 166, 35, 0.2);">
         View Full Dashboard
       </a>
     </div>

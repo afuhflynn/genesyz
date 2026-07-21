@@ -41,8 +41,12 @@ export const sendWelcomeEmailFunction = inngest.createFunction(
       if (!user) {
         throw new Error("Failed to create user");
       }
-      await db.entitlement.create({
-        data: {
+      await db.entitlement.upsert({
+        where: {
+          userId: user.id,
+        },
+        update: {},
+        create: {
           userId: user.id,
           plan: "FREE",
           maxActiveIdeas: PLANS.FREE.maxActiveIdeas,

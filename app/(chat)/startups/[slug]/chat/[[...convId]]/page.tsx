@@ -5,20 +5,21 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { checkStartupAccess } from "@/lib/startup-permissions";
 
-interface VCCoachNewPageProps {
-  params: Promise<{ slug: string }>;
+interface VCCoachPageProps {
+  params: Promise<{ slug: string; convId?: string[] }>;
 }
 
-export default async function VCCoachNewPage({
+export default async function VCCoachPage({
   params,
-}: VCCoachNewPageProps) {
+}: VCCoachPageProps) {
   const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session?.user) {
     notFound();
   }
 
-  const { slug } = await params;
+  const { slug, convId } = await params;
+  const singleConvId = convId?.[0];
 
   const access = await checkStartupAccess(slug, "view_startup");
 
@@ -35,7 +36,22 @@ export default async function VCCoachNewPage({
     notFound();
   }
 
+  if (singleConvId) {
+    const conversation = await db.startupConversation.findUnique({
+      where: { id: singleConvId },
+      select: { id: true },
+    });
+
+    if (!conversation) {
+      notFound();
+    }
+  }
+
   return (
-    <VCCoach startupId={startup.id} startupName={startup.name} />
+    <VCCoach
+      startupId={startup.id}
+      startupName={startup.name}
+      conversationId={singleConvId}
+    />
   );
 }

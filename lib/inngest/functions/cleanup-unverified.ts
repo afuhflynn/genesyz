@@ -53,7 +53,7 @@ export const cleanupUnverifiedUsers = inngest.createFunction(
                 Unverified accounts are deleted after 90 days. Please verify your email to keep your account.
               </p>
               <div style="text-align: center;">
-                <a href="${process.env.NEXT_PUBLIC_APP_URL}/verify-email/resend" style="display: inline-block; background: #F5A623; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 16px;">
+                <a href="${process.env.NEXT_PUBLIC_APP_URL}/verify-email/resend" style="display: inline-block; background: #ea580c; color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-weight: 800; font-size: 16px;">
                   Verify Email
                 </a>
               </div>
