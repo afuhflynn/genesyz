@@ -1,7 +1,9 @@
 import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
+import { ajAI, checkRateLimit, rateLimitResponse } from "@/lib/arcjet";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { consumeAICredit } from "@/lib/polar/workspace-entitlements";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -46,16 +48,14 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Rate limit check for AI generation
-  const { ajAI } = await import("@/lib/arcjet");
-  const decision = await ajAI.protect(request, {
-    userId: session.user.id,
-    requested: 1,
-  });
-  if (decision.isDenied()) {
+  const decision = await checkRateLimit(request, session.user.id, ajAI);
+  if (decision) return rateLimitResponse(decision);
+
+  const aiCredit = await consumeAICredit(session.user.id);
+  if (!aiCredit.allowed) {
     return NextResponse.json(
-      { error: "Rate limit exceeded. Please try again later." },
-      { status: 429 },
+      { error: "Your workspace has no AI credits remaining." },
+      { status: 402 },
     );
   }
 

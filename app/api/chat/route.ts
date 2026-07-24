@@ -1,18 +1,31 @@
 import { headers } from "next/headers";
-import { NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
 import { streamTextWithFallback } from "@/lib/ai/stream-fallback";
 import { tools } from "@/lib/ai/tools";
+import { ajChat, checkRateLimit, rateLimitResponse } from "@/lib/arcjet";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { consumeAICredit } from "@/lib/polar/workspace-entitlements";
 
 export const runtime = "nodejs";
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
 
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const decision = await checkRateLimit(req, session.user.id, ajChat);
+    if (decision) return rateLimitResponse(decision);
+
+    const aiCredit = await consumeAICredit(session.user.id);
+    if (!aiCredit.allowed) {
+      return NextResponse.json(
+        { error: "Your workspace has no AI credits remaining." },
+        { status: 402 },
+      );
     }
 
     const {

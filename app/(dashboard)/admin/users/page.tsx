@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search, Shield, ShieldOff } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,13 +14,21 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useAdminUsers } from "@/hooks";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useAdminUsers, useUpdateUserRole } from "@/hooks";
 import { formatRelativeTime } from "@/lib/utils";
 
 export default function AdminUsersPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const { data, isLoading } = useAdminUsers({ page, limit: 20, search });
+  const updateRole = useUpdateUserRole();
 
   return (
     <div className="space-y-8">
@@ -69,7 +77,7 @@ export default function AdminUsersPage() {
                       <Skeleton className="h-4 w-48" />
                     </TableCell>
                     <TableCell>
-                      <Skeleton className="h-4 w-16" />
+                      <Skeleton className="h-4 w-24" />
                     </TableCell>
                     <TableCell>
                       <Skeleton className="h-4 w-16" />
@@ -96,11 +104,30 @@ export default function AdminUsersPage() {
                   </TableCell>
                   <TableCell>{user.email}</TableCell>
                   <TableCell>
-                    <Badge
-                      variant={user.role === "ADMIN" ? "default" : "outline"}
+                    <Select
+                      defaultValue={user.role}
+                      onValueChange={(role) =>
+                        updateRole.mutate({ userId: user.id, role })
+                      }
                     >
-                      {user.role}
-                    </Badge>
+                      <SelectTrigger className="h-7 w-28 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="USER">
+                          <span className="flex items-center gap-2">
+                            <ShieldOff className="h-3 w-3" />
+                            User
+                          </span>
+                        </SelectItem>
+                        <SelectItem value="ADMIN">
+                          <span className="flex items-center gap-2">
+                            <Shield className="h-3 w-3" />
+                            Admin
+                          </span>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
                   </TableCell>
                   <TableCell>
                     <Badge variant="secondary">

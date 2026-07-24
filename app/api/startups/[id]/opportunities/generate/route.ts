@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { generateStartupOpportunities } from "@/lib/opportunities/generator";
 import { checkStartupAccess } from "@/lib/startup-permissions";
+import { consumeAICredit } from "@/lib/polar/workspace-entitlements";
 
 export async function POST(
   _request: NextRequest,
@@ -23,6 +24,9 @@ export async function POST(
     if (!access.hasAccess || !access.startupId) {
       return NextResponse.json({ error: "Access denied" }, { status: 403 });
     }
+
+    const aiCredit = await consumeAICredit(session.user.id);
+    if (!aiCredit.allowed) return NextResponse.json({ error: "Your workspace has no AI credits remaining.", code: "PLAN_LIMIT_REACHED", resource: "ai" }, { status: 402 });
 
     const startup = await db.startup.findUnique({
       where: { id: access.startupId },

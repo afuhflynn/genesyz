@@ -2,6 +2,7 @@
 
 import { AlertTriangle, Check, Loader2 } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,34 +16,29 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSubscription } from "@/hooks";
 import { authClient } from "@/lib/auth-client";
-import { PLANS } from "@/lib/polar/client";
+import { WORKSPACE_PLANS, type WorkspacePlanId } from "@/lib/polar/client";
 
 export default function BillingPage() {
   const { data: subscription, isLoading } = useSubscription();
   const [createCheckout, setCreateCheckout] = useState(false);
-  const [cancelSubscription, _setCancelSubscription] = useState(false);
+  const [openingPortal, setOpeningPortal] = useState(false);
 
   // Determine current plan
   // Note: The API returns { subscription: unknown, usage: ... }
   // We need to infer the plan from the subscription object or usage
   // For now, let's assume the API returns a 'plan' field in the subscription object or we can infer from maxIdeas
-  const currentPlanId =
-    subscription?.usage.maxIdeas === Infinity ? "PRO" : "FREE";
+  const currentPlanId = (subscription?.subscription ||
+    "EXPLORER") as WorkspacePlanId;
 
-  const handleUpgrade = async (planId: string) => {
-    let productId = "";
-
-    if (planId === "pro") {
-      productId = process.env.NEXT_PUBLIC_POLAR_PRO_PRODUCT_ID as string;
-    } else {
-      productId = process.env.NEXT_PUBLIC_POLAR_FREE_PRODUCT_ID as string;
-    }
+  const handleUpgrade = async (planId: WorkspacePlanId) => {
+    const plan = WORKSPACE_PLANS[planId];
+    if (!plan.polarProductId) return;
     setCreateCheckout(true);
     try {
       await authClient.checkout({
-        products: [productId],
+        products: [plan.polarProductId],
         successUrl: "/dashboard?checkout_id={CHECKOUT_ID}",
-        slug: planId,
+        slug: planId.toLowerCase(),
       });
     } catch (error) {
       console.log(error);
@@ -51,14 +47,20 @@ export default function BillingPage() {
     }
   };
 
-  const handleCancel = async () => {
-    if (
-      confirm(
-        "Are you sure you want to cancel? You will lose access to Pro features at the end of your billing period.",
-      )
-    ) {
-      // await authClient.customer.subscriptions.
-      // cancelSubscription.mutate();
+  const handleOpenPortal = async () => {
+    setOpeningPortal(true);
+    try {
+      const response = await fetch("/api/billing/portal", { method: "POST" });
+      const data = await response.json();
+      if (!response.ok)
+        throw new Error(data.error || "Billing portal unavailable");
+      window.location.assign(data.url);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Billing portal unavailable",
+      );
+    } finally {
+      setOpeningPortal(false);
     }
   };
 
@@ -73,6 +75,15 @@ export default function BillingPage() {
         <p className="text-muted-foreground mt-2">
           Manage your subscription and usage limits.
         </p>
+        <Button
+          variant="outline"
+          className="mt-4"
+          onClick={handleOpenPortal}
+          disabled={openingPortal}
+        >
+          {openingPortal && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          Manage billing
+        </Button>
       </div>
 
       {/* Usage Card */}
@@ -109,113 +120,78 @@ export default function BillingPage() {
                 }}
               />
             </div>
-            <p className="text-xs text-muted-foreground pt-1">
-              {currentPlanId === "FREE"
-                ? "Upgrade to Pro for unlimited ideas."
-                : "You have unlimited active ideas."}
-            </p>
+            <div className="grid gap-3 pt-4 text-xs text-muted-foreground sm:grid-cols-2">
+              <span>{subscription?.usage.activeStartups} / {subscription?.usage.maxStartups} startups</span>
+              <span>{subscription?.usage.seats ?? 0} seats used · {subscription?.usage.pendingInvitations ?? 0} pending</span>
+              <span>{subscription?.workspace?.aiCredits ?? 0} AI credits remaining</span>
+              <span>{subscription?.workspace?.builderCredits ?? 0} builder generations remaining</span>
+              <span>{subscription?.usage.hostedProjects ?? 0} / {subscription?.workspace?.hostedProjectLimit ?? 0} hosted projects</span>
+              <span>{formatBytes(subscription?.usage.storageBytes)} / {formatBytes(subscription?.usage.storageLimitBytes)} storage</span>
+            </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Plans Grid */}
-      <div className="grid gap-8 md:grid-cols-2">
-        {/* Free Plan */}
-        <Card
-          className={currentPlanId === "FREE" ? "border-primary shadow-md" : ""}
-        >
-          <CardHeader>
-            <div className="flex justify-between items-start">
-              <div>
-                <CardTitle>{PLANS.FREE.name}</CardTitle>
-                <CardDescription>Perfect for hobbyists</CardDescription>
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        {Object.values(WORKSPACE_PLANS).map((plan) => (
+          <Card
+            key={plan.id}
+            className={
+              currentPlanId === plan.id ? "border-primary shadow-md" : ""
+            }
+          >
+            <CardHeader>
+              <div className="flex justify-between items-start">
+                <div>
+                  <CardTitle>{plan.name}</CardTitle>
+                  <CardDescription>
+                    {plan.seats} seats · {plan.maxStartups} startups
+                  </CardDescription>
+                </div>
+                {currentPlanId === plan.id && <Badge>Current Plan</Badge>}
               </div>
-              {currentPlanId === "FREE" && <Badge>Current Plan</Badge>}
-            </div>
-            <div className="mt-4">
-              <span className="text-3xl font-bold">$0</span>
-              <span className="text-muted-foreground">/month</span>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-3 text-sm">
-              {PLANS.FREE.features.map((feature, i) => (
-                <li key={`item-${i}`} className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-500" />
-                  {feature}
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-          <CardFooter>
-            {currentPlanId === "FREE" ? (
-              <Button className="w-full" variant="outline" disabled>
-                Current Plan
-              </Button>
-            ) : (
-              <Button
-                className="w-full"
-                variant="outline"
-                onClick={handleCancel}
-                disabled={cancelSubscription}
-              >
-                {cancelSubscription ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : null}
-                Downgrade to Free
-              </Button>
-            )}
-          </CardFooter>
-        </Card>
-
-        {/* Pro Plan */}
-        <Card
-          className={currentPlanId === "PRO" ? "border-primary shadow-md" : ""}
-        >
-          <CardHeader>
-            <div className="flex justify-between items-start">
-              <div>
-                <CardTitle>{PLANS.PRO.name}</CardTitle>
-                <CardDescription>For serious founders</CardDescription>
+              <div className="mt-4">
+                <span className="text-3xl font-bold">{plan.price}</span>
               </div>
-              {currentPlanId === "PRO" && <Badge>Current Plan</Badge>}
-            </div>
-            <div className="mt-4">
-              <span className="text-3xl font-bold">{PLANS.PRO.price}</span>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-3 text-sm">
-              {PLANS.PRO.features.map((feature, i) => (
-                <li key={`item-${i}`} className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-500" />
-                  {feature}
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-          <CardFooter>
-            {currentPlanId === "PRO" ? (
-              <Button className="w-full" variant="outline" disabled>
-                Current Plan
-              </Button>
-            ) : (
-              <Button
-                className="w-full"
-                onClick={() => handleUpgrade("pro")}
-                disabled={createCheckout}
-              >
-                {createCheckout ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : null}
-                Upgrade to Pro
-              </Button>
-            )}
-          </CardFooter>
-        </Card>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-3 text-sm">
+                {plan.features.map((feature) => (
+                  <li key={feature} className="flex items-center gap-2">
+                    <Check className="h-4 w-4 text-green-500" />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+            <CardFooter>
+              {currentPlanId === plan.id ? (
+                <Button className="w-full" variant="outline" disabled>
+                  Current Plan
+                </Button>
+              ) : !plan.polarProductId ? (
+                <Button className="w-full" variant="outline" asChild>
+                  <a href="mailto:hello@genesyz.com">Contact Genesyz</a>
+                </Button>
+              ) : (
+                <Button
+                  className="w-full"
+                  onClick={() => handleUpgrade(plan.id)}
+                  disabled={createCheckout}
+                >
+                  {createCheckout ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : null}
+                  Choose {plan.name}
+                </Button>
+              )}
+            </CardFooter>
+          </Card>
+        ))}
       </div>
 
-      {currentPlanId === "PRO" && (
+      {currentPlanId !== "EXPLORER" && (
         <div className="bg-muted/50 p-4 rounded-lg flex items-start gap-3 text-sm text-muted-foreground">
           <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0" />
           <p>
@@ -227,6 +203,14 @@ export default function BillingPage() {
       )}
     </div>
   );
+}
+
+function formatBytes(value?: string) {
+  const bytes = Number(value || 0);
+  if (!bytes) return "0 B";
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+  return `${(bytes / 1024 ** index).toFixed(index > 1 ? 1 : 0)} ${units[index]}`;
 }
 
 function BillingSkeleton() {

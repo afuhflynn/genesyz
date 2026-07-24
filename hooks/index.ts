@@ -15,6 +15,8 @@ import {
   type IdeaWithDetails,
   type PaginationParams,
   type StartupOpportunity,
+  type TaskLabel,
+  type TaskPriority,
   type TaskStatus,
 } from "@/lib/api-client";
 import { authClient, signIn, signUp } from "@/lib/auth-client";
@@ -41,6 +43,8 @@ export const queryKeys = {
       [...queryKeys.startups.all, "updates", id] as const,
     tasks: (id: string, status?: TaskStatus) =>
       [...queryKeys.startups.all, "tasks", id, status] as const,
+    growthExperiments: (id: string) =>
+      [...queryKeys.startups.all, "growth-experiments", id] as const,
     opportunities: (
       id: string,
       params?: { status?: string; category?: string },
@@ -344,7 +348,191 @@ export function useAdminAuditLogs(params?: PaginationParams) {
   return useQuery({
     queryKey: queryKeys.admin.auditLogs(params),
     queryFn: () => api.queries.admin.getAuditLogs(params),
-    staleTime: 30 * 1000, // 30 seconds
+    staleTime: 30 * 1000,
+  });
+}
+
+export function useUpdateUserRole() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      userId,
+      role,
+    }: {
+      userId: string;
+      role: string;
+    }) => api.mutations.admin.updateUserRole(userId, role),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.users() });
+      toast.success("User role updated");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to update role");
+    },
+  });
+}
+
+export function useAdminCourses() {
+  return useQuery({
+    queryKey: ["admin", "lms", "courses"],
+    queryFn: () => api.queries.admin.getCourses(),
+  });
+}
+
+export function useAdminCourse(id: string) {
+  return useQuery({
+    queryKey: ["admin", "lms", "course", id],
+    queryFn: () => api.queries.admin.getCourse(id),
+    enabled: !!id,
+  });
+}
+
+export function useCreateCourse() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Parameters<typeof api.mutations.admin.createCourse>[0]) =>
+      api.mutations.admin.createCourse(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "lms", "courses"] });
+      toast.success("Course created");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+}
+
+export function useUpdateCourse() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Record<string, unknown>;
+    }) => api.mutations.admin.updateCourse(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "lms"] });
+      toast.success("Course updated");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+}
+
+export function useDeleteCourse() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.mutations.admin.deleteCourse(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "lms", "courses"] });
+      toast.success("Course deleted");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+}
+
+export function useCreateModule() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      courseId,
+      data,
+    }: {
+      courseId: string;
+      data: { title: string };
+    }) => api.mutations.admin.createModule(courseId, data),
+    onSuccess: (_, { courseId }) => {
+      queryClient.invalidateQueries({
+        queryKey: ["admin", "lms", "course", courseId],
+      });
+      toast.success("Module added");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+}
+
+export function useUpdateModule() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: { title?: string };
+    }) => api.mutations.admin.updateModule(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "lms"] });
+      toast.success("Module updated");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+}
+
+export function useDeleteModule() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.mutations.admin.deleteModule(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "lms"] });
+      toast.success("Module deleted");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+}
+
+export function useCreateLesson() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      moduleId,
+      data,
+    }: {
+      moduleId: string;
+      data: Record<string, unknown>;
+    }) => api.mutations.admin.createLesson(moduleId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "lms"] });
+      toast.success("Lesson added");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+}
+
+export function useUpdateLesson() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      data,
+    }: {
+      id: string;
+      data: Record<string, unknown>;
+    }) => api.mutations.admin.updateLesson(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "lms"] });
+      toast.success("Lesson updated");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+}
+
+export function useDeleteLesson() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.mutations.admin.deleteLesson(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "lms"] });
+      toast.success("Lesson deleted");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+}
+
+export function useLmsAnalytics() {
+  return useQuery({
+    queryKey: ["admin", "lms", "analytics"],
+    queryFn: () => api.queries.admin.getLmsAnalytics(),
+    staleTime: 2 * 60 * 1000,
   });
 }
 
@@ -910,6 +1098,96 @@ export function useTaskLists(startupId: string, status?: TaskStatus) {
   });
 }
 
+export function useTaskMilestones(startupId: string) {
+  return useQuery({
+    queryKey: [...queryKeys.startups.tasks(startupId), "milestones"],
+    queryFn: () => api.queries.startups.getTaskMilestones(startupId),
+    enabled: !!startupId,
+  });
+}
+
+export function useGrowthExperiments(startupId: string) {
+  return useQuery({
+    queryKey: queryKeys.startups.growthExperiments(startupId),
+    queryFn: () => api.queries.startups.getGrowthExperiments(startupId),
+    enabled: !!startupId,
+  });
+}
+
+export function useSuggestGrowthExperimentTasks() {
+  return useMutation({
+    mutationFn: ({ startupId, experimentId }: { startupId: string; experimentId: string }) =>
+      api.mutations.startups.suggestGrowthExperimentTasks(startupId, experimentId),
+    onError: (error: Error) => toast.error(error.message || "Failed to generate execution tasks"),
+  });
+}
+
+export function useCreateGrowthExperimentTasks() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ startupId, experimentId, data }: { startupId: string; experimentId: string; data: { tasks: Array<{ listId: string; title: string; description?: string; priority: TaskPriority; deadline?: string | null; assigneeIds: string[]; labelIds: string[]; milestoneId?: string | null }> } }) =>
+      api.mutations.startups.createGrowthExperimentTasks(startupId, experimentId, data),
+    onSuccess: (_, { startupId }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.startups.tasks(startupId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.startups.growthExperiments(startupId) });
+      toast.success("Experiment tasks created!");
+    },
+    onError: (error: Error) => toast.error(error.message || "Failed to create experiment tasks"),
+  });
+}
+
+export function useUpdateGrowthExperiment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ startupId, experimentId, data }: { startupId: string; experimentId: string; data: Parameters<typeof api.mutations.startups.updateGrowthExperiment>[2] }) =>
+      api.mutations.startups.updateGrowthExperiment(startupId, experimentId, data),
+    onSuccess: (_, { startupId }) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.startups.growthExperiments(startupId) });
+    },
+    onError: (error: Error) => toast.error(error.message || "Failed to update experiment"),
+  });
+}
+
+export function useCreateTaskMilestone() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ startupId, data }: { startupId: string; data: { title: string; description?: string; targetDate?: string | null } }) =>
+      api.mutations.startups.createTaskMilestone(startupId, data),
+    onSuccess: (_, { startupId }) => {
+      queryClient.invalidateQueries({ queryKey: [...queryKeys.startups.tasks(startupId), "milestones"] });
+      toast.success("Milestone created!");
+    },
+    onError: (error: Error) => toast.error(error.message || "Failed to create milestone"),
+  });
+}
+
+export function useUpdateTaskMilestone() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ startupId, data }: { startupId: string; data: { milestoneId: string; title?: string; description?: string; targetDate?: string | null; archived?: boolean } }) =>
+      api.mutations.startups.updateTaskMilestone(startupId, data),
+    onSuccess: (_, { startupId }) => {
+      queryClient.invalidateQueries({ queryKey: [...queryKeys.startups.tasks(startupId), "milestones"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.startups.tasks(startupId) });
+    },
+    onError: (error: Error) => toast.error(error.message || "Failed to update milestone"),
+  });
+}
+
+export function useDeleteTaskMilestone() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ startupId, milestoneId }: { startupId: string; milestoneId: string }) =>
+      api.mutations.startups.deleteTaskMilestone(startupId, milestoneId),
+    onSuccess: (_, { startupId }) => {
+      queryClient.invalidateQueries({ queryKey: [...queryKeys.startups.tasks(startupId), "milestones"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.startups.tasks(startupId) });
+      toast.success("Milestone deleted!");
+    },
+    onError: (error: Error) => toast.error(error.message || "Failed to delete milestone"),
+  });
+}
+
 export function useCreateTaskList() {
   const queryClient = useQueryClient();
 
@@ -997,8 +1275,12 @@ export function useCreateTask() {
         listId: string;
         title: string;
         description?: string;
+        priority?: TaskPriority;
         deadline?: string;
         status?: TaskStatus;
+        assigneeIds?: string[];
+        labelIds?: string[];
+        milestoneId?: string | null;
       };
     }) => api.mutations.startups.createTask(startupId, data),
     onSuccess: (_, { startupId }) => {
@@ -1076,7 +1358,11 @@ export function useUpdateTask() {
         taskId: string;
         title?: string;
         description?: string;
+        priority?: TaskPriority;
         deadline?: string | null;
+        assigneeIds?: string[];
+        labelIds?: string[];
+        milestoneId?: string | null;
       };
     }) => api.mutations.startups.updateTask(startupId, data),
     onSuccess: (_, { startupId }) => {
@@ -1087,6 +1373,104 @@ export function useUpdateTask() {
     },
     onError: (error: Error) => {
       toast.error(error.message || "Failed to update task");
+    },
+  });
+}
+
+export function useTaskLabels(startupId: string) {
+  return useQuery({
+    queryKey: [...queryKeys.startups.tasks(startupId), "labels"],
+    queryFn: () => api.queries.startups.getTaskLabels(startupId),
+    enabled: !!startupId,
+  });
+}
+
+export function useCreateTaskLabel() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      startupId,
+      data,
+    }: {
+      startupId: string;
+      data: { name: string; color?: string };
+    }) => api.mutations.startups.createTaskLabel(startupId, data),
+    onSuccess: (_, { startupId }) => {
+      queryClient.invalidateQueries({
+        queryKey: [...queryKeys.startups.tasks(startupId), "labels"],
+      });
+      toast.success("Label created!");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to create label");
+    },
+  });
+}
+
+export function useDeleteTaskLabel() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      startupId,
+      labelId,
+    }: {
+      startupId: string;
+      labelId: string;
+    }) => api.mutations.startups.deleteTaskLabel(startupId, labelId),
+    onSuccess: (_, { startupId }) => {
+      queryClient.invalidateQueries({
+        queryKey: [...queryKeys.startups.tasks(startupId), "labels"],
+      });
+      toast.success("Label deleted!");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to delete label");
+    },
+  });
+}
+
+export function useUpdateTaskAssignees() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      startupId,
+      data,
+    }: {
+      startupId: string;
+      data: { taskId: string; userIds: string[] };
+    }) => api.mutations.startups.updateTaskAssignees(startupId, data),
+    onSuccess: (_, { startupId }) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.startups.tasks(startupId),
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to update assignees");
+    },
+  });
+}
+
+export function useUpdateTaskLabels() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      startupId,
+      data,
+    }: {
+      startupId: string;
+      data: { taskId: string; labelIds: string[] };
+    }) => api.mutations.startups.updateTaskLabels(startupId, data),
+    onSuccess: (_, { startupId }) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.startups.tasks(startupId),
+      });
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to update labels");
     },
   });
 }

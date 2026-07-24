@@ -7,6 +7,7 @@ import {
   checkStartupAccess,
   type StartupMemberRole,
 } from "@/lib/startup-permissions";
+import { assertSeatAvailable, entitlementErrorResponse } from "@/lib/polar/workspace-entitlements";
 
 const LEGACY_ROLE_TO_BA: Record<string, string> = {
   OWNER: "owner",
@@ -186,6 +187,13 @@ export async function POST(
   let member: Record<string, unknown>;
 
   if (startup.organizationId) {
+    try {
+      await assertSeatAvailable(session.user.id, startup.organizationId);
+    } catch (error) {
+      const entitlementResponse = entitlementErrorResponse(error);
+      if (entitlementResponse) return entitlementResponse;
+      throw error;
+    }
     const existingBaMember = await db.member.findUnique({
       where: {
         organizationId_userId: {

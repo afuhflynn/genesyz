@@ -22,19 +22,87 @@ import { privateAxios, publicAxios } from "@/config/axios.config";
 // ===========================================
 
 export type TaskStatus = "TODO" | "IN_PROGRESS" | "BLOCKED" | "DONE";
+export type TaskPriority = "NONE" | "LOW" | "MEDIUM" | "HIGH" | "URGENT";
+
+export interface TaskAssignee {
+  id: string;
+  taskId: string;
+  userId: string;
+  user?: { id: string; name: string; image: string | null };
+}
+
+export interface TaskLabel {
+  id: string;
+  startupId: string;
+  name: string;
+  color: string;
+}
 
 export interface TaskItem {
   id: string;
   startupId: string;
   listId: string;
+  milestoneId: string | null;
   title: string;
   description: string | null;
+  priority: TaskPriority;
   deadline: string | null;
   status: TaskStatus;
   position: number;
   completedAt: string | null;
   createdAt: string;
   updatedAt: string;
+  assignees?: TaskAssignee[];
+  labels?: { id: string; label: TaskLabel }[];
+  milestone?: TaskMilestone | null;
+  experiment?: { id: string; title: string; status: string; conclusion: string } | null;
+}
+
+export type GrowthExperimentStatus = "PLANNED" | "RUNNING" | "CONCLUDED";
+export type GrowthExperimentConclusion = "PENDING" | "SUCCESS" | "FAILURE" | "INCONCLUSIVE";
+
+export interface GrowthExperimentTaskProgress {
+  total: number;
+  completed: number;
+  overdue: number;
+  percent: number;
+}
+
+export interface GrowthExperimentTaskSuggestion {
+  title: string;
+  description: string;
+  priority: TaskPriority;
+  dueInDays: number | null;
+  phase: string;
+}
+
+export interface GrowthExperiment {
+  id: string;
+  startupId: string;
+  campaignId: string | null;
+  title: string;
+  hypothesis: string;
+  metrics: string;
+  results: string;
+  status: GrowthExperimentStatus;
+  conclusion: GrowthExperimentConclusion;
+  learnings: string;
+  createdAt: string;
+  campaign?: { id: string; name: string; channel: string } | null;
+  tasks?: TaskItem[];
+  progress?: GrowthExperimentTaskProgress;
+}
+
+export interface TaskMilestone {
+  id: string;
+  startupId: string;
+  title: string;
+  description: string | null;
+  targetDate: string | null;
+  archived: boolean;
+  createdAt: string;
+  updatedAt: string;
+  progress?: { total: number; completed: number; percent: number; overdue: boolean };
 }
 
 export interface TaskList {
@@ -342,7 +410,18 @@ export const api = {
     billing: {
       getSubscription: (): Promise<{
         subscription: unknown;
-        usage: { activeIdeas: number; maxIdeas: number };
+        usage: {
+          activeIdeas: number;
+          maxIdeas: number;
+          activeStartups: number;
+          maxStartups: number;
+          seats: number;
+          pendingInvitations: number;
+          hostedProjects: number;
+          storageBytes: string;
+          storageLimitBytes: string;
+        };
+        workspace: { aiCredits: number; builderCredits: number; hostingCredits: number; hostedProjectLimit: number; storageBytes: string; storageLimitBytes: string } | null;
       }> => apiRequest("/billing/subscription", { method: "GET" }),
 
       getCheckoutUrl: (planId: string): Promise<{ url: string }> =>
@@ -355,6 +434,9 @@ export const api = {
         totalUsers: number;
         totalIdeas: number;
         totalResearched: number;
+        totalCourses: number;
+        totalEnrollments: number;
+        totalCertificates: number;
       }> => apiRequest("/admin/stats", { method: "GET" }),
 
       getUsers: (
@@ -376,6 +458,98 @@ export const api = {
           }`,
           { method: "GET" },
         ),
+
+      updateUserRole: (userId: string, role: string) =>
+        apiRequest<{ success: boolean }>("/admin/users/role", {
+          method: "PATCH",
+          body: { userId, role },
+        }),
+
+      // LMS
+      getCourses: () =>
+        apiRequest<{ data: unknown[] }>("/admin/lms/courses", {
+          method: "GET",
+        }),
+      createCourse: (data: {
+        title: string;
+        slug: string;
+        description?: string;
+        longDescription?: string;
+        thumbnail?: string;
+        isPublished?: boolean;
+      }) =>
+        apiRequest<{ data: unknown }>("/admin/lms/courses", {
+          method: "POST",
+          body: data,
+        }),
+      getCourse: (id: string) =>
+        apiRequest<{ data: unknown }>(`/admin/lms/courses/${id}`, {
+          method: "GET",
+        }),
+      updateCourse: (id: string, data: Record<string, unknown>) =>
+        apiRequest<{ data: unknown }>(`/admin/lms/courses/${id}`, {
+          method: "PATCH",
+          body: data,
+        }),
+      deleteCourse: (id: string) =>
+        apiRequest<{ success: boolean }>(`/admin/lms/courses/${id}`, {
+          method: "DELETE",
+        }),
+      createModule: (courseId: string, data: { title: string }) =>
+        apiRequest<{ data: unknown }>(
+          `/admin/lms/courses/${courseId}/modules`,
+          { method: "POST", body: data },
+        ),
+      reorderModules: (
+        courseId: string,
+        modules: { id: string; position: number }[],
+      ) =>
+        apiRequest<{ success: boolean }>(
+          `/admin/lms/courses/${courseId}/modules`,
+          { method: "PATCH", body: { modules } },
+        ),
+      updateModule: (id: string, data: { title?: string }) =>
+        apiRequest<{ data: unknown }>(`/admin/lms/modules/${id}`, {
+          method: "PATCH",
+          body: data,
+        }),
+      deleteModule: (id: string) =>
+        apiRequest<{ success: boolean }>(`/admin/lms/modules/${id}`, {
+          method: "DELETE",
+        }),
+      createLesson: (
+        moduleId: string,
+        data: {
+          title?: string;
+          type?: string;
+          videoUrl?: string;
+          content?: string;
+          duration?: number;
+          questions?: unknown[];
+          passingScore?: number;
+          maxAttempts?: number;
+          instructions?: string;
+          submissionType?: string;
+          dueDays?: number;
+        },
+      ) =>
+        apiRequest<{ data: unknown }>(
+          `/admin/lms/modules/${moduleId}/lessons`,
+          { method: "POST", body: data },
+        ),
+      updateLesson: (id: string, data: Record<string, unknown>) =>
+        apiRequest<{ data: unknown }>(`/admin/lms/lessons/${id}`, {
+          method: "PATCH",
+          body: data,
+        }),
+      deleteLesson: (id: string) =>
+        apiRequest<{ success: boolean }>(`/admin/lms/lessons/${id}`, {
+          method: "DELETE",
+        }),
+      getLmsAnalytics: () =>
+        apiRequest<{ data: unknown }>("/admin/lms/analytics", {
+          method: "GET",
+        }),
     },
 
     // Startups
@@ -419,9 +593,19 @@ export const api = {
         }>(`/startups/${id}/streak`, { method: "GET" }),
       getTaskLists: (id: string, status?: TaskStatus) =>
         apiRequest<{ data: { lists: TaskList[] } }>(
-          `/startups/${id}/applications${status ? `?status=${status}` : ""}`,
+          `/startups/${id}/tasks${status ? `?status=${status}` : ""}`,
           { method: "GET" },
         ),
+      getTaskMilestones: (id: string) =>
+        apiRequest<{ data: TaskMilestone[] }>(`/startups/${id}/task-milestones`, { method: "GET" }),
+      getTaskLabels: (id: string) =>
+        apiRequest<{ data: TaskLabel[] }>(`/startups/${id}/task-labels`, {
+          method: "GET",
+        }),
+      getGrowthExperiments: (id: string) =>
+        apiRequest<{ data: { campaigns: unknown[]; experiments: GrowthExperiment[] } }>(`/startups/${id}/growth/experiments`, { method: "GET" }),
+      getGrowthExperiment: (id: string, experimentId: string) =>
+        apiRequest<{ data: GrowthExperiment }>(`/startups/${id}/growth/experiments/${experimentId}`, { method: "GET" }),
       getOpportunities: (
         id: string,
         params?: { status?: string; category?: string },
@@ -702,7 +886,7 @@ export const api = {
         }),
       getTaskLists: (id: string, status?: TaskStatus) =>
         apiRequest<{ data: { lists: TaskList[] } }>(
-          `/startups/${id}/applications${status ? `?status=${status}` : ""}`,
+          `/startups/${id}/tasks${status ? `?status=${status}` : ""}`,
           { method: "GET" },
         ),
       createTaskList: (
@@ -711,7 +895,7 @@ export const api = {
           name: string;
         },
       ) =>
-        apiRequest<unknown>(`/startups/${id}/applications`, {
+        apiRequest<unknown>(`/startups/${id}/tasks`, {
           method: "POST",
           body: {
             action: "create_list",
@@ -725,7 +909,7 @@ export const api = {
           name: string;
         },
       ) =>
-        apiRequest<unknown>(`/startups/${id}/applications`, {
+        apiRequest<unknown>(`/startups/${id}/tasks`, {
           method: "PATCH",
           body: {
             action: "rename_list",
@@ -733,7 +917,7 @@ export const api = {
           },
         }),
       deleteTaskList: (id: string, listId: string) =>
-        apiRequest<{ success: boolean }>(`/startups/${id}/applications`, {
+        apiRequest<{ success: boolean }>(`/startups/${id}/tasks`, {
           method: "DELETE",
           body: {
             action: "delete_list",
@@ -746,11 +930,16 @@ export const api = {
           listId: string;
           title: string;
           description?: string;
+          priority?: TaskPriority;
           deadline?: string;
           status?: TaskStatus;
+          assigneeIds?: string[];
+          labelIds?: string[];
+          milestoneId?: string | null;
+          experimentId?: string | null;
         },
       ) =>
-        apiRequest<{ data: TaskItem }>(`/startups/${id}/applications`, {
+        apiRequest<{ data: TaskItem }>(`/startups/${id}/tasks`, {
           method: "POST",
           body: {
             action: "create_task",
@@ -763,10 +952,15 @@ export const api = {
           taskId: string;
           title?: string;
           description?: string;
+          priority?: TaskPriority;
           deadline?: string | null;
+          assigneeIds?: string[];
+          labelIds?: string[];
+          milestoneId?: string | null;
+          experimentId?: string | null;
         },
       ) =>
-        apiRequest<{ success: boolean }>(`/startups/${id}/applications`, {
+        apiRequest<{ data: TaskItem }>(`/startups/${id}/tasks`, {
           method: "PATCH",
           body: {
             action: "update_task",
@@ -782,7 +976,7 @@ export const api = {
           position?: number;
         },
       ) =>
-        apiRequest<{ success: boolean }>(`/startups/${id}/applications`, {
+        apiRequest<{ success: boolean }>(`/startups/${id}/tasks`, {
           method: "PATCH",
           body: {
             action: "move_task",
@@ -790,12 +984,56 @@ export const api = {
           },
         }),
       deleteTask: (id: string, taskId: string) =>
-        apiRequest<{ success: boolean }>(`/startups/${id}/applications`, {
+        apiRequest<{ success: boolean }>(`/startups/${id}/tasks`, {
           method: "DELETE",
           body: {
             action: "delete_task",
             taskId,
           },
+        }),
+      createTaskMilestone: (id: string, data: { title: string; description?: string; targetDate?: string | null }) =>
+        apiRequest<{ data: TaskMilestone }>(`/startups/${id}/task-milestones`, { method: "POST", body: data }),
+      updateTaskMilestone: (id: string, data: { milestoneId: string; title?: string; description?: string; targetDate?: string | null; archived?: boolean }) =>
+        apiRequest<{ data: TaskMilestone }>(`/startups/${id}/task-milestones`, { method: "PATCH", body: data }),
+      deleteTaskMilestone: (id: string, milestoneId: string) =>
+        apiRequest<{ success: boolean }>(`/startups/${id}/task-milestones`, { method: "DELETE", body: { milestoneId } }),
+      updateGrowthExperiment: (id: string, experimentId: string, data: Partial<Pick<GrowthExperiment, "title" | "hypothesis" | "metrics" | "campaignId" | "status" | "results" | "conclusion" | "learnings">>) =>
+        apiRequest<{ data: GrowthExperiment }>(`/startups/${id}/growth/experiments/${experimentId}`, { method: "PATCH", body: data }),
+      suggestGrowthExperimentTasks: (id: string, experimentId: string) =>
+        apiRequest<{ data: { experimentId: string; suggestions: GrowthExperimentTaskSuggestion[] } }>(`/startups/${id}/growth/experiments/${experimentId}/suggest-tasks`, { method: "POST" }),
+      createGrowthExperimentTasks: (id: string, experimentId: string, data: { tasks: Array<{ listId: string; title: string; description?: string; priority: TaskPriority; deadline?: string | null; assigneeIds: string[]; labelIds: string[]; milestoneId?: string | null }> }) =>
+        apiRequest<{ data: { tasks: TaskItem[] } }>(`/startups/${id}/growth/experiments/${experimentId}/tasks`, { method: "POST", body: data }),
+      updateTaskAssignees: (
+        id: string,
+        data: { taskId: string; userIds: string[] },
+      ) =>
+        apiRequest<{ success: boolean }>(`/startups/${id}/tasks`, {
+          method: "PATCH",
+          body: {
+            action: "update_assignees",
+            ...data,
+          },
+        }),
+      updateTaskLabels: (
+        id: string,
+        data: { taskId: string; labelIds: string[] },
+      ) =>
+        apiRequest<{ success: boolean }>(`/startups/${id}/tasks`, {
+          method: "PATCH",
+          body: {
+            action: "update_labels",
+            ...data,
+          },
+        }),
+      createTaskLabel: (id: string, data: { name: string; color?: string }) =>
+        apiRequest<{ data: TaskLabel }>(`/startups/${id}/task-labels`, {
+          method: "POST",
+          body: data,
+        }),
+      deleteTaskLabel: (id: string, labelId: string) =>
+        apiRequest<{ success: boolean }>(`/startups/${id}/task-labels`, {
+          method: "DELETE",
+          body: { labelId },
         }),
       createOpportunity: (
         id: string,
@@ -931,6 +1169,65 @@ export const api = {
         }),
       delete: (slug: string) =>
         apiRequest<{ success: boolean }>(`/accelerators/${slug}`, {
+          method: "DELETE",
+        }),
+    },
+
+    // Admin
+    admin: {
+      updateUserRole: (userId: string, role: string) =>
+        apiRequest<{ success: boolean }>("/admin/users/role", {
+          method: "PATCH",
+          body: { userId, role },
+        }),
+      createCourse: (data: Record<string, unknown>) =>
+        apiRequest<{ data: unknown }>("/admin/lms/courses", {
+          method: "POST",
+          body: data,
+        }),
+      updateCourse: (id: string, data: Record<string, unknown>) =>
+        apiRequest<{ data: unknown }>(`/admin/lms/courses/${id}`, {
+          method: "PATCH",
+          body: data,
+        }),
+      deleteCourse: (id: string) =>
+        apiRequest<{ success: boolean }>(`/admin/lms/courses/${id}`, {
+          method: "DELETE",
+        }),
+      createModule: (courseId: string, data: { title: string }) =>
+        apiRequest<{ data: unknown }>(
+          `/admin/lms/courses/${courseId}/modules`,
+          { method: "POST", body: data },
+        ),
+      reorderModules: (
+        courseId: string,
+        modules: { id: string; position: number }[],
+      ) =>
+        apiRequest<{ success: boolean }>(
+          `/admin/lms/courses/${courseId}/modules`,
+          { method: "PATCH", body: { modules } },
+        ),
+      updateModule: (id: string, data: { title?: string }) =>
+        apiRequest<{ data: unknown }>(`/admin/lms/modules/${id}`, {
+          method: "PATCH",
+          body: data,
+        }),
+      deleteModule: (id: string) =>
+        apiRequest<{ success: boolean }>(`/admin/lms/modules/${id}`, {
+          method: "DELETE",
+        }),
+      createLesson: (moduleId: string, data: Record<string, unknown>) =>
+        apiRequest<{ data: unknown }>(
+          `/admin/lms/modules/${moduleId}/lessons`,
+          { method: "POST", body: data },
+        ),
+      updateLesson: (id: string, data: Record<string, unknown>) =>
+        apiRequest<{ data: unknown }>(`/admin/lms/lessons/${id}`, {
+          method: "PATCH",
+          body: data,
+        }),
+      deleteLesson: (id: string) =>
+        apiRequest<{ success: boolean }>(`/admin/lms/lessons/${id}`, {
           method: "DELETE",
         }),
     },

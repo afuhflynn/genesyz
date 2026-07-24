@@ -17,6 +17,7 @@
     "db:migrate:deploy": "prisma migrate deploy",
     "db:migrate:reset": "prisma migrate reset",
     "db:seed": "tsx prisma/seed.ts",
+    "migrate:school-catalog": "tsx scripts/migrate-school-catalog.ts",
     "bootstrap:accelerator": "tsx scripts/bootstrap-accelerator.ts",
     "db:repair:extracted-urls": "tsx scripts/repair-extracted-urls.ts",
     "migrate:orgs": "tsx scripts/migrate-startups-to-orgs.ts",

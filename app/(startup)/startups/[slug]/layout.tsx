@@ -52,8 +52,10 @@ export default async function StartupLayout({
   }
 
   const permissions = {
+    role,
     canViewStartup: hasPermission(role, "view_startup"),
     canManageTasks: hasPermission(role, "manage_tasks"),
+    canManageTeam: hasPermission(role, "manage_team"),
     canViewSettings: hasPermission(role, "view_settings"),
   };
 

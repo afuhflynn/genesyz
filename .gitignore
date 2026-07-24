@@ -47,5 +47,8 @@ next-env.d.ts
 mprocs.log
 .nvii/
 
+# Compylar's binary repository index is local/generated and exceeds GitHub's file limit.
+.compylar/brain.db
+
 
 TODO.md

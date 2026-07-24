@@ -1,22 +1,31 @@
 import { isStepCount } from "ai";
 import { headers } from "next/headers";
-import { NextResponse } from "next/server";
+import { type NextRequest, NextResponse } from "next/server";
+import {
+  getLastUserMessage,
+  normalizeConversationId,
+  serializeMessageContent,
+} from "@/lib/ai/chat-request";
 import { streamTextWithFallback } from "@/lib/ai/stream-fallback";
 import { tools } from "@/lib/ai/tools";
+import { ajChat, checkRateLimit, rateLimitResponse } from "@/lib/arcjet";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { checkStartupAccess } from "@/lib/startup-permissions";
 import {
-  searchMemories,
   addMemories,
   formatMemoriesForPrompt,
-  isMemoryEnabled,
+  searchMemories,
 } from "@/lib/memory/client";
+import {
+  consumeAICredit,
+  refundAICredit,
+} from "@/lib/polar/workspace-entitlements";
+import { checkStartupAccess } from "@/lib/startup-permissions";
 
 export const runtime = "nodejs";
 
 export async function POST(
-  req: Request,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
@@ -25,6 +34,9 @@ export async function POST(
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const decision = await checkRateLimit(req, session.user.id, ajChat);
+    if (decision) return rateLimitResponse(decision);
 
     const { id: startupIdOrSlug } = await params;
     const { messages, conversationId: requestedConversationId } =
@@ -86,31 +98,60 @@ export async function POST(
       return NextResponse.json({ error: "Access denied" }, { status: 403 });
     }
 
-    let conversationId = requestedConversationId;
+    const conversationId = normalizeConversationId(requestedConversationId);
 
-    // Handle persistence: Save the latest user message
-    const lastMessage = coreMessages[coreMessages.length - 1];
-    if (lastMessage && lastMessage.role === "user") {
-      // If no conversationId provided, create a new one
-      if (!conversationId) {
-        const newConversation = await db.startupConversation.create({
-          data: {
-            startupId: access.startupId,
-            title:
-              lastMessage.content.substring(0, 50) +
-              (lastMessage.content.length > 50 ? "..." : ""),
-          },
-        });
-        conversationId = newConversation.id;
-        console.log(`[CHAT_NEW_CONV] Created: ${conversationId}`);
+    if (!conversationId) {
+      return NextResponse.json(
+        { error: "conversationId is required" },
+        { status: 400 },
+      );
+    }
+
+    const conversation = await db.startupConversation.findFirst({
+      where: {
+        id: conversationId,
+        startupId: access.startupId,
+        isActive: true,
+      },
+      select: { id: true },
+    });
+
+    if (!conversation) {
+      return NextResponse.json(
+        { error: "Conversation not found" },
+        { status: 404 },
+      );
+    }
+
+    const aiCredit = await consumeAICredit(session.user.id);
+    if (!aiCredit.allowed) {
+      return NextResponse.json(
+        { error: "Your workspace has no AI credits remaining." },
+        { status: 402 },
+      );
+    }
+
+    let creditRefunded = false;
+    const refundFailedRequest = async () => {
+      if (creditRefunded) return;
+      creditRefunded = true;
+      try {
+        await refundAICredit(session.user.id);
+      } catch (refundError) {
+        console.error("Failed to refund VC Coach AI credit:", refundError);
       }
+    };
 
-      // Save user message
+    // Persist only the latest user message. The client sends the complete
+    // conversation so the model can retain context, but the database should
+    // receive one new user message per request.
+    const lastMessage = getLastUserMessage(coreMessages);
+    if (lastMessage) {
       await db.startupMessage.create({
         data: {
           conversationId,
           role: "user",
-          content: lastMessage.content,
+          content: serializeMessageContent(lastMessage.content),
         },
       });
       console.log(`[CHAT_USER_MSG] Saved to: ${conversationId}`);
@@ -134,8 +175,10 @@ export async function POST(
     }
 
     // Retrieve relevant memories from past conversations
-    const lastUserQuery =
-      coreMessages.filter((m: any) => m.role === "user").pop()?.content || "";
+    const lastUserMessage = getLastUserMessage(coreMessages);
+    const lastUserQuery = serializeMessageContent(
+      lastUserMessage?.content ?? "",
+    );
     const [userMemories, startupMemories] = await Promise.all([
       searchMemories(lastUserQuery, {
         userId: session.user.id,
@@ -274,14 +317,11 @@ If the user asks for a pitch review or market analysis, use your tools to get th
       "STARTUP_COACH",
     );
 
-    const textStreamResponse = result.toTextStreamResponse();
-    return new Response(textStreamResponse.body, {
-      status: textStreamResponse.status,
-      statusText: textStreamResponse.statusText,
-      headers: {
-        ...Object.fromEntries(textStreamResponse.headers.entries()),
-        "x-conversation-id": conversationId || "",
-        "Access-Control-Expose-Headers": "x-conversation-id",
+    return result.toUIMessageStreamResponse({
+      onError: (streamError) => {
+        void refundFailedRequest();
+        console.error("VC Coach model stream failed:", streamError);
+        return "VC Coach is temporarily unavailable. Your AI credit was restored; please try again.";
       },
     });
   } catch (error) {

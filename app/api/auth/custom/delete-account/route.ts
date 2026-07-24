@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { sendEmail } from "@/lib/email/client";
 import { renderPremiumEmail } from "@/lib/email/send";
+import { ajAuth, checkRateLimit, rateLimitResponse } from "@/lib/arcjet";
 import { db } from "@/lib/db";
 import { getServerSession } from "@/lib/get-server-session";
 
@@ -10,6 +11,9 @@ export async function DELETE(req: NextRequest) {
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const decision = await checkRateLimit(req, session.user.id, ajAuth);
+    if (decision) return rateLimitResponse(decision);
 
     const userId = session.user.id;
 

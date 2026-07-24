@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { ajAuth, checkRateLimit, rateLimitResponse } from "@/lib/arcjet";
 import { getServerSession } from "@/lib/get-server-session";
 import { emailPreferencesSchema } from "@/lib/validators/auth";
 
@@ -9,6 +10,9 @@ export async function PATCH(req: NextRequest) {
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const decision = await checkRateLimit(req, session.user.id, ajAuth);
+    if (decision) return rateLimitResponse(decision);
 
     const body = await req.json();
     const { emailNotifications } = emailPreferencesSchema.parse(body);

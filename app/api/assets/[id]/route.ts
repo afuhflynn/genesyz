@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { utapi } from "@/lib/uploadthing-server";
+import { removeWorkspaceFile } from "@/lib/polar/workspace-entitlements";
 
 export async function DELETE(
   _request: Request,
@@ -38,6 +39,7 @@ export async function DELETE(
       const fileKey = asset.fileUrl.split("/f/")[1];
       if (fileKey) {
         await utapi.deleteFiles(fileKey);
+        await removeWorkspaceFile(session.user.id, fileKey);
       }
     }
 

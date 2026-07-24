@@ -23,6 +23,7 @@ import {
   CheckCircle2,
   Circle,
   Clock3,
+  Flag,
   GripVertical,
   Plus,
   Trash2,
@@ -69,9 +70,11 @@ import {
   useMoveTask,
   useRenameTaskList,
   useTaskLists,
+  useTaskMilestones,
   useUpdateTask,
 } from "@/hooks";
 import { cn } from "@/lib/utils";
+import { DEFAULT_TASK_FILTERS, filterTaskLists, type TaskFilters as TaskFiltersState } from "@/lib/task-types";
 import { Skeleton } from "../ui/skeleton";
 
 const STATUSES = [
@@ -80,6 +83,14 @@ const STATUSES = [
   { id: "BLOCKED", label: "Blocked", icon: XCircle },
   { id: "DONE", label: "Done", icon: CheckCircle2 },
 ] as const;
+
+const PRIORITY_LABELS: Record<string, { label: string; color: string }> = {
+  NONE: { label: "", color: "" },
+  LOW: { label: "Low", color: "text-blue-500" },
+  MEDIUM: { label: "Med", color: "text-yellow-500" },
+  HIGH: { label: "High", color: "text-orange-500" },
+  URGENT: { label: "Urgent", color: "text-red-500" },
+};
 
 function TaskCard({
   startupId,
@@ -163,7 +174,7 @@ function TaskCard({
         className={cn("p-3 space-y-2", isDragging && "bg-muted opacity-60")}
       >
         <div className="flex items-start justify-between gap-2">
-          <div className="flex items-start gap-2 min-w-0">
+          <div className="flex items-start gap-2 min-w-0 flex-1">
             <button
               className="p-1 rounded hover:bg-muted cursor-grab active:cursor-grabbing"
               {...attributes}
@@ -173,14 +184,30 @@ function TaskCard({
             </button>
             <button
               type="button"
-              className="min-w-0 cursor-pointer text-left"
+              className="min-w-0 cursor-pointer text-left flex-1"
               onClick={() => onView(task)}
             >
-              <p className="font-medium text-sm truncate">{task.title}</p>
+              <div className="flex items-center gap-1.5">
+                {task.labels && task.labels.length > 0 && (
+                  <div className="flex gap-0.5 shrink-0">
+                    {task.labels.slice(0, 2).map((l) => (
+                      <div
+                        key={l.id}
+                        className="h-2 w-2 rounded-full"
+                        style={{ backgroundColor: l.label.color }}
+                      />
+                    ))}
+                  </div>
+                )}
+                <p className="font-medium text-sm truncate">{task.title}</p>
+              </div>
               {task.description && (
-                <p className="text-xs text-muted-foreground line-clamp-2">
+                <p className="text-xs text-muted-foreground line-clamp-1">
                   {task.description}
                 </p>
+              )}
+              {task.experiment && (
+                <p className="mt-1 truncate text-[10px] text-primary">Growth experiment: {task.experiment.title}</p>
               )}
             </button>
           </div>
@@ -195,12 +222,38 @@ function TaskCard({
             </Button>
           )}
         </div>
-        {task.deadline && (
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Calendar className="h-3 w-3" />
-            {format(new Date(task.deadline), "MMM d, yyyy")}
-          </div>
-        )}
+        <div className="flex items-center gap-2 flex-wrap">
+          {task.priority && task.priority !== "NONE" && (
+            <span
+              className={cn(
+                "inline-flex items-center gap-0.5 text-xs",
+                PRIORITY_LABELS[task.priority]?.color,
+              )}
+            >
+              <Flag className="h-3 w-3" />
+              {PRIORITY_LABELS[task.priority]?.label}
+            </span>
+          )}
+          {task.deadline && (
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+              <Calendar className="h-3 w-3" />
+              {format(new Date(task.deadline), "MMM d")}
+            </span>
+          )}
+          {task.assignees && task.assignees.length > 0 && (
+            <div className="flex -space-x-1 ml-auto">
+              {task.assignees.slice(0, 2).map((a) => (
+                <div
+                  key={a.id}
+                  className="flex h-5 w-5 items-center justify-center rounded-full bg-muted text-[10px] font-medium ring-1 ring-background"
+                  title={a.user?.name ?? ""}
+                >
+                  {a.user?.name?.charAt(0) ?? "?"}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         {isExpanded && (
           <div className="space-y-3 border-t pt-3">
@@ -301,7 +354,7 @@ function Column({
   );
 }
 
-export function TaskBoard({ startupId }: { startupId: string }) {
+export function TaskBoard({ startupId, filters = DEFAULT_TASK_FILTERS }: { startupId: string; filters?: TaskFiltersState }) {
   const { data: taskListsData, isLoading } = useTaskLists(startupId);
   const createTaskList = useCreateTaskList();
   const renameTaskList = useRenameTaskList();
@@ -311,6 +364,9 @@ export function TaskBoard({ startupId }: { startupId: string }) {
   const deleteTask = useDeleteTask();
 
   const lists: TaskList[] = taskListsData?.data?.lists || [];
+  const visibleLists = useMemo(() => filterTaskLists(lists, filters), [lists, filters]);
+  const { data: milestonesData } = useTaskMilestones(startupId);
+  const milestones = milestonesData?.data ?? [];
 
   const [activeTask, setActiveTask] = useState<TaskItem | null>(null);
 
@@ -322,6 +378,7 @@ export function TaskBoard({ startupId }: { startupId: string }) {
   const [taskTitle, setTaskTitle] = useState("");
   const [taskDescription, setTaskDescription] = useState("");
   const [taskDeadline, setTaskDeadline] = useState("");
+  const [taskMilestoneId, setTaskMilestoneId] = useState<string>("none");
 
   const [isRenameDialogOpen, setIsRenameDialogOpen] = useState(false);
   const [renameListId, setRenameListId] = useState("");
@@ -398,6 +455,7 @@ export function TaskBoard({ startupId }: { startupId: string }) {
         deadline: taskDeadline
           ? new Date(taskDeadline).toISOString()
           : undefined,
+        milestoneId: taskMilestoneId === "none" ? null : taskMilestoneId,
         status: "TODO",
       },
     });
@@ -405,6 +463,7 @@ export function TaskBoard({ startupId }: { startupId: string }) {
     setTaskTitle("");
     setTaskDescription("");
     setTaskDeadline("");
+    setTaskMilestoneId("none");
     setTaskListId("");
     setIsTaskDialogOpen(false);
   };
@@ -499,7 +558,7 @@ export function TaskBoard({ startupId }: { startupId: string }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Startup Tasks</h2>
+        <div />
         <div className="flex items-center gap-2">
           <Dialog open={isListDialogOpen} onOpenChange={setIsListDialogOpen}>
             <DialogTrigger asChild>
@@ -576,6 +635,15 @@ export function TaskBoard({ startupId }: { startupId: string }) {
                   value={taskDeadline}
                   onChange={(e) => setTaskDeadline(e.target.value)}
                 />
+
+                <Label htmlFor="task-milestone">Milestone</Label>
+                <Select value={taskMilestoneId} onValueChange={setTaskMilestoneId}>
+                  <SelectTrigger id="task-milestone"><SelectValue placeholder="No milestone" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No milestone</SelectItem>
+                    {milestones.map((milestone) => <SelectItem key={milestone.id} value={milestone.id}>{milestone.title}</SelectItem>)}
+                  </SelectContent>
+                </Select>
 
                 <Button onClick={handleCreateTask} className="w-full">
                   Create Task
@@ -668,7 +736,7 @@ export function TaskBoard({ startupId }: { startupId: string }) {
           onDragEnd={onDragEnd}
         >
           <div className="space-y-4">
-            {lists.map((list) => (
+            {visibleLists.map((list) => (
               <Card key={list.id}>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between gap-2">

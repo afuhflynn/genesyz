@@ -20,15 +20,21 @@ export async function GET(_request: NextRequest) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const [totalUsers, totalIdeas, totalResearched] = await Promise.all([
+  const [totalUsers, totalIdeas, totalResearched, totalCourses, totalEnrollments, totalCertificates] = await Promise.all([
     db.user.count(),
     db.idea.count({ where: { isArchived: false } }),
     db.idea.count({ where: { status: "RESEARCHED", isArchived: false } }),
+    db.course.count({ where: { isPublished: true } }),
+    db.enrollment.count(),
+    db.certificate.count(),
   ]);
 
   return NextResponse.json({
     totalUsers,
     totalIdeas,
     totalResearched,
+    totalCourses,
+    totalEnrollments,
+    totalCertificates,
   });
 }

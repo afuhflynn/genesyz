@@ -1,9 +1,11 @@
 import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
+import { ajAI, checkRateLimit, rateLimitResponse } from "@/lib/arcjet";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { inngest } from "@/lib/inngest/client";
 import { detectBestLocation, validateLocation } from "@/lib/location";
+import { consumeAICredit } from "@/lib/polar/workspace-entitlements";
 import { extractUrlsFromSources } from "@/lib/scraping";
 
 interface OnboardingData {
@@ -33,6 +35,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const decision = await checkRateLimit(request, session.user.id, ajAI);
+    if (decision) return rateLimitResponse(decision);
+
     const data: OnboardingData = await request.json();
 
     // Validate required fields
@@ -40,6 +45,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 },
+      );
+    }
+
+    const aiCredit = await consumeAICredit(session.user.id);
+    if (!aiCredit.allowed) {
+      return NextResponse.json(
+        { error: "Your workspace has no AI credits remaining." },
+        { status: 402 },
       );
     }
 

@@ -1,0 +1,16 @@
+CREATE TABLE IF NOT EXISTS "streaks" (
+  "id" TEXT NOT NULL,
+  "userId" TEXT NOT NULL,
+  "currentStreak" INTEGER NOT NULL DEFAULT 0,
+  "longestStreak" INTEGER NOT NULL DEFAULT 0,
+  "lastActiveDate" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT "streaks_pkey" PRIMARY KEY ("id")
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS "streaks_userId_key" ON "streaks"("userId");
+
+DO $$ BEGIN
+  ALTER TABLE "streaks" ADD CONSTRAINT "streaks_userId_fkey"
+    FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;

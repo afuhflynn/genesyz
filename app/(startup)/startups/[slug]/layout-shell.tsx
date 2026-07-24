@@ -1,11 +1,11 @@
 "use client";
 
-import { StartupWorkspaceHeader } from "@/components/layout/startup-workspace-header";
 import { StartupSidebar } from "@/components/layout/startup-sidebar";
+import { StartupWorkspaceHeader } from "@/components/layout/startup-workspace-header";
 import {
-  SidebarProvider,
   Sidebar,
   SidebarInset,
+  SidebarProvider,
 } from "@/components/ui/sidebar";
 
 interface StartupLayoutShellProps {
@@ -17,8 +17,10 @@ interface StartupLayoutShellProps {
     stage: string;
   };
   permissions: {
+    role?: "OWNER" | "ADMIN" | "MEMBER" | "VIEWER";
     canViewStartup: boolean;
     canManageTasks: boolean;
+    canManageTeam?: boolean;
     canViewSettings: boolean;
   };
   children: React.ReactNode;

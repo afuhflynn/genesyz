@@ -8,6 +8,7 @@ import {
   sendGuideMessage,
 } from "@/lib/agents/guide";
 import { auth } from "@/lib/auth";
+import { ajChat, checkRateLimit, rateLimitResponse } from "@/lib/arcjet";
 import { db } from "@/lib/db";
 
 // GET /api/ideas/[id]/guide - List conversations or get specific one
@@ -73,6 +74,9 @@ export async function POST(
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const decision = await checkRateLimit(request, session.user.id, ajChat);
+    if (decision) return rateLimitResponse(decision);
 
     const { id: ideaId } = await params;
     const body = await request.json();

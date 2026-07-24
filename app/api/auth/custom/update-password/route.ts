@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
+import { ajAuth, checkRateLimit, rateLimitResponse } from "@/lib/arcjet";
 import { getServerSession } from "@/lib/get-server-session";
 import { updatePasswordSchema } from "@/lib/validators/auth";
 
@@ -10,6 +11,9 @@ export async function PUT(req: NextRequest) {
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
+
+    const decision = await checkRateLimit(req, session.user.id, ajAuth);
+    if (decision) return rateLimitResponse(decision);
 
     const body = await req.json();
     const { currentPassword, newPassword } = updatePasswordSchema.parse(body);

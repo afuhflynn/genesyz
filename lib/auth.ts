@@ -17,9 +17,36 @@ import { magicLink, organization, twoFactor } from "better-auth/plugins";
 import { generateVerificationCode } from "@/lib/auth-utils";
 import { sendVerificationEmail } from "@/lib/email/send";
 import { syncEntitlement } from "@/lib/polar/entitlements";
+import {
+  syncOrganizationEntitlements,
+  workspacePlanFromPolarProduct,
+} from "@/lib/polar/workspace-entitlements";
+import { ac, admin, member, owner, viewer } from "./auth/access";
 import { db } from "./db";
 import { inngest } from "./inngest/client";
-import { ac, owner, admin, member, viewer } from "./auth/access";
+
+const checkoutProducts = [
+  { productId: process.env.NEXT_PUBLIC_POLAR_PRO_PRODUCT_ID, slug: "pro" },
+  {
+    productId: process.env.NEXT_PUBLIC_POLAR_FOUNDER_PRODUCT_ID,
+    slug: "founder",
+  },
+  { productId: process.env.NEXT_PUBLIC_POLAR_TEAM_PRODUCT_ID, slug: "team" },
+  {
+    productId: process.env.NEXT_PUBLIC_POLAR_GROWTH_PRODUCT_ID,
+    slug: "growth",
+  },
+  {
+    productId: process.env.NEXT_PUBLIC_POLAR_ACCELERATOR_PRODUCT_ID,
+    slug: "accelerator",
+  },
+  {
+    productId: process.env.NEXT_PUBLIC_POLAR_ENTERPRISE_PRODUCT_ID,
+    slug: "enterprise",
+  },
+].filter((product): product is { productId: string; slug: string } =>
+  Boolean(product.productId),
+);
 
 export const auth = betterAuth({
   database: prismaAdapter(db, {
@@ -117,6 +144,7 @@ export const auth = betterAuth({
             data: {
               name: `${user.name || user.email || "User"}'s Organization`,
               slug: finalSlug,
+              entitlement: { create: {} },
               members: {
                 create: {
                   userId: user.id,
@@ -140,12 +168,7 @@ export const auth = betterAuth({
       createCustomerOnSignUp: process.env.NODE_ENV !== "development",
       use: [
         checkout({
-          products: [
-            {
-              productId: process.env.NEXT_PUBLIC_POLAR_PRO_PRODUCT_ID!,
-              slug: "pro",
-            },
-          ],
+          products: checkoutProducts,
           successUrl: "/dashboard?checkout_id={CHECKOUT_ID}",
           authenticatedUsersOnly: true,
         }),
@@ -222,10 +245,23 @@ async function handleSubscriptionChange(
       ? "PRO"
       : "FREE";
 
+  const workspacePlan = workspacePlanFromPolarProduct(data.data.productId);
+
   await syncEntitlement(userId, {
     polarCustomerId: data.data.customerId,
     polarSubscriptionId: data.data.id,
     plan,
+    status: data.data.status === "active" ? "ACTIVE" : "PAST_DUE",
+    currentPeriodEnd: data.data.currentPeriodEnd
+      ? new Date(data.data.currentPeriodEnd)
+      : undefined,
+    cancelAtPeriodEnd: data.data.cancelAtPeriodEnd || false,
+  });
+
+  await syncOrganizationEntitlements(userId, {
+    polarCustomerId: data.data.customerId,
+    polarSubscriptionId: data.data.id,
+    plan: workspacePlan,
     status: data.data.status === "active" ? "ACTIVE" : "PAST_DUE",
     currentPeriodEnd: data.data.currentPeriodEnd
       ? new Date(data.data.currentPeriodEnd)
@@ -264,6 +300,17 @@ async function handleSubscriptionCanceled(
     cancelAtPeriodEnd: true,
   });
 
+  await syncOrganizationEntitlements(userId, {
+    polarCustomerId: data.data.customerId,
+    polarSubscriptionId: data.data.id,
+    plan: "EXPLORER",
+    status: "CANCELED",
+    currentPeriodEnd: data.data.currentPeriodEnd
+      ? new Date(data.data.currentPeriodEnd)
+      : undefined,
+    cancelAtPeriodEnd: true,
+  });
+
   await db.auditLog.create({
     data: {
       userId,
@@ -284,6 +331,13 @@ async function handleSubscriptionRevoked(
     polarCustomerId: data.data.customerId,
     polarSubscriptionId: data.data.id,
     plan: "FREE",
+    status: "EXPIRED",
+  });
+
+  await syncOrganizationEntitlements(userId, {
+    polarCustomerId: data.data.customerId,
+    polarSubscriptionId: data.data.id,
+    plan: "EXPLORER",
     status: "EXPIRED",
   });
 

@@ -32,7 +32,7 @@ export const ajRateLimit = arcjet({
     tokenBucket({
       mode: "LIVE",
       characteristics: ["userId"],
-      refillRate: 10,
+      refillRate: 30,
       interval: 60,
       capacity: 100,
     }),
@@ -44,7 +44,7 @@ export const ajAuth = arcjet({
   rules: [
     tokenBucket({
       mode: "LIVE",
-      characteristics: ["userId"],
+      characteristics: ["userId", "ip.src"],
       refillRate: 5,
       interval: 60,
       capacity: 20,
@@ -64,6 +64,58 @@ export const ajAI = arcjet({
     }),
   ],
 });
+
+export const ajChat = arcjet({
+  key: process.env.ARCJET_KEY!,
+  rules: [
+    tokenBucket({
+      mode: "LIVE",
+      characteristics: ["userId"],
+      refillRate: 10,
+      interval: 60,
+      capacity: 30,
+    }),
+  ],
+});
+
+export const RATE_LIMIT_ERROR = "Rate limit exceeded. Please try again later.";
+export const ACCESS_DENIED_ERROR = "Access Denied";
+
+function isExplicitArcjetTestBypass() {
+  return (
+    process.env.ARCJET_TEST_BYPASS === "true" &&
+    (process.env.NODE_ENV === "test" || process.env.NODE_ENV === "development")
+  );
+}
+
+export async function checkRateLimit(
+  request: NextRequest,
+  userId: string,
+  limiter: typeof ajAI | typeof ajAuth | typeof ajRateLimit | typeof ajChat = ajRateLimit,
+  requested = 1,
+): Promise<ArcjetDecision | null> {
+  // Tests may opt out explicitly. Development must exercise the same
+  // protection path as production so local verification cannot hide gaps.
+  if (isExplicitArcjetTestBypass()) {
+    return null;
+  }
+
+  const decision = await limiter.protect(request, { userId, requested });
+  if (decision.isDenied()) {
+    return decision;
+  }
+  return null;
+}
+
+export function rateLimitResponse(decision: ArcjetDecision) {
+  if (decision.reason.isRateLimit()) {
+    return Response.json(
+      { error: RATE_LIMIT_ERROR, retryAfterSeconds: 60 },
+      { status: 429, headers: { "Retry-After": "60" } },
+    );
+  }
+  return Response.json({ error: ACCESS_DENIED_ERROR }, { status: 403 });
+}
 
 // auth handlers
 const emailOptions = {
@@ -96,8 +148,9 @@ const signupOptions = {
 
 // protect nextjs requests
 export async function protect(req: NextRequest): Promise<ArcjetDecision> {
-  // Bypass Arcjet in local development to allow headless browser tests to run
-  if (process.env.NODE_ENV === "development") {
+  // Tests may explicitly bypass Arcjet; development and production must use
+  // the same protection path so local verification cannot hide gaps.
+  if (isExplicitArcjetTestBypass()) {
     return {
       isDenied: () => false,
       isAllowed: () => true,
@@ -126,7 +179,12 @@ export async function protect(req: NextRequest): Promise<ArcjetDecision> {
 
   // If this is a signup then use the special protectSignup rule
   // See https://docs.arcjet.com/signup-protection/quick-start
-  if (req.nextUrl.pathname.startsWith("/api/auth/custom/sign-up")) {
+  // Better Auth handles email registration at /api/auth/sign-up/email.
+  // Keep the custom route prefix covered for legacy auth flows as well.
+  if (
+    req.nextUrl.pathname.startsWith("/api/auth/sign-up") ||
+    req.nextUrl.pathname.startsWith("/api/auth/custom/sign-up")
+  ) {
     // Better-Auth reads the body, so we need to clone the request preemptively
     const body = await req.clone().json();
 

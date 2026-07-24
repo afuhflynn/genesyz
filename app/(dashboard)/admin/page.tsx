@@ -1,7 +1,16 @@
 "use client";
 
-import { CheckCircle2, Lightbulb, Users } from "lucide-react";
+import {
+  Award,
+  BookOpen,
+  CheckCircle2,
+  GraduationCap,
+  Lightbulb,
+  Users,
+} from "lucide-react";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAdminStats } from "@/hooks";
 
@@ -21,7 +30,7 @@ export default function AdminDashboardPage() {
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Users</CardTitle>
@@ -53,6 +62,57 @@ export default function AdminDashboardPage() {
             </div>
           </CardContent>
         </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Published Courses
+            </CardTitle>
+            <BookOpen className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {stats?.totalCourses || 0}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Total Enrollments
+            </CardTitle>
+            <GraduationCap className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {stats?.totalEnrollments || 0}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Certificates
+            </CardTitle>
+            <Award className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {stats?.totalCertificates || 0}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="flex gap-4">
+        <Button asChild variant="outline">
+          <Link href="/admin/users">Manage Users</Link>
+        </Button>
+        <Button asChild variant="outline">
+          <Link href="/admin/lms">Manage Courses</Link>
+        </Button>
+        <Button asChild variant="outline">
+          <Link href="/admin/lms/analytics">View Analytics</Link>
+        </Button>
       </div>
     </div>
   );
@@ -66,7 +126,7 @@ function AdminDashboardSkeleton() {
         <Skeleton className="h-4 w-64" />
       </div>
       <div className="grid gap-4 md:grid-cols-3">
-        {Array(3)
+        {Array(6)
           .fill(0)
           .map((_, i) => (
             <Skeleton key={`item-${i}`} className="h-32" />

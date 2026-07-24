@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "producer": {"name": "codebase-index", "version": "bundled-with-compylar-0.1.1"},
+  "generatedAt": "2026-07-22T19:27:01Z",
+  "brainFingerprint": "35d02afad82c986d",
+  "artifact": {"path": "CODEBASE_INDEX.md", "sha256": "0dc74ad79fbe04509c44e116a50b5cc5763a237467238fc17132363276be9b08"},
+  "verification": {"complete": true, "blockers": []},
+  "coverage": ["foundation", "system", "flow", "contract", "test-guarantee", "convention", "unknown"],
+  "unknowns": ["Deployment provider and CI workflow are not represented in the indexed tracked source scope.", "Environment variable values are intentionally not indexed."],
+  "findings": [
+    {"key": "next-app-router-runtime", "kind": "system", "summary": "Genesyz is a Next.js App Router application with a shared root layout.", "confidence": "high", "sources": [{"path": "app/layout.tsx", "startLine": 1, "endLine": 12}]},
+    {"key": "root-layout-providers", "kind": "system", "summary": "The root layout installs UploadThing SSR, nuqs, React Query, theme, analytics, and toast providers.", "confidence": "high", "sources": [{"path": "app/layout.tsx", "startLine": 64, "endLine": 94}]},
+    {"key": "proxy-auth-security-boundary", "kind": "constraint", "summary": "The proxy combines Arcjet shield/bot detection with cookie-based protected-route and auth-route redirects.", "confidence": "high", "sources": [{"path": "proxy.ts", "startLine": 1, "endLine": 14}, {"path": "proxy.ts", "startLine": 31, "endLine": 65}]},
+    {"key": "prisma-domain-schema", "kind": "system", "summary": "The application persists its domain state through a Prisma-backed database client used by route handlers and services.", "confidence": "high", "sources": [{"path": "lib/db.ts", "startLine": 1, "endLine": 25}]},
+    {"key": "idea-research-flow", "kind": "flow", "summary": "Idea creation authenticates, rate-limits and checks entitlement, accepts multimodal form data, extracts URLs, resolves location, and starts research.", "confidence": "high", "sources": [{"path": "app/api/ideas/route.ts", "startLine": 77, "endLine": 105}, {"path": "app/api/ideas/route.ts", "startLine": 107, "endLine": 218}]},
+    {"key": "research-pipeline-phases", "kind": "flow", "summary": "Research runs Interpreter, four parallel specialist agents, then Synthesis, persisting packets/scores and marking the idea researched.", "confidence": "high", "sources": [{"path": "lib/agents/pipeline.ts", "startLine": 61, "endLine": 115}, {"path": "lib/agents/pipeline.ts", "startLine": 118, "endLine": 180}, {"path": "lib/agents/pipeline.ts", "startLine": 182, "endLine": 240}]},
+    {"key": "startup-weekly-update-contract", "kind": "constraint", "summary": "Weekly update creation validates input, checks startup capability, prevents duplicate weeks, persists goals and metrics, and audits the action.", "confidence": "high", "sources": [{"path": "app/api/startups/[id]/updates/route.ts", "startLine": 67, "endLine": 121}, {"path": "app/api/startups/[id]/updates/route.ts", "startLine": 138, "endLine": 218}]},
+    {"key": "inngest-background-boundary", "kind": "system", "summary": "The Inngest route registers research, email, reports, reminders, announcements, opportunity discovery, notifications, and cleanup functions with a 300-second max duration.", "confidence": "high", "sources": [{"path": "app/api/inngest/route.ts", "startLine": 1, "endLine": 60}]},
+    {"key": "test-coverage-scope", "kind": "gotcha", "summary": "The repository-owned email test is the only test file found in the indexed source scope.", "confidence": "medium", "sources": [{"path": "lib/email/send.test.ts", "startLine": 1, "endLine": 51}]},
+    {"key": "api-handler-scan-size", "kind": "unknown", "summary": "The current deterministic scan contains app/api route handler files; endpoint semantics and method counts remain route-specific.", "confidence": "high", "sources": [{"path": "app/api/inngest/route.ts", "startLine": 1, "endLine": 4}]}
+  ]
+}

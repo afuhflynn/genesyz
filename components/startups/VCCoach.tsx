@@ -17,8 +17,34 @@ import {
   UserIcon,
   ZapIcon,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarHeader,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuAction,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarRail,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  useCreateStartupConversation,
+  useDeleteStartupConversation,
+  useStartupConversation,
+  useStartupConversations,
+} from "@/hooks";
 import {
   Conversation,
   ConversationContent,
@@ -34,9 +60,9 @@ import {
 import {
   PromptInput,
   PromptInputBody,
-  PromptInputTextarea,
   PromptInputFooter,
   PromptInputSubmit,
+  PromptInputTextarea,
   PromptInputTools,
 } from "../ai-elements/prompt-input";
 import {
@@ -44,32 +70,6 @@ import {
   ReasoningContent,
   ReasoningTrigger,
 } from "../ai-elements/reasoning";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarRail,
-  SidebarTrigger,
-  SidebarInset,
-  SidebarFooter,
-  SidebarMenuAction,
-} from "@/components/ui/sidebar";
-import Link from "next/link";
-import {
-  useStartupConversations,
-  useStartupConversation,
-  useDeleteStartupConversation,
-  useCreateStartupConversation,
-} from "@/hooks";
-import { toast } from "sonner";
-import { Skeleton } from "@/components/ui/skeleton";
 
 interface VCCoachProps {
   startupId: string;
@@ -92,7 +92,7 @@ export function VCCoach({
   const searchParams = useSearchParams();
   const slug = params.slug as string;
   const hasAutoSent = useRef(false);
-  const pendingConvIdRef = useRef<string | null>(null);
+  const conversationCreationRef = useRef<Promise<string> | null>(null);
 
   const { data: conversations, refetch: refetchList } =
     useStartupConversations(startupId);
@@ -106,61 +106,23 @@ export function VCCoach({
     activeConvIdRef.current = activeConvId;
   }, [activeConvId]);
 
-  const { messages, sendMessage, status, setMessages } = useChat({
-    id: activeConvId || undefined,
-    transport: new DefaultChatTransport({
-      api: `/api/startups/${startupId}/chat`,
-      body: () => ({
-        conversationId: activeConvIdRef.current,
+  const transport = useMemo(
+    () =>
+      new DefaultChatTransport({
+        api: `/api/startups/${startupId}/chat`,
+        body: () => ({
+          conversationId: activeConvIdRef.current,
+        }),
       }),
-      fetch: async (url: RequestInfo | URL, init: RequestInit | undefined) => {
-        console.log("[FETCH_INTERCEPTOR] Initiated request to:", url);
-        const response = await fetch(url, init);
-        console.log("[FETCH_INTERCEPTOR] Response status:", response.status);
-        console.log(
-          "[FETCH_INTERCEPTOR] Response headers:",
-          Array.from(response.headers.entries()),
-        );
-        const convId = response.headers.get("x-conversation-id");
-        console.log("[FETCH_INTERCEPTOR] Found x-conversation-id:", convId);
-        if (convId && activeConvId !== convId) {
-          pendingConvIdRef.current = convId;
-          console.log(
-            "[FETCH_INTERCEPTOR] Set pendingConvIdRef.current:",
-            convId,
-          );
-        }
-        return response;
-      },
-    }),
+    [startupId],
+  );
+
+  const { messages, sendMessage, status, error, setMessages } = useChat({
+    id: activeConvId || undefined,
+    transport,
   });
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      (window as any).__chatStatus = status;
-    }
-    console.log("[VC_COACH_STATUS_CHANGE] Current status:", status);
-  }, [status]);
-
-  useEffect(() => {
-    if (status === "ready" && pendingConvIdRef.current) {
-      const newConvId = pendingConvIdRef.current;
-      console.log(
-        "[STATUS_READY] Updating browser URL to:",
-        `/startups/${slug}/chat/${newConvId}`,
-      );
-      window.history.replaceState(
-        null,
-        "",
-        `/startups/${slug}/chat/${newConvId}`,
-      );
-      setActiveConvId(newConvId);
-      pendingConvIdRef.current = null;
-      refetchList();
-    }
-  }, [status, slug, refetchList]);
-
-  const isLoading = status === "streaming";
+  const isLoading = status === "streaming" || status === "submitted";
 
   const loadMessagesFromDb = useCallback(
     (msgs: any[]) => {
@@ -212,30 +174,15 @@ export function VCCoach({
   }, [conversationData, activeConvId, loadMessagesFromDb, setMessages]);
 
   useEffect(() => {
-    setActiveConvId(conversationId ?? null);
+    const nextConversationId = conversationId ?? null;
+    activeConvIdRef.current = nextConversationId;
+    setActiveConvId(nextConversationId);
     setMessages([]); // Clear messages immediately when switching sessions
   }, [conversationId, setMessages]);
 
-  useEffect(() => {
-    const initialQuestion = searchParams.get("q");
-    if (initialQuestion && activeConvId && !hasAutoSent.current) {
-      hasAutoSent.current = true;
-      const timer = setTimeout(
-        () => sendMessage({ text: initialQuestion }),
-        100,
-      );
-      return () => clearTimeout(timer);
-    }
-  }, [searchParams, activeConvId, sendMessage]);
-
   const handleNewChat = () => {
+    hasAutoSent.current = false;
     router.push(`/startups/${slug}/chat`);
-  };
-
-  const handleSelectConversation = (id: string) => {
-    if (activeConvId !== id) {
-      router.push(`/startups/${slug}/chat/${id}`);
-    }
   };
 
   const handleDelete = async (e: React.MouseEvent, id: string) => {
@@ -248,9 +195,56 @@ export function VCCoach({
     }
   };
 
-  const handleSendMessage = async (text: string) => {
-    sendMessage({ text });
-  };
+  const handleSendMessage = useCallback(
+    async (text: string) => {
+      if (!text.trim() || isLoading) return;
+
+      let conversationIdToUse = activeConvIdRef.current;
+      if (!conversationIdToUse) {
+        const pendingCreation =
+          conversationCreationRef.current ??
+          createConversation
+            .mutateAsync({
+              startupId,
+              title: text.trim().slice(0, 50),
+            })
+            .then((result) => result.data.id);
+
+        conversationCreationRef.current = pendingCreation;
+        try {
+          conversationIdToUse = await pendingCreation;
+        } finally {
+          if (conversationCreationRef.current === pendingCreation) {
+            conversationCreationRef.current = null;
+          }
+        }
+
+        activeConvIdRef.current = conversationIdToUse;
+        setActiveConvId(conversationIdToUse);
+        window.history.replaceState(
+          null,
+          "",
+          `/startups/${slug}/chat/${conversationIdToUse}`,
+        );
+        await refetchList();
+      }
+
+      sendMessage({ text });
+    },
+    [createConversation, isLoading, refetchList, sendMessage, slug, startupId],
+  );
+
+  useEffect(() => {
+    const initialQuestion = searchParams.get("q");
+    if (initialQuestion && !hasAutoSent.current) {
+      hasAutoSent.current = true;
+      const timer = setTimeout(
+        () => void handleSendMessage(initialQuestion),
+        100,
+      );
+      return () => clearTimeout(timer);
+    }
+  }, [handleSendMessage, searchParams]);
 
   const handleCopy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -437,7 +431,7 @@ export function VCCoach({
                     )}
 
                     <div className="flex flex-col gap-2 flex-1">
-                      {message.parts.map((part, i) => {
+                      {message.parts.map((part) => {
                         if (part.type === "text") {
                           const thinkingMatch = part.text.match(
                             /<thinking>([\s\S]*?)<\/thinking>/,
@@ -447,7 +441,10 @@ export function VCCoach({
                             .trim();
 
                           return (
-                            <div key={i} className="space-y-2">
+                            <div
+                              key={`${message.id}-${part.type}-${part.type === "text" ? part.text.slice(0, 24) : "part"}`}
+                              className="space-y-2"
+                            >
                               {thinkingMatch && (
                                 <Reasoning defaultOpen={false}>
                                   <ReasoningTrigger />
@@ -508,6 +505,12 @@ export function VCCoach({
                   <RefreshCwIcon className="w-3 h-3 animate-spin" />
                   <span className="text-xs">Thinking...</span>
                 </div>
+              </div>
+            )}
+            {error && (
+              <div className="mx-4 mb-4 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                {error.message ||
+                  "The VC Coach could not complete that response."}
               </div>
             )}
             <ConversationScrollButton />

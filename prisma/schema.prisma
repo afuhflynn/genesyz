@@ -33,27 +33,42 @@ model User {
   resetTokenExpiry DateTime?
 
   // Preferences
-  emailNotifications Boolean @default(true)
+  emailNotifications  Boolean @default(true)
   onboardingDismissed Boolean @default(false)
-  location           String?
-  locationContext    Json?
+  location            String?
+  locationContext     Json?
 
   role             UserRole @default(USER)
   twoFactorEnabled Boolean  @default(false)
 
   // Relations
-  sessions     Session[]
-  accounts     Account[]
-  ideas        Idea[]
-  entitlements Entitlement[]
-  auditLogs    AuditLog[]
-  startups     Startup[]
-  accelerators Accelerator[]
-  startupMembers StartupMember[]
+  sessions           Session[]
+  accounts           Account[]
+  ideas              Idea[]
+  entitlements       Entitlement[]
+  auditLogs          AuditLog[]
+  startups           Startup[]
+  accelerators       Accelerator[]
+  startupMembers     StartupMember[]
   acceleratorMembers AcceleratorMember[]
-  members      Member[]
-  invitations  Invitation[]
-  twoFactor    TwoFactor?
+  members            Member[]
+  invitations        Invitation[]
+  twoFactor          TwoFactor?
+
+  // School / LMS
+  enrollments        Enrollment[]
+  quizAttempts       QuizAttempt[]
+  submissions        Submission[]
+  certificates       Certificate[]
+  userBadges         UserBadge[]
+  streak             Streak?
+  learningActivities LearningActivity[]
+  courseAssignments  CourseAssignment[]
+  usageEvents        WorkspaceUsageEvent[]
+  uploadedFiles      WorkspaceFile[]
+
+  // Tasks
+  taskAssignees TaskAssignee[]
 
   @@map("users")
 }
@@ -62,11 +77,11 @@ model User {
 // Two Factor Auth (Better Auth plugin)
 // ===========================================
 model TwoFactor {
-  id         String  @id @default(cuid())
-  secret     String
+  id          String  @id @default(cuid())
+  secret      String
   backupCodes String
-  userId     String  @unique
-  verified   Boolean @default(true)
+  userId      String  @unique
+  verified    Boolean @default(true)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -151,9 +166,14 @@ model Organization {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  members     Member[]
-  invitations Invitation[]
-  startups    Startup[]
+  members           Member[]
+  invitations       Invitation[]
+  startups          Startup[]
+  hostedProjects    HostedProject[]
+  entitlement       OrganizationEntitlement?
+  courseAssignments CourseAssignment[]
+  usageEvents       WorkspaceUsageEvent[]
+  files             WorkspaceFile[]
 
   @@map("organization")
 }
@@ -203,9 +223,9 @@ model Idea {
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
   researchedAt DateTime?
-  
+
   // Sharing
-  shareToken   String?   @unique // For public sharing
+  shareToken String? @unique // For public sharing
 
   // Relations
   user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -224,16 +244,16 @@ model Idea {
 
   // Location Targeting
   targetLocation  String? // User-specified location (e.g., "United States", "California")
-  locationContext Json?   // Structured location data: { country, region, city, timezone }
+  locationContext Json? // Structured location data: { country, region, city, timezone }
 
   // URL Handling
-  extractedUrls String[] @default([]) // URLs found in user input
-  urlContents   UrlContent[]          // Scraped content from URLs
+  extractedUrls String[]     @default([]) // URLs found in user input
+  urlContents   UrlContent[] // Scraped content from URLs
 
   // Prompt Tracking & Contextualization
-  originalPrompt    String? @db.Text // What user actually submitted
-  interpretedPrompt String? @db.Text // AI's interpretation/enhancement
-  promptVersions    PromptVersion[]  // Track prompt edits
+  originalPrompt    String?         @db.Text // What user actually submitted
+  interpretedPrompt String?         @db.Text // AI's interpretation/enhancement
+  promptVersions    PromptVersion[] // Track prompt edits
 
   // AI Guide
   guideConversations GuideConversation[]
@@ -243,6 +263,7 @@ model Idea {
 
   // Research Feed
   researchFeedItems ResearchFeedItem[]
+  files             WorkspaceFile[]
 
   @@index([userId])
   @@index([status])
@@ -428,9 +449,65 @@ model Entitlement {
   @@map("entitlements")
 }
 
+// Organization-owned platform billing. User entitlements remain temporarily
+// for backwards compatibility while workspace billing is rolled out.
+model OrganizationEntitlement {
+  id                  String            @id @default(cuid())
+  organizationId      String            @unique
+  polarCustomerId     String?
+  polarSubscriptionId String?
+  plan                WorkspacePlan     @default(EXPLORER)
+  status              EntitlementStatus @default(ACTIVE)
+  seats               Int               @default(1)
+  maxStartups         Int               @default(1)
+  aiCredits           Int               @default(100)
+  builderCredits      Int               @default(0)
+  hostingCredits      Int               @default(0)
+  storageBytes        BigInt            @default(0)
+  storageLimitBytes   BigInt            @default(262144000)
+  hostedProjectLimit  Int               @default(0)
+  capabilities        Json              @default("{}")
+  currentPeriodEnd    DateTime?
+  cancelAtPeriodEnd   Boolean           @default(false)
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([polarCustomerId])
+  @@index([polarSubscriptionId])
+  @@map("organization_entitlements")
+}
+
+model StartupEntitlement {
+  id               String        @id @default(cuid())
+  startupId        String        @unique
+  plan             WorkspacePlan @default(FOUNDER)
+  inherited        Boolean       @default(true)
+  aiCredits        Int           @default(25)
+  builderCredits   Int           @default(0)
+  hostingCredits   Int           @default(0)
+  featureOverrides Json?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  startup Startup @relation(fields: [startupId], references: [id], onDelete: Cascade)
+
+  @@map("startup_entitlements")
+}
+
 enum EntitlementPlan {
   FREE
   PRO
+}
+
+enum WorkspacePlan {
+  EXPLORER
+  FOUNDER
+  TEAM
+  GROWTH
+  ACCELERATOR
+  ENTERPRISE
 }
 
 enum EntitlementStatus {
@@ -468,17 +545,17 @@ model AuditLog {
 // ===========================================
 
 model UrlContent {
-  id          String   @id @default(cuid())
+  id          String           @id @default(cuid())
   ideaId      String
   url         String
   title       String?
   description String?
-  content     String   @db.Text // Scraped text content
-  metadata    Json?    // Headers, timestamps, contentType, etc.
+  content     String           @db.Text // Scraped text content
+  metadata    Json? // Headers, timestamps, contentType, etc.
   status      UrlContentStatus @default(PENDING) // PENDING, SCRAPED, FAILED
-  error       String?  // Error message if scraping failed
+  error       String? // Error message if scraping failed
   scrapedAt   DateTime? // When scraping completed
-  createdAt   DateTime @default(now())
+  createdAt   DateTime         @default(now())
 
   idea Idea @relation(fields: [ideaId], references: [id], onDelete: Cascade)
 
@@ -503,7 +580,7 @@ model PromptVersion {
   prompt            String   @db.Text // The prompt text at this version
   editedAt          DateTime @default(now())
   triggeredResearch Boolean  @default(false) // Whether this edit triggered new research
-  editedBy          String?  // User ID if available
+  editedBy          String? // User ID if available
 
   idea Idea @relation(fields: [ideaId], references: [id], onDelete: Cascade)
 
@@ -517,13 +594,13 @@ model PromptVersion {
 // ===========================================
 
 model GuideConversation {
-  id        String         @id @default(cuid())
-  ideaId    String
-  title     String?        // Optional title for the conversation
-  isActive  Boolean        @default(true) // Soft delete support
-  messageCount Int        @default(0)
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
+  id           String   @id @default(cuid())
+  ideaId       String
+  title        String? // Optional title for the conversation
+  isActive     Boolean  @default(true) // Soft delete support
+  messageCount Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   messages GuideMessage[]
   idea     Idea           @relation(fields: [ideaId], references: [id], onDelete: Cascade)
@@ -534,14 +611,14 @@ model GuideConversation {
 }
 
 model GuideMessage {
-  id             String            @id @default(cuid())
+  id             String           @id @default(cuid())
   conversationId String
   role           GuideMessageRole
-  content        String            @db.Text
-  toolCalls      Json?             // Any tool calls made by AI (search, etc.)
-  toolResults    Json?             // Results from tool calls
-  tokensUsed     Int?              // Token count for this message
-  createdAt      DateTime          @default(now())
+  content        String           @db.Text
+  toolCalls      Json? // Any tool calls made by AI (search, etc.)
+  toolResults    Json? // Results from tool calls
+  tokensUsed     Int? // Token count for this message
+  createdAt      DateTime         @default(now())
 
   conversation GuideConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
@@ -561,17 +638,17 @@ enum GuideMessageRole {
 // ===========================================
 
 model Startup {
-  id        String   @id @default(cuid())
-  ideaId    String?  @unique
-  userId    String
+  id     String  @id @default(cuid())
+  ideaId String? @unique
+  userId String
 
   // Profile Data
-  name        String
-  slug        String   @unique
-  tagline     String?
-  description String?  @db.Text
-  industry    String?
-  stage       StartupStage @default(IDEA)
+  name         String
+  slug         String        @unique
+  tagline      String?
+  description  String?       @db.Text
+  industry     String?
+  stage        StartupStage  @default(IDEA)
   targetMarket TargetMarket?
 
   // Branding
@@ -595,47 +672,203 @@ model Startup {
   lastUpdateAt      DateTime?
 
   // Status
-  isActive       Boolean   @default(true)
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  organizationId String?   @unique
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  organizationId String?
 
   // Relations
-  idea          Idea?          @relation(fields: [ideaId], references: [id], onDelete: SetNull)
-  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  organization  Organization?  @relation(fields: [organizationId], references: [id], onDelete: SetNull)
-  weeklyUpdates WeeklyUpdate[]
-  metrics       StartupMetric[]
-  goals         StartupGoal[]
-  opportunities StartupOpportunity[]
-  cohortStartups CohortStartup[]
+  idea                    Idea?                    @relation(fields: [ideaId], references: [id], onDelete: SetNull)
+  user                    User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization            Organization?            @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  entitlement             StartupEntitlement?
+  weeklyUpdates           WeeklyUpdate[]
+  metrics                 StartupMetric[]
+  goals                   StartupGoal[]
+  opportunities           StartupOpportunity[]
+  cohortStartups          CohortStartup[]
   acceleratorApplications AcceleratorApplication[]
-  streak         StartupStreak?
-  taskLists      TaskList[]
-  tasks          Task[]
-  members       StartupMember[]
-  followers     StartupFollower[]
-  conversations StartupConversation[]
-  researchFeedItems ResearchFeedItem[]
-  flags         StartupFlag[]
-  mentorMatches MentorMatch[]
+  streak                  StartupStreak?
+  taskLists               TaskList[]
+  tasks                   Task[]
+  taskMilestones          TaskMilestone[]
+  growthExperiments       GrowthExperiment[]
+  members                 StartupMember[]
+  followers               StartupFollower[]
+  conversations           StartupConversation[]
+  researchFeedItems       ResearchFeedItem[]
+  flags                   StartupFlag[]
+  mentorMatches           MentorMatch[]
+  taskLabels              TaskLabel[]
+  customerPersonas        CustomerPersona[]
+  growthCampaigns         GrowthCampaign[]
+  growthEvents            GrowthEvent[]
+  prototypes              Prototype[]
+  hostedProjects          HostedProject[]
+  usageEvents             WorkspaceUsageEvent[]
+  files                   WorkspaceFile[]
+  lectureProgresses       LectureProgress[]
+  enrollments             Enrollment[]
+  certificates            Certificate[]
 
   @@index([userId])
   @@index([slug])
   @@map("startups")
 }
 
-model StartupConversation {
-  id        String         @id @default(cuid())
-  startupId String
-  title     String?
-  isActive  Boolean        @default(true)
-  messageCount Int         @default(0)
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
+model Prototype {
+  id          String    @id @default(cuid())
+  startupId   String
+  name        String
+  prompt      String?   @db.Text
+  html        String    @db.Text
+  status      String    @default("DRAFT")
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
-  messages  StartupMessage[]
-  startup   Startup        @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  startup        Startup         @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  hostedProject  HostedProject?
+  hostedReleases HostedRelease[]
+
+  @@index([startupId, updatedAt])
+  @@map("prototypes")
+}
+
+model HostedProject {
+  id              String   @id @default(cuid())
+  organizationId  String
+  startupId       String
+  prototypeId     String   @unique
+  slug            String   @unique
+  provider        String   @default("static")
+  status          String   @default("ACTIVE")
+  activeReleaseId String?  @unique
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  organization  Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  startup       Startup         @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  prototype     Prototype       @relation(fields: [prototypeId], references: [id], onDelete: Cascade)
+  releases      HostedRelease[]
+  route         HostedRoute?
+  activeRelease HostedRelease?  @relation("ActiveHostedRelease", fields: [activeReleaseId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, status])
+  @@index([startupId])
+  @@map("hosted_projects")
+}
+
+model HostedRelease {
+  id          String    @id @default(cuid())
+  projectId   String
+  prototypeId String
+  version     Int
+  provider    String    @default("static")
+  status      String    @default("VALIDATED")
+  html        String    @db.Text
+  manifest    Json?
+  error       String?   @db.Text
+  promotedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  project   HostedProject        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  prototype Prototype            @relation(fields: [prototypeId], references: [id], onDelete: Cascade)
+  activeFor HostedProject?       @relation("ActiveHostedRelease")
+  events    HostedReleaseEvent[]
+
+  @@unique([projectId, version])
+  @@index([projectId, status])
+  @@map("hosted_releases")
+}
+
+model HostedReleaseEvent {
+  id        String   @id @default(cuid())
+  releaseId String
+  type      String
+  message   String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  release HostedRelease @relation(fields: [releaseId], references: [id], onDelete: Cascade)
+
+  @@index([releaseId, createdAt])
+  @@map("hosted_release_events")
+}
+
+model HostedRoute {
+  id        String   @id @default(cuid())
+  projectId String   @unique
+  slug      String   @unique
+  status    String   @default("ACTIVE")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project HostedProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("hosted_routes")
+}
+
+model WorkspaceUsageEvent {
+  id             String   @id @default(cuid())
+  organizationId String
+  actorId        String
+  startupId      String?
+  resource       String
+  amount         Int
+  operationKey   String   @unique
+  status         String   @default("COMMITTED")
+  metadata       Json?
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  actor        User         @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  startup      Startup?     @relation(fields: [startupId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, resource, createdAt])
+  @@index([startupId])
+  @@map("workspace_usage_events")
+}
+
+model WorkspaceFile {
+  id             String    @id @default(cuid())
+  organizationId String
+  uploadedById   String
+  startupId      String?
+  ideaId         String?
+  objectKey      String    @unique
+  url            String?
+  name           String?
+  mimeType       String?
+  byteSize       BigInt
+  status         String    @default("PENDING")
+  deletedAt      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  uploadedBy   User         @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+  startup      Startup?     @relation(fields: [startupId], references: [id], onDelete: SetNull)
+  idea         Idea?        @relation(fields: [ideaId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, status])
+  @@index([startupId])
+  @@index([ideaId])
+  @@map("workspace_files")
+}
+
+model StartupConversation {
+  id           String   @id @default(cuid())
+  startupId    String
+  title        String?
+  isActive     Boolean  @default(true)
+  messageCount Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  messages StartupMessage[]
+  startup  Startup          @relation(fields: [startupId], references: [id], onDelete: Cascade)
 
   @@index([startupId])
   @@index([isActive])
@@ -643,16 +876,16 @@ model StartupConversation {
 }
 
 model StartupMessage {
-  id             String            @id @default(cuid())
+  id             String   @id @default(cuid())
   conversationId String
-  role           String            // user, assistant, system
-  content        String            @db.Text
+  role           String // user, assistant, system
+  content        String   @db.Text
   toolCalls      Json?
   toolResults    Json?
   tokensUsed     Int?
-  createdAt      DateTime          @default(now())
+  createdAt      DateTime @default(now())
 
-  conversation   StartupConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversation StartupConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
   @@index([conversationId])
   @@index([createdAt])
@@ -667,7 +900,7 @@ model StartupFollower {
   createdAt DateTime @default(now())
   createdBy String?
 
-  startup   Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  startup Startup @relation(fields: [startupId], references: [id], onDelete: Cascade)
 
   @@unique([startupId, email])
   @@index([startupId])
@@ -676,15 +909,15 @@ model StartupFollower {
 }
 
 model StartupMember {
-  id        String           @id @default(cuid())
+  id        String            @id @default(cuid())
   startupId String
   userId    String
   role      StartupMemberRole @default(MEMBER)
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
 
-  startup   Startup          @relation(fields: [startupId], references: [id], onDelete: Cascade)
-  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  startup Startup @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([startupId, userId])
   @@index([startupId])
@@ -693,8 +926,8 @@ model StartupMember {
 }
 
 model WeeklyUpdate {
-  id        String   @id @default(cuid())
-  startupId String
+  id         String   @id @default(cuid())
+  startupId  String
   weekNumber Int
   weekStart  DateTime
   weekEnd    DateTime
@@ -723,7 +956,7 @@ model WeeklyUpdate {
   goalsCompletionRate Float?
 
   // Goals & Morale
-  moraleScore     Int     // 1-10
+  moraleScore     Int // 1-10
   topImprovements String? @db.Text
   biggestObstacle String? @db.Text
 
@@ -733,13 +966,13 @@ model WeeklyUpdate {
   aiRecommendations Json?
 
   // Editability
-  editableUntil DateTime?  // Can be edited until this time (createdAt + 3 days)
+  editableUntil DateTime? // Can be edited until this time (createdAt + 3 days)
   isLocked      Boolean   @default(false)
   lockedAt      DateTime?
 
   createdAt DateTime @default(now())
 
-  startup       Startup              @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  startup       Startup             @relation(fields: [startupId], references: [id], onDelete: Cascade)
   goals         WeeklyGoal[]
   metricHistory WeeklyMetricEntry[]
 
@@ -750,11 +983,11 @@ model WeeklyUpdate {
 }
 
 model WeeklyGoal {
-  id              String @id @default(cuid())
-  weeklyUpdateId  String
-  content         String
-  priority        Int    @default(1)
-  completed       Boolean @default(false)
+  id             String  @id @default(cuid())
+  weeklyUpdateId String
+  content        String
+  priority       Int     @default(1)
+  completed      Boolean @default(false)
 
   weeklyUpdate WeeklyUpdate @relation(fields: [weeklyUpdateId], references: [id], onDelete: Cascade)
 
@@ -794,7 +1027,7 @@ model StartupGoal {
   content   String
   completed Boolean   @default(false)
   dueDate   DateTime?
-  priority  Int       @default(0)  // 1=Top Priority, 2=Secondary, 3=Third, 0=Normal
+  priority  Int       @default(0) // 1=Top Priority, 2=Secondary, 3=Third, 0=Normal
   createdAt DateTime  @default(now())
 
   startup Startup @relation(fields: [startupId], references: [id], onDelete: Cascade)
@@ -825,6 +1058,14 @@ enum TaskStatus {
   DONE
 }
 
+enum TaskPriority {
+  NONE
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
 model TaskList {
   id        String   @id @default(cuid())
   startupId String
@@ -842,27 +1083,235 @@ model TaskList {
 }
 
 model Task {
-  id          String     @id @default(cuid())
-  startupId   String
-  listId      String
-  title       String
-  description String?    @db.Text
-  deadline    DateTime?
-  status      TaskStatus @default(TODO)
-  position    Int        @default(0)
-  completedAt DateTime?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  id           String       @id @default(cuid())
+  startupId    String
+  listId       String
+  milestoneId  String?
+  experimentId String?
+  title        String
+  description  String?      @db.Text
+  priority     TaskPriority @default(NONE)
+  deadline     DateTime?
+  status       TaskStatus   @default(TODO)
+  position     Int          @default(0)
+  completedAt  DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
 
-  startup Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
-  list   TaskList @relation(fields: [listId], references: [id], onDelete: Cascade)
+  startup    Startup           @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  list       TaskList          @relation(fields: [listId], references: [id], onDelete: Cascade)
+  milestone  TaskMilestone?    @relation(fields: [milestoneId], references: [id], onDelete: SetNull)
+  experiment GrowthExperiment? @relation(fields: [experimentId], references: [id], onDelete: SetNull)
+  assignees  TaskAssignee[]
+  labels     TaskTaskLabel[]
 
   @@index([startupId])
   @@index([listId])
   @@index([status])
   @@index([deadline])
   @@index([position])
+  @@index([milestoneId])
+  @@index([experimentId])
   @@map("tasks")
+}
+
+model TaskMilestone {
+  id          String    @id @default(cuid())
+  startupId   String
+  title       String
+  description String?   @db.Text
+  targetDate  DateTime?
+  archived    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  startup Startup @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  tasks   Task[]
+
+  @@index([startupId])
+  @@index([targetDate])
+  @@map("task_milestones")
+}
+
+model TaskAssignee {
+  id     String @id @default(cuid())
+  taskId String
+  userId String
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, userId])
+  @@index([userId])
+  @@map("task_assignees")
+}
+
+model TaskLabel {
+  id        String @id @default(cuid())
+  startupId String
+  name      String
+  color     String @default("#6366f1")
+
+  startup Startup         @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  tasks   TaskTaskLabel[]
+
+  @@unique([startupId, name])
+  @@index([startupId])
+  @@map("task_labels")
+}
+
+model TaskTaskLabel {
+  id      String @id @default(cuid())
+  taskId  String
+  labelId String
+
+  task  Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  label TaskLabel @relation(fields: [labelId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, labelId])
+  @@map("task_task_labels")
+}
+
+// ===========================================
+// Growth / Marketing
+// ===========================================
+
+model CustomerPersona {
+  id             String   @id @default(cuid())
+  startupId      String
+  name           String
+  avatar         String   @default("💡")
+  description    String   @default("")
+  painPoints     Json     @default("[]")
+  channels       Json     @default("[]")
+  psychographics String   @default("")
+  score          Int      @default(80)
+  createdAt      DateTime @default(now())
+
+  startup     Startup                   @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  events      GrowthEvent[]
+  campaigns   GrowthCampaignPersona[]
+  experiments GrowthExperimentPersona[]
+
+  @@index([startupId])
+  @@map("customer_personas")
+}
+
+model GrowthCampaign {
+  id        String    @id @default(cuid())
+  startupId String
+  name      String
+  channel   String
+  objective String    @default("")
+  status    String    @default("DRAFT")
+  budget    Float     @default(0)
+  startDate DateTime?
+  endDate   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  startup     Startup                 @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  experiments GrowthExperiment[]
+  events      GrowthEvent[]
+  personas    GrowthCampaignPersona[]
+
+  @@index([startupId])
+  @@map("growth_campaigns")
+}
+
+model GrowthExperiment {
+  id         String   @id @default(cuid())
+  startupId  String
+  campaignId String?
+  title      String
+  hypothesis String
+  metrics    String
+  results    String   @default("")
+  status     String   @default("PLANNED")
+  conclusion String   @default("PENDING")
+  learnings  String   @default("")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  startup  Startup                   @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  campaign GrowthCampaign?           @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  events   GrowthEvent[]
+  tasks    Task[]
+  personas GrowthExperimentPersona[]
+
+  @@index([startupId])
+  @@index([campaignId])
+  @@map("growth_experiments")
+}
+
+model GrowthEvent {
+  id           String    @id @default(cuid())
+  startupId    String
+  campaignId   String?
+  experimentId String?
+  personaId    String?
+  eventName    String
+  stage        String    @default("AWARENESS")
+  count        Int       @default(1)
+  channel      String?
+  source       String?
+  medium       String?
+  campaignName String?
+  value        Float?
+  periodStart  DateTime?
+  periodEnd    DateTime?
+  notes        String?
+  occurredAt   DateTime  @default(now())
+  createdAt    DateTime  @default(now())
+
+  startup    Startup           @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  campaign   GrowthCampaign?   @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  experiment GrowthExperiment? @relation(fields: [experimentId], references: [id], onDelete: SetNull)
+  persona    CustomerPersona?  @relation(fields: [personaId], references: [id], onDelete: SetNull)
+
+  @@index([startupId, occurredAt])
+  @@index([startupId, eventName])
+  @@index([campaignId])
+  @@index([experimentId])
+  @@index([personaId])
+  @@index([startupId, stage])
+  @@map("growth_events")
+}
+
+model GrowthCampaignPersona {
+  campaignId String
+  personaId  String
+  campaign   GrowthCampaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  persona    CustomerPersona @relation(fields: [personaId], references: [id], onDelete: Cascade)
+
+  @@id([campaignId, personaId])
+  @@index([personaId])
+  @@map("growth_campaign_personas")
+}
+
+model GrowthExperimentPersona {
+  experimentId String
+  personaId    String
+  experiment   GrowthExperiment @relation(fields: [experimentId], references: [id], onDelete: Cascade)
+  persona      CustomerPersona  @relation(fields: [personaId], references: [id], onDelete: Cascade)
+
+  @@id([experimentId, personaId])
+  @@index([personaId])
+  @@map("growth_experiment_personas")
+}
+
+model LectureProgress {
+  id          String    @id @default(cuid())
+  startupId   String
+  lectureId   String
+  completed   Boolean   @default(false)
+  completedAt DateTime?
+
+  startup Startup @relation(fields: [startupId], references: [id], onDelete: Cascade)
+
+  @@unique([startupId, lectureId])
+  @@index([startupId])
+  @@map("lecture_progress")
 }
 
 enum StartupStage {
@@ -967,29 +1416,29 @@ enum OpportunityStatus {
 }
 
 model StartupOpportunity {
-  id            String   @id @default(cuid())
-  startupId     String
-  title         String
-  description   String   @db.Text
-  url           String
-  category      OpportunityCategory
-  eligibility   String?  @db.Text
-  benefits      String?  @db.Text
-  deadline      DateTime?
-  
+  id          String              @id @default(cuid())
+  startupId   String
+  title       String
+  description String              @db.Text
+  url         String
+  category    OpportunityCategory
+  eligibility String?             @db.Text
+  benefits    String?             @db.Text
+  deadline    DateTime?
+
   // Tracking
-  status        OpportunityStatus @default(DISCOVERED)
-  appliedAt     DateTime?
-  notes         String?  @db.Text
-  
+  status    OpportunityStatus @default(DISCOVERED)
+  appliedAt DateTime?
+  notes     String?           @db.Text
+
   // Source
-  source        String   @default("manual") // manual, ai_generated
-  
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  
-  startup       Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
-  
+  source String @default("manual") // manual, ai_generated
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  startup Startup @relation(fields: [startupId], references: [id], onDelete: Cascade)
+
   @@index([startupId])
   @@index([status])
   @@index([category])
@@ -1001,45 +1450,45 @@ model StartupOpportunity {
 // ===========================================
 
 model Accelerator {
-  id            String   @id @default(cuid())
-  name          String
-  slug          String   @unique
-  
+  id   String @id @default(cuid())
+  name String
+  slug String @unique
+
   // Description
-  description   String?  @db.Text
-  programType   String   @default("accelerator") // incubator, accelerator, cohort_based
-  
+  description String? @db.Text
+  programType String  @default("accelerator") // incubator, accelerator, cohort_based
+
   // Branding
-  logoUrl       String?
-  website       String?
-  contactEmail  String?
-  
+  logoUrl      String?
+  website      String?
+  contactEmail String?
+
   // Program Details
   durationWeeks Int?
-  benefits      String?  @db.Text
-  requirements  String?  @db.Text
-  maxStartups  Int?
+  benefits      String? @db.Text
+  requirements  String? @db.Text
+  maxStartups   Int?
   fundingAmount String?
-  
+
   // Visibility
-  isPublic     Boolean  @default(true)
-  isActive     Boolean  @default(true)
-  
+  isPublic Boolean @default(true)
+  isActive Boolean @default(true)
+
   // Owner (Superior Admin)
-  ownerId       String
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  
-  owner         User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  cohorts       Cohort[]
-  events        AcceleratorEvent[]
-  applications  AcceleratorApplication[]
-  members       AcceleratorMember[]
-  invitations   AcceleratorInvitation[]
-  kpis          AcceleratorKPI[]
-  reports       AcceleratorWeeklyReport[]
-  mentors       Mentor[]
-  
+  ownerId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner        User                      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  cohorts      Cohort[]
+  events       AcceleratorEvent[]
+  applications AcceleratorApplication[]
+  members      AcceleratorMember[]
+  invitations  AcceleratorInvitation[]
+  kpis         AcceleratorKPI[]
+  reports      AcceleratorWeeklyReport[]
+  mentors      Mentor[]
+
   @@index([slug])
   @@index([ownerId])
   @@index([isPublic])
@@ -1047,11 +1496,11 @@ model Accelerator {
 }
 
 enum AcceleratorRole {
-  OWNER           // Superior Admin: Full access, manage admins
+  OWNER // Superior Admin: Full access, manage admins
   PROGRAM_MANAGER // Manage cohorts, startups, flags
   OPERATIONS_LEAD // Manage events, curriculum, logistics
-  MENTOR          // View assigned startups, feedback
-  OBSERVER        // Read-only
+  MENTOR // View assigned startups, feedback
+  OBSERVER // Read-only
 }
 
 model AcceleratorMember {
@@ -1062,8 +1511,8 @@ model AcceleratorMember {
   joinedAt      DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
 
-  accelerator   Accelerator     @relation(fields: [acceleratorId], references: [id], onDelete: Cascade)
-  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accelerator Accelerator @relation(fields: [acceleratorId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([acceleratorId, userId])
   @@index([userId])
@@ -1081,7 +1530,7 @@ model AcceleratorInvitation {
   invitedById   String
   createdAt     DateTime        @default(now())
 
-  accelerator   Accelerator     @relation(fields: [acceleratorId], references: [id], onDelete: Cascade)
+  accelerator Accelerator @relation(fields: [acceleratorId], references: [id], onDelete: Cascade)
 
   @@index([acceleratorId])
   @@index([email])
@@ -1089,17 +1538,17 @@ model AcceleratorInvitation {
 }
 
 model AcceleratorKPI {
-  id            String   @id @default(cuid())
+  id            String    @id @default(cuid())
   acceleratorId String
   name          String
   targetValue   Float
-  currentValue  Float    @default(0)
-  unit          String?  // $, %, count
+  currentValue  Float     @default(0)
+  unit          String? // $, %, count
   deadline      DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
-  accelerator   Accelerator @relation(fields: [acceleratorId], references: [id], onDelete: Cascade)
+  accelerator Accelerator @relation(fields: [acceleratorId], references: [id], onDelete: Cascade)
 
   @@index([acceleratorId])
   @@map("accelerator_kpis")
@@ -1110,27 +1559,27 @@ model AcceleratorWeeklyReport {
   acceleratorId String
   weekNumber    Int
   content       String   @db.Text
-  metrics       Json?    // Snapshot of aggregate KPIs
+  metrics       Json? // Snapshot of aggregate KPIs
   aiSummary     String?  @db.Text
   createdAt     DateTime @default(now())
 
-  accelerator   Accelerator @relation(fields: [acceleratorId], references: [id], onDelete: Cascade)
+  accelerator Accelerator @relation(fields: [acceleratorId], references: [id], onDelete: Cascade)
 
   @@index([acceleratorId])
   @@map("accelerator_weekly_reports")
 }
 
 model StartupFlag {
-  id            String   @id @default(cuid())
-  startupId     String
-  reason        String   @db.Text
-  severity      String   @default("warning") // warning, critical
-  status        String   @default("active")  // active, resolved
-  resolvedAt    DateTime?
-  resolvedById  String?
-  createdAt     DateTime @default(now())
+  id           String    @id @default(cuid())
+  startupId    String
+  reason       String    @db.Text
+  severity     String    @default("warning") // warning, critical
+  status       String    @default("active") // active, resolved
+  resolvedAt   DateTime?
+  resolvedById String?
+  createdAt    DateTime  @default(now())
 
-  startup       Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  startup Startup @relation(fields: [startupId], references: [id], onDelete: Cascade)
 
   @@index([startupId])
   @@map("startup_flags")
@@ -1147,74 +1596,74 @@ model Mentor {
   linkedIn      String?
   createdAt     DateTime @default(now())
 
-  accelerator   Accelerator   @relation(fields: [acceleratorId], references: [id], onDelete: Cascade)
-  matches       MentorMatch[]
+  accelerator Accelerator   @relation(fields: [acceleratorId], references: [id], onDelete: Cascade)
+  matches     MentorMatch[]
 
   @@index([acceleratorId])
   @@map("mentors")
 }
 
 model MentorMatch {
-  id            String   @id @default(cuid())
-  mentorId      String
-  startupId     String
-  focus         String?
-  createdAt     DateTime @default(now())
+  id        String   @id @default(cuid())
+  mentorId  String
+  startupId String
+  focus     String?
+  createdAt DateTime @default(now())
 
-  mentor        Mentor   @relation(fields: [mentorId], references: [id], onDelete: Cascade)
-  startup       Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  mentor  Mentor  @relation(fields: [mentorId], references: [id], onDelete: Cascade)
+  startup Startup @relation(fields: [startupId], references: [id], onDelete: Cascade)
 
   @@unique([mentorId, startupId])
   @@map("mentor_matches")
 }
 
 model Cohort {
-  id              String   @id @default(cuid())
-  acceleratorId   String
-  name            String   // "Winter 2026"
-  description     String?
-  startDate       DateTime
-  endDate         DateTime
-  isActive        Boolean  @default(true)
-  
-  accelerator     Accelerator @relation(fields: [acceleratorId], references: [id], onDelete: Cascade)
-  startups        CohortStartup[]
-  events          AcceleratorEvent[]
-  
+  id            String   @id @default(cuid())
+  acceleratorId String
+  name          String // "Winter 2026"
+  description   String?
+  startDate     DateTime
+  endDate       DateTime
+  isActive      Boolean  @default(true)
+
+  accelerator Accelerator        @relation(fields: [acceleratorId], references: [id], onDelete: Cascade)
+  startups    CohortStartup[]
+  events      AcceleratorEvent[]
+
   @@index([acceleratorId])
   @@map("cohorts")
 }
 
 model CohortStartup {
-  cohortId      String
-  startupId     String
-  joinedAt      DateTime @default(now())
-  
-  cohort        Cohort   @relation(fields: [cohortId], references: [id], onDelete: Cascade)
-  startup       Startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
-  
+  cohortId  String
+  startupId String
+  joinedAt  DateTime @default(now())
+
+  cohort  Cohort  @relation(fields: [cohortId], references: [id], onDelete: Cascade)
+  startup Startup @relation(fields: [startupId], references: [id], onDelete: Cascade)
+
   @@id([cohortId, startupId])
   @@index([startupId])
   @@map("cohort_startups")
 }
 
 model AcceleratorEvent {
-  id            String   @id @default(cuid())
+  id            String  @id @default(cuid())
   cohortId      String?
   acceleratorId String
-  
-  title         String
-  description   String?  @db.Text
-  eventType     String   // mentor_session, office_hours, demo_day, workshop, networking
-  scheduledAt   DateTime
-  duration      Int      // minutes
-  location      String?  // physical, virtual, hybrid
-  meetingUrl    String?
-  
-  cohort        Cohort?   @relation(fields: [cohortId], references: [id], onDelete: Cascade)
-  accelerator   Accelerator @relation(fields: [acceleratorId], references: [id], onDelete: Cascade)
-  attendance    EventAttendance[]
-  
+
+  title       String
+  description String?  @db.Text
+  eventType   String // mentor_session, office_hours, demo_day, workshop, networking
+  scheduledAt DateTime
+  duration    Int // minutes
+  location    String? // physical, virtual, hybrid
+  meetingUrl  String?
+
+  cohort      Cohort?           @relation(fields: [cohortId], references: [id], onDelete: Cascade)
+  accelerator Accelerator       @relation(fields: [acceleratorId], references: [id], onDelete: Cascade)
+  attendance  EventAttendance[]
+
   @@index([acceleratorId])
   @@index([cohortId])
   @@index([scheduledAt])
@@ -1222,38 +1671,38 @@ model AcceleratorEvent {
 }
 
 model EventAttendance {
-  eventId       String
-  userId        String
-  status        String   @default("rsvp") // rsvp, attended, absent
-  feedback      String?  @db.Text
-  createdAt     DateTime @default(now())
+  eventId   String
+  userId    String
+  status    String   @default("rsvp") // rsvp, attended, absent
+  feedback  String?  @db.Text
+  createdAt DateTime @default(now())
 
-  event         AcceleratorEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  event AcceleratorEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
 
   @@id([eventId, userId])
   @@map("event_attendance")
 }
 
 model AcceleratorApplication {
-  id            String   @id @default(cuid())
+  id            String  @id @default(cuid())
   acceleratorId String
   startupId     String?
   founderEmail  String
   founderName   String
   founderPhone  String?
-  
+
   // Application
-  status        String   @default("pending") // pending, accepted, waitlisted, rejected
-  notes         String?  @db.Text
-  answers       Json?    // Custom application answers
-  
+  status  String  @default("pending") // pending, accepted, waitlisted, rejected
+  notes   String? @db.Text
+  answers Json? // Custom application answers
+
   // Timestamps
-  appliedAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  
-  accelerator   Accelerator @relation(fields: [acceleratorId], references: [id], onDelete: Cascade)
-  startup       Startup?    @relation(fields: [startupId], references: [id], onDelete: Cascade)
-  
+  appliedAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  accelerator Accelerator @relation(fields: [acceleratorId], references: [id], onDelete: Cascade)
+  startup     Startup?    @relation(fields: [startupId], references: [id], onDelete: Cascade)
+
   @@index([acceleratorId])
   @@index([startupId])
   @@map("accelerator_applications")
@@ -1277,7 +1726,7 @@ model ResearchFeedItem {
   type           ResearchFeedType
   title          String
   summary        String?          @db.Text
-  content        Json?            // For type-specific data
+  content        Json? // For type-specific data
   idempotencyKey String?          @unique // To prevent duplicate entries during retries
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
@@ -1289,4 +1738,307 @@ model ResearchFeedItem {
   @@index([type])
   @@index([createdAt])
   @@map("research_feed_items")
+}
+
+enum LessonType {
+  VIDEO
+  TEXT
+  QUIZ
+  ASSIGNMENT
+}
+
+enum ContentProvider {
+  YOUTUBE
+  VIMEO
+  CUSTOM
+}
+
+enum EnrollmentStatus {
+  ENROLLED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum LessonProgressStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum SubmissionType {
+  TEXT
+  FILE
+  LINK
+}
+
+model Course {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  description String?  @db.Text
+  thumbnail   String?
+  category    String?
+  isPublished Boolean  @default(false)
+  position    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  modules      Module[]
+  enrollments  Enrollment[]
+  certificates Certificate[]
+  assignments  CourseAssignment[]
+
+  @@index([slug])
+  @@index([category])
+  @@index([isPublished])
+  @@map("courses")
+}
+
+model Module {
+  id          String   @id @default(cuid())
+  courseId    String
+  title       String
+  description String?  @db.Text
+  position    Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  course  Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons Lesson[]
+
+  @@index([courseId])
+  @@index([position])
+  @@map("course_modules")
+}
+
+model Lesson {
+  id          String          @id @default(cuid())
+  moduleId    String
+  title       String
+  description String?         @db.Text
+  type        LessonType      @default(VIDEO)
+  content     Json? // For TEXT lessons: markdown body; for QUIZ/ASSIGNMENT: instructions
+  position    Int             @default(0)
+  duration    Int? // Duration in seconds (for VIDEO lessons)
+  videoUrl    String? // YouTube/Vimeo URL
+  provider    ContentProvider @default(YOUTUBE)
+  createdAt   DateTime        @default(now())
+
+  module     Module           @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  quiz       Quiz?
+  assignment Assignment?
+  progress   LessonProgress[]
+
+  @@index([moduleId])
+  @@index([position])
+  @@map("lessons")
+}
+
+model Enrollment {
+  id          String           @id @default(cuid())
+  userId      String
+  startupId   String?
+  courseId    String
+  status      EnrollmentStatus @default(ENROLLED)
+  enrolledAt  DateTime         @default(now())
+  completedAt DateTime?
+  createdAt   DateTime         @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  startup Startup? @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  progress LessonProgress[]
+
+  @@unique([userId, startupId, courseId])
+  @@index([userId, startupId])
+  @@index([courseId])
+  @@map("enrollments")
+}
+
+model LessonProgress {
+  id            String               @id @default(cuid())
+  enrollmentId  String
+  lessonId      String
+  status        LessonProgressStatus @default(NOT_STARTED)
+  maxPercentage Int                  @default(0)
+  timeSpent     Int                  @default(0) // Total seconds spent
+  completedAt   DateTime?
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  enrollment Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  lesson     Lesson     @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+
+  @@unique([enrollmentId, lessonId])
+  @@index([enrollmentId])
+  @@index([lessonId])
+  @@map("lesson_progress")
+}
+
+model Quiz {
+  id           String   @id @default(cuid())
+  lessonId     String   @unique
+  questions    Json // Array of { question, options[], correctAnswer, explanation? }
+  passingScore Int      @default(70) // Percentage
+  maxAttempts  Int      @default(3)
+  createdAt    DateTime @default(now())
+
+  lesson   Lesson        @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  attempts QuizAttempt[]
+
+  @@map("quizzes")
+}
+
+model QuizAttempt {
+  id          String   @id @default(cuid())
+  quizId      String
+  userId      String
+  score       Int      @default(0) // Percentage 0-100
+  answers     Json // Array of { questionIndex, selectedAnswer, correct }
+  passed      Boolean  @default(false)
+  completedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@index([quizId])
+  @@index([userId])
+  @@map("quiz_attempts")
+}
+
+model Assignment {
+  id             String         @id @default(cuid())
+  lessonId       String         @unique
+  instructions   String         @db.Text
+  dueDays        Int? // Days from enrollment to submit
+  submissionType SubmissionType @default(TEXT)
+  createdAt      DateTime       @default(now())
+
+  lesson      Lesson       @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  submissions Submission[]
+
+  @@map("assignments")
+}
+
+model Submission {
+  id           String    @id @default(cuid())
+  assignmentId String
+  userId       String
+  content      Json? // { text?, fileUrls?, link? }
+  grade        Int? // 0-100
+  feedback     String?   @db.Text
+  submittedAt  DateTime  @default(now())
+  gradedAt     DateTime?
+  createdAt    DateTime  @default(now())
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assignment Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+
+  @@unique([assignmentId, userId])
+  @@index([assignmentId])
+  @@index([userId])
+  @@map("submissions")
+}
+
+model Certificate {
+  id               String    @id @default(cuid())
+  userId           String
+  startupId        String?
+  courseId         String
+  certificateUrl   String? // URL to generated certificate image/PDF
+  verificationCode String    @unique
+  status           String    @default("ACTIVE")
+  revokedAt        DateTime?
+  revocationReason String?
+  issuedAt         DateTime  @default(now())
+  createdAt        DateTime  @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  startup Startup? @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, startupId, courseId])
+  @@index([verificationCode])
+  @@index([userId, startupId])
+  @@map("certificates")
+}
+
+model CourseAssignment {
+  id             String    @id @default(cuid())
+  organizationId String
+  courseId       String
+  assigneeId     String?
+  required       Boolean   @default(true)
+  dueDate        DateTime?
+  status         String    @default("ASSIGNED")
+  assignedAt     DateTime  @default(now())
+  completedAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  course       Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  assignee     User?        @relation(fields: [assigneeId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, courseId, assigneeId])
+  @@index([organizationId, status])
+  @@index([courseId])
+  @@index([assigneeId])
+  @@map("course_assignments")
+}
+
+model LearningActivity {
+  id           String   @id @default(cuid())
+  userId       String
+  activityDate DateTime
+  activityType String
+  sourceId     String?
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, activityDate])
+  @@index([userId, activityDate])
+  @@map("learning_activities")
+}
+
+model Badge {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  icon        String? // Lucide icon name or URL
+  description String?  @db.Text
+  criteria    Json? // { type: "streak" | "courses" | "lessons" | "score", value: number }
+  createdAt   DateTime @default(now())
+
+  users UserBadge[]
+
+  @@map("badges")
+}
+
+model UserBadge {
+  id       String   @id @default(cuid())
+  userId   String
+  badgeId  String
+  earnedAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId])
+  @@index([userId])
+  @@map("user_badges")
+}
+
+model Streak {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  currentStreak  Int      @default(0)
+  longestStreak  Int      @default(0)
+  lastActiveDate DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("streaks")
 }

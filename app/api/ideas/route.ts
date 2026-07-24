@@ -1,11 +1,12 @@
 import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
-import { ajAI } from "@/lib/arcjet";
+import { ajAI, checkRateLimit, rateLimitResponse } from "@/lib/arcjet";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { inngest } from "@/lib/inngest/client";
 import { detectBestLocation, validateLocation } from "@/lib/location";
 import { isAllowedToCreateIdea } from "@/lib/polar/entitlements";
+import { consumeAICredit } from "@/lib/polar/workspace-entitlements";
 import { extractUrlsFromSources, sanitizeUrlStrings } from "@/lib/scraping";
 
 // GET /api/ideas - List all ideas for the authenticated user
@@ -83,16 +84,8 @@ export async function POST(request: NextRequest) {
   }
 
   // Rate limit check for AI generation
-  const decision = await ajAI.protect(request, {
-    userId: session.user.id,
-    requested: 1,
-  });
-  if (decision.isDenied()) {
-    return NextResponse.json(
-      { error: "Rate limit exceeded. Please try again later." },
-      { status: 429 },
-    );
-  }
+  const decision = await checkRateLimit(request, session.user.id, ajAI);
+  if (decision) return rateLimitResponse(decision);
 
   // Check entitlement
   const entitlementCheck = await isAllowedToCreateIdea(session.user.id);
@@ -215,6 +208,14 @@ export async function POST(request: NextRequest) {
     });
 
     locationContext = detectedLocation.context;
+  }
+
+  const aiCredit = await consumeAICredit(session.user.id);
+  if (!aiCredit.allowed) {
+    return NextResponse.json(
+      { error: "Your workspace has no AI credits remaining." },
+      { status: 402 },
+    );
   }
 
   // Create the idea with prompt and location data

@@ -1,11 +1,13 @@
-import { generateObjectWithFallback } from "@/lib/ai/fallback";
 import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { generateObjectWithFallback } from "@/lib/ai/fallback";
+import { ajAI, checkRateLimit, rateLimitResponse } from "@/lib/arcjet";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { inngest } from "@/lib/inngest/client";
 import { detectLocationFromText } from "@/lib/location";
+import { consumeAICredit } from "@/lib/polar/workspace-entitlements";
 import { extractUrlsFromSources, sanitizeUrlStrings } from "@/lib/scraping";
 
 const ChangeSignificanceSchema = z.object({
@@ -71,6 +73,17 @@ export async function PUT(
 
     if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const decision = await checkRateLimit(request, session.user.id, ajAI);
+    if (decision) return rateLimitResponse(decision);
+
+    const aiCredit = await consumeAICredit(session.user.id);
+    if (!aiCredit.allowed) {
+      return NextResponse.json(
+        { error: "Your workspace has no AI credits remaining." },
+        { status: 402 },
+      );
     }
 
     const { id: ideaId } = await params;
@@ -190,7 +203,7 @@ Return valid JSON only.`;
       );
 
       shouldRunFullResearch =
-        // @ts-ignore
+        // @ts-expect-error
         assessment?.object?.significance === "major_change";
 
       // If minor change, skip full research to save resources
@@ -204,7 +217,7 @@ Return valid JSON only.`;
             resourceId: ideaId,
             metadata: {
               versionId: newVersion.id,
-              // @ts-ignore
+              // @ts-expect-error
               reason: assessment?.object?.reason,
             },
           },
@@ -216,7 +229,7 @@ Return valid JSON only.`;
           version: newVersion,
           researchTriggered: false,
           skipped: true,
-          // @ts-ignore
+          // @ts-expect-error
           skipReason: assessment?.object?.reason,
           message:
             "Prompt change was minor; full research skipped to save resources",

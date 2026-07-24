@@ -2,7 +2,12 @@ import { headers } from "next/headers";
 import { type NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { isAllowedToCreateIdea } from "@/lib/polar/entitlements";
+import {
+  ensureOrganizationEntitlement,
+  ensureStartupEntitlement,
+  getPrimaryOrganizationEntitlement,
+  isAllowedToCreateStartup,
+} from "@/lib/polar/workspace-entitlements";
 import { createStartupSchema } from "@/lib/validators/startup";
 
 export async function GET(request: NextRequest) {
@@ -80,7 +85,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const entitlementCheck = await isAllowedToCreateIdea(session.user.id);
+  const entitlementCheck = await isAllowedToCreateStartup(session.user.id);
   if (!entitlementCheck.allowed) {
     return NextResponse.json(
       { error: entitlementCheck.reason },
@@ -99,6 +104,9 @@ export async function POST(request: NextRequest) {
   }
 
   const { ideaId, locationContext, ...startupData } = parsed.data;
+  const sourceEntitlement = await getPrimaryOrganizationEntitlement(
+    session.user.id,
+  );
 
   if (ideaId) {
     const existingIdea = await db.idea.findFirst({
@@ -151,31 +159,44 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  const orgBaseSlug = `${startupData.slug}-org`;
-  const orgSlugExists = await db.organization.findUnique({
-    where: { slug: orgBaseSlug },
+  const primaryMembership = await db.member.findFirst({
+    where: { userId: session.user.id },
+    select: { organizationId: true },
+    orderBy: { createdAt: "asc" },
   });
-  const orgSlug = orgSlugExists
-    ? `${orgBaseSlug}-${startup.id.slice(0, 6)}`
-    : orgBaseSlug;
-
-  const org = await db.organization.create({
-    data: {
-      name: `${startupData.name}`,
-      slug: orgSlug,
-      members: {
-        create: {
-          userId: session.user.id,
-          role: "owner",
+  const org = primaryMembership
+    ? await db.organization.findUniqueOrThrow({ where: { id: primaryMembership.organizationId } })
+    : await db.organization.create({
+        data: {
+          name: `${startupData.name}`,
+          slug: `${startupData.slug}-org-${startup.id.slice(0, 6)}`,
+          entitlement: { create: sourceEntitlement ? {
+            polarCustomerId: sourceEntitlement.polarCustomerId,
+            polarSubscriptionId: sourceEntitlement.polarSubscriptionId,
+            plan: sourceEntitlement.plan,
+            status: sourceEntitlement.status,
+            seats: sourceEntitlement.seats,
+            maxStartups: sourceEntitlement.maxStartups,
+            aiCredits: sourceEntitlement.aiCredits,
+            builderCredits: sourceEntitlement.builderCredits,
+            hostingCredits: sourceEntitlement.hostingCredits,
+            storageBytes: sourceEntitlement.storageBytes,
+            currentPeriodEnd: sourceEntitlement.currentPeriodEnd,
+            cancelAtPeriodEnd: sourceEntitlement.cancelAtPeriodEnd,
+          } : {} },
+          members: { create: { userId: session.user.id, role: "owner" } },
         },
-      },
-    },
-  });
+      });
 
   await db.startup.update({
     where: { id: startup.id },
     data: { organizationId: org.id },
   });
+
+  await Promise.all([
+    ensureOrganizationEntitlement(org.id),
+    ensureStartupEntitlement(startup.id),
+  ]);
 
   await db.auditLog.create({
     data: {

@@ -1,31 +1,21 @@
 "use client";
 
-import {
-  ArrowLeft,
-  Brain,
-  Briefcase,
-  Calendar,
-  FileText,
-  Flame,
-  LayoutDashboard,
-  MessageSquareIcon,
-  Settings,
-  TrendingUp,
-  User,
-} from "lucide-react";
+import { ArrowLeft, LockKeyhole } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
 import {
   SidebarContent,
-  SidebarHeader,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
+  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { useWorkspaceNavigation } from "@/hooks/use-workspace";
+import { type NavigationItem, startupNavigation } from "@/lib/navigation";
+import { cn } from "@/lib/utils";
 
 interface StartupSidebarProps extends React.HTMLAttributes<HTMLDivElement> {
   startup: {
@@ -36,10 +26,24 @@ interface StartupSidebarProps extends React.HTMLAttributes<HTMLDivElement> {
     stage: string;
   };
   permissions: {
+    role?: "OWNER" | "ADMIN" | "MEMBER" | "VIEWER";
     canViewStartup: boolean;
     canManageTasks: boolean;
+    canManageTeam?: boolean;
     canViewSettings: boolean;
   };
+}
+
+function hasPermission(
+  item: NavigationItem,
+  permissions: StartupSidebarProps["permissions"],
+) {
+  if (!item.permission) return true;
+  if (item.permission === "view_startup") return permissions.canViewStartup;
+  if (item.permission === "manage_tasks") return permissions.canManageTasks;
+  if (item.permission === "manage_team")
+    return permissions.canManageTeam ?? false;
+  return permissions.canViewSettings;
 }
 
 export function StartupSidebar({
@@ -48,160 +52,103 @@ export function StartupSidebar({
   className,
 }: StartupSidebarProps) {
   const pathname = usePathname();
-  const basePath = `/startups/${startup.slug}`;
-
-  const routes = [
-    {
-      label: "Overview",
-      icon: LayoutDashboard,
-      href: basePath,
-      active: pathname === basePath,
-      visible: permissions.canViewStartup,
+  const { data: workspace } = useWorkspaceNavigation();
+  const capabilities = workspace?.entitlement.capabilities;
+  const items = startupNavigation(startup.slug).filter((item) =>
+    hasPermission(item, permissions),
+  );
+  const groups = items.reduce<Record<string, NavigationItem[]>>(
+    (result, item) => {
+      if (!result[item.section]) result[item.section] = [];
+      result[item.section].push(item);
+      return result;
     },
-    {
-      label: "VC Coach",
-      icon: MessageSquareIcon,
-      href: `${basePath}/chat`,
-      active:
-        pathname === `${basePath}/chat` ||
-        pathname.startsWith(`${basePath}/chat/`),
-      visible: permissions.canViewStartup,
-    },
-    {
-      label: "Research Feed",
-      icon: Brain,
-      href: `/startups/${startup.slug}/research-feed`,
-      active: pathname === `/startups/${startup.slug}/research-feed`,
-      visible: permissions.canViewStartup,
-    },
-    {
-      label: "Weekly Updates",
-      icon: Calendar,
-      href: `${basePath}/updates`,
-      active: pathname.startsWith(`${basePath}/updates`),
-      visible: permissions.canViewStartup,
-    },
-    {
-      label: "Streaks",
-      icon: Flame,
-      href: `${basePath}/streaks`,
-      active: pathname === `${basePath}/streaks`,
-      visible: permissions.canViewStartup,
-    },
-    {
-      label: "Tasks",
-      icon: FileText,
-      href: `${basePath}/tasks`,
-      active:
-        pathname.startsWith(`${basePath}/tasks`) ||
-        pathname.startsWith(`${basePath}/applications`),
-      visible: permissions.canManageTasks,
-    },
-    {
-      label: "Opportunities",
-      icon: Briefcase,
-      href: `${basePath}/opportunities`,
-      active: pathname === `${basePath}/opportunities`,
-      visible: permissions.canViewStartup,
-    },
-    {
-      label: "Metrics",
-      icon: TrendingUp,
-      href: `${basePath}/metrics`,
-      active:
-        pathname === `${basePath}/metrics` ||
-        pathname.startsWith(`${basePath}/metrics/`),
-      visible: permissions.canViewStartup,
-    },
-    {
-      label: "Profile",
-      icon: User,
-      href: `${basePath}/profile`,
-      active: pathname === `${basePath}/profile`,
-      visible: permissions.canViewStartup,
-    },
-    {
-      label: "Settings",
-      icon: Settings,
-      href: `${basePath}/settings`,
-      active: pathname === `${basePath}/settings`,
-      visible: permissions.canViewSettings,
-    },
-  ].filter((route) => route.visible);
+    {},
+  );
 
   return (
     <>
       <SidebarHeader className="border-b border-sidebar-border p-3">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton tooltip="Back to Dashboard" asChild>
+            <SidebarMenuButton tooltip="Back to workspace" asChild>
               <Link href="/dashboard" className="flex items-center gap-2">
                 <ArrowLeft className="h-4 w-4 shrink-0" />
                 <span className="group-data-[collapsible=icon]:hidden font-medium">
-                  Back to Dashboard
+                  Back to workspace
                 </span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
+        <div className="group-data-[collapsible=icon]:hidden mt-3 rounded-lg border border-sidebar-border bg-sidebar-accent/40 px-3 py-2">
+          <p className="truncate text-sm font-semibold">{startup.name}</p>
+          <p className="mt-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+            {permissions.role
+              ? `${permissions.role.toLowerCase()} access`
+              : "Startup workspace"}
+          </p>
+        </div>
       </SidebarHeader>
 
-      <SidebarContent className={cn("p-1", className)}>
-        <SidebarGroup>
-          <SidebarGroupLabel className="group-data-[collapsible=icon]:hidden px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-            Track
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {routes
-                .filter((r) => !["Profile", "Settings"].includes(r.label))
-                .map((route) => (
-                  <SidebarMenuItem key={route.href}>
-                    <SidebarMenuButton
-                      tooltip={route.label}
-                      isActive={route.active}
-                      asChild
-                    >
-                      <Link href={route.href}>
-                        <route.icon className="h-4 w-4 shrink-0" />
-                        <span className="group-data-[collapsible=icon]:hidden">
-                          {route.label}
-                        </span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel className="group-data-[collapsible=icon]:hidden px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-            Setup
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {routes
-                .filter((r) => ["Profile", "Settings"].includes(r.label))
-                .map((route) => (
-                  <SidebarMenuItem key={route.href}>
-                    <SidebarMenuButton
-                      tooltip={route.label}
-                      isActive={route.active}
-                      asChild
-                    >
-                      <Link href={route.href}>
-                        <route.icon className="h-4 w-4 shrink-0" />
-                        <span className="group-data-[collapsible=icon]:hidden">
-                          {route.label}
-                        </span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+      <SidebarContent className={cn("px-1", className)}>
+        {Object.entries(groups).map(([label, group]) => (
+          <SidebarGroup key={label} className="py-2">
+            <SidebarGroupLabel className="group-data-[collapsible=icon]:hidden px-3 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/70">
+              {label}
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {group.map((item) => {
+                  const Icon = item.icon;
+                  const locked = Boolean(
+                    item.capability &&
+                      capabilities &&
+                      capabilities[item.capability] !== true,
+                  );
+                  const href = locked
+                    ? `/billing?feature=${item.capability}`
+                    : item.href;
+                  return (
+                    <SidebarMenuItem key={item.href + item.label}>
+                      <SidebarMenuButton
+                        tooltip={
+                          locked
+                            ? `${item.label} — upgrade to unlock`
+                            : item.label
+                        }
+                        isActive={!locked && item.active(pathname)}
+                        asChild
+                        className={
+                          locked
+                            ? "text-muted-foreground/60 hover:text-foreground"
+                            : undefined
+                        }
+                      >
+                        <Link
+                          href={href}
+                          aria-label={
+                            locked
+                              ? `${item.label} is locked. View plans.`
+                              : item.label
+                          }
+                        >
+                          <Icon className="h-4 w-4 shrink-0" />
+                          <span className="group-data-[collapsible=icon]:hidden flex-1 truncate">
+                            {item.label}
+                          </span>
+                          {locked && (
+                            <LockKeyhole className="ml-auto h-3.5 w-3.5 shrink-0" />
+                          )}
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
       </SidebarContent>
     </>
   );

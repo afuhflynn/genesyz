@@ -1,10 +1,15 @@
+import ip from "@arcjet/ip";
 import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { ajAuth, checkRateLimit, rateLimitResponse } from "@/lib/arcjet";
 import { inngest } from "@/lib/inngest/client";
 import { verifyEmailSchema } from "@/lib/validators/auth";
 
 export async function POST(req: NextRequest) {
   try {
+    const decision = await checkRateLimit(req, ip(req) || "127.0.0.1", ajAuth);
+    if (decision) return rateLimitResponse(decision);
+
     const body = await req.json();
     const { code } = verifyEmailSchema.parse(body);
 
