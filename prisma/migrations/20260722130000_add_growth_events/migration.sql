@@ -3,11 +3,18 @@ CREATE TABLE IF NOT EXISTS "growth_events" (
     "startupId" TEXT NOT NULL,
     "campaignId" TEXT,
     "experimentId" TEXT,
+    "personaId" TEXT,
     "eventName" TEXT NOT NULL,
+    "stage" TEXT NOT NULL DEFAULT 'AWARENESS',
+    "count" INTEGER NOT NULL DEFAULT 1,
+    "channel" TEXT,
     "source" TEXT,
     "medium" TEXT,
     "campaignName" TEXT,
     "value" DOUBLE PRECISION,
+    "periodStart" TIMESTAMP(3),
+    "periodEnd" TIMESTAMP(3),
+    "notes" TEXT,
     "occurredAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "growth_events_pkey" PRIMARY KEY ("id")
@@ -17,6 +24,8 @@ CREATE INDEX IF NOT EXISTS "growth_events_startupId_occurredAt_idx" ON "growth_e
 CREATE INDEX IF NOT EXISTS "growth_events_startupId_eventName_idx" ON "growth_events"("startupId", "eventName");
 CREATE INDEX IF NOT EXISTS "growth_events_campaignId_idx" ON "growth_events"("campaignId");
 CREATE INDEX IF NOT EXISTS "growth_events_experimentId_idx" ON "growth_events"("experimentId");
+CREATE INDEX IF NOT EXISTS "growth_events_personaId_idx" ON "growth_events"("personaId");
+CREATE INDEX IF NOT EXISTS "growth_events_startupId_stage_idx" ON "growth_events"("startupId", "stage");
 
 DO $$
 BEGIN
@@ -44,6 +53,15 @@ BEGIN
         ALTER TABLE "growth_events"
         ADD CONSTRAINT "growth_events_experimentId_fkey"
         FOREIGN KEY ("experimentId") REFERENCES "growth_experiments"("id")
+        ON DELETE SET NULL ON UPDATE CASCADE;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'growth_events_personaId_fkey'
+    ) THEN
+        ALTER TABLE "growth_events"
+        ADD CONSTRAINT "growth_events_personaId_fkey"
+        FOREIGN KEY ("personaId") REFERENCES "customer_personas"("id")
         ON DELETE SET NULL ON UPDATE CASCADE;
     END IF;
 END $$;
