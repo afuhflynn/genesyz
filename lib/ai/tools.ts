@@ -344,8 +344,14 @@ export const getStartupContext = tool({
       include: {
         idea: {
           include: {
-            researchPackets: true,
-            scores: true,
+            researchPackets: {
+              orderBy: { createdAt: "desc" },
+              take: 1,
+            },
+            scores: {
+              orderBy: { createdAt: "desc" },
+              take: 1,
+            },
           },
         },
         weeklyUpdates: {
