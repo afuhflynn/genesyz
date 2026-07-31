@@ -82,29 +82,163 @@ export function VCCoach({
   startupName,
   conversationId,
 }: VCCoachProps) {
-  const [input, setInput] = useState("");
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [activeConvId, setActiveConvId] = useState<string | null>(
-    conversationId ?? null,
-  );
+  const [pendingMessage, setPendingMessage] = useState<string | null>(null);
   const router = useRouter();
   const params = useParams();
-  const searchParams = useSearchParams();
   const slug = params.slug as string;
-  const hasAutoSent = useRef(false);
-  const conversationCreationRef = useRef<Promise<string> | null>(null);
 
   const { data: conversations, refetch: refetchList } =
     useStartupConversations(startupId);
-  const { data: conversationData, isFetching: isFetchingConv } =
-    useStartupConversation(startupId, activeConvId || "");
-  const deleteConversation = useDeleteStartupConversation();
   const createConversation = useCreateStartupConversation();
+  const deleteConversation = useDeleteStartupConversation();
 
-  const activeConvIdRef = useRef(activeConvId);
+  const handleNewChat = () => {
+    setPendingMessage(null);
+    router.push(`/startups/${slug}/chat`);
+  };
+
+  const handleNewSessionMessage = async (text: string) => {
+    const result = await createConversation.mutateAsync({
+      startupId,
+      title: text.trim().slice(0, 50),
+    });
+    setPendingMessage(text);
+    router.push(`/startups/${slug}/chat/${result.data.id}`);
+    await refetchList();
+  };
+
+  const handleDelete = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    if (confirm("Delete this conversation?")) {
+      await deleteConversation.mutateAsync({ startupId, conversationId: id });
+      if (conversationId === id) {
+        handleNewChat();
+      }
+    }
+  };
+
+  return (
+    <>
+      <Sidebar collapsible="icon">
+        <SidebarHeader>
+          <Button
+            className="w-full justify-start gap-2"
+            variant="outline"
+            asChild
+          >
+            <Link href={`/startups/${slug}/chat`}>
+              <PlusIcon className="w-4 h-4" />
+              <span>New Session</span>
+            </Link>
+          </Button>
+        </SidebarHeader>
+        <SidebarContent>
+          <SidebarGroup>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {conversations?.data?.map((conv) => (
+                  <SidebarMenuItem key={conv.id}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={conversationId === conv.id}
+                    >
+                      <Link href={`/startups/${slug}/chat/${conv.id}`}>
+                        <MessageSquareIcon className="w-4 h-4 shrink-0" />
+                        <span className="truncate flex-1 text-left">
+                          {conv.title || "Untitled Session"}
+                        </span>
+                      </Link>
+                    </SidebarMenuButton>
+                    <SidebarMenuAction
+                      onClick={(e) => handleDelete(e, conv.id)}
+                      className="opacity-0 group-hover:opacity-100 hover:text-destructive transition-opacity"
+                    >
+                      <Trash2Icon className="w-3 h-3" />
+                    </SidebarMenuAction>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </SidebarContent>
+        <SidebarFooter className="border-t p-3">
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild tooltip="Back to Startup Dashboard">
+                <Link
+                  href={`/startups/${slug}`}
+                  className="flex items-center gap-2"
+                >
+                  <ArrowLeft className="h-4 w-4 shrink-0" />
+                  <span>Back to Startup</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarFooter>
+        <SidebarRail />
+      </Sidebar>
+
+      <SidebarInset className="flex flex-col min-w-0">
+        <header className="flex items-center justify-between px-4 py-3 border-b bg-muted/30 shrink-0">
+          <div className="flex items-center gap-3">
+            <SidebarTrigger />
+            <div className="flex items-center gap-3 ml-2">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <BotIcon className="w-5 h-5 text-primary" />
+              </div>
+              <h2 className="font-semibold text-sm">VC</h2>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Badge
+              variant="outline"
+              className="text-xs font-normal hidden sm:inline-flex"
+            >
+              Startup: {startupName}
+            </Badge>
+          </div>
+        </header>
+
+        <ChatSession
+          key={conversationId ?? "new"}
+          startupId={startupId}
+          conversationId={conversationId}
+          pendingMessage={pendingMessage}
+          onPendingMessageSent={() => setPendingMessage(null)}
+          onNewSessionMessage={handleNewSessionMessage}
+        />
+      </SidebarInset>
+    </>
+  );
+}
+
+function ChatSession({
+  startupId,
+  conversationId,
+  pendingMessage,
+  onPendingMessageSent,
+  onNewSessionMessage,
+}: {
+  startupId: string;
+  conversationId?: string;
+  pendingMessage: string | null;
+  onPendingMessageSent: () => void;
+  onNewSessionMessage: (text: string) => Promise<void>;
+}) {
+  const [input, setInput] = useState("");
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const hasAutoSent = useRef(false);
+
+  const { data: conversationData, isFetching: isFetchingConv } =
+    useStartupConversation(startupId, conversationId || "");
+
+  const activeConvIdRef = useRef(conversationId);
   useEffect(() => {
-    activeConvIdRef.current = activeConvId;
-  }, [activeConvId]);
+    activeConvIdRef.current = conversationId;
+  }, [conversationId]);
 
   const transport = useMemo(
     () =>
@@ -117,12 +251,17 @@ export function VCCoach({
     [startupId],
   );
 
-  const { messages, sendMessage, status, error, setMessages } = useChat({
-    id: activeConvId || undefined,
+  const { messages, sendMessage, status, error, setMessages, stop } = useChat({
     transport,
   });
 
   const isLoading = status === "streaming" || status === "submitted";
+
+  useEffect(() => {
+    return () => {
+      stop();
+    };
+  }, [stop]);
 
   const loadMessagesFromDb = useCallback(
     (msgs: any[]) => {
@@ -166,73 +305,40 @@ export function VCCoach({
   );
 
   useEffect(() => {
+    if (isLoading) return;
     if (conversationData?.data?.messages) {
       loadMessagesFromDb(conversationData.data.messages);
-    } else if (!activeConvId) {
+    } else if (!conversationId) {
       setMessages([]);
     }
-  }, [conversationData, activeConvId, loadMessagesFromDb, setMessages]);
-
-  useEffect(() => {
-    const nextConversationId = conversationId ?? null;
-    activeConvIdRef.current = nextConversationId;
-    setActiveConvId(nextConversationId);
-    setMessages([]); // Clear messages immediately when switching sessions
-  }, [conversationId, setMessages]);
-
-  const handleNewChat = () => {
-    hasAutoSent.current = false;
-    router.push(`/startups/${slug}/chat`);
-  };
-
-  const handleDelete = async (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
-    if (confirm("Delete this conversation?")) {
-      await deleteConversation.mutateAsync({ startupId, conversationId: id });
-      if (activeConvId === id) {
-        handleNewChat();
-      }
-    }
-  };
+  }, [
+    conversationData,
+    conversationId,
+    isLoading,
+    loadMessagesFromDb,
+    setMessages,
+  ]);
 
   const handleSendMessage = useCallback(
     async (text: string) => {
       if (!text.trim() || isLoading) return;
 
-      let conversationIdToUse = activeConvIdRef.current;
-      if (!conversationIdToUse) {
-        const pendingCreation =
-          conversationCreationRef.current ??
-          createConversation
-            .mutateAsync({
-              startupId,
-              title: text.trim().slice(0, 50),
-            })
-            .then((result) => result.data.id);
-
-        conversationCreationRef.current = pendingCreation;
-        try {
-          conversationIdToUse = await pendingCreation;
-        } finally {
-          if (conversationCreationRef.current === pendingCreation) {
-            conversationCreationRef.current = null;
-          }
-        }
-
-        activeConvIdRef.current = conversationIdToUse;
-        setActiveConvId(conversationIdToUse);
-        window.history.replaceState(
-          null,
-          "",
-          `/startups/${slug}/chat/${conversationIdToUse}`,
-        );
-        await refetchList();
+      if (!conversationId) {
+        await onNewSessionMessage(text);
+        return;
       }
 
       sendMessage({ text });
     },
-    [createConversation, isLoading, refetchList, sendMessage, slug, startupId],
+    [conversationId, isLoading, sendMessage, onNewSessionMessage],
   );
+
+  useEffect(() => {
+    if (pendingMessage && conversationId) {
+      onPendingMessageSent();
+      sendMessage({ text: pendingMessage });
+    }
+  }, [pendingMessage, conversationId, sendMessage, onPendingMessageSent]);
 
   useEffect(() => {
     const initialQuestion = searchParams.get("q");
@@ -282,270 +388,178 @@ export function VCCoach({
 
   return (
     <>
-      <Sidebar collapsible="icon">
-        <SidebarHeader>
-          <Button
-            className="w-full justify-start gap-2"
-            variant="outline"
-            asChild
-          >
-            <Link href={`/startups/${slug}/chat`}>
-              <PlusIcon className="w-4 h-4" />
-              <span>New Session</span>
-            </Link>
-          </Button>
-        </SidebarHeader>
-        <SidebarContent>
-          <SidebarGroup>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {conversations?.data?.map((conv) => (
-                  <SidebarMenuItem key={conv.id}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={activeConvId === conv.id}
-                    >
-                      <Link href={`/startups/${slug}/chat/${conv.id}`}>
-                        <MessageSquareIcon className="w-4 h-4 shrink-0" />
-                        <span className="truncate flex-1 text-left">
-                          {conv.title || "Untitled Session"}
-                        </span>
-                      </Link>
-                    </SidebarMenuButton>
-                    <SidebarMenuAction
-                      onClick={(e) => handleDelete(e, conv.id)}
-                      className="opacity-0 group-hover:opacity-100 hover:text-destructive transition-opacity"
-                    >
-                      <Trash2Icon className="w-3 h-3" />
-                    </SidebarMenuAction>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        </SidebarContent>
-        <SidebarFooter className="border-t p-3">
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip="Back to Startup Dashboard">
-                <Link
-                  href={`/startups/${slug}`}
-                  className="flex items-center gap-2"
-                >
-                  <ArrowLeft className="h-4 w-4 shrink-0" />
-                  <span>Back to Startup</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarFooter>
-        <SidebarRail />
-      </Sidebar>
-
-      <SidebarInset className="flex flex-col min-w-0">
-        <header className="flex items-center justify-between px-4 py-3 border-b bg-muted/30 shrink-0">
-          <div className="flex items-center gap-3">
-            <SidebarTrigger />
-            <div className="flex items-center gap-3 ml-2">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <BotIcon className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <h2 className="font-semibold text-sm">VC Coach</h2>
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                  <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
-                    Online & Strategic
-                  </span>
+      <Conversation className="flex-1">
+        <ConversationContent>
+          {isFetchingConv && messages.length === 0 ? (
+            <ChatMessagesSkeleton />
+          ) : messages.length === 0 && status === "ready" ? (
+            <div className="space-y-8 py-8">
+              <div className="flex flex-col items-center justify-center text-center px-4">
+                <div className="p-4 bg-primary/5 rounded-full mb-4">
+                  <BotIcon className="w-12 h-12 text-primary/40" />
                 </div>
+                <h3 className="text-xl font-bold">
+                  Your Personal VC Strategic Advisor
+                </h3>
+                <p className="text-muted-foreground max-w-sm mt-2">
+                  I have complete access to your startup's data, metrics, and
+                  research. Ask me anything about your strategy, growth, or
+                  fundraising.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 px-8">
+                {suggestedQuestions.map((q) => (
+                  <button
+                    key={q.label}
+                    type="button"
+                    onClick={() => handleSendMessage(q.prompt)}
+                    className="flex items-start gap-3 p-4 text-left rounded-xl border bg-card hover:bg-accent hover:border-primary/50 transition-all group"
+                  >
+                    <div className="p-2 bg-muted rounded-lg group-hover:bg-primary/10 transition-colors">
+                      <q.icon className="w-4 h-4 text-muted-foreground group-hover:text-primary" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium">{q.label}</div>
+                      <div className="text-xs text-muted-foreground line-clamp-1">
+                        {q.prompt}
+                      </div>
+                    </div>
+                  </button>
+                ))}
               </div>
             </div>
-          </div>
+          ) : null}
 
-          <div className="flex items-center gap-2">
-            <Badge
-              variant="outline"
-              className="text-xs font-normal hidden sm:inline-flex"
-            >
-              Startup: {startupName}
-            </Badge>
-          </div>
-        </header>
-
-        <Conversation className="flex-1">
-          <ConversationContent>
-            {isFetchingConv && messages.length === 0 ? (
-              <ChatMessagesSkeleton />
-            ) : messages.length === 0 && status === "ready" ? (
-              <div className="space-y-8 py-8">
-                <div className="flex flex-col items-center justify-center text-center px-4">
-                  <div className="p-4 bg-primary/5 rounded-full mb-4">
-                    <BotIcon className="w-12 h-12 text-primary/40" />
-                  </div>
-                  <h3 className="text-xl font-bold">
-                    Your Personal VC Strategic Advisor
-                  </h3>
-                  <p className="text-muted-foreground max-w-sm mt-2">
-                    I have complete access to your startup's data, metrics, and
-                    research. Ask me anything about your strategy, growth, or
-                    fundraising.
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 px-8">
-                  {suggestedQuestions.map((q) => (
-                    <button
-                      key={q.label}
-                      type="button"
-                      onClick={() => handleSendMessage(q.prompt)}
-                      className="flex items-start gap-3 p-4 text-left rounded-xl border bg-card hover:bg-accent hover:border-primary/50 transition-all group"
-                    >
-                      <div className="p-2 bg-muted rounded-lg group-hover:bg-primary/10 transition-colors">
-                        <q.icon className="w-4 h-4 text-muted-foreground group-hover:text-primary" />
-                      </div>
-                      <div>
-                        <div className="text-sm font-medium">{q.label}</div>
-                        <div className="text-xs text-muted-foreground line-clamp-1">
-                          {q.prompt}
-                        </div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-
-            {messages.map((message, index) => (
-              <div key={`${index}-${message.id}`} className="space-y-4">
-                <Message from={message.role}>
-                  <div className="flex items-start gap-3 w-full">
-                    {message.role === "assistant" && (
-                      <div className="mt-1 shrink-0 p-1.5 bg-primary/10 rounded-md">
-                        <BotIcon className="w-4 h-4 text-primary" />
-                      </div>
-                    )}
-                    {message.role === "user" && (
-                      <div className="mt-1 shrink-0 p-1.5 bg-muted rounded-md order-last">
-                        <UserIcon className="w-4 h-4 text-muted-foreground" />
-                      </div>
-                    )}
-
-                    <div className="flex flex-col gap-2 flex-1">
-                      {message.parts.map((part) => {
-                        if (part.type === "text") {
-                          const thinkingMatch = part.text.match(
-                            /<thinking>([\s\S]*?)<\/thinking>/,
-                          );
-                          const textWithoutThinking = part.text
-                            .replace(/<thinking>[\s\S]*?<\/thinking>/, "")
-                            .trim();
-
-                          return (
-                            <div
-                              key={`${message.id}-${part.type}-${part.type === "text" ? part.text.slice(0, 24) : "part"}`}
-                              className="space-y-2"
-                            >
-                              {thinkingMatch && (
-                                <Reasoning defaultOpen={false}>
-                                  <ReasoningTrigger />
-                                  <ReasoningContent>
-                                    {thinkingMatch[1]}
-                                  </ReasoningContent>
-                                </Reasoning>
-                              )}
-                              {textWithoutThinking && (
-                                <>
-                                  <MessageContent
-                                    className={
-                                      message.role === "user"
-                                        ? "group-[.is-user]:bg-primary group-[.is-user]:text-primary-foreground"
-                                        : ""
-                                    }
-                                  >
-                                    <MessageResponse>
-                                      {textWithoutThinking}
-                                    </MessageResponse>
-                                  </MessageContent>
-
-                                  {message.role === "assistant" && (
-                                    <MessageActions className="opacity-0 group-hover:opacity-100 transition-opacity">
-                                      <MessageAction
-                                        tooltip="Copy response"
-                                        onClick={() =>
-                                          handleCopy(
-                                            textWithoutThinking,
-                                            message.id,
-                                          )
-                                        }
-                                      >
-                                        {copiedId === message.id ? (
-                                          <CheckIcon className="w-3.5 h-3.5 text-green-500" />
-                                        ) : (
-                                          <CopyIcon className="w-3.5 h-3.5" />
-                                        )}
-                                      </MessageAction>
-                                    </MessageActions>
-                                  )}
-                                </>
-                              )}
-                            </div>
-                          );
-                        }
-
-                        return null;
-                      })}
+          {messages.map((message, index) => (
+            <div key={`${index}-${message.id}`} className="space-y-4">
+              <Message from={message.role}>
+                <div className="flex items-start gap-3 w-full">
+                  {message.role === "assistant" && (
+                    <div className="mt-1 shrink-0 p-1.5 bg-primary/10 rounded-md">
+                      <BotIcon className="w-4 h-4 text-primary" />
                     </div>
-                  </div>
-                </Message>
-              </div>
-            ))}
-            {status === "streaming" && (
-              <div className="flex justify-start">
-                <div className="bg-muted text-muted-foreground px-4 py-2 rounded-lg flex items-center gap-2">
-                  <RefreshCwIcon className="w-3 h-3 animate-spin" />
-                  <span className="text-xs">Thinking...</span>
-                </div>
-              </div>
-            )}
-            {error && (
-              <div className="mx-4 mb-4 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-                {error.message ||
-                  "The VC Coach could not complete that response."}
-              </div>
-            )}
-            <ConversationScrollButton />
-          </ConversationContent>
-        </Conversation>
+                  )}
+                  {message.role === "user" && (
+                    <div className="mt-1 shrink-0 p-1.5 bg-muted rounded-md order-last">
+                      <UserIcon className="w-4 h-4 text-muted-foreground" />
+                    </div>
+                  )}
 
-        <div className="p-6 border-t bg-muted/10">
-          <PromptInput
-            onSubmit={(msg) => {
-              if (msg.text.trim()) {
-                handleSendMessage(msg.text);
-                setInput("");
-              }
-            }}
-          >
-            <PromptInputBody>
-              <PromptInputTextarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask your VC Coach anything..."
-                className="min-h-[100px] bg-background shadow-sm"
-              />
-            </PromptInputBody>
-            <PromptInputFooter>
-              <PromptInputTools>
-                <div className="flex items-center gap-2 px-2 text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
-                  <SparklesIcon className="w-3 h-3 text-amber-500" />
-                  Genesyz Strategic Agent Enabled
+                  <div className="flex flex-col gap-2 flex-1">
+                    {message.parts.map((part) => {
+                      if (part.type === "text") {
+                        const thinkingMatch = part.text.match(
+                          /<thinking>([\s\S]*?)<\/thinking>/,
+                        );
+                        const textWithoutThinking = part.text
+                          .replace(/<thinking>[\s\S]*?<\/thinking>/, "")
+                          .trim();
+
+                        return (
+                          <div
+                            key={`${message.id}-${part.type}-${part.type === "text" ? part.text.slice(0, 24) : "part"}`}
+                            className="space-y-2"
+                          >
+                            {thinkingMatch && (
+                              <Reasoning defaultOpen={false}>
+                                <ReasoningTrigger />
+                                <ReasoningContent>
+                                  {thinkingMatch[1]}
+                                </ReasoningContent>
+                              </Reasoning>
+                            )}
+                            {textWithoutThinking && (
+                              <>
+                                <MessageContent
+                                  className={
+                                    message.role === "user"
+                                      ? "group-[.is-user]:bg-primary group-[.is-user]:text-primary-foreground"
+                                      : ""
+                                  }
+                                >
+                                  <MessageResponse>
+                                    {textWithoutThinking}
+                                  </MessageResponse>
+                                </MessageContent>
+
+                                {message.role === "assistant" && (
+                                  <MessageActions className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <MessageAction
+                                      tooltip="Copy response"
+                                      onClick={() =>
+                                        handleCopy(
+                                          textWithoutThinking,
+                                          message.id,
+                                        )
+                                      }
+                                    >
+                                      {copiedId === message.id ? (
+                                        <CheckIcon className="w-3.5 h-3.5 text-green-500" />
+                                      ) : (
+                                        <CopyIcon className="w-3.5 h-3.5" />
+                                      )}
+                                    </MessageAction>
+                                  </MessageActions>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        );
+                      }
+
+                      return null;
+                    })}
+                  </div>
                 </div>
-              </PromptInputTools>
-              <PromptInputSubmit status={isLoading ? "streaming" : "ready"} />
-            </PromptInputFooter>
-          </PromptInput>
-        </div>
-      </SidebarInset>
+              </Message>
+            </div>
+          ))}
+          {status === "streaming" && (
+            <div className="flex justify-start">
+              <div className="bg-muted text-muted-foreground px-4 py-2 rounded-lg flex items-center gap-2">
+                <RefreshCwIcon className="w-3 h-3 animate-spin" />
+                <span className="text-xs">Thinking...</span>
+              </div>
+            </div>
+          )}
+          {error && (
+            <div className="mx-4 mb-4 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+              {error.message || "The VC could not complete that response."}
+            </div>
+          )}
+          <ConversationScrollButton />
+        </ConversationContent>
+      </Conversation>
+
+      <div className="p-6 border-t bg-muted/10">
+        <PromptInput
+          onSubmit={(msg) => {
+            if (msg.text.trim()) {
+              handleSendMessage(msg.text);
+              setInput("");
+            }
+          }}
+        >
+          <PromptInputBody>
+            <PromptInputTextarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Ask your VC anything..."
+              className="min-h-[100px] bg-background shadow-sm"
+            />
+          </PromptInputBody>
+          <PromptInputFooter>
+            <PromptInputTools>
+              <div className="flex items-center gap-2 px-2 text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
+                <SparklesIcon className="w-3 h-3 text-amber-500" />
+                Genesyz Strategic Agent Enabled
+              </div>
+            </PromptInputTools>
+            <PromptInputSubmit status={isLoading ? "streaming" : "ready"} />
+          </PromptInputFooter>
+        </PromptInput>
+      </div>
     </>
   );
 }
@@ -553,7 +567,6 @@ export function VCCoach({
 function ChatMessagesSkeleton() {
   return (
     <div className="space-y-6 py-6 px-4">
-      {/* Assistant Message Skeleton */}
       <div className="flex items-start gap-3 max-w-[80%]">
         <div className="p-1.5 bg-primary/10 rounded-md shrink-0">
           <div className="w-4 h-4 rounded-full bg-primary/20 animate-pulse" />
@@ -568,7 +581,6 @@ function ChatMessagesSkeleton() {
         </div>
       </div>
 
-      {/* User Message Skeleton */}
       <div className="flex items-start gap-3 max-w-[80%] ml-auto justify-end">
         <div className="space-y-2 flex-1 items-end flex flex-col animate-pulse">
           <Skeleton className="h-4 w-16" />
@@ -582,7 +594,6 @@ function ChatMessagesSkeleton() {
         </div>
       </div>
 
-      {/* Assistant Message Skeleton with Thinking block */}
       <div className="flex items-start gap-3 max-w-[80%]">
         <div className="p-1.5 bg-primary/10 rounded-md shrink-0">
           <div className="w-4 h-4 rounded-full bg-primary/20 animate-pulse" />

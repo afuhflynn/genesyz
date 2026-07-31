@@ -150,7 +150,7 @@ export function ChatInterface({ ideas = [] }: ChatInterfaceProps) {
             </Button>
           </div>
 
-          {/* VC Coach Toggle */}
+          {/* VC Toggle */}
           <div className="flex items-end">
             <Button
               variant={vcMode ? "default" : "outline"}
@@ -159,7 +159,7 @@ export function ChatInterface({ ideas = [] }: ChatInterfaceProps) {
               className={`flex gap-2 ${vcMode ? "bg-green-600 hover:bg-green-700" : ""}`}
             >
               <Briefcase className="w-4 h-4" />
-              {vcMode ? "VC Coach On" : "VC Coach"}
+              {vcMode ? "VC On" : "VC"}
             </Button>
           </div>
         </div>
@@ -171,7 +171,7 @@ export function ChatInterface({ ideas = [] }: ChatInterfaceProps) {
         )}
         {vcMode && (
           <p className="text-xs text-green-600 mt-2">
-            💡 VC Coach mode: Get investor perspective feedback on your pitch,
+            💡 VC mode: Get investor perspective feedback on your pitch,
             business model, and growth strategy
           </p>
         )}

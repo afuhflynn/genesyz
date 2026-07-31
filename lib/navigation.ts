@@ -141,7 +141,7 @@ export function startupNavigation(slug: string): NavigationItem[] {
       active: (p) => p === base,
     },
     {
-      label: "VC Coach",
+      label: "VC",
       description: "Think through the next decision",
       href: `${base}/chat`,
       icon: MessageSquare,

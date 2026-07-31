@@ -78,7 +78,7 @@ export const WORKSPACE_PLANS = {
     capabilities: { builder: true, hosting: false, growthOS: true, advancedAI: false, exports: true, lmsAnalytics: false },
     features: [
       "Full startup workspace",
-      "VC Coach",
+      "VC",
       "Growth experiments",
       "Prototype builder",
     ],

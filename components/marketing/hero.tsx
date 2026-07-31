@@ -46,7 +46,7 @@ export function Hero() {
           >
             Genesyz is your AI co-founder - pressure-test an idea, research the
             market, and then operate your startup with weekly metrics, a
-            research feed, and a strategic VC Coach in your corner.
+            research feed, and a strategic VC in your corner.
           </motion.p>
 
           <motion.div

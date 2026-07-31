@@ -138,7 +138,7 @@ export async function POST(
       try {
         await refundAICredit(session.user.id);
       } catch (refundError) {
-        console.error("Failed to refund VC Coach AI credit:", refundError);
+        console.error("Failed to refund VC AI credit:", refundError);
       }
     };
 
@@ -320,12 +320,12 @@ If the user asks for a pitch review or market analysis, use your tools to get th
     return result.toUIMessageStreamResponse({
       onError: (streamError) => {
         void refundFailedRequest();
-        console.error("VC Coach model stream failed:", streamError);
-        return "VC Coach is temporarily unavailable. Your AI credit was restored; please try again.";
+        console.error("VC model stream failed:", streamError);
+        return "VC is temporarily unavailable. Your AI credit was restored; please try again.";
       },
     });
   } catch (error) {
-    console.error("Startup VC Coach API error:", error);
+    console.error("Startup VC API error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },
