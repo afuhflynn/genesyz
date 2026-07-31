@@ -227,6 +227,7 @@ function ChatSession({
   const searchParams = useSearchParams();
   const slug = params.slug as string;
   const hasAutoSent = useRef(false);
+  const hasHydrated = useRef(false);
 
   const { data: conversationData, isFetching: isFetchingConv } =
     useStartupConversation(startupId, conversationId || "");
@@ -301,11 +302,14 @@ function ChatSession({
   );
 
   useEffect(() => {
+    if (hasHydrated.current) return;
     if (isLoading) return;
     if (conversationData?.data?.messages) {
       loadMessagesFromDb(conversationData.data.messages);
+      hasHydrated.current = true;
     } else if (!conversationId) {
       setMessages([]);
+      hasHydrated.current = true;
     }
   }, [
     conversationData,
@@ -318,12 +322,11 @@ function ChatSession({
   const handleSendMessage = useCallback(
     async (text: string) => {
       if (!text.trim() || isLoading) return;
-
+      hasHydrated.current = true;
       if (!conversationId) {
         await onNewSessionMessage(text);
         return;
       }
-
       sendMessage({ text });
     },
     [conversationId, isLoading, sendMessage, onNewSessionMessage],
