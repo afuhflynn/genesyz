@@ -16,6 +16,10 @@ const client = tavily({
 });
 const search_depth = "advanced";
 
+function toJson<T>(value: T): T {
+  return JSON.parse(JSON.stringify(value)) as T;
+}
+
 export interface TavilySearchResult {
   title: string;
   url: string;
@@ -152,7 +156,7 @@ export const getIdeaContext = tool({
 
     if (!idea) throw new Error("Idea not found");
 
-    return {
+    return toJson({
       id: idea.id,
       title: idea.title,
       summary: idea.summary,
@@ -164,7 +168,7 @@ export const getIdeaContext = tool({
       })),
       scores: idea.scores[0],
       history: idea.snapshots,
-    };
+    });
   },
 });
 
@@ -232,7 +236,7 @@ export const addStartupTask = tool({
       },
     });
 
-    return task;
+    return toJson(task);
   },
 });
 
@@ -292,7 +296,7 @@ export const createStartupTaskList = tool({
       },
     });
 
-    return list; // return ID!
+    return toJson(list); // return ID!
   },
 });
 
@@ -327,7 +331,7 @@ export const getStartupTaskLists = tool({
       },
     });
 
-    return taskLists;
+    return toJson(taskLists);
   },
 });
 
@@ -377,7 +381,7 @@ export const getStartupContext = tool({
 
     if (!startup) throw new Error("Startup not found");
 
-    return {
+    return toJson({
       id: startup.id,
       name: startup.name,
       tagline: startup.tagline,
@@ -405,7 +409,7 @@ export const getStartupContext = tool({
         role: m.role,
       })),
       followersCount: startup.followers.length,
-    };
+    });
   },
 });
 
@@ -430,7 +434,7 @@ export const updateStartupTaskList = tool({
       },
     });
 
-    return updatedList;
+    return toJson(updatedList);
   },
 });
 
@@ -445,10 +449,12 @@ export const updateStartupMetrics = tool({
   }),
   execute: async ({ startupId, ...data }) => {
     const { db } = await import("@/lib/db");
-    return await db.startup.update({
-      where: { id: startupId },
-      data,
-    });
+    return toJson(
+      await db.startup.update({
+        where: { id: startupId },
+        data,
+      }),
+    );
   },
 });
 
@@ -471,14 +477,16 @@ export const addWeeklyUpdate = tool({
     const weekEnd = new Date();
     weekEnd.setDate(weekEnd.getDate() + 7);
 
-    return await db.weeklyUpdate.create({
-      data: {
-        ...updateData,
-        weekStart,
-        weekEnd,
-        startup: { connect: { id: startupId } },
-      },
-    });
+    return toJson(
+      await db.weeklyUpdate.create({
+        data: {
+          ...updateData,
+          weekStart,
+          weekEnd,
+          startup: { connect: { id: startupId } },
+        },
+      }),
+    );
   },
 });
 
@@ -497,14 +505,16 @@ export const trackOpportunity = tool({
   }),
   execute: async ({ startupId, deadline, description, ...details }) => {
     const { db } = await import("@/lib/db");
-    return await db.startupOpportunity.create({
-      data: {
-        ...details,
-        description: description ?? "", // ...so we fall back to "" for Prisma
-        deadline: deadline ? new Date(deadline) : null,
-        startup: { connect: { id: startupId } },
-      },
-    });
+    return toJson(
+      await db.startupOpportunity.create({
+        data: {
+          ...details,
+          description: description ?? "", // ...so we fall back to "" for Prisma
+          deadline: deadline ? new Date(deadline) : null,
+          startup: { connect: { id: startupId } },
+        },
+      }),
+    );
   },
 });
 
@@ -515,13 +525,15 @@ export const getAcceleratorContext = tool({
   }),
   execute: async ({ slug }) => {
     const { db } = await import("@/lib/db");
-    return await db.accelerator.findUnique({
-      where: { slug },
-      include: {
-        cohorts: { where: { isActive: true } },
-        events: { take: 5, orderBy: { scheduledAt: "asc" } },
-      },
-    });
+    return toJson(
+      await db.accelerator.findUnique({
+        where: { slug },
+        include: {
+          cohorts: { where: { isActive: true } },
+          events: { take: 5, orderBy: { scheduledAt: "asc" } },
+        },
+      }),
+    );
   },
 });
 
@@ -544,7 +556,7 @@ export const createResearchFeedItem = tool({
   }),
   execute: async (data) => {
     const { db } = await import("@/lib/db");
-    return await db.researchFeedItem.create({ data });
+    return toJson(await db.researchFeedItem.create({ data }));
   },
 });
 
