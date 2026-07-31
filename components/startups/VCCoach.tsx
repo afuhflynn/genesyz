@@ -82,7 +82,6 @@ export function VCCoach({
   startupName,
   conversationId,
 }: VCCoachProps) {
-  const [pendingMessage, setPendingMessage] = useState<string | null>(null);
   const router = useRouter();
   const params = useParams();
   const slug = params.slug as string;
@@ -93,7 +92,6 @@ export function VCCoach({
   const deleteConversation = useDeleteStartupConversation();
 
   const handleNewChat = () => {
-    setPendingMessage(null);
     router.push(`/startups/${slug}/chat`);
   };
 
@@ -102,8 +100,9 @@ export function VCCoach({
       startupId,
       title: text.trim().slice(0, 50),
     });
-    setPendingMessage(text);
-    router.push(`/startups/${slug}/chat/${result.data.id}`);
+    router.push(
+      `/startups/${slug}/chat/${result.data.id}?q=${encodeURIComponent(text)}`,
+    );
     await refetchList();
   };
 
@@ -205,8 +204,6 @@ export function VCCoach({
           key={conversationId ?? "new"}
           startupId={startupId}
           conversationId={conversationId}
-          pendingMessage={pendingMessage}
-          onPendingMessageSent={() => setPendingMessage(null)}
           onNewSessionMessage={handleNewSessionMessage}
         />
       </SidebarInset>
@@ -217,19 +214,18 @@ export function VCCoach({
 function ChatSession({
   startupId,
   conversationId,
-  pendingMessage,
-  onPendingMessageSent,
   onNewSessionMessage,
 }: {
   startupId: string;
   conversationId?: string;
-  pendingMessage: string | null;
-  onPendingMessageSent: () => void;
   onNewSessionMessage: (text: string) => Promise<void>;
 }) {
   const [input, setInput] = useState("");
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const router = useRouter();
+  const params = useParams();
   const searchParams = useSearchParams();
+  const slug = params.slug as string;
   const hasAutoSent = useRef(false);
 
   const { data: conversationData, isFetching: isFetchingConv } =
@@ -334,23 +330,18 @@ function ChatSession({
   );
 
   useEffect(() => {
-    if (pendingMessage && conversationId) {
-      onPendingMessageSent();
-      sendMessage({ text: pendingMessage });
-    }
-  }, [pendingMessage, conversationId, sendMessage, onPendingMessageSent]);
-
-  useEffect(() => {
     const initialQuestion = searchParams.get("q");
     if (initialQuestion && !hasAutoSent.current) {
       hasAutoSent.current = true;
-      const timer = setTimeout(
-        () => void handleSendMessage(initialQuestion),
-        100,
-      );
+      const timer = setTimeout(() => {
+        void handleSendMessage(initialQuestion);
+        if (conversationId) {
+          router.replace(`/startups/${slug}/chat/${conversationId}`);
+        }
+      }, 100);
       return () => clearTimeout(timer);
     }
-  }, [handleSendMessage, searchParams]);
+  }, [handleSendMessage, searchParams, router, slug, conversationId]);
 
   const handleCopy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
